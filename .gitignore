@@ -1,8 +1,37 @@
+# ── Node / Server ────────────────────────────────────────────────────────────
 server/node_modules/
+server/*.db
+server/*.db-wal
+server/*.db-shm
+server/.env
+server/public/numera.apk
+
+# ── Android build outputs ────────────────────────────────────────────────────
 android/.gradle/
+android/build/
 android/app/build/
 android/local.properties
-*.db
-*.db-shm
-*.db-wal
-.env
+android/**/*.apk
+android/**/*.aab
+
+# ── Claude / AI tooling ──────────────────────────────────────────────────────
+.claude/
+.system_generated/
+
+# ── Dev scratch scripts ──────────────────────────────────────────────────────
+scratch/
+
+# ── Wolfram MCP server ───────────────────────────────────────────────────────
+wolfram-mcp-server/
+
+# ── Loose build artifacts & logs ─────────────────────────────────────────────
+*.apk
+*.aab
+*.log
+hd_player_out.txt
+android/processes.txt
+
+# ── OS junk ──────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini

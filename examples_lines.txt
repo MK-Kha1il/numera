@@ -1,0 +1,15 @@
+66: passedExamplesJson: String? = null,
+98: var examplesList by remember { mutableStateOf<List<MathExample>>(emptyList()) }
+254: examplesList = response.examples ?: emptyList()
+275: val examples = puzzle.examples
+281: examplesList = examples ?: emptyList()
+292: examplesList = response.examples ?: emptyList()
+324: val parsedExamples = try {
+325: if (!passedExamplesJson.isNullOrEmpty()) {
+327: com.google.gson.Gson().fromJson<List<MathExample>>(passedExamplesJson, typeToken)
+336: examplesList = parsedExamples
+347: examplesList = response.examples ?: emptyList()
+363: examplesList = response.examples ?: emptyList()
+540: if (examplesList.isNotEmpty()) {
+542: text = "WORKED EXAMPLES",
+549: examplesList.forEachIndexed { index, ex ->

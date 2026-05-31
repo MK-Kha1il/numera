@@ -1,0 +1,195 @@
+1916:                 }
+1917:             )
+1918:         }
+1919: 
+1920:         // Slide-up calculator overlay
+1921:         AnimatedVisibility(
+1922:             visible = showCalculator,
+1923:             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+1924:             exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+1925:             modifier = Modifier.align(Alignment.BottomCenter)
+1926:         ) {
+1927:             Card(
+1928:                 modifier = Modifier
+1929:                     .fillMaxWidth()
+1930:                     .fillMaxHeight(0.55f)
+1931:                     .clickable(enabled = false) {}
+1932:                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+1933:                     .background(MaterialTheme.colorScheme.surface),
+1934:                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+1935:                 elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+1936:             ) {
+1937:                 Column(
+1938:                     modifier = Modifier
+1939:                         .fillMaxSize()
+1940:                         .padding(16.dp),
+1941:                     verticalArrangement = Arrangement.spacedBy(8.dp)
+1942:                 ) {
+1943:                     Row(
+1944:                         modifier = Modifier.fillMaxWidth(),
+1945:                         horizontalArrangement = Arrangement.SpaceBetween,
+1946:                         verticalAlignment = Alignment.CenterVertically
+1947:                     ) {
+1948:                         Text(
+1949:                             text = "🧮 Calculator",
+1950:                             fontWeight = FontWeight.ExtraBold,
+1951:                             fontSize = 18.sp,
+1952:                             color = MaterialTheme.colorScheme.primary
+1953:                         )
+1954:                         IconButton(onClick = { showCalculator = false }) {
+1955:                             Icon(Icons.Default.Clear, contentDescription = "Close")
+1956:                         }
+1957:                     }
+1958: 
+1959:                     Card(
+1960:                         modifier = Modifier
+1961:                             .fillMaxWidth()
+1962:                             .height(72.dp)
+1963:                             .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+1964:                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+1965:                     ) {
+1966:                         Column(
+1967:                             modifier = Modifier
+1968:                                 .fillMaxSize()
+1969:                                 .padding(horizontal = 12.dp, vertical = 6.dp),
+1970:                             verticalArrangement = Arrangement.Center,
+1971:                             horizontalAlignment = Alignment.End
+1972:                         ) {
+1973:                             Text(
+1974:                                 text = calculatorInput.ifEmpty { "0" },
+1975:                                 fontSize = 22.sp,
+1976:                                 fontWeight = FontWeight.Bold,
+1977:                                 color = MaterialTheme.colorScheme.onSurface,
+1978:                                 maxLines = 1
+1979:                             )
+1980:                             if (calculatorResult.isNotEmpty()) {
+1981:                                 Text(
+1982:                                     text = "= $calculatorResult",
+1983:                                     fontSize = 16.sp,
+1984:                                     fontWeight = FontWeight.Medium,
+1985:                                     color = MaterialTheme.colorScheme.secondary,
+1986:                                     maxLines = 1
+1987:                                 )
+1988:                             }
+1989:                         }
+1990:                     }
+1991: 
+1992:                     val keys = listOf(
+1993:                         listOf("C", "(", ")", "⌫"),
+1994:                         listOf("7", "8", "9", "/"),
+1995:                         listOf("4", "5", "6", "*"),
+1996:                         listOf("1", "2", "3", "-"),
+1997:                         listOf("0", ".", "π", "+"),
+1998:                         listOf("e", "sqrt(", "=", "=")
+1999:                     )
+2000: 
+2001:                     Column(
+2002:                         modifier = Modifier.fillMaxWidth(),
+2003:                         verticalArrangement = Arrangement.spacedBy(4.dp)
+2004:                     ) {
+2005:                         keys.forEach { row ->
+2006:                             Row(
+2007:                                 modifier = Modifier.fillMaxWidth(),
+2008:                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
+2009:                             ) {
+2010:                                 var skipNext = false
+2011:                                 row.forEachIndexed { colIdx, key ->
+2012:                                     if (skipNext) {
+2013:                                         skipNext = false
+2014:                                         return@forEachIndexed
+2015:                                     }
+2016:                                     
+2017:                                     val isEquals = key == "="
+2018:                                     val isDouble = isEquals && colIdx < row.size - 1 && row[colIdx + 1] == "="
+2019:                                     
+2020:                                     val weight = if (isDouble) 2f else 1f
+2021:                                     if (isDouble) skipNext = true
+2022:                                     
+2023:                                     val containerColor = when (key) {
+2024:                                         "C" -> WrongRed.copy(alpha = 0.15f)
+2025:                                         "⌫" -> MaterialTheme.colorScheme.secondaryContainer
+2026:                                         "=", "+", "-", "*", "/" -> MaterialTheme.colorScheme.primaryContainer
+2027:                                         else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+2028:                                     }
+2029:                                     val contentColor = when (key) {
+2030:                                         "C" -> WrongRed
+2031:                                         "=", "+", "-", "*", "/" -> MaterialTheme.colorScheme.onPrimaryContainer
+2032:                                         else -> MaterialTheme.colorScheme.onSurfaceVariant
+2033:                                     }
+2034:                                     
+2035:                                     Box(
+2036:                                         modifier = Modifier
+2037:                                             .weight(weight)
+2038:                                             .clip(RoundedCornerShape(12.dp))
+2039:                                             .background(containerColor)
+2040:                                             .clickable {
+2041:                                                 com.example.numera.haptic.HapticManager.playSoft()
+2042:                                                 when (key) {
+2043:                                                     "C" -> {
+2044:                                                         calculatorInput = ""
+2045:                                                         calculatorResult = ""
+2046:                                                     }
+2047:                                                     "⌫" -> {
+2048:                                                         if (calculatorInput.isNotEmpty()) {
+2049:                                                             calculatorInput = calculatorInput.dropLast(1)
+2050:                                                         }
+2051:                                                     }
+2052:                                                     "=" -> {
+2053:                                                         try {
+2054:                                                             if (calculatorInput.isNotEmpty()) {
+2055:                                                                 val res = evaluateExpression(calculatorInput)
+2056:                                                                 calculatorResult = if (res % 1.0 == 0.0) res.toInt().toString() else String.format("%.4f", res)
+2057:                                                                 if (Math.abs(res - 67.0) < 1e-9) {
+2058:                                                                     logCalculatorTelemetry("67")
+2059:                                                                 } else {
+2060:                                                                     logCalculatorTelemetry(calculatorInput)
+2061:                                                                 }
+2062:                                                             }
+2063:                                                         } catch (e: Exception) {
+2064:                                                             calculatorResult = "Error"
+2065:                                                         }
+2066:                                                     }
+2067:                                                     else -> {
+2068:                                                         calculatorInput += key
+2069:                                                     }
+2070:                                                 }
+2071:                                                 
+2072:                                                 if (key != "=" && key != "C") {
+2073:                                                     try {
+2074:                                                         if (calculatorInput.isNotEmpty()) {
+2075:                                                             val res = evaluateExpression(calculatorInput)
+2076:                                                             calculatorResult = if (res % 1.0 == 0.0) res.toInt().toString() else String.format("%.4f", res)
+2077:                                                         } else {
+2078:                                                             calculatorResult = ""
+2079:                                                         }
+2080:                                                     } catch (e: Exception) {
+2081:                                                         // ignore invalid expressions mid-typing
+2082:                                                     }
+2083:                                                 }
+2084:                                             }
+2085:                                             .padding(vertical = 10.dp),
+2086:                                         contentAlignment = Alignment.Center
+2087:                                     ) {
+2088:                                         Text(
+2089:                                             text = key,
+2090:                                             fontSize = 18.sp,
+2091:                                             fontWeight = FontWeight.Bold,
+2092:                                             color = contentColor
+2093:                                         )
+2094:                                     }
+2095:                                 }
+2096:                             }
+2097:                         }
+2098:                     }
+2099:                 }
+2100:             }
+2101:         }
+2102: 
+2103:         // Slide-up tip overlay
+2104:         AnimatedVisibility(
+2105:             visible = showTip,
+2106:             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+2107:             exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+2108:             modifier = Modifier.align(Alignment.BottomCenter)
+2109:         ) {
+2110:             Card(

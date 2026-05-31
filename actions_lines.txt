@@ -1,0 +1,150 @@
+1225:             if (currentExerciseType == ExerciseType.MCQ || currentExerciseType == ExerciseType.TYPED) {
+1226:                 Box(
+1227:                     modifier = Modifier
+1228:                         .align(Alignment.BottomEnd)
+1229:                         .padding(12.dp)
+1230:                 ) {
+1231:                     Column(
+1232:                         horizontalAlignment = Alignment.End,
+1233:                         verticalArrangement = Arrangement.spacedBy(4.dp)
+1234:                     ) {
+1235:                         AnimatedVisibility(
+1236:                             visible = showScratchpadPrompt,
+1237:                             enter = fadeIn() + expandVertically(),
+1238:                             exit = fadeOut() + shrinkVertically()
+1239:                         ) {
+1240:                             Box(
+1241:                                 modifier = Modifier
+1242:                                     .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(10.dp))
+1243:                                     .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
+1244:                                     .padding(horizontal = 10.dp, vertical = 5.dp)
+1245:                             ) {
+1246:                                 Text(
+1247:                                     text = "💡 Need scratch space?",
+1248:                                     fontSize = 11.sp,
+1249:                                     fontWeight = FontWeight.Bold,
+1250:                                     color = MaterialTheme.colorScheme.onPrimaryContainer
+1251:                                 )
+1252:                             }
+1253:                         }
+1254: 
+1255:                         Row(
+1256:                             horizontalArrangement = Arrangement.spacedBy(8.dp),
+1257:                             verticalAlignment = Alignment.CenterVertically
+1258:                         ) {
+1259:                             // Tip Button
+1260:                             Box(
+1261:                                 modifier = Modifier
+1262:                                     .clip(RoundedCornerShape(12.dp))
+1263:                                     .background(MaterialTheme.colorScheme.secondaryContainer)
+1264:                                     .border(BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)), shape = RoundedCornerShape(12.dp))
+1265:                                     .clickable {
+1266:                                         com.example.numera.haptic.HapticManager.playSoft()
+1267:                                         showCalculator = false
+1268:                                         showWhiteboard = false
+1269:                                         showTip = true
+1270:                                     }
+1271:                                     .padding(horizontal = 12.dp, vertical = 8.dp),
+1272:                                 contentAlignment = Alignment.Center
+1273:                             ) {
+1274:                                 Row(
+1275:                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
+1276:                                     verticalAlignment = Alignment.CenterVertically
+1277:                                 ) {
+1278:                                     com.example.numera.ui.components.NumeraIcon(
+1279:                                         type = com.example.numera.ui.components.NumeraIconType.Tip,
+1280:                                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
+1281:                                         modifier = Modifier.size(16.dp),
+1282:                                         animate = false
+1283:                                     )
+1284:                                     Text(
+1285:                                         text = "TIP",
+1286:                                         color = MaterialTheme.colorScheme.onSecondaryContainer,
+1287:                                         fontWeight = FontWeight.Bold,
+1288:                                         fontSize = 11.sp
+1289:                                     )
+1290:                                 }
+1291:                             }
+1292: 
+1293:                             // Calculator Button
+1294:                             Box(
+1295:                                 modifier = Modifier
+1296:                                     .clip(RoundedCornerShape(12.dp))
+1297:                                     .background(MaterialTheme.colorScheme.tertiaryContainer)
+1298:                                     .border(BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f)), shape = RoundedCornerShape(12.dp))
+1299:                                     .clickable {
+1300:                                         com.example.numera.haptic.HapticManager.playSoft()
+1301:                                         showTip = false
+1302:                                         showWhiteboard = false
+1303:                                         showCalculator = true
+1304:                                         logCalculatorTelemetry(null)
+1305:                                     }
+1306:                                     .padding(horizontal = 12.dp, vertical = 8.dp),
+1307:                                 contentAlignment = Alignment.Center
+1308:                             ) {
+1309:                                 Row(
+1310:                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
+1311:                                     verticalAlignment = Alignment.CenterVertically
+1312:                                 ) {
+1313:                                     com.example.numera.ui.components.NumeraIcon(
+1314:                                         type = com.example.numera.ui.components.NumeraIconType.Calculator,
+1315:                                         tint = MaterialTheme.colorScheme.onTertiaryContainer,
+1316:                                         modifier = Modifier.size(16.dp),
+1317:                                         animate = false
+1318:                                     )
+1319:                                     Text(
+1320:                                         text = "CALC",
+1321:                                         color = MaterialTheme.colorScheme.onTertiaryContainer,
+1322:                                         fontWeight = FontWeight.Bold,
+1323:                                         fontSize = 11.sp
+1324:                                     )
+1325:                                 }
+1326:                             }
+1327: 
+1328:                             // Try Paper Button
+1329:                             Box(
+1330:                                 modifier = Modifier
+1331:                                     .clip(RoundedCornerShape(12.dp))
+1332:                                     .background(
+1333:                                         Brush.verticalGradient(
+1334:                                             listOf(
+1335:                                                 MaterialTheme.colorScheme.primary,
+1336:                                                 MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+1337:                                             )
+1338:                                         )
+1339:                                     )
+1340:                                     .border(BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)), shape = RoundedCornerShape(12.dp))
+1341:                                     .clickable {
+1342:                                         com.example.numera.haptic.HapticManager.playSoft()
+1343:                                         showTip = false
+1344:                                         showCalculator = false
+1345:                                         showWhiteboard = true
+1346:                                         showScratchpadPrompt = false
+1347:                                     }
+1348:                                     .padding(horizontal = 12.dp, vertical = 8.dp),
+1349:                                 contentAlignment = Alignment.Center
+1350:                             ) {
+1351:                                 Row(
+1352:                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
+1353:                                     verticalAlignment = Alignment.CenterVertically
+1354:                                 ) {
+1355:                                     com.example.numera.ui.components.NumeraIcon(
+1356:                                         type = com.example.numera.ui.components.NumeraIconType.Scratchpad,
+1357:                                         tint = Color.White,
+1358:                                         modifier = Modifier.size(16.dp),
+1359:                                         animate = false
+1360:                                     )
+1361:                                     Text(
+1362:                                         text = "TRY PAPER",
+1363:                                         color = Color.White,
+1364:                                         fontWeight = FontWeight.Black,
+1365:                                         fontSize = 11.sp,
+1366:                                         letterSpacing = 0.8.sp
+1367:                                     )
+1368:                                 }
+1369:                             }
+1370:                         }
+1371:                     }
+1372:         }
+1373:     }
+1374: }

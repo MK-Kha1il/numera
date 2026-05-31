@@ -1,0 +1,48 @@
+[
+  {
+    "category": "number_theory",
+    "level_range": "41-50",
+    "type": "gcd_lcm",
+    "question_pattern": "Find the Greatest Common Divisor of the two numbers: $$\\gcd({a}, {b})$$",
+    "solve_params_json": {
+      "a": { "type": "range", "min": 10, "max": 100 },
+      "b": { "type": "range", "min": 15, "max": 150 }
+    },
+    "explanation_pattern": "Using the Euclidean algorithm:\n$$gcd({a}, {b}) = gcd({b}, {a} \\bmod {b}) = {answer}$$"
+  },
+  {
+    "category": "number_theory",
+    "level_range": "41-50",
+    "type": "modular_arithmetic",
+    "question_pattern": "Evaluate the modular power remainder: $${base}^{power} \\pmod{{mod}}$$",
+    "solve_params_json": {
+      "base": { "type": "choice", "choices": [2, 3, 5] },
+      "power": { "type": "range", "min": 2, "max": 5 },
+      "mod": { "type": "range", "min": 7, "max": 19 }
+    },
+    "explanation_pattern": "Calculate the power: $${base}^{power} = {powerAns}$. Dividing by {mod} yields remainder {answer}:\n$${base}^{power} \\equiv {answer} \\pmod{{mod}}$$"
+  },
+  {
+    "category": "algebra",
+    "level_range": "11-20",
+    "type": "linear_two_step",
+    "question_pattern": "Solve for the root variable $x$ in the equation: $${a}x + {b} = {c}$$",
+    "solve_params_json": {
+      "a": { "type": "choice", "choices": [2, 3, 4, 5] },
+      "x": { "type": "range", "min": 1, "max": 10 },
+      "b": { "type": "range", "min": 1, "max": 15 }
+    },
+    "explanation_pattern": "Isolate variables column:\n1. Subtract {b} from both sides: $${a}x = {c} - {b} = {diff}$$\n2. Divide by {a}: $$x = {answer}$$"
+  },
+  {
+    "category": "arithmetic",
+    "level_range": "1-10",
+    "type": "arithmetic_mult",
+    "question_pattern": "Evaluate the product of the integers: $${a} \\times {b}$$",
+    "solve_params_json": {
+      "a": { "type": "range", "min": 5, "max": 20 },
+      "b": { "type": "range", "min": 5, "max": 15 }
+    },
+    "explanation_pattern": "Multiply the factors:\n$${a} \\times {b} = {answer}$$"
+  }
+]
