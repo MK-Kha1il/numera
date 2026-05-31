@@ -1,0 +1,27 @@
+# Refinement & Coherence Checklist
+
+- `[x]` 1. Educational Coherence (Lessons & Archive Sync)
+  - `[x]` Define `getLessonForArchive(title, category)` in `server/mathEngine/lessons.js`
+  - `[x]` Update daily puzzle `/api/math/daily-puzzle` endpoint in `server/server.js`
+  - `[x]` Update search archive `/api/archive/search` endpoint in `server/server.js`
+  - `[x]` Add lesson fields to `DailyPuzzle` and `ArchiveExercise` in `Models.kt`
+  - `[x]` Add lesson fields to `SoloGame` navigation key in `NavigationKeys.kt`
+  - `[x]` Update `SoloGame` entry in `Navigation.kt` to map lesson fields
+  - `[x]` Pass lesson parameters in `SoloGame` launch inside `MainTabsScreen.kt`
+  - `[x]` Update `SoloGameScreen.kt` to initialize from direct lesson parameters
+- `[x]` 2. Achievement Persistence & Race Condition Security
+  - `[x]` Remove `DELETE FROM user_achievements` from database init in `server/db.js`
+  - `[x]` Secure `/api/quests/claim` endpoint against race conditions in `server/server.js`
+  - `[x]` Secure `/api/achievements/claim` endpoint against race conditions in `server/server.js`
+- `[x]` 3. UI Refinements & Mistakes Rebranding
+  - `[x]` Redesign Daily Puzzle card to be compact and lightweight in `MainTabsScreen.kt`
+  - `[x]` Rebrand Mistakes Bank card to Growth Practice Focus Trainer in `MainTabsScreen.kt`
+  - `[x]` Update daily quest branding for mistakes to "Focus Practice" in `server/server.js`
+  - `[x]` Display "GROWTH PRACTICE" in the game header during mistakes review in `SoloGameScreen.kt`
+- `[x]` 4. Shop Integrity & Shop Hero Overhaul
+  - `[x]` Restrict purchase of free/prestige items in `/api/shop/purchase` inside `server/server.js`
+  - `[x]` Build `ShopHeroCard` in `MainTabsScreen.kt`
+  - `[x]` Overhaul Shop screen to show a single featured item inside the Hero card
+- `[x]` 5. Compile & Verify
+  - `[x]` Run Kotlin compilation checks via Gradle
+  - `[x]` Test endpoints and claim race-condition safety
