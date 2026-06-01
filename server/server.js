@@ -36,6 +36,12 @@ const {
   rateLimiter,
 } = require('./middleware/rateLimit');
 const { authenticateToken } = require('./middleware/auth');
+const {
+  calculateRank,
+  calculateRankFromElo,
+  getRankValue,
+  normalizeLevelForGenerator,
+} = require('./lib/progression');
 
 const app = express();
 
@@ -64,6 +70,8 @@ app.use(globalRateLimiter(100, 60000));
 app.use(require('./routes/notifications'));
 app.use(require('./routes/srs'));
 app.use(require('./routes/library'));
+app.use(require('./routes/mistakes'));
+app.use(require('./routes/leaderboard'));
 
 // Landing Page & Status Dashboard
 app.get('/', (req, res) => {
@@ -1177,49 +1185,8 @@ app.post('/api/commitment/recommit', authenticateToken, (req, res) => {
   });
 });
 
-function calculateRank(level) {
-  const ranks = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster'];
-  const tierSize = 9; // 3 divisions * 3 levels per division = 9 levels per tier
-  const tierIdx = Math.min(Math.floor((level - 1) / tierSize), ranks.length - 1);
-  const currentTier = ranks[tierIdx];
-  
-  const subLevel = (level - 1) % tierSize;
-  let divisionStr = 'III';
-  if (subLevel >= 6) divisionStr = 'I';
-  else if (subLevel >= 3) divisionStr = 'II';
-  
-  return `${currentTier} ${divisionStr}`;
-}
-
-function calculateRankFromElo(elo, matchesCount) {
-  if (matchesCount === undefined || matchesCount === null || matchesCount < 5) {
-    return `Unranked (Placement: ${matchesCount || 0}/5)`;
-  }
-  
-  if (elo < 1100) return 'Bronze III';
-  if (elo < 1200) return 'Bronze II';
-  if (elo < 1300) return 'Bronze I';
-  
-  if (elo < 1400) return 'Silver III';
-  if (elo < 1500) return 'Silver II';
-  if (elo < 1600) return 'Silver I';
-  
-  if (elo < 1700) return 'Gold III';
-  if (elo < 1800) return 'Gold II';
-  if (elo < 1900) return 'Gold I';
-  
-  if (elo < 2000) return 'Platinum III';
-  if (elo < 2100) return 'Platinum II';
-  if (elo < 2200) return 'Platinum I';
-  
-  if (elo < 2300) return 'Diamond III';
-  if (elo < 2400) return 'Diamond II';
-  if (elo < 2500) return 'Diamond I';
-  
-  if (elo < 2700) return 'Master';
-  return 'Grandmaster';
-}
-
+// calculateRank, calculateRankFromElo, getRankValue, normalizeLevelForGenerator
+// are imported from ./lib/progression (pure utilities).
 
 function grantRankRewards(userId, rank, callback) {
   const rewards = [];
@@ -1294,28 +1261,7 @@ function grantRankRewards(userId, rank, callback) {
 }
 // -------------------------------------------------------------
 
-function normalizeLevelForGenerator(category, level) {
-  const parsedLevel = parseInt(level, 10);
-  if (isNaN(parsedLevel) || parsedLevel <= 0) return 1;
-  if (parsedLevel === 10 || parsedLevel === 20 || parsedLevel === 30 || parsedLevel === 40 || parsedLevel === 50 || parsedLevel === 60) {
-    return parsedLevel;
-  }
-  const cat = (category || 'arithmetic').toLowerCase();
-  const index = Math.floor((parsedLevel - 1) / 6);
-  if (cat === 'algebra') {
-    return index >= 8 ? 19 : 11 + index;
-  } else if (cat === 'combinatorics') {
-    return index >= 8 ? 29 : 21 + index;
-  } else if (cat === 'calculus') {
-    return index >= 8 ? 39 : 31 + index;
-  } else if (cat === 'number theory' || cat === 'number_theory') {
-    return 41 + Math.min(8, index);
-  } else if (cat === 'mental') {
-    return 1 + index;
-  } else {
-    return 1 + index;
-  }
-}
+// normalizeLevelForGenerator imported from ./lib/progression
 
 // Procedural problems for specific category & level — engine-integrated
 app.get('/api/math/problems', authenticateToken, async (req, res) => {
@@ -2057,116 +2003,7 @@ app.get('/api/archive/search', authenticateToken, (req, res) => {
   });
 });
 
-// Mistakes Bank Endpoint: Get all current user errors
-app.get('/api/mistakes', authenticateToken, (req, res) => {
-  db.get("SELECT level, elo FROM users WHERE id = ?", [req.user.id], (errUser, userRow) => {
-    if (errUser) return res.status(500).json({ error: errUser.message });
-    const userLevel = userRow ? userRow.level : 1;
-    const userElo = userRow ? (userRow.elo || 1000) : 1000;
-
-    db.all("SELECT * FROM user_concept_analytics WHERE user_id = ?", [req.user.id], (err2, analyticsRows) => {
-      const analyticsMap = {};
-      if (!err2 && analyticsRows) {
-        analyticsRows.forEach(row => {
-          analyticsMap[row.concept] = row;
-        });
-      }
-
-      db.all("SELECT * FROM user_mistakes WHERE user_id = ? ORDER BY created_at DESC", [req.user.id], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        const parsed = rows.map((r, index) => {
-          const cat = r.category || 'Arithmetic';
-          const normLevel = normalizeLevelForGenerator(cat, userLevel);
-          const fresh = generateProblem(cat, normLevel, index, userElo, analyticsMap);
-          return {
-            ...r,
-            question: fresh.question,
-            correct_answer: fresh.correctAnswer,
-            options: fresh.options,
-            explanation: fresh.explanation
-          };
-        });
-        res.json(parsed);
-      });
-    });
-  });
-});
-
-// Post a new wrong answer to the Mistakes Bank
-app.post('/api/mistakes', authenticateToken, (req, res) => {
-  const { category, question, correct_answer, options, explanation } = req.body;
-  if (!question || !correct_answer || !options) {
-    return res.status(400).json({ error: 'Missing required mistake fields' });
-  }
-  
-  const optionsStr = typeof options === 'string' ? options : JSON.stringify(options);
-  const now = Math.floor(Date.now() / 1000);
-  
-  db.run(
-    `INSERT INTO user_mistakes (user_id, category, question, correct_answer, options, explanation, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [req.user.id, category || 'Arithmetic', question, correct_answer, optionsStr, explanation || '', now],
-    function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      
-      db.run(
-        "UPDATE user_quests SET mistakes_today = mistakes_today + 1 WHERE user_id = ?",
-        [req.user.id],
-        () => {
-          res.json({ success: true, id: this.lastID });
-        }
-      );
-    }
-  );
-});
-
-// Resolve a logged mistake after answering it correctly
-app.post('/api/mistakes/resolve', authenticateToken, (req, res) => {
-  const { mistakeId } = req.body;
-  if (!mistakeId) return res.status(400).json({ error: 'Mistake ID required' });
-  
-  db.get("SELECT * FROM user_mistakes WHERE id = ? AND user_id = ?", [mistakeId, req.user.id], (err, mistake) => {
-    if (err || !mistake) return res.status(404).json({ error: 'Mistake not found' });
-    
-    db.run("DELETE FROM user_mistakes WHERE id = ? AND user_id = ?", [mistakeId, req.user.id], (errDel) => {
-      if (errDel) return res.status(500).json({ error: errDel.message });
-      
-      const coinsGained = 10;
-      const xpGained = 15;
-      
-      db.get("SELECT xp, level, coins, league_points, rank FROM users WHERE id = ?", [req.user.id], (errU, user) => {
-        if (errU || !user) return res.status(500).json({ error: 'User details not found' });
-        
-        let newXp = user.xp + xpGained;
-        let newLevel = user.level;
-        while (newXp >= newLevel * 100) {
-          newXp -= newLevel * 100;
-          newLevel += 1;
-        }
-        
-        const newCoins = user.coins + coinsGained;
-        const newLeaguePoints = (user.league_points || 0) + xpGained;
-        const currentRank = user.rank || 'Unranked (Placement: 0/5)';
-        
-        db.run(
-          "UPDATE users SET xp = ?, level = ?, coins = ?, rank = ?, league_points = ? WHERE id = ?",
-          [newXp, newLevel, newCoins, currentRank, newLeaguePoints, req.user.id],
-          () => {
-            res.json({
-              success: true,
-              coinsGained,
-              xpGained,
-              xp: newXp,
-              level: newLevel,
-              coins: newCoins,
-              rank: currentRank
-            });
-          }
-        );
-      });
-    });
-  });
-});
+// Mistakes Bank endpoints (/api/mistakes*) moved to routes/mistakes.js
 
 // Fetch user daily quests standings
 app.get('/api/quests', authenticateToken, (req, res) => {
@@ -2467,32 +2304,7 @@ app.get('/api/league/leaderboard', authenticateToken, (req, res) => {
 // SHOP & INVENTORY ENDPOINTS
 // -------------------------------------------------------------
 
-function getRankValue(rankStr) {
-  if (!rankStr) return 0;
-  const cleaned = rankStr.replace(/Unranked.*/i, '').trim();
-  if (!cleaned) return 0;
-  
-  const ranks = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster'];
-  const divisions = ['III', 'II', 'I'];
-  
-  let tierVal = 0;
-  for (let i = 0; i < ranks.length; i++) {
-    if (cleaned.startsWith(ranks[i])) {
-      tierVal = (i + 1) * 10;
-      break;
-    }
-  }
-  
-  let divVal = 0;
-  for (let j = 0; j < divisions.length; j++) {
-    if (cleaned.endsWith(divisions[j])) {
-      divVal = j + 1;
-      break;
-    }
-  }
-  
-  return tierVal + divVal;
-}
+// getRankValue imported from ./lib/progression
 
 app.get('/api/shop', authenticateToken, (req, res) => {
   // The shop catalog (shop_items) is identical for every user and only changes
@@ -3147,15 +2959,7 @@ app.post('/api/friends/accept', authenticateToken, (req, res) => {
 // LEADERBOARD ENDPOINT
 // -------------------------------------------------------------
 
-app.get('/api/leaderboard', authenticateToken, (req, res) => {
-  db.all(
-    `SELECT id, username, xp, level, rank, active_badge, avatar, active_banner FROM users ORDER BY level DESC, xp DESC LIMIT 20`,
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
-    }
-  );
-});
+// Global leaderboard (/api/leaderboard) moved to routes/leaderboard.js
 
 // -------------------------------------------------------------
 // ACHIEVEMENTS ENDPOINTS
