@@ -1,10 +1,6 @@
 package com.example.numera.theme
 
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 object Spacing {
     val zero  = 0.dp
@@ -56,41 +52,6 @@ object Alpha {
     const val full      = 1.00f
 }
 
-object AppTypography {
-    val titleLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Bold,
-        fontSize   = 24.sp,
-        lineHeight = 32.sp
-    )
-    val titleMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Bold,
-        fontSize   = 20.sp,
-        lineHeight = 28.sp
-    )
-    val bodyLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Normal,
-        fontSize   = 16.sp,
-        lineHeight = 24.sp
-    )
-    val bodyMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Normal,
-        fontSize   = 14.sp,
-        lineHeight = 20.sp
-    )
-    val labelLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        fontSize   = 14.sp,
-        lineHeight = 20.sp
-    )
-    val labelMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Medium,
-        fontSize   = 12.sp,
-        lineHeight = 16.sp
-    )
-}
+// NOTE: app-wide text styles live in Type.kt (Material3 `Typography`, wired in Theme.kt
+// and consumed via MaterialTheme.typography). A duplicate `AppTypography` object used to
+// live here but was unreferenced — removed to keep a single source of truth for type.
