@@ -59,6 +59,12 @@ app.use(securityHeaders);
 // Global per-IP API rate limiting (100 requests / minute). Loopback/LAN exempt.
 app.use(globalRateLimiter(100, 60000));
 
+// Feature routers extracted from this file (incremental decomposition — see docs/Architecture.md).
+// Each router declares its own full /api/... paths and imports its own deps.
+app.use(require('./routes/notifications'));
+app.use(require('./routes/srs'));
+app.use(require('./routes/library'));
+
 // Landing Page & Status Dashboard
 app.get('/', (req, res) => {
   db.get("SELECT COUNT(*) AS count FROM users", (err, rowUsers) => {
@@ -1897,77 +1903,7 @@ app.post('/api/assessment/skip', authenticateToken, (req, res) => {
   });
 });
 
-// Get Spaced Repetition SRS due lists
-app.get('/api/math/srs/due', authenticateToken, (req, res) => {
-  const now = Math.floor(Date.now() / 1000);
-  db.all(
-    `SELECT * FROM srs_reviews WHERE user_id = ? AND next_review <= ?`,
-    [req.user.id, now],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
-    }
-  );
-});
-
-// Post SRS review feedback (SuperMemo SM-2 algorithm)
-app.post('/api/math/srs/review', authenticateToken, (req, res) => {
-  const { topic, quality } = req.body; // quality 0 to 5
-  if (quality === undefined || quality < 0 || quality > 5) {
-    return res.status(400).json({ error: 'Valid quality rating (0-5) required' });
-  }
-
-  db.get(
-    `SELECT * FROM srs_reviews WHERE user_id = ? AND topic = ?`,
-    [req.user.id, topic],
-    (err, review) => {
-      if (err) return res.status(500).json({ error: err.message });
-
-      let ef = review ? review.ease_factor : 2.5;
-      let interval = review ? review.interval : 0;
-      let reps = review ? review.repetitions : 0;
-
-      // SM-2 calculations
-      if (quality >= 3) {
-        if (reps === 0) {
-          interval = 1; // 1 day
-        } else if (reps === 1) {
-          interval = 6; // 6 days
-        } else {
-          interval = Math.round(interval * ef);
-        }
-        reps += 1;
-      } else {
-        reps = 0;
-        interval = 0; // Immediate review
-      }
-
-      // Update ease factor
-      ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-      if (ef < 1.3) ef = 1.3;
-
-      // Set next review timestamp
-      const nextReview = (quality < 3)
-        ? Math.floor(Date.now() / 1000) - 5
-        : Math.floor(Date.now() / 1000) + interval * 86400; // in seconds
-
-      db.run(
-        `INSERT INTO srs_reviews (user_id, topic, ease_factor, interval, repetitions, next_review)
-         VALUES (?, ?, ?, ?, ?, ?)
-         ON CONFLICT(user_id, topic) DO UPDATE SET
-           ease_factor = excluded.ease_factor,
-           interval = excluded.interval,
-           repetitions = excluded.repetitions,
-           next_review = excluded.next_review`,
-        [req.user.id, topic, ef, interval, reps, nextReview],
-        (saveErr) => {
-          if (saveErr) return res.status(500).json({ error: saveErr.message });
-          res.json({ topic, ease_factor: ef, interval, next_review: nextReview });
-        }
-      );
-    }
-  );
-});
+// SRS endpoints (/api/math/srs/*) moved to routes/srs.js
 
 // -------------------------------------------------------------
 // LEGACY PUZZLES & PUBLIC USER ENDPOINTS
@@ -3295,203 +3231,7 @@ app.post('/api/achievements/claim', authenticateToken, idempotency, (req, res) =
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));
 });
 
-// -------------------------------------------------------------
-// FAVORITES / SAVED EXERCISES ENDPOINTS
-// -------------------------------------------------------------
-app.get('/api/favorites', authenticateToken, (req, res) => {
-  db.all(
-    `SELECT id, title, category, question, correct_answer, options, explanation, collection_id 
-     FROM saved_exercises 
-     WHERE user_id = ? 
-     ORDER BY created_at DESC`,
-    [req.user.id],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      const mapped = (rows || []).map(r => {
-        let opts = [];
-        try {
-          opts = JSON.parse(r.options);
-        } catch(e) {
-          opts = [];
-        }
-        return {
-          id: r.id,
-          title: r.title || 'Saved Exercise',
-          story: '',
-          question: r.question,
-          correct_answer: r.correct_answer,
-          options: opts,
-          explanation: r.explanation,
-          category: r.category,
-          stars: 3,
-          source: 'Favorites',
-          collection_id: r.collection_id
-        };
-      });
-      res.json(mapped);
-    }
-  );
-});
-
-app.post('/api/favorites/toggle', authenticateToken, (req, res) => {
-  const { title, category, question, correct_answer, options, explanation } = req.body;
-  if (!category || !question || !correct_answer || !options || !explanation) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-  
-  db.get(
-    `SELECT id FROM saved_exercises WHERE user_id = ? AND question = ?`,
-    [req.user.id, question],
-    (err, row) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (row) {
-        db.run(
-          `DELETE FROM saved_exercises WHERE id = ?`,
-          [row.id],
-          (errDel) => {
-            if (errDel) return res.status(500).json({ error: errDel.message });
-            return res.json({ success: true, saved: false, message: 'Removed from favorites' });
-          }
-        );
-      } else {
-        const now = Math.floor(Date.now() / 1000);
-        const optionsStr = JSON.stringify(options);
-        db.run(
-          `INSERT INTO saved_exercises (user_id, title, category, question, correct_answer, options, explanation, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [req.user.id, title || '', category, question, correct_answer, optionsStr, explanation, now],
-          (errIns) => {
-            if (errIns) return res.status(500).json({ error: errIns.message });
-            return res.json({ success: true, saved: true, message: 'Added to favorites' });
-          }
-        );
-      }
-    }
-  );
-});
-
-// -------------------------------------------------------------
-// SAVED NOTEBOOK COLLECTIONS ENDPOINTS
-// -------------------------------------------------------------
-app.get('/api/collections', authenticateToken, (req, res) => {
-  db.all(
-    'SELECT id, user_id, name, is_public, created_at FROM saved_collections WHERE user_id = ? ORDER BY name ASC',
-    [req.user.id],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(rows || []);
-    }
-  );
-});
-
-app.post('/api/collections', authenticateToken, (req, res) => {
-  const { name, is_public } = req.body;
-  if (!name || name.trim() === '') {
-    return res.status(400).json({ error: 'Collection name is required.' });
-  }
-  const now = Math.floor(Date.now() / 1000);
-  const isPub = is_public ? 1 : 0;
-  
-  db.run(
-    'INSERT INTO saved_collections (user_id, name, is_public, created_at) VALUES (?, ?, ?, ?)',
-    [req.user.id, name.trim(), isPub, now],
-    function(err) {
-      if (err) {
-        if (err.message.includes('UNIQUE')) {
-          return res.status(400).json({ error: 'A collection with this name already exists.' });
-        }
-        return res.status(500).json({ error: err.message });
-      }
-      res.status(201).json({ success: true, id: this.lastID, name: name.trim(), is_public: isPub });
-    }
-  );
-});
-
-app.put('/api/collections/:id', authenticateToken, (req, res) => {
-  const collectionId = parseInt(req.params.id, 10);
-  if (isNaN(collectionId)) return res.status(400).json({ error: 'Invalid collection ID' });
-  
-  const { name, is_public } = req.body;
-  if (!name || name.trim() === '') {
-    return res.status(400).json({ error: 'Collection name is required.' });
-  }
-  const isPub = is_public ? 1 : 0;
-
-  db.run(
-    'UPDATE saved_collections SET name = ?, is_public = ? WHERE id = ? AND user_id = ?',
-    [name.trim(), isPub, collectionId, req.user.id],
-    function(err) {
-      if (err) {
-        if (err.message.includes('UNIQUE')) {
-          return res.status(400).json({ error: 'A collection with this name already exists.' });
-        }
-        return res.status(500).json({ error: err.message });
-      }
-      if (this.changes === 0) return res.status(404).json({ error: 'Collection not found.' });
-      res.json({ success: true, message: 'Collection updated successfully.' });
-    }
-  );
-});
-
-app.delete('/api/collections/:id', authenticateToken, (req, res) => {
-  const collectionId = parseInt(req.params.id, 10);
-  if (isNaN(collectionId)) return res.status(400).json({ error: 'Invalid collection ID' });
-
-  // Delete collection
-  db.run(
-    'DELETE FROM saved_collections WHERE id = ? AND user_id = ?',
-    [collectionId, req.user.id],
-    function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      if (this.changes === 0) return res.status(404).json({ error: 'Collection not found.' });
-      
-      // Clear associated collection_id references in saved_exercises
-      db.run(
-        'UPDATE saved_exercises SET collection_id = NULL WHERE collection_id = ? AND user_id = ?',
-        [collectionId, req.user.id],
-        (errUpdate) => {
-          if (errUpdate) return res.status(500).json({ error: errUpdate.message });
-          res.json({ success: true, message: 'Collection deleted successfully.' });
-        }
-      );
-    }
-  );
-});
-
-app.post('/api/favorites/assign-collection', authenticateToken, (req, res) => {
-  const { exerciseId, collectionId } = req.body;
-  if (!exerciseId) return res.status(400).json({ error: 'Exercise ID is required.' });
-  
-  // collectionId can be null to unassign
-  const collId = collectionId ? parseInt(collectionId, 10) : null;
-  
-  const updateExercise = () => {
-    db.run(
-      'UPDATE saved_exercises SET collection_id = ? WHERE id = ? AND user_id = ?',
-      [collId, exerciseId, req.user.id],
-      function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        if (this.changes === 0) return res.status(404).json({ error: 'Exercise not found.' });
-        res.json({ success: true, message: 'Collection assigned successfully.' });
-      }
-    );
-  };
-
-  if (collId !== null) {
-    // Verify collection belongs to user
-    db.get(
-      'SELECT id FROM saved_collections WHERE id = ? AND user_id = ?',
-      [collId, req.user.id],
-      (errColl, row) => {
-        if (errColl) return res.status(500).json({ error: errColl.message });
-        if (!row) return res.status(404).json({ error: 'Collection not found or access denied.' });
-        updateExercise();
-      }
-    );
-  } else {
-    updateExercise();
-  }
-});
+// Favorites + collections endpoints (/api/favorites*, /api/collections*) moved to routes/library.js
 
 app.get('/api/user/:userId/public-collections', authenticateToken, (req, res) => {
   const targetUserId = parseInt(req.params.userId, 10);
@@ -3555,46 +3295,7 @@ app.get('/api/user/:userId/public-collections', authenticateToken, (req, res) =>
   );
 });
 
-// -------------------------------------------------------------
-// NOTIFICATIONS ENDPOINTS
-// -------------------------------------------------------------
-app.get('/api/notifications', authenticateToken, (req, res) => {
-  db.all(
-    `SELECT id, title, message, type, read_state, created_at 
-     FROM user_notifications 
-     WHERE user_id = ? 
-     ORDER BY created_at DESC 
-     LIMIT 50`,
-    [req.user.id],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(rows || []);
-    }
-  );
-});
-
-app.post('/api/notifications/read', authenticateToken, (req, res) => {
-  const { notificationId } = req.body;
-  if (notificationId) {
-    db.run(
-      `UPDATE user_notifications SET read_state = 1 WHERE user_id = ? AND id = ?`,
-      [req.user.id, notificationId],
-      (err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true });
-      }
-    );
-  } else {
-    db.run(
-      `UPDATE user_notifications SET read_state = 1 WHERE user_id = ?`,
-      [req.user.id],
-      (err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true });
-      }
-    );
-  }
-});
+// Notifications endpoints (/api/notifications*) moved to routes/notifications.js
 
 // =====================================================================
 // MATHEMATICAL LEARNING INTELLIGENCE ENGINE — API Endpoints

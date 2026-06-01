@@ -58,6 +58,20 @@ test('GET /api/leaderboard responds for an authed user', async () => {
   assert.strictEqual(res.status, 200);
 });
 
+test('extracted routers are mounted (notifications, srs, library)', async () => {
+  const { token } = await registerUser(ctx.base);
+  for (const route of [
+    '/api/notifications',
+    '/api/math/srs/due',
+    '/api/favorites',
+    '/api/collections',
+  ]) {
+    const res = await api(ctx.base, 'GET', route, { token });
+    assert.strictEqual(res.status, 200, `${route} should respond 200`);
+    assert.ok(Array.isArray(res.body), `${route} should return an array`);
+  }
+});
+
 test('idempotency: same Idempotency-Key replays the identical response', async () => {
   const { token } = await registerUser(ctx.base);
   const key = require('crypto').randomUUID();
