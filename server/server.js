@@ -4,14 +4,11 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const path = require('path');
 const { db, initDb } = require('./db');
 const { runMigrations } = require('./migrations');
-const { withTransaction, httpError } = require('./dbx');
 const { idempotency } = require('./idempotency');
-const cache = require('./cache');
-const { generateProblem, generateArchiveProblem, getLessonAndExamples, getLessonForArchive } = require('./mathGenerator');
+const { generateProblem, getLessonAndExamples } = require('./mathGenerator');
 const { runIngestionPipeline } = require('./mathEngine/knowledgeIngestion');
 const NRS = require('./mathEngine/ratingEngine');
 
@@ -30,7 +27,7 @@ const { securityHeaders, securityLog } = require('./middleware/security');
 const { globalRateLimiter } = require('./middleware/rateLimit');
 const { authenticateToken } = require('./middleware/auth');
 const { calculateRankFromElo, normalizeLevelForGenerator } = require('./lib/progression');
-const { getUserWithMastery, checkAndResetQuestsAndLeagues } = require('./services/userService');
+const { getUserWithMastery } = require('./services/userService');
 const { updateAchievements } = require('./services/achievementService');
 const { attachTipToProblem } = require('./services/tipService');
 
@@ -73,6 +70,11 @@ app.use(require('./routes/account'));
 app.use(require('./routes/friends'));
 app.use(require('./routes/achievements'));
 app.use(require('./routes/engine'));
+app.use(require('./routes/assessment'));
+app.use(require('./routes/archive'));
+app.use(require('./routes/league'));
+// publicProfile owns /api/user/:userId — mount LAST so it doesn't shadow account.js routes.
+app.use(require('./routes/publicProfile'));
 
 // Landing Page & Status Dashboard
 app.get('/', (req, res) => {
@@ -1214,124 +1216,8 @@ app.post('/api/math/complete', authenticateToken, idempotency, (req, res) => {
   });
 });
 
-const assessmentQuestions = [
-  {
-    question: "What is 15% of 120?",
-    correctAnswer: "18",
-    options: ["12", "15", "18", "20"],
-    explanation: "15% of 120 is 0.15 * 120 = 18."
-  },
-  {
-    question: "Solve for x: 3x - 7 = 14",
-    correctAnswer: "7",
-    options: ["5", "6", "7", "8"],
-    explanation: "Add 7 to both sides: 3x = 21. Divide by 3: x = 7."
-  },
-  {
-    question: "If a right triangle has perpendicular sides of lengths 6 and 8, what is the length of the hypotenuse?",
-    correctAnswer: "10",
-    options: ["9", "10", "11", "12"],
-    explanation: "Use Pythagorean theorem: 6^2 + 8^2 = 36 + 64 = 100. Sqrt(100) = 10."
-  },
-  {
-    question: "What is the sum of the first 5 terms of the geometric sequence: 2, 4, 8, 16, 32?",
-    correctAnswer: "62",
-    options: ["60", "62", "64", "66"],
-    explanation: "2 + 4 + 8 + 16 + 32 = 62."
-  },
-  {
-    question: "If f(x) = 2x^2 - 3x + 5, what is the value of f(2)?",
-    correctAnswer: "7",
-    options: ["5", "7", "9", "11"],
-    explanation: "f(2) = 2*(2^2) - 3*(2) + 5 = 2*4 - 6 + 5 = 8 - 6 + 5 = 7."
-  },
-  {
-    question: "What is the area of a circle with a radius of 7? (Use pi ≈ 22/7)",
-    correctAnswer: "154",
-    options: ["44", "77", "154", "308"],
-    explanation: "Area = pi * r^2 = (22/7) * 7 * 7 = 154."
-  },
-  {
-    question: "Find the roots of x^2 - 5x + 6 = 0.",
-    correctAnswer: "2 and 3",
-    options: ["1 and 6", "2 and 3", "-2 and -3", "0 and 5"],
-    explanation: "(x - 2)(x - 3) = 0. Roots: x = 2 and x = 3."
-  },
-  {
-    question: "What is the limit of (x^2 - 4) / (x - 2) as x approaches 2?",
-    correctAnswer: "4",
-    options: ["0", "2", "4", "undefined"],
-    explanation: "Factor: (x - 2)(x + 2) / (x - 2) = x + 2. Limit as x approaches 2 is 2 + 2 = 4."
-  },
-  {
-    question: "How many edges does a regular dodecahedron (a 3D solid with 12 pentagonal faces) have?",
-    correctAnswer: "30",
-    options: ["12", "20", "30", "60"],
-    explanation: "A dodecahedron has 12 faces, 20 vertices, and 30 edges."
-  },
-  {
-    question: "Using Gauss's summation method, what is the sum of all integers from 1 to 50?",
-    correctAnswer: "1275",
-    options: ["1225", "1250", "1275", "1300"],
-    explanation: "Sum = n(n+1)/2 = 50 * 51 / 2 = 1275."
-  }
-];
+// assessmentQuestions + /api/assessment/* moved to routes/assessment.js
 
-app.get('/api/assessment/questions', authenticateToken, (req, res) => {
-  res.json(assessmentQuestions);
-});
-
-app.post('/api/assessment/submit', authenticateToken, (req, res) => {
-  const { score } = req.body;
-  if (score === undefined || score < 0 || score > 10) {
-    return res.status(400).json({ error: 'Valid score (0-10) required' });
-  }
-
-  let assignedLevel = 1;
-  let assignedRank = 'Bronze III';
-
-  if (score >= 9) {
-    assignedLevel = 13;
-    assignedRank = 'Gold III';
-  } else if (score >= 7) {
-    assignedLevel = 10;
-    assignedRank = 'Silver III';
-  } else if (score >= 5) {
-    assignedLevel = 7;
-    assignedRank = 'Bronze I';
-  } else if (score >= 3) {
-    assignedLevel = 4;
-    assignedRank = 'Bronze II';
-  } else {
-    assignedLevel = 1;
-    assignedRank = 'Bronze III';
-  }
-
-  db.get("SELECT rank FROM users WHERE id = ?", [req.user.id], (errU, user) => {
-    const currentRank = user ? user.rank : 'Unranked (Placement: 0/5)';
-    db.run(
-      `UPDATE users SET level = ?, assessment_taken = 1 WHERE id = ?`,
-      [assignedLevel, req.user.id],
-      (err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        
-        res.json({
-          success: true,
-          assignedLevel,
-          assignedRank: currentRank,
-          rewardsUnlocked: []
-        });
-      }
-    );
-  });
-});
-
-app.post('/api/assessment/skip', authenticateToken, (req, res) => {
-  db.run(`UPDATE users SET assessment_taken = 1 WHERE id = ?`, [req.user.id], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true });
-  });
-});
 
 // SRS endpoints (/api/math/srs/*) moved to routes/srs.js
 
@@ -1339,153 +1225,8 @@ app.post('/api/assessment/skip', authenticateToken, (req, res) => {
 // LEGACY PUZZLES & PUBLIC USER ENDPOINTS
 // -------------------------------------------------------------
 
-app.get('/api/legacy/puzzles', authenticateToken, (req, res) => {
-  db.all("SELECT id, title, story, question, correct_answer, options, explanation, difficulty, category, stars FROM archive_exercises LIMIT 10", [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    const formatted = rows.map(r => ({
-      id: r.id,
-      title: r.title,
-      story: r.story,
-      question: r.question,
-      correct_answer: r.correct_answer,
-      options: typeof r.options === 'string' ? JSON.parse(r.options) : r.options,
-      explanation: r.explanation,
-      difficulty: r.difficulty,
-      category: r.category || "arithmetic",
-      stars: r.stars || 3
-    }));
-    res.json(formatted);
-  });
-});
-
-app.get('/api/user/:userId', authenticateToken, (req, res) => {
-  const targetId = parseInt(req.params.userId, 10);
-  if (isNaN(targetId)) return res.status(400).json({ error: 'Invalid user ID' });
-  
-  db.get(`
-    SELECT id, username, xp, level, coins, rank, active_badge, theme, avatar, active_banner, solved_count, arena_wins, elo, competitive_matches
-    FROM users
-    WHERE id = ?
-  `, [targetId], (err, user) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    
-    db.get(`SELECT * FROM user_mastery WHERE user_id = ?`, [targetId], (errM, mastery) => {
-      const mast = mastery || {
-        arithmetic_correct: 0,
-        mental_correct: 0,
-        algebra_correct: 0,
-        calculus_correct: 0,
-        combinatorics_correct: 0,
-        number_theory_correct: 0
-      };
-      res.json({
-        id: user.id,
-        username: user.username,
-        xp: user.xp,
-        level: user.level,
-        coins: user.coins,
-        rank: user.rank,
-        active_badge: user.active_badge,
-        theme: user.theme,
-        avatar: user.avatar,
-        active_banner: user.active_banner,
-        solved_count: user.solved_count || 0,
-        arena_wins: user.arena_wins || 0,
-        elo: user.elo,
-        competitive_matches: user.competitive_matches,
-        mastery: {
-          arithmetic_correct: mast.arithmetic_correct || 0,
-          mental_correct: mast.mental_correct || 0,
-          algebra_correct: mast.algebra_correct || 0,
-          calculus_correct: mast.calculus_correct || 0,
-          combinatorics_correct: mast.combinatorics_correct || 0,
-          number_theory_correct: mast.number_theory_correct || 0
-        }
-      });
-    });
-  });
-});
-// -------------------------------------------------------------
-
-// Search the archive (mixed static seeded challenges & dynamic infinite additions)
-app.get('/api/archive/search', authenticateToken, (req, res) => {
-  const category = req.query.category || '';
-  const stars = req.query.stars ? parseInt(req.query.stars) : null;
-  const query = req.query.q || '';
-  // Pagination: clients request fixed-size pages and append them for infinite scroll.
-  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 50);
-  const offset = Math.max(parseInt(req.query.offset) || 0, 0);
-
-  let sql = "SELECT * FROM archive_exercises WHERE 1=1";
-  const params = [];
-
-  if (category) {
-    sql += " AND category = ?";
-    params.push(category);
-  }
-  if (stars) {
-    sql += " AND stars = ?";
-    params.push(stars);
-  }
-  if (query) {
-    sql += " AND (title LIKE ? OR story LIKE ? OR question LIKE ?)";
-    params.push(`%${query}%`, `%${query}%`, `%${query}%`);
-  }
-  sql += " LIMIT ? OFFSET ?";
-  params.push(limit, offset);
-
-  db.all(sql, params, (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    
-    let results = rows.map(r => {
-      const lesson = getLessonForArchive(r.title, r.category, r.stars);
-      const parsedOpts = typeof r.options === 'string' ? JSON.parse(r.options) : r.options;
-      let normalizedAnswer = r.correct_answer;
-      if (parsedOpts && parsedOpts.length > 0 && !parsedOpts.includes(normalizedAnswer)) {
-        const stripLatex = (s) => s.replace(/\$/g, '').replace(/\\dots/g, '...').replace(/\\\\dots/g, '...').trim();
-        const plainAnswer = stripLatex(normalizedAnswer);
-        const match = parsedOpts.find(opt => stripLatex(opt) === plainAnswer);
-        if (match) normalizedAnswer = match;
-      }
-      return {
-        ...r,
-        correct_answer: normalizedAnswer,
-        options: parsedOpts,
-        lessonTitle: lesson.lessonTitle,
-        lessonContent: lesson.lessonContent,
-        lessonFormula: lesson.lessonFormula,
-        examples: lesson.examples,
-        lessonSections: lesson.sections || null
-      };
-    });
-    
-    // Supplement with 10 procedurally generated problems to ensure it is always an infinite scrolling archive
-    const countToGenerate = 10;
-    const categoriesList = ['Number Theory', 'Combinatorics', 'Calculus', 'Algebra', 'Mental', 'Arithmetic'];
-    const selectedCategory = category || categoriesList[Math.floor(Math.random() * categoriesList.length)];
-    const selectedStars = stars || (Math.floor(Math.random() * 5) + 1);
-    
-    for (let i = 0; i < countToGenerate; i++) {
-      const generated = generateArchiveProblem(selectedCategory, selectedStars);
-      generated.id = 10000 + i + Math.floor(Math.random() * 90000);
-      generated.options = typeof generated.options === 'string' ? JSON.parse(generated.options) : generated.options;
-      
-      const lesson = getLessonForArchive(generated.title, generated.category, generated.stars);
-      results.push({
-        ...generated,
-        lessonTitle: lesson.lessonTitle,
-        lessonContent: lesson.lessonContent,
-        lessonFormula: lesson.lessonFormula,
-        examples: lesson.examples,
-        lessonSections: lesson.sections || null
-      });
-    }
-    
-    results = results.map(item => attachTipToProblem(item, true));
-    res.json(results);
-  });
-});
+// Legacy puzzles + /api/user/:userId + archive/search moved to
+// routes/{archive,publicProfile}.js
 
 // Mistakes Bank endpoints (/api/mistakes*) moved to routes/mistakes.js
 
@@ -1494,43 +1235,7 @@ app.get('/api/archive/search', authenticateToken, (req, res) => {
 
 // Daily puzzle endpoints (/api/math/daily-puzzle*) moved to routes/dailyPuzzle.js
 
-// Get league leaderboard details
-app.get('/api/league/leaderboard', authenticateToken, (req, res) => {
-  checkAndResetQuestsAndLeagues(req.user.id, () => {
-    db.get("SELECT league, last_league_reset FROM users WHERE id = ?", [req.user.id], (err, currentUser) => {
-      if (err || !currentUser) return res.status(500).json({ error: 'User not found' });
-      
-      const userLeague = currentUser.league || 'Bronze';
-      const lastReset = currentUser.last_league_reset || 0;
-      const now = Math.floor(Date.now() / 1000);
-      const secondsRemaining = Math.max(0, (7 * 86400) - (now - lastReset));
-
-      // seconds_remaining is per-request, but the standings list is shared by
-      // everyone in the league and changes slowly — cache it briefly so a busy
-      // league doesn't re-run the ORDER BY on every open.
-      const sendStandings = (rows) =>
-        res.json({ league: userLeague, seconds_remaining: secondsRemaining, standings: rows });
-
-      const cacheKey = `league:standings:${userLeague}`;
-      const cachedStandings = cache.get(cacheKey);
-      if (cachedStandings) return sendStandings(cachedStandings);
-
-      db.all(
-        `SELECT id, username, league_points, avatar, active_badge, level
-         FROM users
-         WHERE league = ?
-         ORDER BY league_points DESC
-         LIMIT 30`,
-        [userLeague],
-        (errL, rows) => {
-          if (errL) return res.status(500).json({ error: errL.message });
-          cache.set(cacheKey, rows, 30 * 1000); // 30s staleness is fine for a leaderboard
-          sendStandings(rows);
-        }
-      );
-    });
-  });
-});
+// League leaderboard (/api/league/leaderboard) moved to routes/league.js
 
 // -------------------------------------------------------------
 // SHOP & INVENTORY ENDPOINTS
@@ -1555,67 +1260,7 @@ app.get('/api/league/leaderboard', authenticateToken, (req, res) => {
 
 // Favorites + collections endpoints (/api/favorites*, /api/collections*) moved to routes/library.js
 
-app.get('/api/user/:userId/public-collections', authenticateToken, (req, res) => {
-  const targetUserId = parseInt(req.params.userId, 10);
-  if (isNaN(targetUserId)) return res.status(400).json({ error: 'Invalid user ID' });
-
-  // Get public collections
-  db.all(
-    'SELECT id, name, created_at FROM saved_collections WHERE user_id = ? AND is_public = 1 ORDER BY name ASC',
-    [targetUserId],
-    (err, collections) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (!collections || collections.length === 0) {
-        return res.json([]);
-      }
-
-      // Fetch saved exercises for each public collection
-      db.all(
-        `SELECT id, title, category, question, correct_answer, options, explanation, collection_id 
-         FROM saved_exercises 
-         WHERE user_id = ? AND collection_id IN (
-           SELECT id FROM saved_collections WHERE user_id = ? AND is_public = 1
-         )`,
-        [targetUserId, targetUserId],
-        (errEx, exercises) => {
-          if (errEx) return res.status(500).json({ error: errEx.message });
-
-          const results = collections.map(col => {
-            const colExercises = (exercises || [])
-              .filter(ex => ex.collection_id === col.id)
-              .map(ex => {
-                let opts = [];
-                try {
-                  opts = JSON.parse(ex.options);
-                } catch(e) {}
-                return {
-                  id: ex.id,
-                  title: ex.title || 'Saved Exercise',
-                  story: '',
-                  question: ex.question,
-                  correct_answer: ex.correct_answer,
-                  options: opts,
-                  explanation: ex.explanation,
-                  category: ex.category,
-                  stars: 3,
-                  source: 'Favorites',
-                  collection_id: ex.collection_id
-                };
-              });
-            return {
-              id: col.id,
-              name: col.name,
-              created_at: col.created_at,
-              exercises: colExercises
-            };
-          });
-
-          res.json(results);
-        }
-      );
-    }
-  );
-});
+// /api/user/:userId/public-collections moved to routes/publicProfile.js
 
 // Notifications endpoints (/api/notifications*) moved to routes/notifications.js
 
