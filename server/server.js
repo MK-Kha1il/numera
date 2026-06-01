@@ -25,132 +25,39 @@ const AnalyticsEngine    = require('./mathEngine/analyticsEngine');
 const CompetitiveEngine  = require('./mathEngine/competitiveEngine');
 const Orchestrator       = require('./mathEngine/problemOrchestrator');
 
+// Centralized config + extracted cross-cutting middleware (see config.js, middleware/).
+const { JWT_SECRET, PORT, EXTRA_CORS_ORIGINS } = require('./config');
+const { securityHeaders, securityLog, isLocalIp } = require('./middleware/security');
+const {
+  globalRateLimiter,
+  checkFailedLogins,
+  recordFailedLogin,
+  clearFailedLogins,
+  rateLimiter,
+} = require('./middleware/rateLimit');
+const { authenticateToken } = require('./middleware/auth');
+
 const app = express();
-app.use(cors());
+
+// CORS: same-origin + an env-configured allow-list. Requests with no Origin header
+// (native mobile clients, server-to-server) are permitted; browser origins must match.
+const allowedOrigins = new Set(EXTRA_CORS_ORIGINS);
+app.use(
+  cors({
+    origin(origin, cb) {
+      if (!origin || allowedOrigins.has(origin)) return cb(null, true);
+      return cb(null, false);
+    },
+  })
+);
 app.use(express.json({ limit: '10kb' })); // Restrict JSON payloads to 10KB to protect against body overflow/DDoS
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
-// Enforce HTTP Security Headers (defense-in-depth)
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'none';");
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
-  next();
-});
+// Defense-in-depth HTTP security headers (see middleware/security.js).
+app.use(securityHeaders);
 
-// Security Audit logging utility
-function securityLog(userId, eventType, ip, details) {
-  const now = Math.floor(Date.now() / 1000);
-  console.warn(`[SECURITY AUDIT] Event: ${eventType} | User: ${userId} | IP: ${ip} | Details: ${details}`);
-  db.run(
-    "INSERT INTO security_audit_logs (timestamp, user_id, event_type, ip_address, details) VALUES (?, ?, ?, ?, ?)",
-    [now, userId, eventType, ip, details],
-    (err) => {
-      if (err) console.error("[SECURITY] Failed to write audit log:", err.message);
-    }
-  );
-}
-
-// Helper to identify local IP addresses (development, loopbacks, LANs)
-function isLocalIp(ip) {
-  if (!ip) return false;
-  const cleanIp = ip.replace(/^::ffff:/, '');
-  if (cleanIp === '127.0.0.1' || cleanIp === '::1' || cleanIp === 'localhost') {
-    return true;
-  }
-  // Check private IPv4 ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
-  if (/^10\./.test(cleanIp)) return true;
-  if (/^192\.168\./.test(cleanIp)) return true;
-  if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(cleanIp)) return true;
-  return false;
-}
-
-// Global API rate limits
-const apiRateLimits = {}; // ip -> Array of timestamps
-function globalRateLimiter(limit, windowMs) {
-  return (req, res, next) => {
-    const ip = req.ip;
-    if (isLocalIp(ip)) {
-      return next();
-    }
-    const now = Date.now();
-    if (!apiRateLimits[ip]) {
-      apiRateLimits[ip] = [];
-    }
-    apiRateLimits[ip] = apiRateLimits[ip].filter(t => now - t < windowMs);
-    if (apiRateLimits[ip].length >= limit) {
-      securityLog(req.user ? req.user.id : null, 'rate_limit_triggered', ip, `Global rate limit exceeded (${limit} requests / ${windowMs}ms).`);
-      return res.status(429).json({ error: 'Too many requests. Please try again later.' });
-    }
-    apiRateLimits[ip].push(now);
-    next();
-  };
-}
-
-// Apply global rate limiting to all endpoints (100 requests per minute)
+// Global per-IP API rate limiting (100 requests / minute). Loopback/LAN exempt.
 app.use(globalRateLimiter(100, 60000));
-
-// Stateful failed auth attempts tracker for brute-force protection
-const failedLoginAttempts = {}; // ip -> Array of timestamps
-
-function checkFailedLogins(req, res, next) {
-  const ip = req.ip;
-  if (isLocalIp(ip)) {
-    return next();
-  }
-  const now = Date.now();
-  const fifteenMins = 15 * 60 * 1000;
-  
-  if (failedLoginAttempts[ip]) {
-    failedLoginAttempts[ip] = failedLoginAttempts[ip].filter(t => now - t < fifteenMins);
-    if (failedLoginAttempts[ip].length >= 5) {
-      const waitTime = Math.ceil((fifteenMins - (now - failedLoginAttempts[ip][0])) / 60000);
-      securityLog(null, 'rate_limit_triggered', ip, `IP blocked from login due to brute-force protection. Waiting: ${waitTime}m.`);
-      return res.status(429).json({ 
-        error: `Too many failed login attempts. Please wait ${waitTime} minutes.` 
-      });
-    }
-  }
-  next();
-}
-
-function recordFailedLogin(ip) {
-  if (isLocalIp(ip)) return;
-  if (!failedLoginAttempts[ip]) {
-    failedLoginAttempts[ip] = [];
-  }
-  failedLoginAttempts[ip].push(Date.now());
-}
-
-function clearFailedLogins(ip) {
-  delete failedLoginAttempts[ip];
-}
-
-// Backwards-compatible router-specific rate-limiter middleware
-const rateLimits = {};
-function rateLimiter(limit, windowMs) {
-  return (req, res, next) => {
-    const ip = req.ip;
-    if (isLocalIp(ip)) {
-      return next();
-    }
-    const now = Date.now();
-    if (!rateLimits[ip]) {
-      rateLimits[ip] = [];
-    }
-    rateLimits[ip] = rateLimits[ip].filter(timestamp => now - timestamp < windowMs);
-    if (rateLimits[ip].length >= limit) {
-      securityLog(req.user ? req.user.id : null, 'rate_limit_triggered', ip, `Route-specific rate limit exceeded (${limit} requests / ${windowMs}ms).`);
-      return res.status(429).json({ error: 'Too many requests. Please try again later.' });
-    }
-    rateLimits[ip].push(now);
-    next();
-  };
-}
 
 // Landing Page & Status Dashboard
 app.get('/', (req, res) => {
@@ -486,9 +393,7 @@ app.get('/download-apk', (req, res) => {
   });
 });
 
-const crypto = require('crypto');
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
-const PORT = process.env.PORT || 3000;
+const crypto = require('crypto'); // used for session UUIDs (JWT_SECRET/PORT come from ./config)
 
 // Initialize Database, then apply any pending versioned migrations.
 // `ready` resolves once the schema is initialized + migrated; tests await it before
@@ -501,43 +406,7 @@ const ready = initDb()
     throw err;
   });
 
-// Middleware to authenticate JWT
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Access token missing' });
-
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(403).json({ error: 'Invalid or expired token' });
-    
-    // Enforce stateful session tracking to prevent token reuse after invalidation
-    if (!decoded.sessionId) {
-      securityLog(decoded.id || null, 'session_hijack_attempt', req.ip, 'Token does not contain a session ID.');
-      return res.status(401).json({ error: 'Invalid token structure. Log in again.' });
-    }
-
-    db.get(
-      "SELECT id, expires_at FROM user_sessions WHERE id = ? AND user_id = ?",
-      [decoded.sessionId, decoded.id],
-      (errSession, session) => {
-        if (errSession || !session) {
-          securityLog(decoded.id, 'session_hijack_attempt', req.ip, 'Attempted to use an invalidated or revoked session.');
-          return res.status(401).json({ error: 'Session has been invalidated. Please log in again.' });
-        }
-        
-        const now = Math.floor(Date.now() / 1000);
-        if (session.expires_at < now) {
-          db.run("DELETE FROM user_sessions WHERE id = ?", [decoded.sessionId]);
-          securityLog(decoded.id, 'session_hijack_attempt', req.ip, 'Attempted to use an expired session.');
-          return res.status(401).json({ error: 'Session has expired. Please log in again.' });
-        }
-        
-        req.user = decoded;
-        next();
-      }
-    );
-  });
-}
+// authenticateToken is imported from ./middleware/auth (stateful JWT + session check).
 
 // Achievements Progression Calculation Helper
 function updateAchievements(userId, callback) {
