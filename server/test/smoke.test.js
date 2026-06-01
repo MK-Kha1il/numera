@@ -67,6 +67,8 @@ test('extracted routers are mounted (notifications, srs, library)', async () => 
     '/api/collections',
     '/api/mistakes',
     '/api/leaderboard',
+    '/api/achievements',
+    '/api/friends',
   ]) {
     const res = await api(ctx.base, 'GET', route, { token });
     assert.strictEqual(res.status, 200, `${route} should respond 200`);
