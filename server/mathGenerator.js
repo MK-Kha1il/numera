@@ -1,7 +1,7 @@
 // Procedural Mathematics Challenge Generator for Numera
 // Integrated with the Modular Adaptive Mathematical Intelligence Engine
 
-const { calculateDifficultyProfile } = require('./mathEngine/adaptive');
+const { calculateDifficultyProfile, calculateAdaptiveDifficulty } = require('./mathEngine/adaptive');
 const { generateDistractors } = require('./mathEngine/distractors');
 const { templates } = require('./mathEngine/templates');
 const { getLessonAndExamples, getLessonForArchive } = require('./mathEngine/lessons');
@@ -19,6 +19,31 @@ const {
 } = require('./mathEngine/symbolic');
 const { constructPersonalizedExplanation } = require('./mathEngine/explanationEngine');
 const { solveSymbolically } = require('./mathEngine/validation');
+
+// Maps knowledge-graph conceptId → the canonical template category + level
+// that generates problems of that concept type.
+const CONCEPT_TO_LEVEL = {
+  arithmetic_add:       { category: 'arithmetic',    level: 1  },
+  arithmetic_sub:       { category: 'arithmetic',    level: 6  },
+  arithmetic_mult:      { category: 'arithmetic',    level: 7  },
+  arithmetic_div:       { category: 'arithmetic',    level: 8  },
+  pemdas:               { category: 'arithmetic',    level: 9  },
+  pythagorean:          { category: 'arithmetic',    level: 10 },
+  linear_one_step:      { category: 'algebra',       level: 11 },
+  linear_two_step:      { category: 'algebra',       level: 13 },
+  quadratic:            { category: 'algebra',       level: 15 },
+  matrix_trace:         { category: 'algebra',       level: 16 },
+  matrix_determinant:   { category: 'algebra',       level: 17 },
+  pigeonhole:           { category: 'combinatorics', level: 21 },
+  permutations:         { category: 'combinatorics', level: 23 },
+  combinations:         { category: 'combinatorics', level: 24 },
+  binomial:             { category: 'combinatorics', level: 30 },
+  derivative:           { category: 'calculus',      level: 31 },
+  integral:             { category: 'calculus',      level: 35 },
+  gcd_lcm:              { category: 'number_theory', level: 41 },
+  modular_arithmetic:   { category: 'number_theory', level: 45 },
+  totient:              { category: 'number_theory', level: 49 }
+};
 
 let ingestedTemplatesCache = [];
 
@@ -99,9 +124,20 @@ function validateLaTeXString(str) {
 }
 
 // Generates an exercise matching standard gameplay levels
-function generateProblemInstance(category, level, index, elo, userAnalytics = {}) {
-  const profile = calculateDifficultyProfile(elo);
+// engineOptions: { targetConceptId?, learnerProfile? } — provided by orchestrator
+function generateProblemInstance(category, level, index, elo, userAnalytics = {}, engineOptions = {}) {
+  // Use learner-model-aware difficulty when a profile is available
+  const profile = engineOptions.learnerProfile
+    ? calculateAdaptiveDifficulty(elo, engineOptions.learnerProfile)
+    : calculateDifficultyProfile(elo);
   const diffFactor = profile.diffFactor;
+
+  // If the orchestrator has nominated a specific concept, override category+level
+  if (engineOptions.targetConceptId && CONCEPT_TO_LEVEL[engineOptions.targetConceptId]) {
+    const mapped = CONCEPT_TO_LEVEL[engineOptions.targetConceptId];
+    category = mapped.category;
+    level    = mapped.level;
+  }
   const idx = index !== undefined ? index : Math.floor(Math.random() * 10);
   
   let catKey;
@@ -315,16 +351,17 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
 }
 
 // Generates an exercise matching standard gameplay levels with LaTeX validation and retry loop
-function generateProblem(category, level, index, elo, userAnalytics = {}) {
+// engineOptions: { targetConceptId?, learnerProfile? }
+function generateProblem(category, level, index, elo, userAnalytics = {}, engineOptions = {}) {
   let attempt = 0;
   while (attempt < 10) {
-    const problem = generateProblemInstance(category, level, index + attempt, elo, userAnalytics);
+    const problem = generateProblemInstance(category, level, index + attempt, elo, userAnalytics, engineOptions);
     if (validateLaTeXString(problem.question) && validateLaTeXString(problem.explanation)) {
       return problem;
     }
     attempt++;
   }
-  return generateProblemInstance(category, level, index, elo, userAnalytics);
+  return generateProblemInstance(category, level, index, elo, userAnalytics, engineOptions);
 }
 
 // Generates a parameterized mathematical challenge for the Archive Explorer
@@ -604,5 +641,6 @@ module.exports = {
   generateArchiveProblem,
   getLessonAndExamples,
   getLessonForArchive,
-  refreshIngestedTemplates
+  refreshIngestedTemplates,
+  CONCEPT_TO_LEVEL
 };

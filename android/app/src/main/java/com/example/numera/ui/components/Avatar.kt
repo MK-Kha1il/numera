@@ -369,76 +369,109 @@ fun AchievementBadge(achievementId: String?, modifier: Modifier = Modifier) {
             modifier = modifier
         )
     } else {
-        val emoji = when (achievementId) {
-            "persist_streak_3" -> "🌱"
-            "persist_streak_10" -> "🔥"
-            "persist_streak_30" -> "⚡"
-            
-            "learn_exercises_10" -> "📚"
-            "learn_exercises_50" -> "📝"
-            "learn_exercises_200" -> "🎓"
-            
-            "accuracy_perfect_5" -> "🎯"
-            "accuracy_perfect_25" -> "🏹"
-            "accuracy_perfect_100" -> "🔮"
-            
-            "mastery_level_10" -> "📈"
-            "mastery_level_30" -> "🌟"
-            "mastery_level_60" -> "👑"
-            
-            "social_friends_1" -> "🤝"
-            "social_friends_5" -> "👥"
-            "social_friends_15" -> "🌐"
-            
-            "comp_arena_wins_3" -> "⚔️"
-            "comp_arena_wins_15" -> "🛡️"
-            "comp_arena_wins_50" -> "🏆"
-            
-            "explore_archive_5" -> "🗺️"
-            "explore_archive_25" -> "🧭"
-            "explore_archive_100" -> "🛸"
-            
-            "collect_items_3" -> "🎒"
-            "collect_items_10" -> "💼"
-            "collect_items_25" -> "🏦"
-            
-            "seasonal_spring_5" -> "🌸"
-            "seasonal_summer_5" -> "☀️"
-            
-            "hidden_ultimate" -> "🛸"
-            "hidden_speed" -> "⚡"
+        // Determine emoji, tier, and accent colors from achievement id
+        data class AchInfo(val emoji: String, val tier: Int, val startColor: Color, val endColor: Color)
+        val info = when (achievementId) {
+            "persist_streak_3", "streak_1"        -> AchInfo("🌱", 1, Color(0xFF4ADE80), Color(0xFF16A34A))
+            "persist_streak_10", "streak_2"       -> AchInfo("🔥", 2, Color(0xFFFB923C), Color(0xFFEA580C))
+            "persist_streak_30", "streak_3", "streak_expert" -> AchInfo("⚡", 3, Color(0xFFFDE047), Color(0xFFCA8A04))
+            "streak_4"                            -> AchInfo("☀️", 4, Color(0xFFF9A8D4), Color(0xFFDB2777))
 
-            "solver_1" -> "🧠"
-            "solver_2" -> "📐"
-            "solver_3" -> "🎓"
-            "solver_4" -> "🧙‍♂️"
-            
-            "streak_1" -> "🌱"
-            "streak_2" -> "🔥"
-            "streak_3" -> "⚡"
-            "streak_4" -> "☀️"
-            
-            "arena_1" -> "⚔️"
-            "arena_2" -> "🛡️"
-            "arena_3" -> "🏆"
-            "arena_4" -> "👑"
-            
-            "shop_1" -> "🪙"
-            "shop_2" -> "💼"
-            "shop_3" -> "💎"
-            "shop_4" -> "✨"
-            
-            "math_novice" -> "🧠"
-            "math_expert" -> "🏆"
-            "streak_novice" -> "🔥"
-            "streak_expert" -> "⚡"
-            "arena_challenger" -> "⚔️"
-            "arena_champion" -> "👑"
-            "shop_customer" -> "🪙"
-            else -> "🏆"
+            "learn_exercises_10", "solver_1", "math_novice" -> AchInfo("📚", 1, Color(0xFF818CF8), Color(0xFF4F46E5))
+            "learn_exercises_50", "solver_2"      -> AchInfo("📝", 2, Color(0xFF7DD3FC), Color(0xFF0284C7))
+            "learn_exercises_200", "solver_3", "math_expert" -> AchInfo("🎓", 3, Color(0xFFA78BFA), Color(0xFF7C3AED))
+            "solver_4"                            -> AchInfo("🧙", 4, Color(0xFFF9A8D4), Color(0xFFDB2777))
+
+            "accuracy_perfect_5"                  -> AchInfo("🎯", 1, Color(0xFF6EE7B7), Color(0xFF059669))
+            "accuracy_perfect_25"                 -> AchInfo("🏹", 2, Color(0xFF86EFAC), Color(0xFF16A34A))
+            "accuracy_perfect_100"                -> AchInfo("🔮", 3, Color(0xFFC084FC), Color(0xFF9333EA))
+
+            "mastery_level_10"                    -> AchInfo("📈", 1, Color(0xFF67E8F9), Color(0xFF0891B2))
+            "mastery_level_30"                    -> AchInfo("🌟", 2, Color(0xFFFDE68A), Color(0xFFD97706))
+            "mastery_level_60"                    -> AchInfo("👑", 3, Color(0xFFFDE047), Color(0xFFCA8A04))
+
+            "social_friends_1"                    -> AchInfo("🤝", 1, Color(0xFF86EFAC), Color(0xFF15803D))
+            "social_friends_5"                    -> AchInfo("👥", 2, Color(0xFF6EE7B7), Color(0xFF0F766E))
+            "social_friends_15"                   -> AchInfo("🌐", 3, Color(0xFF7DD3FC), Color(0xFF1D4ED8))
+
+            "comp_arena_wins_3", "arena_1"        -> AchInfo("⚔️", 1, Color(0xFFFCA5A5), Color(0xFFDC2626))
+            "comp_arena_wins_15", "arena_2", "arena_challenger" -> AchInfo("🛡️", 2, Color(0xFF93C5FD), Color(0xFF2563EB))
+            "comp_arena_wins_50", "arena_3"       -> AchInfo("🏆", 3, Color(0xFFFDE68A), Color(0xFFD97706))
+            "arena_4", "arena_champion"           -> AchInfo("👑", 4, Color(0xFFF9A8D4), Color(0xFFBE185D))
+
+            "explore_archive_5"                   -> AchInfo("🗺️", 1, Color(0xFF6EE7B7), Color(0xFF065F46))
+            "explore_archive_25"                  -> AchInfo("🧭", 2, Color(0xFF67E8F9), Color(0xFF0891B2))
+            "explore_archive_100"                 -> AchInfo("🛸", 3, Color(0xFFC084FC), Color(0xFF6D28D9))
+
+            "collect_items_3", "shop_1", "shop_customer" -> AchInfo("🪙", 1, Color(0xFFFDE68A), Color(0xFFB45309))
+            "collect_items_10", "shop_2"          -> AchInfo("💼", 2, Color(0xFF93C5FD), Color(0xFF1D4ED8))
+            "collect_items_25", "shop_3"          -> AchInfo("💎", 3, Color(0xFFA5F3FC), Color(0xFF0891B2))
+            "shop_4"                              -> AchInfo("✨", 4, Color(0xFFF9A8D4), Color(0xFFBE185D))
+
+            "seasonal_spring_5"                   -> AchInfo("🌸", 2, Color(0xFFFDA4AF), Color(0xFFE11D48))
+            "seasonal_summer_5"                   -> AchInfo("☀️", 2, Color(0xFFFDE68A), Color(0xFFD97706))
+            "hidden_ultimate"                     -> AchInfo("🛸", 4, Color(0xFFC084FC), Color(0xFF6D28D9))
+            "hidden_speed"                        -> AchInfo("⚡", 3, Color(0xFFFDE047), Color(0xFFCA8A04))
+            else                                  -> AchInfo("🏆", 1, Color(0xFFFDE68A), Color(0xFFD97706))
         }
+
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
-            Text(text = emoji, fontSize = 28.sp)
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val s = minOf(size.width, size.height)
+                val cx = size.width / 2f
+                val cy = size.height / 2f
+                val r = s * 0.42f
+
+                // Badge background circle with gradient
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(info.startColor, info.endColor),
+                        center = Offset(cx, cy),
+                        radius = r
+                    ),
+                    radius = r,
+                    center = Offset(cx, cy)
+                )
+
+                // Tier ring (thicker for higher tiers)
+                val ringWidth = when (info.tier) {
+                    1 -> 2.dp.toPx()
+                    2 -> 2.5.dp.toPx()
+                    3 -> 3.dp.toPx()
+                    else -> 3.5.dp.toPx()
+                }
+                val ringColor = when (info.tier) {
+                    1 -> Color.White.copy(alpha = 0.5f)
+                    2 -> Color(0xFFFDE68A)
+                    3 -> Color(0xFFFBBF24)
+                    else -> Color(0xFFF59E0B)
+                }
+                drawCircle(
+                    color = ringColor,
+                    radius = r + ringWidth / 2f,
+                    center = Offset(cx, cy),
+                    style = Stroke(width = ringWidth)
+                )
+
+                // Tier stars at bottom (1–4 small dots)
+                val dotR = 2.5.dp.toPx()
+                val dotSpacing = 7.dp.toPx()
+                val totalDotsWidth = (info.tier - 1) * dotSpacing
+                val startX = cx - totalDotsWidth / 2f
+                val dotY = cy + r * 0.62f
+                repeat(info.tier) { i ->
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.9f),
+                        radius = dotR,
+                        center = Offset(startX + i * dotSpacing, dotY)
+                    )
+                }
+            }
+            Text(
+                text = info.emoji,
+                fontSize = 18.sp,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
         }
     }
 }

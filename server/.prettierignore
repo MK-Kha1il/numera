@@ -1,0 +1,7 @@
+node_modules/
+backups/
+public/
+*.db
+*.db-wal
+*.db-shm
+package-lock.json

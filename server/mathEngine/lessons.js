@@ -1,6 +1,40 @@
 // Static Lesson and Example definitions
 
+const { getConceptLesson, levelToConceptId, buildSections } = require('./conceptLessons');
+
+// Milestone levels carry special advanced-theorem lessons (handled by the legacy
+// resolver). Everything else on the foundational path is served by the rich,
+// concept-first lesson library (conceptLessons.js).
+const MILESTONE_LEVELS = new Set([10, 20, 30, 40, 50, 60]);
+
 function getLessonAndExamples(category, level) {
+  const lvl = Number(level) || 0;
+
+  // Concept-first content for the foundational path (non-milestone levels).
+  if (!MILESTONE_LEVELS.has(lvl)) {
+    const rich = getConceptLesson(levelToConceptId(category, lvl));
+    if (rich) {
+      return {
+        lessonTitle:   rich.title,
+        lessonContent: rich.oneLineSummary,
+        lessonFormula: rich.formula,
+        examples:      rich.examples,
+        sections:      buildSections(rich)
+      };
+    }
+  }
+
+  // Fall back to the legacy lesson set (milestones + topics without rich content
+  // yet). The Pythagorean milestone gets concept-first sections layered on.
+  const legacy = getLegacyLessonAndExamples(category, lvl);
+  if (lvl === 10) {
+    const p = getConceptLesson('pythagorean');
+    if (p) legacy.sections = buildSections(p);
+  }
+  return legacy;
+}
+
+function getLegacyLessonAndExamples(category, level) {
   if (level === 10) {
     return {
       lessonTitle: "The Pythagorean Theorem",
@@ -15,7 +49,7 @@ function getLessonAndExamples(category, level) {
         {
           question: "A right triangle has side $a = 5$ and hypotenuse $c = 13$. Find the length of side $b$.",
           answer: "12",
-          explanation: "Using the relation $a^2 + b^2 = c^2$:\n$$5^2 + b^2 = 13^2 \\implies 25 + b^2 = 169$$\n$$b^2 = 169 - 25 = 144 \\implies b = \\sqrt{144} = 12$."
+          explanation: "Using the relation $a^2 + b^2 = c^2$:\n$$5^2 + b^2 = 13^2 \\implies 25 + b^2 = 169$$\n$$b^2 = 169 - 25 = 144 \\implies b = \\sqrt{144} = 12$$"
         }
       ]
     };
@@ -90,7 +124,7 @@ function getLessonAndExamples(category, level) {
         {
           question: "Calculate the value of Euler's totient function $\\phi(10)$.",
           answer: "4",
-          explanation: "We count the positive integers up to $10$ that share no common factors with $10$ other than $1$. These are $\{1, 3, 7, 9\}$. Hence, $\\phi(10) = 4$."
+          explanation: "We count the positive integers up to $10$ that share no common factors with $10$ other than $1$. These are $\\{1, 3, 7, 9\\}$. Hence, $\\phi(10) = 4$."
         },
         {
           question: "Use Euler's theorem to find the remainder of $3^4$ when divided by $10$.",
@@ -228,8 +262,8 @@ function getLessonAndExamples(category, level) {
         lessonContent: "The probability of an event is the ratio of successful outcomes to the total outcomes in a sample space. For rolling two six-sided dice, the total sample space is $6 \\times 6 = 36$ outcomes.",
         lessonFormula: "P(E) = \\frac{|Event|}{|Sample \\ Space|}",
         examples: [
-          { question: "How many dice outcomes sum to $7$ when two fair dice are rolled?", answer: "6", explanation: "The successful pairs are $\{(1,6), (2,5), (3,4), (4,3), (5,2), (6,1)\}$. There are $6$ outcomes." },
-          { question: "How many outcomes sum to $12$ when rolling two dice?", answer: "1", explanation: "Only the pair $\{(6,6)\}$ sums to $12$. There is $1$ outcome." }
+          { question: "How many dice outcomes sum to $7$ when two fair dice are rolled?", answer: "6", explanation: "The successful pairs are $\\{(1,6), (2,5), (3,4), (4,3), (5,2), (6,1)\\}$. There are $6$ outcomes." },
+          { question: "How many outcomes sum to $12$ when rolling two dice?", answer: "1", explanation: "Only the pair $\\{(6,6)\\}$ sums to $12$. There is $1$ outcome." }
         ]
       };
     }
@@ -367,7 +401,7 @@ function getLessonForArchive(title, category, stars) {
       lessonContent: "Euclid proved that there are infinitely many prime numbers. Assuming a finite set of primes $p_1, p_2, \\dots, p_n$, the number $P = (p_1 p_2 \\dots p_n) + 1$ must either be prime or have a prime factor not in the list, creating a contradiction.",
       lessonFormula: "P = \\left(\\prod_{i=1}^n p_i\\right) + 1",
       examples: [
-        { question: "If the only primes were $\{2, 3\}$, calculate $P$.", answer: "7", explanation: "$$P = (2 \\times 3) + 1 = 7$$. Since 7 is prime and not in the list, the list is incomplete." }
+        { question: "If the only primes were $\\{2, 3\\}$, calculate $P$.", answer: "7", explanation: "$$P = (2 \\times 3) + 1 = 7$$. Since 7 is prime and not in the list, the list is incomplete." }
       ]
     };
   }
@@ -391,7 +425,7 @@ function getLessonForArchive(title, category, stars) {
       lessonContent: "Euler's totient function $\\phi(n)$ counts positive integers up to $n$ coprime to $n$. For any number $n$, we find its prime factorization and use the product formula. For example, since $12 = 2^2 \\times 3$, we have $\\phi(12) = 12(1 - 1/2)(1 - 1/3) = 4$.",
       lessonFormula: "\\phi(n) = n \\prod_{p|n} \\left(1 - \\frac{1}{p}\\right)",
       examples: [
-        { question: "Calculate $\\phi(10)$.", answer: "4", explanation: "$$\\phi(10) = 10 \\times \\left(1 - \\frac{1}{2}\\right) \\times \\left(1 - \\frac{1}{5}\\right) = 4$$. Coprime values are $\{1, 3, 7, 9\}$." }
+        { question: "Calculate $\\phi(10)$.", answer: "4", explanation: "$$\\phi(10) = 10 \\times \\left(1 - \\frac{1}{2}\\right) \\times \\left(1 - \\frac{1}{5}\\right) = 4$$. Coprime values are $\\{1, 3, 7, 9\\}$." }
       ]
     };
   }
@@ -439,7 +473,7 @@ function getLessonForArchive(title, category, stars) {
       lessonContent: "The Chinese Remainder Theorem states that if one knows the remainders of a number divided by pairwise coprime moduli, one can determine the remainder of the number divided by the product of these moduli uniquely.",
       lessonFormula: "x \\equiv a_i \\pmod{m_i}",
       examples: [
-        { question: "Solve $x \\equiv 1 \\pmod{3}$ and $x \\equiv 2 \\pmod{5}$.", answer: "7", explanation: "Multiples of 5 offset by 2 are $\{2, 7, 12, \\dots\}$. Checking mod 3: $7 \\equiv 1 \\pmod{3}$. Smallest solution is 7." }
+        { question: "Solve $x \\equiv 1 \\pmod{3}$ and $x \\equiv 2 \\pmod{5}$.", answer: "7", explanation: "Multiples of 5 offset by 2 are $\\{2, 7, 12, \\dots\\}$. Checking mod 3: $7 \\equiv 1 \\pmod{3}$. Smallest solution is 7." }
       ]
     };
   }
@@ -545,7 +579,7 @@ function getLessonForArchive(title, category, stars) {
     return {
       lessonTitle: "The Binomial Theorem",
       lessonContent: "The Binomial Theorem describes the algebraic expansion of powers of a binomial $(x+y)^n$. The coefficient of the term $x^{n-k}y^k$ is $\\binom{n}{k}$.",
-      lessonFormula: "(x+y)^n = \\sum_{k=0}^n \\binom{n}{k} x_{n-k} y^k",
+      lessonFormula: "(x+y)^n = \\sum_{k=0}^n \\binom{n}{k} x^{n-k} y^k",
       examples: [
         { question: "What is the coefficient of $x^2 y$ in $(x+y)^3$?", answer: "3", explanation: "Using the formula: $$\\binom{3}{1} x^{3-1} y^1 = 3x^2 y$$, so the coefficient is 3." }
       ]
@@ -811,7 +845,7 @@ function getLessonForArchive(title, category, stars) {
       lessonContent: "Gambler's Ruin is a Markov chain modeling gambling. A gambler with capital $i$ playing a fair game against a house with total $N$ has ruin probability $1 - i/N$.",
       lessonFormula: "P_{\\text{ruin}} = 1 - \\frac{i}{N}",
       examples: [
-        { question: "With $10, and total capital $40, what is your ruin probability in a fair game?", answer: "3/4", explanation: "Your ruin probability is $1 - i/N = 1 - 10/40 = 1 - 1/4 = 3/4$." }
+        { question: "With a stake of 10 and total capital of 40, what is your ruin probability in a fair game?", answer: "3/4", explanation: "Your ruin probability is $1 - i/N = 1 - 10/40 = 1 - 1/4 = 3/4$." }
       ]
     };
   }
@@ -864,8 +898,8 @@ function getLessonForArchive(title, category, stars) {
     };
   }
 
-  // Fallback to generic lesson based on category & stars
-  const fakeLevel = stars ? stars * 10 : 18;
+  // Fallback: derive an appropriate lesson level from the archive entry's star rating
+  const fakeLevel = stars >= 4 ? 45 : stars >= 3 ? 30 : stars >= 2 ? 18 : 9;
   return getLessonAndExamples(category, fakeLevel);
 }
 

@@ -7,9 +7,23 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const { db, initDb } = require('./db');
+const { runMigrations } = require('./migrations');
+const { withTransaction, httpError } = require('./dbx');
+const { idempotency } = require('./idempotency');
+const cache = require('./cache');
 const { generateProblem, generateArchiveProblem, getLessonAndExamples, getLessonForArchive } = require('./mathGenerator');
 const { runIngestionPipeline } = require('./mathEngine/knowledgeIngestion');
 const { tipsMap } = require('./mathEngine/tips');
+const NRS = require('./mathEngine/ratingEngine');
+
+// Mathematical Learning Intelligence Engine modules
+const LearnerModel       = require('./mathEngine/learnerModel');
+const MisconceptionEngine = require('./mathEngine/misconceptionEngine');
+const RetentionEngine    = require('./mathEngine/retentionEngine');
+const TeachingEngine     = require('./mathEngine/teachingEngine');
+const AnalyticsEngine    = require('./mathEngine/analyticsEngine');
+const CompetitiveEngine  = require('./mathEngine/competitiveEngine');
+const Orchestrator       = require('./mathEngine/problemOrchestrator');
 
 const app = express();
 app.use(cors());
@@ -476,11 +490,16 @@ const crypto = require('crypto');
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
 const PORT = process.env.PORT || 3000;
 
-// Initialize Database
-initDb().catch(err => {
-  console.error("Database initialization failed:", err);
-  process.exit(1);
-});
+// Initialize Database, then apply any pending versioned migrations.
+// `ready` resolves once the schema is initialized + migrated; tests await it before
+// issuing requests. In standalone mode a failure is fatal.
+const ready = initDb()
+  .then(() => runMigrations(db))
+  .catch(err => {
+    console.error("Database initialization failed:", err);
+    if (require.main === module) process.exit(1);
+    throw err;
+  });
 
 // Middleware to authenticate JWT
 function authenticateToken(req, res, next) {
@@ -1423,45 +1442,70 @@ function normalizeLevelForGenerator(category, level) {
   }
 }
 
-// Procedural problems for specific category & level
-app.get('/api/math/problems', authenticateToken, (req, res) => {
-  const category = req.query.category || 'arithmetic';
-  const level = parseInt(req.query.level) || 1;
-  let count = parseInt(req.query.count) || 3;
-  if (count === 5) {
-    count = 3;
-  }
+// Procedural problems for specific category & level — engine-integrated
+app.get('/api/math/problems', authenticateToken, async (req, res) => {
+  try {
+    const userId   = req.user.id;
+    const category = req.query.category || 'arithmetic';
+    const level    = parseInt(req.query.level) || 1;
+    let count      = parseInt(req.query.count) || 3;
+    if (count === 5) count = 3;
 
-  db.get("SELECT elo FROM users WHERE id = ?", [req.user.id], (err, user) => {
-    if (err) return res.status(500).json({ error: err.message });
-    const userElo = user ? (user.elo || 1000) : 1000;
+    // Fetch user ELO and concept analytics in parallel
+    const [user, analyticsRows] = await Promise.all([
+      new Promise((resolve, reject) =>
+        db.get("SELECT elo FROM users WHERE id = ?", [userId], (e, r) => e ? reject(e) : resolve(r))
+      ),
+      new Promise((resolve, reject) =>
+        db.all("SELECT * FROM user_concept_analytics WHERE user_id = ?", [userId], (e, r) => e ? reject(e) : resolve(r || []))
+      )
+    ]);
+
+    const userElo       = user ? (user.elo || 1000) : 1000;
     const normalizedLevel = normalizeLevelForGenerator(category, level);
+    const analyticsMap  = {};
+    analyticsRows.forEach(row => { analyticsMap[row.concept] = row; });
 
-    db.all("SELECT * FROM user_concept_analytics WHERE user_id = ?", [req.user.id], (err2, analyticsRows) => {
-      const analyticsMap = {};
-      if (!err2 && analyticsRows) {
-        analyticsRows.forEach(row => {
-          analyticsMap[row.concept] = row;
-        });
-      }
+    // Ask the orchestrator: what is the best next concept for this learner?
+    const orchestration = await Orchestrator.selectNextConcept(db, userId, category, level);
 
-      const lessonData = getLessonAndExamples(category, normalizedLevel);
-      const problems = [];
-      for (let i = 0; i < count; i++) {
-        const prob = generateProblem(category, normalizedLevel, i, userElo, analyticsMap);
-        problems.push(attachTipToProblem(prob, false));
+    // Get learner profile for adaptive difficulty (non-fatal if missing)
+    let learnerProfile = null;
+    try {
+      if (orchestration.conceptId) {
+        learnerProfile = await LearnerModel.getProfile(db, userId, orchestration.conceptId);
       }
-      res.json({
-        category,
-        level,
-        lessonTitle: lessonData.lessonTitle,
-        lessonContent: lessonData.lessonContent,
-        lessonFormula: lessonData.lessonFormula,
-        examples: lessonData.examples,
-        problems
-      });
+    } catch (_) {}
+
+    const lessonData = getLessonAndExamples(category, normalizedLevel);
+    const problems   = [];
+    for (let i = 0; i < count; i++) {
+      const prob    = generateProblem(category, normalizedLevel, i, userElo, analyticsMap,
+                        { targetConceptId: orchestration.conceptId, learnerProfile });
+      const enriched = await Orchestrator.enrichProblem(db, userId, prob, orchestration);
+      problems.push(attachTipToProblem(enriched, false));
+    }
+
+    res.json({
+      category,
+      level,
+      lessonTitle:   lessonData.lessonTitle,
+      lessonContent: lessonData.lessonContent,
+      lessonFormula: lessonData.lessonFormula,
+      examples:      lessonData.examples,
+      lessonSections: lessonData.sections || null,
+      orchestration: {
+        targetConcept: orchestration.conceptId,
+        reason:        orchestration.reason,
+        priority:      orchestration.priority,
+        meta:          orchestration.meta
+      },
+      problems
     });
-  });
+  } catch (err) {
+    console.error('[/api/math/problems]', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Submit cognitive telemetry of player performance
@@ -1543,14 +1587,63 @@ app.post('/api/math/telemetry', authenticateToken, (req, res) => {
   // 3. Trigger Ingestion pipeline asynchronously in background (10% random chance to process)
   if (Math.random() < 0.1) {
     runIngestionPipeline(db)
-      .then(res => {
-        if (res && res.ingestedCount > 0) {
+      .then(r => {
+        if (r && r.ingestedCount > 0) {
           const { refreshIngestedTemplates } = require('./mathGenerator');
           refreshIngestedTemplates();
         }
       })
       .catch(err => console.error("[Telemetry-Ingestion] Ingestion pipeline failed:", err.message));
   }
+
+  // 4. Feed the Intelligence Engine — fire-and-forget, never blocks the response
+  ;(async () => {
+    try {
+      // Map old concept/template string → knowledge-graph conceptId
+      const conceptId = Orchestrator.conceptFromType(concept) || concept;
+      const retentionScore = await RetentionEngine.getRetentionForProfile(db, userId, conceptId);
+
+      // Speed from legacy API arrives in seconds — convert to ms
+      const responseMs = speedVal > 0 ? speedVal * 1000 : 0;
+      const wasRetry   = retriesVal > 0;
+      const inferredHint = hesitationVal > 2.0;
+
+      // Retention record (rating: 4=fast correct, 3=correct, 1=wrong)
+      const rating = isCorrectNumeric ? (speedVal > 0 && speedVal < 8 ? 4 : 3) : 1;
+      await RetentionEngine.recordReview(db, userId, conceptId, rating);
+
+      // Learner profile update
+      await LearnerModel.updateProfile(db, userId, conceptId, {
+        correct:        !!isCorrectNumeric,
+        responseMs,
+        usedHint:       inferredHint,
+        usedCalculator: false,
+        wasRetry,
+        retentionScore
+      });
+
+      // Lesson analytics
+      if (templateType) {
+        await AnalyticsEngine.recordLessonEvent(db, templateType, {
+          correct: !!isCorrectNumeric,
+          timeTaken: responseMs,
+          usedHint: inferredHint,
+          abandoned: false
+        });
+      }
+
+      // Teaching style signals
+      const signals = TeachingEngine.inferSignalFromResult(
+        { correct: !!isCorrectNumeric, responseMs, usedHint: inferredHint, wasRetry },
+        conceptId
+      );
+      for (const signal of signals) {
+        await TeachingEngine.recordStyleSignal(db, userId, signal.style, signal.outcome);
+      }
+    } catch (e) {
+      console.error('[Telemetry-Engine]', e.message);
+    }
+  })();
 
   res.json({ success: true });
 });
@@ -1585,7 +1678,7 @@ app.post('/api/math/calculator/log', authenticateToken, (req, res) => {
 const completionCooldowns = new Map();
 
 // Update user stats after a successful game session
-app.post('/api/math/complete', authenticateToken, (req, res) => {
+app.post('/api/math/complete', authenticateToken, idempotency, (req, res) => {
   const userId = req.user.id;
   const nowMs = Date.now();
   if (completionCooldowns.has(userId)) {
@@ -1766,6 +1859,22 @@ app.post('/api/math/complete', authenticateToken, (req, res) => {
             else if (normCat === 'number theory' || normCat === 'number_theory') masteryCol = 'number_theory_correct';
 
             const finalizeResponse = () => {
+              // Fire-and-forget: update competitive skill profile for the concepts practised this level
+              ;(async () => {
+                try {
+                  const conceptIds = Orchestrator.getCategoryConceptIds(category, parsedLevel);
+                  const accuracy   = (solvedCount > 0 && errorsCount !== undefined)
+                    ? Math.max(0, (solvedCount - parseInt(errorsCount, 10)) / solvedCount)
+                    : 0.5;
+                  const outcome = accuracy >= 0.8 ? 1 : accuracy >= 0.5 ? 0.5 : 0;
+                  for (const cId of conceptIds.slice(0, 2)) {
+                    await CompetitiveEngine.updateCompetitiveRating(db, req.user.id, cId, outcome);
+                  }
+                } catch (e) {
+                  console.error('[Complete-CompetitiveEngine]', e.message);
+                }
+              })();
+
               grantRankRewards(req.user.id, currentRank, () => {
                 updateAchievements(req.user.id, () => {
                   res.json({
@@ -2069,10 +2178,13 @@ app.get('/api/archive/search', authenticateToken, (req, res) => {
   const category = req.query.category || '';
   const stars = req.query.stars ? parseInt(req.query.stars) : null;
   const query = req.query.q || '';
-  
+  // Pagination: clients request fixed-size pages and append them for infinite scroll.
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 50);
+  const offset = Math.max(parseInt(req.query.offset) || 0, 0);
+
   let sql = "SELECT * FROM archive_exercises WHERE 1=1";
   const params = [];
-  
+
   if (category) {
     sql += " AND category = ?";
     params.push(category);
@@ -2085,7 +2197,9 @@ app.get('/api/archive/search', authenticateToken, (req, res) => {
     sql += " AND (title LIKE ? OR story LIKE ? OR question LIKE ?)";
     params.push(`%${query}%`, `%${query}%`, `%${query}%`);
   }
-  
+  sql += " LIMIT ? OFFSET ?";
+  params.push(limit, offset);
+
   db.all(sql, params, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     
@@ -2106,7 +2220,8 @@ app.get('/api/archive/search', authenticateToken, (req, res) => {
         lessonTitle: lesson.lessonTitle,
         lessonContent: lesson.lessonContent,
         lessonFormula: lesson.lessonFormula,
-        examples: lesson.examples
+        examples: lesson.examples,
+        lessonSections: lesson.sections || null
       };
     });
     
@@ -2127,7 +2242,8 @@ app.get('/api/archive/search', authenticateToken, (req, res) => {
         lessonTitle: lesson.lessonTitle,
         lessonContent: lesson.lessonContent,
         lessonFormula: lesson.lessonFormula,
-        examples: lesson.examples
+        examples: lesson.examples,
+        lessonSections: lesson.sections || null
       });
     }
     
@@ -2302,7 +2418,7 @@ app.get('/api/quests', authenticateToken, (req, res) => {
 });
 
 // Claim a completed daily quest
-app.post('/api/quests/claim', authenticateToken, (req, res) => {
+app.post('/api/quests/claim', authenticateToken, idempotency, (req, res) => {
   const { questType } = req.body;
   if (!questType) return res.status(400).json({ error: 'Quest type required' });
   
@@ -2437,7 +2553,8 @@ app.get('/api/math/daily-puzzle', authenticateToken, (req, res) => {
         lessonTitle: lesson.lessonTitle,
         lessonContent: lesson.lessonContent,
         lessonFormula: lesson.lessonFormula,
-        examples: lesson.examples
+        examples: lesson.examples,
+        lessonSections: lesson.sections || null
       };
       
       res.json(attachTipToProblem(puzzleResponse, true));
@@ -2446,7 +2563,7 @@ app.get('/api/math/daily-puzzle', authenticateToken, (req, res) => {
 });
 
 // Submit evaluation for the daily puzzle
-app.post('/api/math/daily-puzzle/submit', authenticateToken, (req, res) => {
+app.post('/api/math/daily-puzzle/submit', authenticateToken, idempotency, (req, res) => {
   const { correct } = req.body;
   if (correct === undefined) {
     return res.status(400).json({ error: 'Correctness boolean required' });
@@ -2513,22 +2630,28 @@ app.get('/api/league/leaderboard', authenticateToken, (req, res) => {
       const lastReset = currentUser.last_league_reset || 0;
       const now = Math.floor(Date.now() / 1000);
       const secondsRemaining = Math.max(0, (7 * 86400) - (now - lastReset));
-      
+
+      // seconds_remaining is per-request, but the standings list is shared by
+      // everyone in the league and changes slowly — cache it briefly so a busy
+      // league doesn't re-run the ORDER BY on every open.
+      const sendStandings = (rows) =>
+        res.json({ league: userLeague, seconds_remaining: secondsRemaining, standings: rows });
+
+      const cacheKey = `league:standings:${userLeague}`;
+      const cachedStandings = cache.get(cacheKey);
+      if (cachedStandings) return sendStandings(cachedStandings);
+
       db.all(
-        `SELECT id, username, league_points, avatar, active_badge, level 
-         FROM users 
-         WHERE league = ? 
-         ORDER BY league_points DESC 
+        `SELECT id, username, league_points, avatar, active_badge, level
+         FROM users
+         WHERE league = ?
+         ORDER BY league_points DESC
          LIMIT 30`,
         [userLeague],
         (errL, rows) => {
           if (errL) return res.status(500).json({ error: errL.message });
-          
-          res.json({
-            league: userLeague,
-            seconds_remaining: secondsRemaining,
-            standings: rows
-          });
+          cache.set(cacheKey, rows, 30 * 1000); // 30s staleness is fine for a leaderboard
+          sendStandings(rows);
         }
       );
     });
@@ -2567,9 +2690,10 @@ function getRankValue(rankStr) {
 }
 
 app.get('/api/shop', authenticateToken, (req, res) => {
-  db.all(`SELECT * FROM shop_items`, (err, allItems) => {
-    if (err) return res.status(500).json({ error: err.message });
-
+  // The shop catalog (shop_items) is identical for every user and only changes
+  // on a server restart re-seed, so cache it. Everything below (inventory,
+  // utilities, coins, discount) stays per-user and uncached.
+  const buildShop = (allItems) => {
     db.all(`SELECT item_id FROM user_inventory WHERE user_id = ?`, [req.user.id], (errInv, inventoryRows) => {
       if (errInv) return res.status(500).json({ error: errInv.message });
       const inventory = inventoryRows.map(i => i.item_id);
@@ -2654,6 +2778,17 @@ app.get('/api/shop', authenticateToken, (req, res) => {
           const dailyItems = daily.map(item => processRotatedItem(item));
           const utilityItems = utilityPool.map(item => processRotatedItem(item));
 
+          // Full catalog of every purchasable cosmetic so nothing is permanently
+          // gated behind the daily/featured rotation. Sorted by rarity then cost.
+          const rarityRank = { 'Common': 0, 'Rare': 1, 'Epic': 2, 'Legendary': 3, 'Mythic': 4 };
+          const catalogItems = purchaseableItems
+            .filter(item => item.is_utility !== 1)
+            .map(item => processRotatedItem(item))
+            .sort((a, b) => {
+              const r = (rarityRank[a.rarity] ?? 0) - (rarityRank[b.rarity] ?? 0);
+              return r !== 0 ? r : a.cost - b.cost;
+            });
+
           // Concatenate all active items for backward compatibility
           const items = [...featuredItems, ...dailyItems, ...utilityItems];
 
@@ -2662,6 +2797,7 @@ app.get('/api/shop', authenticateToken, (req, res) => {
             featuredItems,
             dailyItems,
             utilityItems,
+            catalogItems,
             inventory,
             utilities,
             expiresInSeconds: secondsUntilMidnight,
@@ -2672,105 +2808,100 @@ app.get('/api/shop', authenticateToken, (req, res) => {
         });
       });
     });
+  };
+
+  const cachedCatalog = cache.get('shop:catalog');
+  if (cachedCatalog) return buildShop(cachedCatalog);
+  db.all(`SELECT * FROM shop_items`, (err, allItems) => {
+    if (err) return res.status(500).json({ error: err.message });
+    cache.set('shop:catalog', allItems, 5 * 60 * 1000); // catalog changes only on restart
+    buildShop(allItems);
   });
 });
 
-app.post('/api/shop/purchase', authenticateToken, (req, res) => {
+app.post('/api/shop/purchase', authenticateToken, idempotency, (req, res) => {
   const { itemId } = req.body;
   if (!itemId) return res.status(400).json({ error: 'Item ID required' });
+  const userId = req.user.id;
 
-  db.get(`SELECT * FROM shop_items WHERE id = ?`, [itemId], (err, item) => {
-    if (err || !item) return res.status(404).json({ error: 'Item not found' });
+  // Whole purchase runs as one ACID transaction: deduct coins + grant item
+  // commit or roll back together. A throw anywhere below restores the coins
+  // automatically (ROLLBACK), so there is no manual refund code to get wrong.
+  withTransaction(async (tx) => {
+    const item = await tx.get(`SELECT * FROM shop_items WHERE id = ?`, [itemId]);
+    if (!item) throw httpError(404, 'Item not found');
 
-    db.get(`SELECT * FROM users WHERE id = ?`, [req.user.id], (errUser, user) => {
-      if (errUser || !user) return res.status(404).json({ error: 'User not found' });
+    const user = await tx.get(`SELECT * FROM users WHERE id = ?`, [userId]);
+    if (!user) throw httpError(404, 'User not found');
 
-      // Rank Locks check for prestigious cosmetic items
-      const requiredRank = item.required_rank;
-      if (requiredRank && getRankValue(user.rank) < getRankValue(requiredRank)) {
-        return res.status(400).json({ error: `Locked: Requires competitive rank ${requiredRank}` });
-      }
+    // Rank locks for prestigious cosmetic items
+    const requiredRank = item.required_rank;
+    if (requiredRank && getRankValue(user.rank) < getRankValue(requiredRank)) {
+      throw httpError(400, `Locked: Requires competitive rank ${requiredRank}`);
+    }
 
-      // Calculate cost with potential dynamic spending discount
-      const totalEarned = user.total_coins_earned || 100;
-      const currentCoins = user.coins || 0;
-      const saveRate = currentCoins / totalEarned;
+    // Cost with potential dynamic spending discount
+    const totalEarned = user.total_coins_earned || 100;
+    const currentCoins = user.coins || 0;
+    const saveRate = currentCoins / totalEarned;
 
-      let discountFactor = 1.0;
-      if (saveRate > 0.7 && currentCoins > 600) {
-        discountFactor = 0.85;
-      } else if (currentCoins < 200 && user.solved_count > 50) {
-        discountFactor = 0.90;
-      }
+    let discountFactor = 1.0;
+    if (saveRate > 0.7 && currentCoins > 600) {
+      discountFactor = 0.85;
+    } else if (currentCoins < 200 && user.solved_count > 50) {
+      discountFactor = 0.90;
+    }
 
-      const finalCost = item.is_utility ? item.cost : Math.round(item.cost * discountFactor);
+    const finalCost = item.is_utility ? item.cost : Math.round(item.cost * discountFactor);
 
-      // Perform atomic conditional coins deduction to prevent concurrent double-spending exploits
-      db.run(
-        `UPDATE users SET coins = coins - ?, total_coins_spent = total_coins_spent + ? WHERE id = ? AND coins >= ?`,
-        [finalCost, finalCost, req.user.id, finalCost],
-        function(errDeduct) {
-          if (errDeduct) return res.status(500).json({ error: errDeduct.message });
-          if (this.changes === 0) {
-            return res.status(400).json({ error: 'Insufficient coins or concurrent transaction conflict' });
-          }
+    // Atomic conditional deduction — guards against overspend / double-spend.
+    const deduct = await tx.run(
+      `UPDATE users SET coins = coins - ?, total_coins_spent = total_coins_spent + ? WHERE id = ? AND coins >= ?`,
+      [finalCost, finalCost, userId, finalCost]
+    );
+    if (deduct.changes === 0) {
+      throw httpError(400, 'Insufficient coins');
+    }
 
-          // Coin deduction succeeded, now perform item grant
-          if (item.is_utility === 1) {
-            db.get("SELECT quantity FROM user_utilities WHERE user_id = ? AND item_id = ?", [req.user.id, itemId], (errUtil, utilRow) => {
-              if (errUtil) {
-                // Refund on database error
-                db.run(`UPDATE users SET coins = coins + ?, total_coins_spent = total_coins_spent - ? WHERE id = ?`, [finalCost, finalCost, req.user.id]);
-                return res.status(500).json({ error: errUtil.message });
-              }
-              
-              const newQty = (utilRow ? utilRow.quantity : 0) + 1;
-              const saveOrUpdate = () => {
-                if (utilRow) {
-                  db.run("UPDATE user_utilities SET quantity = ? WHERE user_id = ? AND item_id = ?", [newQty, req.user.id, itemId], finalizePurchase);
-                } else {
-                  db.run("INSERT INTO user_utilities (user_id, item_id, quantity) VALUES (?, ?, 1)", [req.user.id, itemId], finalizePurchase);
-                }
-              };
-              
-              const finalizePurchase = (errFinal) => {
-                if (errFinal) {
-                  // Refund on database error
-                  db.run(`UPDATE users SET coins = coins + ?, total_coins_spent = total_coins_spent - ? WHERE id = ?`, [finalCost, finalCost, req.user.id]);
-                  return res.status(500).json({ error: errFinal.message });
-                }
-                
-                if (itemId === 'item_xp_booster') {
-                  db.run("UPDATE users SET xp_booster_uses_left = xp_booster_uses_left + 3 WHERE id = ?", [req.user.id]);
-                }
-                res.json({ success: true, message: 'Booster purchased successfully', coinsLeft: user.coins - finalCost });
-              };
-              
-              saveOrUpdate();
-            });
-          } else {
-            db.run(
-              `INSERT INTO user_inventory (user_id, item_id) VALUES (?, ?)`,
-              [req.user.id, itemId],
-              (errInv) => {
-                if (errInv) {
-                  // Refund the coins since the transaction is rolled back
-                  db.run(`UPDATE users SET coins = coins + ?, total_coins_spent = total_coins_spent - ? WHERE id = ?`, [finalCost, finalCost, req.user.id]);
-                  
-                  if (errInv.message.includes('UNIQUE')) {
-                    return res.status(400).json({ error: 'Item already purchased' });
-                  }
-                  return res.status(500).json({ error: errInv.message });
-                }
-
-                res.json({ success: true, message: 'Item purchased successfully', coinsLeft: user.coins - finalCost });
-              }
-            );
-          }
-        }
+    if (item.is_utility === 1) {
+      const utilRow = await tx.get(
+        'SELECT quantity FROM user_utilities WHERE user_id = ? AND item_id = ?',
+        [userId, itemId]
       );
-    });
-  });
+      if (utilRow) {
+        await tx.run(
+          'UPDATE user_utilities SET quantity = quantity + 1 WHERE user_id = ? AND item_id = ?',
+          [userId, itemId]
+        );
+      } else {
+        await tx.run(
+          'INSERT INTO user_utilities (user_id, item_id, quantity) VALUES (?, ?, 1)',
+          [userId, itemId]
+        );
+      }
+      if (itemId === 'item_xp_booster') {
+        await tx.run(
+          'UPDATE users SET xp_booster_uses_left = xp_booster_uses_left + 3 WHERE id = ?',
+          [userId]
+        );
+      }
+      return { success: true, message: 'Booster purchased successfully', coinsLeft: currentCoins - finalCost };
+    }
+
+    // Cosmetic item: UNIQUE(user_id, item_id) enforces "buy once". A duplicate
+    // INSERT throws, rolling back the deduction — i.e. idempotent re-purchase.
+    try {
+      await tx.run(`INSERT INTO user_inventory (user_id, item_id) VALUES (?, ?)`, [userId, itemId]);
+    } catch (e) {
+      if (e.message && e.message.includes('UNIQUE')) {
+        throw httpError(400, 'Item already purchased');
+      }
+      throw e;
+    }
+    return { success: true, message: 'Item purchased successfully', coinsLeft: currentCoins - finalCost };
+  })
+    .then((payload) => res.json(payload))
+    .catch((err) => res.status(err.status || 500).json({ error: err.message }));
 });
 
 app.post('/api/shop/equip', authenticateToken, (req, res) => {
@@ -2818,7 +2949,7 @@ app.post('/api/shop/equip', authenticateToken, (req, res) => {
   }
 });
 
-app.post('/api/shop/consume-retry', authenticateToken, (req, res) => {
+app.post('/api/shop/consume-retry', authenticateToken, idempotency, (req, res) => {
   const userId = req.user.id;
   db.get("SELECT quantity FROM user_utilities WHERE user_id = ? AND item_id = 'item_retry_token'", [userId], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -3255,46 +3386,44 @@ app.get('/api/achievements', authenticateToken, (req, res) => {
 });
 
 
-app.post('/api/achievements/claim', authenticateToken, (req, res) => {
+app.post('/api/achievements/claim', authenticateToken, idempotency, (req, res) => {
   const { achievementId } = req.body;
   if (!achievementId) return res.status(400).json({ error: 'Achievement ID required' });
-  
-  db.get(`
-    SELECT ua.*, a.reward_coins
-    FROM user_achievements ua
-    JOIN achievements a ON ua.achievement_id = a.id
-    WHERE ua.user_id = ? AND ua.achievement_id = ?
-  `, [req.user.id, achievementId], (err, row) => {
-    if (err || !row) return res.status(404).json({ error: 'Achievement progress not found' });
-    if (row.completed_at === 0) return res.status(400).json({ error: 'Achievement not completed yet' });
-    if (row.claimed === 1) return res.status(400).json({ error: 'Achievement already claimed' });
-    
-    // Atomic update check to prevent double-claiming concurrency exploits
-    db.run(
-      `UPDATE user_achievements SET claimed = 1 
-       WHERE user_id = ? AND achievement_id = ? AND claimed = 0 AND completed_at > 0`,
-      [req.user.id, achievementId],
-      function(err2) {
-        if (err2) return res.status(500).json({ error: err2.message });
-        if (this.changes === 0) {
-          return res.status(400).json({ error: 'Achievement already claimed or not completed yet' });
-        }
-        
-        db.run(`UPDATE users SET coins = coins + ? WHERE id = ?`, [row.reward_coins, req.user.id], (err3) => {
-          if (err3) {
-            // rollback claimed state on failure
-            db.run(`UPDATE user_achievements SET claimed = 0 WHERE user_id = ? AND achievement_id = ?`, [req.user.id, achievementId]);
-            return res.status(500).json({ error: err3.message });
-          }
-          
-          const badgeId = "badge_" + achievementId;
-          db.run(`INSERT OR IGNORE INTO user_inventory (user_id, item_id) VALUES (?, ?)`, [req.user.id, badgeId], (errInv) => {
-            res.json({ success: true, rewardCoins: row.reward_coins, unlockedBadge: badgeId });
-          });
-        });
-      }
+  const userId = req.user.id;
+
+  // Claim the reward atomically: flip `claimed`, credit coins, grant badge — all
+  // or nothing. The compare-and-set on `claimed = 0` makes the claim idempotent
+  // against concurrent requests; the transaction makes the coin credit safe.
+  withTransaction(async (tx) => {
+    const row = await tx.get(
+      `SELECT ua.*, a.reward_coins
+         FROM user_achievements ua
+         JOIN achievements a ON ua.achievement_id = a.id
+        WHERE ua.user_id = ? AND ua.achievement_id = ?`,
+      [userId, achievementId]
     );
-  });
+    if (!row) throw httpError(404, 'Achievement progress not found');
+    if (row.completed_at === 0) throw httpError(400, 'Achievement not completed yet');
+    if (row.claimed === 1) throw httpError(400, 'Achievement already claimed');
+
+    const flip = await tx.run(
+      `UPDATE user_achievements SET claimed = 1
+        WHERE user_id = ? AND achievement_id = ? AND claimed = 0 AND completed_at > 0`,
+      [userId, achievementId]
+    );
+    if (flip.changes === 0) {
+      throw httpError(400, 'Achievement already claimed or not completed yet');
+    }
+
+    await tx.run(`UPDATE users SET coins = coins + ? WHERE id = ?`, [row.reward_coins, userId]);
+
+    const badgeId = 'badge_' + achievementId;
+    await tx.run(`INSERT OR IGNORE INTO user_inventory (user_id, item_id) VALUES (?, ?)`, [userId, badgeId]);
+
+    return { success: true, rewardCoins: row.reward_coins, unlockedBadge: badgeId };
+  })
+    .then((payload) => res.json(payload))
+    .catch((err) => res.status(err.status || 500).json({ error: err.message }));
 });
 
 // -------------------------------------------------------------
@@ -3470,7 +3599,7 @@ app.post('/api/favorites/assign-collection', authenticateToken, (req, res) => {
   const updateExercise = () => {
     db.run(
       'UPDATE saved_exercises SET collection_id = ? WHERE id = ? AND user_id = ?',
-      [collId, req.user.id, exerciseId],
+      [collId, exerciseId, req.user.id],
       function(err) {
         if (err) return res.status(500).json({ error: err.message });
         if (this.changes === 0) return res.status(404).json({ error: 'Exercise not found.' });
@@ -3598,7 +3727,783 @@ app.post('/api/notifications/read', authenticateToken, (req, res) => {
   }
 });
 
-// -------------------------------------------------------------
+// =====================================================================
+// MATHEMATICAL LEARNING INTELLIGENCE ENGINE — API Endpoints
+// =====================================================================
+
+// POST /api/engine/event
+// Core telemetry hook: record every answer event and update all engine models
+app.post('/api/engine/event', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  const {
+    conceptId,
+    templateType,
+    correct,
+    responseMs     = 0,
+    usedHint       = false,
+    usedCalculator = false,
+    wasRetry       = false,
+    abandoned      = false,
+    wrongAnswer    = null,
+    correctAnswer  = null,
+    params         = {}
+  } = req.body;
+
+  if (!conceptId) return res.status(400).json({ error: 'conceptId required' });
+
+  try {
+    // 1. Update retention schedule and get current retention score
+    const rating = correct ? (responseMs < 8000 ? 4 : 3) : 1;
+    const retResult = await RetentionEngine.recordReview(db, userId, conceptId, rating);
+    const retentionScore = await RetentionEngine.getRetentionForProfile(db, userId, conceptId);
+
+    // 2. Update learner profile
+    const profileEvent = { correct, responseMs, usedHint, usedCalculator, wasRetry, retentionScore };
+    const updatedProfile = await LearnerModel.updateProfile(db, userId, conceptId, profileEvent);
+
+    // 3. Classify and record misconception on wrong answer
+    let misconception = null;
+    if (!correct && wrongAnswer !== null && correctAnswer !== null) {
+      misconception = MisconceptionEngine.classifyMisconception(
+        conceptId, correctAnswer, wrongAnswer, params
+      );
+      await MisconceptionEngine.recordMisconception(
+        db, userId, conceptId, misconception.id, misconception.label
+      );
+    } else if (correct) {
+      // Attempt to resolve any known misconceptions for this concept on correct answer
+      const activeMisconceptions = await MisconceptionEngine.getConceptMisconceptions(db, userId, conceptId);
+      for (const m of activeMisconceptions) {
+        await MisconceptionEngine.resolveMisconception(db, userId, conceptId, m.misconception_type);
+      }
+    }
+
+    // 4. Record lesson analytics (system-level, not per-user)
+    if (templateType) {
+      await AnalyticsEngine.recordLessonEvent(db, templateType, {
+        correct, timeTaken: responseMs, usedHint, abandoned
+      });
+    }
+
+    // 5. Infer and record teaching style signals
+    if (templateType || conceptId) {
+      const signals = TeachingEngine.inferSignalFromResult(
+        { correct, responseMs, usedHint, wasRetry },
+        conceptId
+      );
+      for (const signal of signals) {
+        await TeachingEngine.recordStyleSignal(db, userId, signal.style, signal.outcome);
+      }
+    }
+
+    res.json({
+      success:         true,
+      mastery:         updatedProfile.mastery_score,
+      retention:       retentionScore,
+      nextReview:      retResult.nextReview,
+      misconception:   misconception && misconception.id !== 'unclassified' ? misconception : null
+    });
+  } catch (err) {
+    console.error('[Engine/event]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/engine/next?category=X&level=Y
+// Return the orchestrated "best next concept" for this learner
+app.get('/api/engine/next', authenticateToken, async (req, res) => {
+  const userId   = req.user.id;
+  const category = req.query.category || 'arithmetic';
+  const level    = parseInt(req.query.level) || 1;
+
+  try {
+    const selection = await Orchestrator.selectNextConcept(db, userId, category, level);
+    const styleProfile = await TeachingEngine.getLearningStyle(db, userId);
+
+    res.json({
+      conceptId:   selection.conceptId,
+      reason:      selection.reason,
+      priority:    selection.priority,
+      meta:        selection.meta,
+      learningStyle: styleProfile.dominant
+    });
+  } catch (err) {
+    console.error('[Engine/next]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/engine/learner
+// Full learner snapshot — all concept profiles for the current user
+app.get('/api/engine/learner', authenticateToken, async (req, res) => {
+  try {
+    const snapshot = await LearnerModel.getLearnerSnapshot(db, req.user.id);
+    const style    = await TeachingEngine.getLearningStyle(db, req.user.id);
+    const spikes   = await AnalyticsEngine.detectDifficultySpikes(db, req.user.id);
+    const summary  = await AnalyticsEngine.getUserSessionSummary(db, req.user.id);
+    res.json({ concepts: snapshot, learningStyle: style, difficultySpikes: spikes, summary });
+  } catch (err) {
+    console.error('[Engine/learner]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/engine/learner/concept/:conceptId
+// Single-concept deep profile
+app.get('/api/engine/learner/concept/:conceptId', authenticateToken, async (req, res) => {
+  try {
+    const profile       = await LearnerModel.getProfile(db, req.user.id, req.params.conceptId);
+    const misconceptions = await MisconceptionEngine.getConceptMisconceptions(db, req.user.id, req.params.conceptId);
+    const retention     = await RetentionEngine.getSchedule(db, req.user.id, req.params.conceptId);
+    const liveRetention = await RetentionEngine.getLiveRetention(db, req.user.id, req.params.conceptId);
+    res.json({ profile, misconceptions, retention, liveRetention });
+  } catch (err) {
+    console.error('[Engine/learner/concept]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/engine/misconceptions
+// Active (unresolved) misconceptions for the current user
+app.get('/api/engine/misconceptions', authenticateToken, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const misconceptions = await MisconceptionEngine.getActiveMisconceptions(db, req.user.id, limit);
+    res.json({ misconceptions });
+  } catch (err) {
+    console.error('[Engine/misconceptions]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/engine/retention/due
+// Concepts due for review right now (overdue + decaying)
+app.get('/api/engine/retention/due', authenticateToken, async (req, res) => {
+  try {
+    const overdue  = await RetentionEngine.getOverdueReviews(db, req.user.id);
+    const decaying = await RetentionEngine.getDecayingConcepts(db, req.user.id);
+    res.json({ overdue, decaying, totalDue: overdue.length + decaying.length });
+  } catch (err) {
+    console.error('[Engine/retention/due]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/engine/retention/review
+// Submit a review result for a concept
+app.post('/api/engine/retention/review', authenticateToken, async (req, res) => {
+  const { conceptId, rating } = req.body;
+  if (!conceptId || !rating) return res.status(400).json({ error: 'conceptId and rating (1-4) required' });
+  const clampedRating = Math.min(4, Math.max(1, parseInt(rating)));
+  try {
+    const result = await RetentionEngine.recordReview(db, req.user.id, conceptId, clampedRating);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[Engine/retention/review]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/engine/analytics/recommendations
+// System-level lesson quality and personalised learning recommendations
+app.get('/api/engine/analytics/recommendations', authenticateToken, async (req, res) => {
+  try {
+    const systemRecs = await AnalyticsEngine.getSystemRecommendations(db);
+    const spikes     = await AnalyticsEngine.detectDifficultySpikes(db, req.user.id);
+    const weak       = await LearnerModel.getWeakConcepts(db, req.user.id, 0.6);
+    const stagnant   = await LearnerModel.getStagnantConcepts(db, req.user.id);
+    res.json({
+      systemRecommendations: systemRecs,
+      personalDifficultySpikes: spikes,
+      weakConcepts:   weak.map(w => ({ conceptId: w.concept_id, mastery: w.mastery_score })),
+      stagnantConcepts: stagnant.map(s => ({ conceptId: s.concept_id, velocity: s.learning_velocity }))
+    });
+  } catch (err) {
+    console.error('[Engine/analytics/recommendations]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/engine/competitive/profile
+// Skill-based competitive profile for the current user
+app.get('/api/engine/competitive/profile', authenticateToken, async (req, res) => {
+  try {
+    const profile = await CompetitiveEngine.getCompetitiveProfile(db, req.user.id);
+    res.json(profile);
+  } catch (err) {
+    console.error('[Engine/competitive/profile]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/engine/competitive/update
+// Update competitive rating after a match result
+app.post('/api/engine/competitive/update', authenticateToken, async (req, res) => {
+  const { conceptId, outcome, opponentRating = 1000 } = req.body;
+  if (!conceptId || outcome === undefined) return res.status(400).json({ error: 'conceptId and outcome required' });
+  const clampedOutcome = Math.min(1, Math.max(0, parseFloat(outcome)));
+  try {
+    const result = await CompetitiveEngine.updateCompetitiveRating(
+      db, req.user.id, conceptId, clampedOutcome, opponentRating
+    );
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[Engine/competitive/update]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/engine/competitive/matchpool
+// Find skill-matched opponents for the current user
+app.get('/api/engine/competitive/matchpool', authenticateToken, async (req, res) => {
+  try {
+    const profile     = await CompetitiveEngine.getCompetitiveProfile(db, req.user.id);
+    const candidates  = await CompetitiveEngine.findMatch(db, req.user.id, profile.overallRating);
+    res.json({ candidates, userRating: profile.overallRating, userTier: profile.tier });
+  } catch (err) {
+    console.error('[Engine/competitive/matchpool]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// =====================================================================
+// END INTELLIGENCE ENGINE
+// =====================================================================
+
+// =============================================================
+// NumeraRating System (NRS) — Rating API
+// =============================================================
+
+// ── Internal helpers ──────────────────────────────────────────────────────────
+
+function getRatingRow(userId, domain, callback) {
+  db.get(
+    'SELECT * FROM user_ratings WHERE user_id = ? AND domain = ?',
+    [userId, domain],
+    (err, row) => {
+      if (err) return callback(err);
+      if (row) return callback(null, row);
+      callback(null, {
+        user_id: userId, domain,
+        mu: NRS.MU_INIT, sigma: NRS.SIGMA_INIT,
+        display_rating: 0, sessions_count: 0, last_updated: 0,
+      });
+    }
+  );
+}
+
+function persistRatingUpdate(userId, domain, before, after, sessionMeta, explanation, callback) {
+  const now = Math.floor(Date.now() / 1000);
+  db.run(
+    `INSERT INTO user_ratings (user_id, domain, mu, sigma, display_rating, sessions_count, last_updated)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id, domain) DO UPDATE SET
+       mu             = excluded.mu,
+       sigma          = excluded.sigma,
+       display_rating = excluded.display_rating,
+       sessions_count = excluded.sessions_count,
+       last_updated   = excluded.last_updated`,
+    [userId, domain, after.mu, after.sigma, after.displayRating, after.sessionsCount, now],
+    (errUpsert) => {
+      if (errUpsert) return callback(errUpsert);
+      db.run(
+        `INSERT INTO rating_history
+           (user_id, domain, mu_before, sigma_before, mu_after, sigma_after,
+            display_before, display_after, delta, performance_score, expected_score,
+            components_json, explanation, session_category, session_level, game_mode, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          userId, domain,
+          before.mu, before.sigma, after.mu, after.sigma,
+          before.display_rating, after.displayRating,
+          after.delta, after.performanceScore, after.expectedPerformance,
+          JSON.stringify(after.components),
+          explanation,
+          sessionMeta.category, sessionMeta.level, sessionMeta.gameMode,
+          now,
+        ],
+        (errHist) => callback(errHist)
+      );
+    }
+  );
+}
+
+function maybeUpdateSeasonPeak(userId, domain, displayRating) {
+  db.get('SELECT id FROM seasons WHERE is_active = 1 LIMIT 1', (errS, season) => {
+    if (errS || !season) return;
+    db.run(
+      `INSERT INTO season_ratings (user_id, season_id, domain, peak_display, final_display)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(user_id, season_id, domain) DO UPDATE SET
+         peak_display  = MAX(peak_display, excluded.peak_display),
+         final_display = excluded.final_display`,
+      [userId, season.id, domain, displayRating, displayRating]
+    );
+  });
+}
+
+function nrsUpdateVelocity(userId, domain, delta) {
+  db.get(
+    'SELECT velocity FROM learning_velocity WHERE user_id = ? AND domain = ?',
+    [userId, domain],
+    (err, row) => {
+      const newVel = NRS.updateLearningVelocity(row ? row.velocity : 0, delta);
+      const now = Math.floor(Date.now() / 1000);
+      db.run(
+        `INSERT INTO learning_velocity (user_id, domain, velocity, updated_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(user_id, domain) DO UPDATE SET velocity = excluded.velocity, updated_at = excluded.updated_at`,
+        [userId, domain, newVel, now]
+      );
+    }
+  );
+}
+
+function checkSmurfSignals(userId, excess, sessionsCount) {
+  db.get('SELECT * FROM smurf_signals WHERE user_id = ?', [userId], (err, row) => {
+    const updated = NRS.evaluateSmurfSignals(row || {}, excess, sessionsCount);
+    const now = Math.floor(Date.now() / 1000);
+    db.run(
+      `INSERT INTO smurf_signals (user_id, anomaly_score, consecutive_high, flagged, last_checked)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         anomaly_score    = excluded.anomaly_score,
+         consecutive_high = excluded.consecutive_high,
+         flagged          = MAX(flagged, excluded.flagged),
+         last_checked     = excluded.last_checked`,
+      [userId, updated.anomaly_score, updated.consecutive_high, updated.flagged ? 1 : 0, now]
+    );
+    if (updated.flagged) {
+      securityLog(userId, 'SMURF_FLAG', 'system',
+        `anomaly_score=${updated.anomaly_score.toFixed(3)}, consecutive=${updated.consecutive_high}`);
+    }
+  });
+}
+
+function nrsUpdateTilt(userId, performanceScore, sessionData) {
+  db.get('SELECT * FROM tilt_tracking WHERE user_id = ?', [userId], (err, row) => {
+    const updated = NRS.updateTiltState(row || {}, performanceScore, sessionData);
+    const now = Math.floor(Date.now() / 1000);
+    db.run(
+      `INSERT INTO tilt_tracking (user_id, loss_streak, tilt_score, tilted, last_session)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         loss_streak  = excluded.loss_streak,
+         tilt_score   = excluded.tilt_score,
+         tilted       = excluded.tilted,
+         last_session = excluded.last_session`,
+      [userId, updated.loss_streak, updated.tilt_score, updated.tilted ? 1 : 0, now]
+    );
+    if (updated.tilted && (!row || !row.tilted)) {
+      db.run(
+        `INSERT INTO user_notifications (user_id, title, message, type, read_state, created_at)
+         VALUES (?, 'Take a Break 🧘', ?, 'system', 0, ?)`,
+        [userId,
+         "You've had a tough session run. Taking a short break often improves performance. Your matchmaking will be adjusted to find you better-suited opponents.",
+         now]
+      );
+    }
+  });
+}
+
+// ── POST /api/rating/session ──────────────────────────────────────────────────
+app.post('/api/rating/session', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  let {
+    category, level, solvedCount, totalProblems, errorsCount,
+    speedBonus, comboBonus, usedCalculator, gameMode,
+  } = req.body;
+
+  solvedCount   = Math.min(Math.max(parseInt(solvedCount,   10) || 0, 0), 20);
+  totalProblems = Math.min(Math.max(parseInt(totalProblems, 10) || 3, 1), 20);
+  errorsCount   = Math.min(Math.max(parseInt(errorsCount,   10) || 0, 0), 20);
+  speedBonus    = Math.min(Math.max(parseInt(speedBonus,    10) || 0, 0), 20);
+  comboBonus    = Math.min(Math.max(parseInt(comboBonus,    10) || 0, 0), 15);
+  const lv      = Math.max(1, parseInt(level, 10) || 1);
+  const gMode   = gameMode || 'level';
+  const domain  = NRS.categoryToDomain(category);
+
+  const sessionData = {
+    solvedCount, totalProblems, errorsCount,
+    speedBonus, comboBonus, level: lv,
+    usedCalculator: Boolean(usedCalculator), gameMode: gMode,
+  };
+
+  getRatingRow(userId, 'global', (errG, globalRow) => {
+    if (errG) return res.status(500).json({ error: 'Rating fetch failed' });
+    getRatingRow(userId, domain, (errD, domainRow) => {
+      if (errD) return res.status(500).json({ error: 'Rating fetch failed' });
+
+      const domainResult = NRS.applySessionToRating(domainRow, sessionData);
+      const domainExplanation = NRS.buildRatingExplanation(domain, sessionData, domainResult);
+
+      const globalInfluence = NRS.domainInfluenceWeight(domainRow, globalRow);
+      const scaledDelta = domainResult.delta * globalInfluence;
+      const globalAfter = NRS.applySessionToRating(globalRow, sessionData);
+      globalAfter.mu = globalRow.mu + scaledDelta;
+      globalAfter.displayRating = Math.max(0, Math.floor(globalAfter.mu - 2 * globalAfter.sigma));
+      const globalExplanation = NRS.buildRatingExplanation('global', sessionData, {
+        ...globalAfter, delta: scaledDelta,
+      });
+
+      persistRatingUpdate(userId, domain, domainRow, domainResult,
+        { category, level: lv, gameMode: gMode }, domainExplanation,
+        (errPD) => {
+          if (errPD) return res.status(500).json({ error: 'Domain rating save failed' });
+
+          persistRatingUpdate(userId, 'global', globalRow, globalAfter,
+            { category, level: lv, gameMode: gMode }, globalExplanation,
+            (errPG) => {
+              if (errPG) return res.status(500).json({ error: 'Global rating save failed' });
+
+              maybeUpdateSeasonPeak(userId, domain, domainResult.displayRating);
+              maybeUpdateSeasonPeak(userId, 'global', globalAfter.displayRating);
+              nrsUpdateVelocity(userId, domain, domainResult.delta);
+              nrsUpdateVelocity(userId, 'global', scaledDelta);
+
+              const excess = domainResult.performanceScore - domainResult.expectedPerformance;
+              checkSmurfSignals(userId, excess, domainResult.sessionsCount);
+              nrsUpdateTilt(userId, domainResult.performanceScore, sessionData);
+
+              const newRank = NRS.displayRatingToRank(globalAfter.displayRating, globalAfter.sessionsCount);
+              db.run('UPDATE users SET elo = ?, competitive_matches = ? WHERE id = ?',
+                [Math.round(globalAfter.mu), globalAfter.sessionsCount, userId]);
+
+              res.json({
+                success: true,
+                domain: {
+                  name: domain,
+                  displayRating: domainResult.displayRating,
+                  mu: +domainResult.mu.toFixed(1),
+                  sigma: +domainResult.sigma.toFixed(1),
+                  delta: +domainResult.delta.toFixed(1),
+                  performanceScore: +domainResult.performanceScore.toFixed(3),
+                  explanation: domainExplanation,
+                },
+                global: {
+                  displayRating: globalAfter.displayRating,
+                  mu: +globalAfter.mu.toFixed(1),
+                  sigma: +globalAfter.sigma.toFixed(1),
+                  delta: +scaledDelta.toFixed(1),
+                  rank: newRank,
+                  explanation: globalExplanation,
+                },
+              });
+            }
+          );
+        }
+      );
+    });
+  });
+});
+
+// ── GET /api/rating/profile ───────────────────────────────────────────────────
+app.get('/api/rating/profile', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+
+  db.all(
+    `SELECT r.domain, r.mu, r.sigma, r.display_rating, r.sessions_count, r.last_updated,
+            COALESCE(v.velocity, 0) AS velocity,
+            COALESCE(t.tilt_score, 0) AS tilt_score,
+            COALESCE(t.tilted, 0) AS tilted
+     FROM user_ratings r
+     LEFT JOIN learning_velocity v ON v.user_id = r.user_id AND v.domain = r.domain
+     LEFT JOIN tilt_tracking t ON t.user_id = r.user_id
+     WHERE r.user_id = ?`,
+    [userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const profile = {};
+      (rows || []).forEach(row => {
+        profile[row.domain] = {
+          mu: +row.mu.toFixed(1),
+          sigma: +row.sigma.toFixed(1),
+          displayRating: row.display_rating,
+          rank: NRS.displayRatingToRank(row.display_rating, row.sessions_count),
+          sessionsCount: row.sessions_count,
+          lastUpdated: row.last_updated,
+          velocity: +row.velocity.toFixed(2),
+          tiltScore: +row.tilt_score.toFixed(2),
+          tilted: !!row.tilted,
+        };
+      });
+
+      NRS.KNOWN_DOMAINS.forEach(d => {
+        if (!profile[d]) {
+          profile[d] = {
+            mu: NRS.MU_INIT, sigma: NRS.SIGMA_INIT,
+            displayRating: 0,
+            rank: 'Unranked (Placement: 0/5)',
+            sessionsCount: 0, lastUpdated: 0,
+            velocity: 0, tiltScore: 0, tilted: false,
+          };
+        }
+      });
+
+      db.get('SELECT id, name, start_at, end_at FROM seasons WHERE is_active = 1 LIMIT 1', (errSe, season) => {
+        if (season) {
+          db.all(
+            'SELECT domain, peak_display FROM season_ratings WHERE user_id = ? AND season_id = ?',
+            [userId, season.id],
+            (errPk, peaks) => {
+              const seasonPeaks = {};
+              (peaks || []).forEach(p => { seasonPeaks[p.domain] = p.peak_display; });
+              res.json({ profile, season: { ...season, peaks: seasonPeaks } });
+            }
+          );
+        } else {
+          res.json({ profile, season: null });
+        }
+      });
+    }
+  );
+});
+
+// ── GET /api/rating/history ───────────────────────────────────────────────────
+app.get('/api/rating/history', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const domain = req.query.domain || null;
+  const limit  = Math.min(parseInt(req.query.limit, 10) || 20, 100);
+
+  const where  = domain ? 'WHERE user_id = ? AND domain = ?' : 'WHERE user_id = ?';
+  const params = domain ? [userId, domain, limit] : [userId, limit];
+
+  db.all(
+    `SELECT id, domain, display_before, display_after, delta, performance_score,
+            expected_score, explanation, session_category, session_level, game_mode, created_at
+     FROM rating_history ${where}
+     ORDER BY created_at DESC LIMIT ?`,
+    params,
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
+    }
+  );
+});
+
+// ── GET /api/rating/leaderboard ───────────────────────────────────────────────
+app.get('/api/rating/leaderboard', authenticateToken, (req, res) => {
+  const domain = NRS.KNOWN_DOMAINS.includes(req.query.domain) ? req.query.domain : 'global';
+  const limit  = Math.min(parseInt(req.query.limit, 10) || 20, 100);
+
+  db.all(
+    `SELECT u.username, u.avatar, u.active_badge,
+            r.display_rating, r.sessions_count
+     FROM user_ratings r
+     JOIN users u ON u.id = r.user_id
+     WHERE r.domain = ? AND r.sessions_count >= 5
+     ORDER BY r.display_rating DESC LIMIT ?`,
+    [domain, limit],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(
+        (rows || []).map((row, i) => ({
+          rank: i + 1,
+          username: row.username,
+          avatar: row.avatar,
+          badge: row.active_badge,
+          displayRating: row.display_rating,
+          rankName: NRS.displayRatingToRank(row.display_rating, row.sessions_count),
+          sessionsCount: row.sessions_count,
+        }))
+      );
+    }
+  );
+});
+
+// ── GET /api/rating/matchmaking ───────────────────────────────────────────────
+app.get('/api/rating/matchmaking', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const domain = NRS.KNOWN_DOMAINS.includes(req.query.domain) ? req.query.domain : 'global';
+  const limit  = Math.min(parseInt(req.query.limit, 10) || 10, 50);
+
+  getRatingRow(userId, domain, (errMe, myRow) => {
+    if (errMe) return res.status(500).json({ error: 'Rating lookup failed' });
+
+    db.all(
+      `SELECT u.id, u.username, u.avatar, r.mu, r.sigma, r.display_rating, r.sessions_count,
+              COALESCE(t.tilt_score, 0) AS tilt_score
+       FROM user_ratings r
+       JOIN users u ON u.id = r.user_id
+       LEFT JOIN tilt_tracking t ON t.user_id = r.user_id
+       WHERE r.domain = ? AND r.user_id != ? AND r.sessions_count >= 3`,
+      [domain, userId],
+      (err, candidates) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        db.get('SELECT tilt_score FROM tilt_tracking WHERE user_id = ?', [userId], (_, tiltRow) => {
+          const myTilt = tiltRow ? tiltRow.tilt_score : 0;
+
+          const scored = (candidates || []).map(c => {
+            let quality = NRS.computeMatchQuality(myRow, c);
+            if (c.tilt_score > 0.5 && myTilt > 0.5) quality *= 0.6;
+            return { ...c, matchQuality: quality };
+          });
+          scored.sort((a, b) => b.matchQuality - a.matchQuality);
+
+          res.json(
+            scored.slice(0, limit).map(c => ({
+              userId: c.id,
+              username: c.username,
+              avatar: c.avatar,
+              displayRating: c.display_rating,
+              rankName: NRS.displayRatingToRank(c.display_rating, c.sessions_count),
+              matchQuality: +c.matchQuality.toFixed(3),
+              sessionsCount: c.sessions_count,
+            }))
+          );
+        });
+      }
+    );
+  });
+});
+
+// ── GET /api/rating/season ────────────────────────────────────────────────────
+app.get('/api/rating/season', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+
+  db.get('SELECT * FROM seasons WHERE is_active = 1 LIMIT 1', (errSe, season) => {
+    if (errSe || !season) return res.json({ season: null });
+    const now = Math.floor(Date.now() / 1000);
+    const daysRemaining = Math.max(0, Math.ceil((season.end_at - now) / 86400));
+
+    db.all(
+      `SELECT sr.domain, sr.peak_display, sr.final_display, r.display_rating
+       FROM season_ratings sr
+       LEFT JOIN user_ratings r ON r.user_id = sr.user_id AND r.domain = sr.domain
+       WHERE sr.user_id = ? AND sr.season_id = ?`,
+      [userId, season.id],
+      (errPk, peaks) => {
+        res.json({
+          season: { id: season.id, name: season.name, startAt: season.start_at, endAt: season.end_at, daysRemaining },
+          myPeaks: (peaks || []).map(p => ({
+            domain: p.domain, peakDisplay: p.peak_display,
+            finalDisplay: p.final_display, currentDisplay: p.display_rating,
+          })),
+        });
+      }
+    );
+  });
+});
+
+// ── POST /api/rating/season/end — admin only ──────────────────────────────────
+app.post('/api/rating/season/end', authenticateToken, (req, res) => {
+  if (!['admin'].includes(req.user.username)) return res.status(403).json({ error: 'Admin only' });
+
+  const now = Math.floor(Date.now() / 1000);
+  const newSeasonName   = req.body.newSeasonName || `Season (${new Date().toLocaleDateString()})`;
+  const newDurationDays = Math.min(Math.max(parseInt(req.body.durationDays, 10) || 90, 30), 365);
+
+  db.get('SELECT * FROM seasons WHERE is_active = 1 LIMIT 1', (errS, oldSeason) => {
+    if (errS || !oldSeason) return res.status(400).json({ error: 'No active season found' });
+
+    db.run('UPDATE seasons SET is_active = 0, end_at = ? WHERE id = ?', [now, oldSeason.id], (errEnd) => {
+      if (errEnd) return res.status(500).json({ error: errEnd.message });
+
+      const newEnd = now + newDurationDays * 86400;
+      db.run(
+        'INSERT INTO seasons (name, start_at, end_at, is_active) VALUES (?, ?, ?, 1)',
+        [newSeasonName, now, newEnd],
+        function(errNew) {
+          if (errNew) return res.status(500).json({ error: errNew.message });
+
+          db.all('SELECT user_id, domain, mu, sigma FROM user_ratings', (errAll, allRatings) => {
+            if (errAll || !allRatings || allRatings.length === 0) {
+              return res.json({ success: true, playersReset: 0 });
+            }
+            let pending = allRatings.length;
+            allRatings.forEach(row => {
+              const { mu: newMu, sigma: newSigma } = NRS.applySeasonReset(row.mu, row.sigma);
+              const newDisplay = Math.max(0, Math.floor(newMu - 2 * newSigma));
+              db.run(
+                'UPDATE user_ratings SET mu = ?, sigma = ?, display_rating = ? WHERE user_id = ? AND domain = ?',
+                [newMu, newSigma, newDisplay, row.user_id, row.domain],
+                () => {
+                  if (--pending === 0) res.json({ success: true, playersReset: allRatings.length });
+                }
+              );
+            });
+          });
+        }
+      );
+    });
+  });
+});
+
+// ── GET /api/rating/analytics — admin only ────────────────────────────────────
+app.get('/api/rating/analytics', authenticateToken, (req, res) => {
+  if (!['admin'].includes(req.user.username)) return res.status(403).json({ error: 'Admin only' });
+
+  const since = Math.floor(Date.now() / 1000) - 30 * 86400;
+
+  db.all(
+    `SELECT domain,
+            COUNT(*) AS total_sessions,
+            AVG(delta) AS avg_delta,
+            AVG(performance_score) AS avg_performance,
+            AVG(expected_score) AS avg_expected,
+            AVG(ABS(performance_score - expected_score)) AS avg_prediction_error
+     FROM rating_history WHERE created_at >= ?
+     GROUP BY domain`,
+    [since],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      db.get('SELECT COUNT(*) AS n FROM smurf_signals WHERE flagged = 1', (_, sm) => {
+        db.get('SELECT COUNT(*) AS n, AVG(tilt_score) AS avg FROM tilt_tracking WHERE tilted = 1', (_, tl) => {
+          res.json({
+            domainStats: (rows || []).map(r => ({
+              domain: r.domain,
+              totalSessions: r.total_sessions,
+              avgRatingDelta: +(r.avg_delta || 0).toFixed(2),
+              avgPerformance: +(r.avg_performance || 0).toFixed(3),
+              avgExpected: +(r.avg_expected || 0).toFixed(3),
+              avgPredictionError: +(r.avg_prediction_error || 0).toFixed(3),
+              inflationSignal: (r.avg_delta || 0) > 5 ? 'inflation' :
+                               (r.avg_delta || 0) < -5 ? 'deflation' : 'stable',
+            })),
+            integrity: {
+              flaggedSmurfAccounts: sm ? sm.n : 0,
+              tiltedPlayersNow: tl ? tl.n : 0,
+              avgTiltScore: tl ? +(tl.avg || 0).toFixed(3) : 0,
+            },
+          });
+        });
+      });
+    }
+  );
+});
+
+// ── GET /api/rating/explanation/:sessionId ────────────────────────────────────
+app.get('/api/rating/explanation/:sessionId', authenticateToken, (req, res) => {
+  const id = parseInt(req.params.sessionId, 10);
+  if (isNaN(id)) return res.status(400).json({ error: 'Invalid session ID' });
+
+  db.get(
+    'SELECT * FROM rating_history WHERE id = ? AND user_id = ?',
+    [id, req.user.id],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!row) return res.status(404).json({ error: 'Not found' });
+      let components = {};
+      try { components = JSON.parse(row.components_json); } catch(e) {}
+      res.json({
+        domain: row.domain, category: row.session_category,
+        level: row.session_level, gameMode: row.game_mode,
+        displayBefore: row.display_before, displayAfter: row.display_after,
+        delta: +row.delta.toFixed(1),
+        performanceScore: +row.performance_score.toFixed(3),
+        expectedScore: +row.expected_score.toFixed(3),
+        components, explanation: row.explanation, date: row.created_at,
+      });
+    }
+  );
+});
+
+// =============================================================
+// END NumeraRating System
+// =============================================================
 
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: "*" } });
@@ -3669,11 +4574,12 @@ function matchmake(queueArray, isRanked) {
   }
 }
 
-// Matchmaking intervals
+// Matchmaking intervals. unref() so this timer never keeps the process alive on its
+// own (the http server owns process lifetime); also lets test imports exit cleanly.
 setInterval(() => {
   matchmake(rankedQueue, true);
   matchmake(casualQueue, false);
-}, 1500);
+}, 1500).unref();
 
 io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);
@@ -4185,10 +5091,15 @@ function setupAdbReverse() {
   });
 }
 
-// Start Server
-server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-  setupAdbReverse();
-  // Continuously attempt setup every 10 seconds in case the emulator is started after the server
-  setInterval(setupAdbReverse, 10000);
-});
+// Start Server — only when run directly (`node server.js`). When imported by tests the
+// app/server/io/db are exported instead so the test harness controls the lifecycle.
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+    setupAdbReverse();
+    // Continuously attempt setup every 10 seconds in case the emulator is started after the server
+    setInterval(setupAdbReverse, 10000);
+  });
+}
+
+module.exports = { app, server, io, db, ready };

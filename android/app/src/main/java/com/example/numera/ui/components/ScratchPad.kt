@@ -11,12 +11,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +32,7 @@ import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawscope.Stroke as DrawStroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.haptic.HapticManager
@@ -51,29 +54,35 @@ fun ScratchPad(
     onClose: () -> Unit
 ) {
     var isEraserMode by remember { mutableStateOf(false) }
-    var selectedColor by remember { mutableStateOf(Color(0xFF2D3748)) } // Charcoal default
+    var selectedColor by remember { mutableStateOf(Color(0xFF2D3748)) }
     val isDarkMode = !MaterialTheme.colorScheme.background.luminance().let { it > 0.5 }
-    
-    // Auto-update color based on light/dark theme if charcoal/white is selected
+
+    // Multi-page: page 0 uses the externally-keyed strokes; extra pages live here
+    val extraPages = remember { mutableStateListOf<SnapshotStateList<ScratchStroke>>() }
+    val extraRedoPages = remember { mutableStateListOf<SnapshotStateList<ScratchStroke>>() }
+    var currentPage by remember { mutableIntStateOf(0) }
+    val totalPages = extraPages.size + 1
+
+    val activeStrokes: MutableList<ScratchStroke> =
+        if (currentPage == 0) strokes else extraPages[currentPage - 1]
+    val activeRedoStrokes: MutableList<ScratchStroke> =
+        if (currentPage == 0) redoStrokes else extraRedoPages[currentPage - 1]
+
     val activeStrokeColor = remember(selectedColor, isDarkMode) {
         if (selectedColor == Color(0xFF2D3748) || selectedColor == Color.White) {
             if (isDarkMode) Color.White else Color(0xFF2D3748)
-        } else {
-            selectedColor
-        }
+        } else selectedColor
     }
 
     val strokeWidth = if (isEraserMode) 35f else 8f
 
-    // Standard high-quality colors
     val colorOptions = listOf(
         if (isDarkMode) Color.White else Color(0xFF2D3748),
-        Color(0xFF3182CE), // Ocean Blue
-        Color(0xFF38A169), // Forest Green
-        Color(0xFFE53E3E)  // Coral Red
+        Color(0xFF3182CE),
+        Color(0xFF38A169),
+        Color(0xFFE53E3E)
     )
 
-    // Current drawing state
     var currentPoints = remember { mutableStateListOf<Offset>() }
 
     Column(
@@ -87,7 +96,64 @@ fun ScratchPad(
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
             )
     ) {
-        // Grab Handle & Toolbar
+        // Page tab bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            repeat(totalPages) { idx ->
+                val isActive = idx == currentPage
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            if (isActive) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+                        )
+                        .clickable {
+                            currentPage = idx
+                            currentPoints.clear()
+                            HapticManager.playSoft()
+                        }
+                        .padding(horizontal = 12.dp, vertical = 5.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "P${idx + 1}",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isActive) MaterialTheme.colorScheme.onPrimary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
+            // Add new page
+            if (totalPages < 6) {
+                IconButton(
+                    onClick = {
+                        extraPages.add(mutableStateListOf())
+                        extraRedoPages.add(mutableStateListOf())
+                        currentPage = extraPages.size  // go to the new page
+                        currentPoints.clear()
+                        HapticManager.playSoft()
+                    },
+                    modifier = Modifier.size(30.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "New Page",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+
+        // Toolbar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -96,14 +162,9 @@ fun ScratchPad(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // Left: Pen / Eraser
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 IconButton(
-                    onClick = {
-                        isEraserMode = false
-                        HapticManager.playSoft()
-                    },
+                    onClick = { isEraserMode = false; HapticManager.playSoft() },
                     colors = IconButtonDefaults.iconButtonColors(
                         containerColor = if (!isEraserMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent
                     )
@@ -114,12 +175,8 @@ fun ScratchPad(
                         tint = if (!isEraserMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
                     )
                 }
-
                 IconButton(
-                    onClick = {
-                        isEraserMode = true
-                        HapticManager.playSoft()
-                    },
+                    onClick = { isEraserMode = true; HapticManager.playSoft() },
                     colors = IconButtonDefaults.iconButtonColors(
                         containerColor = if (isEraserMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent
                     )
@@ -132,17 +189,13 @@ fun ScratchPad(
                 }
             }
 
-            // Middle: Color selector (hidden when in eraser mode)
+            // Middle: Color selector
             if (!isEraserMode) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     colorOptions.forEach { color ->
-                        val isSelected = selectedColor == color || 
+                        val isSelected = selectedColor == color ||
                             (color == Color.White && selectedColor == Color(0xFF2D3748)) ||
                             (color == Color(0xFF2D3748) && selectedColor == Color.White)
-
                         Box(
                             modifier = Modifier
                                 .size(24.dp)
@@ -150,92 +203,69 @@ fun ScratchPad(
                                 .background(color)
                                 .border(
                                     width = if (isSelected) 2.dp else 1.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f).copy(alpha = 0.5f),
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                     shape = CircleShape
                                 )
-                                .clickable {
-                                    selectedColor = color
-                                    HapticManager.playSoft()
-                                }
+                                .clickable { selectedColor = color; HapticManager.playSoft() }
                         )
                     }
                 }
             } else {
-                Text(
-                    text = "Eraser Active",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
+                Text("Eraser Active", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), modifier = Modifier.padding(horizontal = 8.dp))
             }
 
             // Right: Undo, Redo, Clear, Close
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = {
-                        if (strokes.isNotEmpty()) {
-                            val last = strokes.removeAt(strokes.size - 1)
-                            redoStrokes.add(last)
+                        if (activeStrokes.isNotEmpty()) {
+                            val last = activeStrokes.removeAt(activeStrokes.size - 1)
+                            activeRedoStrokes.add(last)
                             HapticManager.playSoft()
                         }
                     },
-                    enabled = strokes.isNotEmpty()
+                    enabled = activeStrokes.isNotEmpty()
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Undo,
                         contentDescription = "Undo",
-                        tint = if (strokes.isNotEmpty()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f).copy(alpha = 0.4f)
+                        tint = if (activeStrokes.isNotEmpty()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                     )
                 }
-
                 IconButton(
                     onClick = {
-                        if (redoStrokes.isNotEmpty()) {
-                            val last = redoStrokes.removeAt(redoStrokes.size - 1)
-                            strokes.add(last)
+                        if (activeRedoStrokes.isNotEmpty()) {
+                            val last = activeRedoStrokes.removeAt(activeRedoStrokes.size - 1)
+                            activeStrokes.add(last)
                             HapticManager.playSoft()
                         }
                     },
-                    enabled = redoStrokes.isNotEmpty()
+                    enabled = activeRedoStrokes.isNotEmpty()
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Redo,
                         contentDescription = "Redo",
-                        tint = if (redoStrokes.isNotEmpty()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f).copy(alpha = 0.4f)
+                        tint = if (activeRedoStrokes.isNotEmpty()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                     )
                 }
-
                 IconButton(
                     onClick = {
-                        if (strokes.isNotEmpty()) {
-                            strokes.clear()
-                            redoStrokes.clear()
+                        if (activeStrokes.isNotEmpty()) {
+                            activeStrokes.clear()
+                            activeRedoStrokes.clear()
                             HapticManager.playSoft()
                         }
                     },
-                    enabled = strokes.isNotEmpty()
+                    enabled = activeStrokes.isNotEmpty()
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Clear All",
-                        tint = if (strokes.isNotEmpty()) Color(0xFFE53E3E) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f).copy(alpha = 0.4f)
+                        contentDescription = "Clear Page",
+                        tint = if (activeStrokes.isNotEmpty()) Color(0xFFE53E3E) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                     )
                 }
-
-                IconButton(
-                    onClick = {
-                        HapticManager.playSoft()
-                        onClose()
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Close Board",
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
+                IconButton(onClick = { HapticManager.playSoft(); onClose() }) {
+                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close Board", tint = MaterialTheme.colorScheme.onBackground)
                 }
             }
         }
@@ -247,7 +277,7 @@ fun ScratchPad(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .pointerInput(isEraserMode, activeStrokeColor) {
+                .pointerInput(isEraserMode, activeStrokeColor, currentPage) {
                     detectDragGestures(
                         onDragStart = { offset ->
                             currentPoints.clear()
@@ -271,7 +301,7 @@ fun ScratchPad(
                                     }
                                 }
                                 
-                                strokes.add(
+                                activeStrokes.add(
                                     ScratchStroke(
                                         points = strokePoints,
                                         color = activeStrokeColor,
@@ -279,7 +309,7 @@ fun ScratchPad(
                                         isEraser = isEraserMode
                                     )
                                 )
-                                redoStrokes.clear() // Clear redo stack on new stroke
+                                activeRedoStrokes.clear()
                             }
                             currentPoints.clear()
                         },
@@ -318,7 +348,7 @@ fun ScratchPad(
                     canvas.saveLayer(Rect(0f, 0f, canvasWidth, canvasHeight), paint)
 
                     // Draw completed strokes
-                    strokes.forEach { stroke ->
+                    activeStrokes.forEach { stroke ->
                         if (!stroke.isEraser) {
                             drawStrokeCurve(this, stroke.points, stroke.color, stroke.width)
                         } else {

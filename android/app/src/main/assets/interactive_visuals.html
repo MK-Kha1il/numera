@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+  html, body { margin:0; padding:0; height:100%; background:transparent;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; overflow:hidden; }
+  #root { position:absolute; left:0; right:0; top:0; display:flex; flex-direction:column; height:300px; }
+  #prompt { font-size:13.5px; line-height:1.4; padding:12px 16px 6px 16px; font-weight:650; flex:0 0 auto; letter-spacing:0.1px; }
+  #stage { position:relative; flex:1 1 auto; min-height:150px; }
+  canvas { display:block; width:100%; height:100%; touch-action:none; }
+  #goal { font-size:11px; line-height:1.3; padding:0 16px 10px 16px; opacity:0.62; font-style:italic; flex:0 0 auto; }
+  #cover { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  #coverBtn { padding:11px 20px; border-radius:16px; font-size:13px; font-weight:800; border:none; box-shadow:0 6px 16px rgba(0,0,0,0.18); }
+  #dbg { position:absolute; left:8px; bottom:4px; font-size:9px; color:#c0392b; font-family:monospace; pointer-events:none; white-space:pre; display:none; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div id="root">
+  <div id="prompt"></div>
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="cover" class="hidden"><button id="coverBtn">Tap to explore ✦</button></div>
+    <div id="dbg"></div>
+  </div>
+  <div id="goal"></div>
+</div>
+<script>
+"use strict";
+
+// ===========================================================================
+//  Config + theme handshake
+// ===========================================================================
+var THEME = { bg:"#FFFFFF", surface:"#F2F2F7", primary:"#58CC02", secondary:"#1899D6",
+  tertiary:"#FF9600", onSurface:"#2A2A33", border:"#E0E0E6", subtext:"#8A8A95",
+  correct:"#58CC02", wrong:"#EA2B2B" };
+var SPEC = { type:"none", params:{}, prompt:"", goal:"" };
+var HOST_H = 0;
+
+try { if (window.AndroidBridge && AndroidBridge.getTheme)   THEME   = JSON.parse(AndroidBridge.getTheme()); } catch(e){}
+try { if (window.AndroidBridge && AndroidBridge.getSpec)    SPEC    = JSON.parse(AndroidBridge.getSpec());  } catch(e){}
+try { if (window.AndroidBridge && AndroidBridge.getHeightDp) HOST_H = AndroidBridge.getHeightDp() || 0;     } catch(e){}
+try {
+  var qs = new URLSearchParams(window.location.search);
+  if (qs.get("spec"))   SPEC   = JSON.parse(decodeURIComponent(qs.get("spec")));
+  if (qs.get("theme"))  THEME  = JSON.parse(decodeURIComponent(qs.get("theme")));
+  if (qs.get("h"))      HOST_H = parseInt(qs.get("h"), 10) || 0;
+} catch(e){}
+
+function postEvent(o){ try { o.type = o.type || SPEC.type; if (window.AndroidBridge && AndroidBridge.onEvent) AndroidBridge.onEvent(JSON.stringify(o)); } catch(e){} }
+
+// Opaque bg matching the host card keeps the canvas layer compositing reliably.
+try { document.documentElement.style.background = THEME.surface; document.body.style.background = THEME.surface; } catch(e){}
+// Drive layout from the host height (CSS px == dp here) — WebView viewport height is unreliable.
+if (HOST_H > 0) { document.getElementById("root").style.height = HOST_H + "px"; }
+
+// ===========================================================================
+//  Canvas plumbing
+// ===========================================================================
+var cv = document.getElementById("cv");
+var ctx = cv.getContext("2d");
+var W = 0, H = 0, DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+var needsDraw = true;
+
+function viewW(){ var st=document.getElementById("stage"); return st.clientWidth || document.documentElement.clientWidth || window.innerWidth || 320; }
+function viewH(){
+  var st=document.getElementById("stage"); var h=st.clientHeight;
+  if (h < 60){ // stage collapsed — derive from host height minus the text bands
+    var bands = document.getElementById("prompt").offsetHeight + document.getElementById("goal").offsetHeight;
+    h = (HOST_H>0 ? HOST_H : (window.innerHeight||260)) - bands;
+  }
+  return Math.max(140, h);
+}
+function resize(){
+  W = viewW(); H = viewH();
+  cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  if (active){ if (active.layout) active.layout(); paint(); requestRender(); }
+  else needsDraw = true;
+}
+
+// ===========================================================================
+//  Math / easing / color helpers
+// ===========================================================================
+var TAU = Math.PI*2;
+function lerp(a,b,t){ return a+(b-a)*t; }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function easeOutCubic(t){ t=clamp(t,0,1); return 1-Math.pow(1-t,3); }
+function easeInOutCubic(t){ t=clamp(t,0,1); return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2; }
+function easeOutBack(t){ t=clamp(t,0,1); var c1=1.70158,c3=c1+1; return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2); }
+
+function hexToRgb(h){ h=(h||"#000").replace("#",""); if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  var n=parseInt(h,16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+function rgba(hex,a){ var c=hexToRgb(hex); return "rgba("+c[0]+","+c[1]+","+c[2]+","+a+")"; }
+function shade(hex,amt){ var c=hexToRgb(hex); // amt>0 lighten, <0 darken
+  function f(x){ return Math.round(clamp(amt>0 ? x+(255-x)*amt : x*(1+amt), 0,255)); }
+  return "rgb("+f(c[0])+","+f(c[1])+","+f(c[2])+")"; }
+
+// ===========================================================================
+//  Spring — eased animated scalar
+// ===========================================================================
+function Spring(v,k){ this.cur=(v||0); this.tgt=this.cur; this.k=(k||0.22); }
+Spring.prototype.to  = function(t){ this.tgt=t; return this; };
+Spring.prototype.set = function(v){ this.cur=this.tgt=v; return this; };
+Spring.prototype.step= function(){ this.cur += (this.tgt-this.cur)*this.k; if(Math.abs(this.tgt-this.cur)<0.0006) this.cur=this.tgt; return this.cur; };
+Spring.prototype.moving = function(){ return Math.abs(this.tgt-this.cur)>0.0012; };
+
+// ===========================================================================
+//  Premium draw helpers
+// ===========================================================================
+function rr(x,y,w,h,r){ r=Math.min(r,Math.abs(w)/2,Math.abs(h)/2); ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function fillRR(x,y,w,h,r,col){ rr(x,y,w,h,r); ctx.fillStyle=col; ctx.fill(); }
+function strokeRR(x,y,w,h,r,col,lw){ rr(x,y,w,h,r); ctx.strokeStyle=col; ctx.lineWidth=lw||2; ctx.stroke(); }
+// vertical gradient rounded rect with soft top sheen
+function gradRR(x,y,w,h,r,col){ rr(x,y,w,h,r);
+  var g=ctx.createLinearGradient(0,y,0,y+h); g.addColorStop(0,shade(col,0.18)); g.addColorStop(1,shade(col,-0.10));
+  ctx.fillStyle=g; ctx.fill(); }
+function shadowOn(blur,col,dy){ ctx.save(); ctx.shadowBlur=blur; ctx.shadowColor=col; ctx.shadowOffsetY=dy||0; }
+function shadowOff(){ ctx.restore(); }
+function glow(x,y,r,col,inten){ var g=ctx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0,rgba(col,inten)); g.addColorStop(1,rgba(col,0));
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); }
+function text(s,x,y,size,col,align,weight){ ctx.fillStyle=col||THEME.onSurface;
+  ctx.font=(weight||"600")+" "+(size||14)+"px -apple-system,Roboto,Arial,sans-serif";
+  ctx.textAlign=align||"center"; ctx.textBaseline="middle"; ctx.fillText(s,x,y); }
+
+// ---- on-canvas pill buttons with press feedback -------------------------
+var buttons = [];
+var pressSpring = {}; // id -> Spring(scale)
+function button(id,x,y,w,h,label,col,disabled,onTap){
+  if(!pressSpring[id]) pressSpring[id]=new Spring(1,0.35);
+  var b={id:id,x:x,y:y,w:w,h:h,label:label,col:col||THEME.primary,disabled:!!disabled,onTap:onTap};
+  buttons.push(b); return b;
+}
+function drawButtons(){
+  for(var i=0;i<buttons.length;i++){ var b=buttons[i]; var sp=pressSpring[b.id]; var s=sp?sp.step():1;
+    var cx=b.x+b.w/2, cy=b.y+b.h/2; ctx.save(); ctx.translate(cx,cy); ctx.scale(s,s); ctx.translate(-cx,-cy);
+    if(!b.disabled){ shadowOn(12*s, rgba(b.col,0.45), 4*s); fillRR(b.x,b.y,b.w,b.h,b.h/2.4, b.col); shadowOff();
+      var g=ctx.createLinearGradient(0,b.y,0,b.y+b.h); g.addColorStop(0,shade(b.col,0.22)); g.addColorStop(1,shade(b.col,-0.06));
+      rr(b.x,b.y,b.w,b.h,b.h/2.4); ctx.fillStyle=g; ctx.fill();
+      text(b.label,cx,cy,13.5,"#FFFFFF","center","800");
+    } else {
+      fillRR(b.x,b.y,b.w,b.h,b.h/2.4, rgba(THEME.subtext,0.16));
+      text(b.label,cx,cy,13.5, THEME.subtext,"center","700");
+    }
+    ctx.restore();
+  }
+}
+function hit(b,x,y){ var pad=8; return x>=b.x-pad&&x<=b.x+b.w+pad&&y>=b.y-pad&&y<=b.y+b.h+pad; }
+function pressBtn(b){ if(pressSpring[b.id]) pressSpring[b.id].set(0.9).to(1); }
+
+// ---- particles (celebration) --------------------------------------------
+var particles=[];
+function burst(x,y,colors,n){ n=n||26; for(var i=0;i<n;i++){ var a=Math.random()*TAU, sp=2+Math.random()*5.5;
+  particles.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,life:1,
+    col:colors[(Math.random()*colors.length)|0], sz:3+Math.random()*4, rot:Math.random()*TAU, vr:(Math.random()-0.5)*0.4}); } }
+function stepParticles(dt){ for(var i=particles.length-1;i>=0;i--){ var p=particles[i];
+  p.vy+=14*dt; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life-=dt*1.05; if(p.life<=0) particles.splice(i,1); } }
+function drawParticles(){ for(var i=0;i<particles.length;i++){ var p=particles[i]; ctx.save();
+  ctx.globalAlpha=clamp(p.life,0,1); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+  fillRR(-p.sz/2,-p.sz/2,p.sz,p.sz*1.4,1.5,p.col); ctx.restore(); } }
+
+// ===========================================================================
+//  Animation loop  (runs only while something is moving, then idles)
+// ===========================================================================
+var clock=0, lastTs=0, entrance=0, lastErr="";
+var rafPending=false;
+function requestRender(){ if(!rafPending){ rafPending=true; requestAnimationFrame(frame); } }
+function frame(ts){ rafPending=false;
+  if(!lastTs) lastTs=ts; var dt=Math.min(0.05,(ts-lastTs)/1000); lastTs=ts; clock+=dt;
+  entrance=Math.min(1, entrance + dt/0.55);
+  if(active && active.update) active.update(dt);
+  stepParticles(dt);
+  paint();
+  if(anyAnim()) requestRender(); else lastTs=0;
+}
+function anyAnim(){ if(entrance<1) return true; if(particles.length>0) return true;
+  if(active && active.animating && active.animating()) return true;
+  for(var k in pressSpring) if(pressSpring[k].moving()) return true;
+  return false;
+}
+function clearCanvas(){ ctx.clearRect(0,0,W,H); }
+function paint(){
+  try{
+    clearCanvas();
+    var e=easeOutCubic(entrance);
+    ctx.save();
+    ctx.globalAlpha=e;
+    var s=0.97+0.03*e, oy=(1-e)*10;
+    ctx.translate(W/2,H/2+oy); ctx.scale(s,s); ctx.translate(-W/2,-H/2);
+    buttons.length=0;
+    if(active) active.draw();
+    drawButtons();
+    ctx.restore();
+    drawParticles();
+    lastErr="";
+  }catch(err){ lastErr=(err&&err.message)||String(err);
+    var d=document.getElementById("dbg"); if(d){ d.style.display="block"; d.textContent="ERR "+lastErr; } }
+  needsDraw=false;
+}
+function celebrate(x,y){ burst(x,y,[THEME.primary,THEME.secondary,THEME.tertiary,"#FFD54A"],30); requestRender(); }
+
+// ===========================================================================
+//  MODULE REGISTRY
+// ===========================================================================
+var MODULES={}; var active=null;
+
+// =================== BALANCE SCALE =========================================
+MODULES.balance_scale = (function(){
+  var a,b,c,sol,step,solved;
+  var beam, tiltErr, popT, glowT, pans, hintA;
+  function init(s){ a=s.params.a; b=s.params.b||0; c=s.params.c; sol=s.params.solution;
+    step=0; solved=false; tiltErr=0; popT=0; glowT=0; hintA=new Spring(0,0.18);
+    beam=new Spring(0,0.14); rebuild(); }
+  var ax,lb,rb;
+  function rebuild(){ ax=a; lb=b; rb=c; popT=0; }
+  function weight(){ return (ax*sol+lb)-rb; }
+  function setBalanced(){ if(step===0){ax=a;lb=b;rb=c;} else if(step===1){ax=a;lb=0;rb=c-b;} else {ax=1;lb=0;rb=Math.round((c-b)/a);} tiltErr=0; }
+  function doStep(){
+    if(step===0 && b!==0){ lb=0; rb=c-b; step=1; popT=0; postEvent({event:"manipulate",detail:"subtract_both"}); }
+    else if(step<=1 && a>1){ ax=1; rb=Math.round((c-b)/a); step=2; popT=0; postEvent({event:"manipulate",detail:"divide_both"}); }
+    else { step=3; solved=true; glowT=1; postEvent({event:"solve",detail:"x="+sol});
+      var p=pans?pans.cx:W/2; celebrate(W/2, H*0.42); }
+    requestRender();
+  }
+  function bumpOneSide(side){ if(solved) return;
+    if(side==="L"&&lb>0) lb--; else if(side==="R"&&rb>0) rb--; else return;
+    tiltErr=weight(); hintA.to(1); postEvent({event:"discover",detail:"imbalance"});
+    setTimeout(function(){ setBalanced(); hintA.to(0); requestRender(); }, 1150); requestRender();
+  }
+  function layout(){}
+  function update(dt){ beam.to(clamp(-tiltErr*0.05,-0.20,0.20)); beam.step();
+    popT=Math.min(1,popT+dt/0.45); glowT=Math.max(0,glowT-dt*0.4); hintA.step(); }
+  function animating(){ return beam.moving() || popT<1 || glowT>0 || hintA.moving(); }
+
+  function draw(){
+    var cx=W/2, top=H*0.16, beamY=top+8, halfW=Math.min(150, W*0.34);
+    pans={cx:cx};
+    // solved glow halo
+    if(glowT>0) glow(cx, beamY+70, 150, THEME.correct, 0.35*glowT);
+    // central post
+    ctx.strokeStyle=rgba(THEME.subtext,0.5); ctx.lineWidth=5; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(cx,beamY); ctx.lineTo(cx,beamY+96); ctx.stroke();
+    fillRR(cx-16,beamY+92,32,12,5, rgba(THEME.subtext,0.5));
+    var ang=beam.cur;
+    // beam
+    ctx.save(); ctx.translate(cx,beamY); ctx.rotate(ang);
+    shadowOn(10, rgba(THEME.secondary,0.4), 3);
+    rr(-halfW,-5,halfW*2,10,5);
+    var bg=ctx.createLinearGradient(0,-5,0,5); bg.addColorStop(0,shade(THEME.secondary,0.2)); bg.addColorStop(1,shade(THEME.secondary,-0.1));
+    ctx.fillStyle=bg; ctx.fill(); shadowOff();
+    ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(0,0,8,0,TAU); ctx.fill();
+    ctx.fillStyle=THEME.secondary; ctx.beginPath(); ctx.arc(0,0,4.5,0,TAU); ctx.fill();
+    ctx.restore();
+    function anchor(sign){ return { x:cx+sign*halfW*Math.cos(ang), y:beamY+sign*halfW*Math.sin(ang) }; }
+    var L=anchor(-1), R=anchor(1);
+    drawPan(L.x, beamY, "L"); drawPan(R.x, beamY, "R");
+    // equation
+    var eq = step>=3 ? ("x = "+sol)
+      : ((ax>1?ax:(ax===1?"":ax))+"x"+(lb>0?" + "+lb:(lb<0?" − "+(-lb):""))+" = "+rb);
+    text(eq, cx, beamY+128, step>=3?22:18, step>=3?THEME.correct:THEME.onSurface, "center","800");
+    // hint
+    if(hintA.cur>0.02){ ctx.globalAlpha=hintA.cur;
+      text("⚖ Keep it balanced — do the same to BOTH sides", cx, H-58, 12, THEME.wrong,"center","700");
+      ctx.globalAlpha=1; }
+    // action button
+    var label = (step===0&&b!==0)?("Subtract "+b+" from both")
+      : (a>1&&step<2)?("Divide both by "+a) : (step>=3?"Solved ✓":"Reveal x");
+    var bw=Math.min(250,W-44), bh=44, bx=cx-bw/2, by=H-bh-12;
+    button("act",bx,by,bw,bh,label, step>=3?THEME.correct:THEME.primary, step>=3, doStep);
+  }
+  var panRects={};
+  function drawPan(px, beamY, side){
+    var hangTop=beamY, py=beamY+92, pw=128;
+    // hang lines
+    ctx.strokeStyle=rgba(THEME.subtext,0.4); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(px,hangTop); ctx.lineTo(px-pw/2+8,py); ctx.moveTo(px,hangTop); ctx.lineTo(px+pw/2-8,py); ctx.stroke();
+    // tray
+    shadowOn(10, rgba(0,0,0,0.12), 4);
+    rr(px-pw/2, py, pw, 14, 7); var tg=ctx.createLinearGradient(0,py,0,py+14);
+    tg.addColorStop(0,shade(THEME.surface,-0.04)); tg.addColorStop(1,shade(THEME.surface,-0.14));
+    ctx.fillStyle=tg; ctx.fill(); shadowOff();
+    strokeRR(px-pw/2,py,pw,14,7, rgba(THEME.subtext,0.25),1);
+    panRects[side]={x:px-pw/2,y:py-58,w:pw,h:70,side:side};
+    // tiles
+    var tiles=[];
+    if(side==="L"){ for(var i=0;i<ax;i++) tiles.push("x"); for(var j=0;j<Math.abs(lb);j++) tiles.push(lb<0?"-1":"1"); }
+    else { for(var k=0;k<Math.abs(rb);k++) tiles.push(rb<0?"-1":"1"); }
+    var n=tiles.length, tw=22, gap=5, perRow=Math.max(1,Math.floor((pw-10)/(tw+gap)));
+    for(var t=0;t<n;t++){
+      var row=Math.floor(t/perRow), colu=t%perRow, rowN=Math.min(perRow,n-row*perRow);
+      var startX=px-(rowN*(tw+gap)-gap)/2;
+      var tx=startX+colu*(tw+gap), ty=py-10-tw-row*(tw+gap);
+      // staggered pop
+      var appear=clamp(popT*(n+2)-t,0,1), sc=easeOutBack(appear); if(sc<=0.01) continue;
+      var isX=tiles[t]==="x", neg=tiles[t]==="-1";
+      var col=isX?THEME.primary:(neg?THEME.wrong:THEME.tertiary);
+      ctx.save(); ctx.translate(tx+tw/2,ty+tw/2); ctx.scale(sc,sc); ctx.translate(-tw/2,-tw/2);
+      shadowOn(6, rgba(col,0.4), 3); gradRR(0,0,tw,tw,6,col); shadowOff();
+      text(isX?"x":(neg?"−1":"1"), tw/2, tw/2, isX?13:11, "#FFFFFF","center","800");
+      ctx.restore();
+    }
+  }
+  function down(x,y){ for(var i=0;i<buttons.length;i++) if(hit(buttons[i],x,y)){ pressBtn(buttons[i]); buttons[i].onTap(); return; }
+    if(panRects.L&&hit(panRects.L,x,y)) bumpOneSide("L"); else if(panRects.R&&hit(panRects.R,x,y)) bumpOneSide("R"); }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down };
+})();
+
+// =================== FRACTION BAR ==========================================
+MODULES.fraction_bar = (function(){
+  var bars, mode, eq;
+  function init(s){ mode=s.mode||"compare"; eq=new Spring(0,0.15);
+    bars=(s.params.fractions||[{n:1,d:2}]).map(function(f){ return {n:f.n,d:f.d, fill:new Spring(f.n,0.2)}; });
+    if(!bars.length) bars=[{n:1,d:2,fill:new Spring(1,0.2)}]; }
+  var geo=[];
+  function layout(){ geo=[]; var pad=22, top=H*0.20, bw=W-pad*2-26, bh=Math.min(54,H*0.18), gap=bh+34;
+    for(var i=0;i<bars.length;i++) geo.push({x:pad,y:top+i*gap,w:bw,h:bh}); }
+  function update(dt){ for(var i=0;i<bars.length;i++) bars[i].fill.step(); eq.step(); }
+  function animating(){ for(var i=0;i<bars.length;i++) if(bars[i].fill.moving()) return true; return false; }
+  function draw(){
+    if(!geo.length) layout();
+    for(var i=0;i<bars.length;i++){ var g=geo[i], f=bars[i], col=(i===0?THEME.primary:THEME.secondary);
+      f.fill.to(f.n);
+      var segW=g.w/f.d;
+      // track
+      fillRR(g.x,g.y,g.w,g.h,10, rgba(THEME.subtext,0.10));
+      // animated fill
+      var fillW=clamp(f.fill.cur,0,f.d)*segW;
+      if(fillW>0.5){ ctx.save(); rr(g.x,g.y,g.w,g.h,10); ctx.clip();
+        var fg=ctx.createLinearGradient(0,g.y,0,g.y+g.h); fg.addColorStop(0,shade(col,0.18)); fg.addColorStop(1,shade(col,-0.08));
+        ctx.fillStyle=fg; ctx.fillRect(g.x,g.y,fillW,g.h); ctx.restore(); }
+      // segment dividers
+      ctx.strokeStyle=rgba(THEME.surface,0.9); ctx.lineWidth=2;
+      for(var s=1;s<f.d;s++){ var sx=g.x+s*segW; ctx.beginPath(); ctx.moveTo(sx,g.y+2); ctx.lineTo(sx,g.y+g.h-2); ctx.stroke(); }
+      strokeRR(g.x,g.y,g.w,g.h,10, rgba(THEME.subtext,0.2),1.5);
+      // denominator handle
+      var hx=g.x+g.w+16, hy=g.y+g.h/2;
+      shadowOn(8, rgba(THEME.tertiary,0.5),3); ctx.fillStyle=THEME.tertiary; ctx.beginPath(); ctx.arc(hx,hy,12,0,TAU); ctx.fill(); shadowOff();
+      ctx.fillStyle="#FFF"; text("⇕",hx,hy,12,"#FFF","center","800"); g.handle={x:hx,y:hy,r:24};
+      // label
+      text(f.n+"/"+f.d, g.x+2, g.y-15, 15, col,"left","800");
+      text("= "+(Math.round(f.n/f.d*100)/100), g.x+62, g.y-15, 12.5, THEME.subtext,"left","600");
+    }
+    var msgY=geo[geo.length-1].y+geo[geo.length-1].h+30;
+    if(mode==="compare" && bars.length===2){ var a=bars[0].n/bars[0].d, b=bars[1].n/bars[1].d;
+      var rel=Math.abs(a-b)<1e-9?"These fractions are EQUAL":(a>b?bars[0].n+"/"+bars[0].d+" is greater":bars[1].n+"/"+bars[1].d+" is greater");
+      text(rel, W/2, msgY, 14.5, Math.abs(a-b)<1e-9?THEME.correct:THEME.onSurface,"center","800");
+    } else if(mode==="add" && bars.length===2){
+      if(bars[0].d===bars[1].d){ var sumN=bars[0].n+bars[1].n;
+        text(bars[0].n+"/"+bars[0].d+" + "+bars[1].n+"/"+bars[1].d+" = "+sumN+"/"+bars[0].d, W/2, msgY, 15, THEME.correct,"center","800");
+      } else {
+        text("Different-sized pieces — line them up first", W/2, msgY, 12.5, THEME.subtext,"center","600");
+        var bw=Math.min(240,W-44); button("common", W/2-bw/2, msgY+12, bw, 40, "Make pieces the same size", THEME.tertiary, false, makeCommon);
+      }
+    } else text("Tap to shade • drag ⇕ to split", W/2, msgY, 12.5, THEME.subtext,"center","600");
+  }
+  function gcd(x,y){ return y===0?x:gcd(y,x%y); }
+  function makeCommon(){ var L=bars[0].d,R=bars[1].d,lcd=L*R/gcd(L,R);
+    bars[0].n*=lcd/L; bars[0].d=lcd; bars[1].n*=lcd/R; bars[1].d=lcd;
+    postEvent({event:"discover",detail:"common_denominator:"+lcd}); layout(); requestRender(); }
+  var drag=null;
+  function down(x,y){ for(var i=0;i<buttons.length;i++) if(hit(buttons[i],x,y)){ pressBtn(buttons[i]); buttons[i].onTap(); return; }
+    for(var b=0;b<bars.length;b++){ var g=geo[b];
+      if(g.handle && Math.hypot(x-g.handle.x,y-g.handle.y)<g.handle.r){ drag={bar:b,startY:y,startD:bars[b].d}; return; }
+      if(x>=g.x&&x<=g.x+g.w&&y>=g.y-6&&y<=g.y+g.h+6){ var seg=Math.floor((x-g.x)/(g.w/bars[b].d))+1;
+        bars[b].n=(bars[b].n===seg)?seg-1:seg; postEvent({event:"manipulate",detail:"shade:"+bars[b].n+"/"+bars[b].d}); requestRender(); return; } } }
+  function move(x,y){ if(!drag) return; var dd=Math.round((drag.startY-y)/24);
+    var nd=clamp(drag.startD+dd,1,12); if(nd!==bars[drag.bar].d){ bars[drag.bar].d=nd; if(bars[drag.bar].n>nd) bars[drag.bar].n=nd; requestRender(); } }
+  function up(){ if(drag){ postEvent({event:"manipulate",detail:"denominator:"+bars[drag.bar].d}); drag=null; } }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
+})();
+
+// =================== RIGHT TRIANGLE ========================================
+MODULES.right_triangle = (function(){
+  var a,b,as,bs,ox,oy,unit,pulse;
+  function init(s){ a=s.params.a||3; b=s.params.b||4; as=new Spring(a,0.25); bs=new Spring(b,0.25); pulse=0; }
+  function layout(){ unit=Math.min((W*0.46)/12,(H*0.42)/12); if(unit<7) unit=7; ox=W*0.34; oy=H*0.66; }
+  function update(dt){ as.to(a).step(); bs.to(b).step(); pulse+=dt; }
+  function animating(){ return as.moving()||bs.moving(); }
+  function draw(){
+    if(!unit) layout();
+    var av=as.cur, bv=bs.cur, c=Math.sqrt(av*av+bv*bv);
+    var O={x:ox,y:oy}, A={x:ox+av*unit,y:oy}, B={x:ox,y:oy-bv*unit};
+    // squares (areas)
+    ctx.fillStyle=rgba(THEME.primary,0.16); ctx.fillRect(O.x,O.y,av*unit,av*unit);
+    ctx.fillStyle=rgba(THEME.secondary,0.16); ctx.fillRect(O.x-bv*unit,O.y-bv*unit,bv*unit,bv*unit);
+    ctx.strokeStyle=rgba(THEME.primary,0.4); ctx.lineWidth=1; ctx.strokeRect(O.x,O.y,av*unit,av*unit);
+    ctx.strokeStyle=rgba(THEME.secondary,0.4); ctx.strokeRect(O.x-bv*unit,O.y-bv*unit,bv*unit,bv*unit);
+    // hypotenuse square hint (rotated) — light
+    // triangle
+    shadowOn(14, rgba(THEME.tertiary,0.25), 4);
+    ctx.beginPath(); ctx.moveTo(O.x,O.y); ctx.lineTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.closePath();
+    var tg=ctx.createLinearGradient(O.x,O.y,A.x,B.y); tg.addColorStop(0,rgba(THEME.tertiary,0.42)); tg.addColorStop(1,rgba(THEME.tertiary,0.22));
+    ctx.fillStyle=tg; ctx.fill(); shadowOff();
+    ctx.strokeStyle=THEME.onSurface; ctx.lineWidth=2.5; ctx.lineJoin="round"; ctx.stroke();
+    ctx.strokeStyle=rgba(THEME.onSurface,0.55); ctx.lineWidth=1.5; ctx.strokeRect(O.x,O.y-11,11,11);
+    // labels
+    text("a = "+Math.round(av), (O.x+A.x)/2, O.y+18, 13, THEME.primary,"center","800");
+    text("b = "+Math.round(bv), O.x-18, (O.y+B.y)/2, 13, THEME.secondary,"center","800");
+    // push c label outward from the triangle, clear of the handles
+    var mx=(A.x+B.x)/2, my=(A.y+B.y)/2, ddx=mx-O.x, ddy=my-O.y, dl=Math.hypot(ddx,ddy)||1;
+    text("c = "+(Math.round(c*100)/100), mx+ddx/dl*22, my+ddy/dl*22, 13, shade(THEME.tertiary,-0.15),"center","800");
+    // handles (pulsing glow)
+    var ph=0.5+0.5*Math.sin(pulse*2.4);
+    [A,B].forEach(function(h){ glow(h.x,h.y,16+4*ph,THEME.tertiary,0.4);
+      ctx.fillStyle=THEME.tertiary; ctx.beginPath(); ctx.arc(h.x,h.y,9,0,TAU); ctx.fill();
+      ctx.strokeStyle="#FFF"; ctx.lineWidth=2.5; ctx.stroke(); });
+    HA=A; HB=B;
+    // identity bar
+    var ia=Math.round(av), ib=Math.round(bv);
+    text(ia+"² + "+ib+"² = "+(ia*ia)+" + "+(ib*ib)+" = "+(ia*ia+ib*ib)+" = c²", W/2, H-20, 13.5, THEME.onSurface,"center","800");
+  }
+  var HA,HB,drag=null;
+  function down(x,y){ if(HA&&Math.hypot(x-HA.x,y-HA.y)<30) drag="A"; else if(HB&&Math.hypot(x-HB.x,y-HB.y)<30) drag="B"; }
+  function move(x,y){ if(!drag) return; if(drag==="A") a=clamp(Math.round((x-ox)/unit),1,12); else b=clamp(Math.round((oy-y)/unit),1,12); requestRender(); }
+  function up(){ if(drag){ postEvent({event:"manipulate",detail:"legs:"+a+","+b}); drag=null; } }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
+})();
+
+// =================== PARABOLA ==============================================
+MODULES.parabola = (function(){
+  var a,b,c,sliders,pulse;
+  function init(s){ a=s.params.a; b=s.params.b||0; c=s.params.c||0; pulse=0; }
+  function layout(){ var y0=H-66,sp=24,x0=22;
+    sliders=[ {key:"a",min:-4,max:4,y:y0,get:function(){return a;},set:function(v){a=v;},col:THEME.primary},
+      {key:"b",min:-8,max:8,y:y0+sp,get:function(){return b;},set:function(v){b=v;},col:THEME.secondary},
+      {key:"c",min:-8,max:8,y:y0+2*sp,get:function(){return c;},set:function(v){c=v;},col:THEME.tertiary} ];
+    sliders.forEach(function(s){ s.x=x0+46; s.w=W-44-46; }); }
+  function update(dt){ pulse+=dt; }
+  function animating(){ return drag!=null; }
+  function draw(){
+    if(!sliders) layout();
+    var gx=W/2, plotH=H-96, gy=plotH*0.56, sx=Math.min(W,440)/16, sy=Math.min(plotH*0.9,250)/16;
+    // grid
+    ctx.strokeStyle=rgba(THEME.subtext,0.12); ctx.lineWidth=1;
+    for(var gxn=gx%sx; gxn<W; gxn+=sx){ ctx.beginPath(); ctx.moveTo(gxn,0); ctx.lineTo(gxn,plotH); ctx.stroke(); }
+    for(var gyn=gy%sy; gyn<plotH; gyn+=sy){ ctx.beginPath(); ctx.moveTo(0,gyn); ctx.lineTo(W,gyn); ctx.stroke(); }
+    ctx.strokeStyle=rgba(THEME.subtext,0.45); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.moveTo(gx,4); ctx.lineTo(gx,plotH); ctx.stroke();
+    // fill under curve
+    ctx.beginPath(); var started=false;
+    for(var px=0;px<=W;px+=2){ var xv=(px-gx)/sx, yv=a*xv*xv+b*xv+c, py=gy-yv*sy;
+      if(!started){ ctx.moveTo(px,clamp(py,-20,plotH+20)); started=true; } else ctx.lineTo(px,clamp(py,-20,plotH+20)); }
+    ctx.lineTo(W,gy); ctx.lineTo(0,gy); ctx.closePath();
+    ctx.fillStyle=rgba(THEME.primary,0.10); ctx.fill();
+    // curve
+    ctx.strokeStyle=THEME.primary; ctx.lineWidth=3; ctx.lineJoin="round"; started=false; ctx.beginPath();
+    for(var px2=0;px2<=W;px2+=2){ var xv2=(px2-gx)/sx, yv2=a*xv2*xv2+b*xv2+c, py2=gy-yv2*sy;
+      if(py2<-40||py2>plotH+40){ started=false; continue; } if(!started){ctx.moveTo(px2,py2);started=true;} else ctx.lineTo(px2,py2); }
+    shadowOn(8,rgba(THEME.primary,0.4),0); ctx.stroke(); shadowOff();
+    // roots
+    var disc=b*b-4*a*c, msg, ph=0.5+0.5*Math.sin(pulse*3);
+    if(a!==0&&disc>=0){ var r1=(-b-Math.sqrt(disc))/(2*a), r2=(-b+Math.sqrt(disc))/(2*a);
+      [r1,r2].forEach(function(r){ var rxp=gx+r*sx; glow(rxp,gy,10+3*ph,THEME.wrong,0.5);
+        ctx.fillStyle=THEME.wrong; ctx.beginPath(); ctx.arc(rxp,gy,5.5,0,TAU); ctx.fill();
+        ctx.strokeStyle="#FFF"; ctx.lineWidth=2; ctx.stroke(); });
+      msg=disc===0?"one root: x = "+rnd(r1):"roots: x = "+rnd(r1)+", "+rnd(r2);
+    } else msg=a===0?"a = 0 → not a parabola":"no real roots (b² − 4ac < 0)";
+    fillRR(W/2-110, 8, 220, 24, 12, rgba(THEME.surface,0.85));
+    text(msg, W/2, 20, 12.5, THEME.onSurface,"center","700");
+    // sliders
+    sliders.forEach(function(s){ ctx.strokeStyle=rgba(THEME.subtext,0.25); ctx.lineWidth=5; ctx.lineCap="round";
+      ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(s.x+s.w,s.y); ctx.stroke();
+      var t=(s.get()-s.min)/(s.max-s.min), hx=s.x+t*s.w;
+      ctx.strokeStyle=s.col; ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(hx,s.y); ctx.stroke();
+      shadowOn(8,rgba(s.col,0.5),2); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(hx,s.y,11,0,TAU); ctx.fill(); shadowOff();
+      ctx.fillStyle=s.col; ctx.beginPath(); ctx.arc(hx,s.y,6,0,TAU); ctx.fill();
+      text(s.key+" = "+s.get(), s.x-26, s.y, 13, s.col,"center","800"); });
+  }
+  function rnd(v){ return Math.round(v*100)/100; }
+  var drag=null;
+  function down(x,y){ for(var i=0;i<sliders.length;i++){ var s=sliders[i];
+    if(Math.abs(y-s.y)<24 && x>=s.x-22 && x<=s.x+s.w+22){ drag=s; setFrom(x); return; } } }
+  function move(x){ if(drag) setFrom(x); }
+  function setFrom(x){ var t=clamp((x-drag.x)/drag.w,0,1), v=Math.round(drag.min+t*(drag.max-drag.min)); drag.set(v); requestRender(); }
+  function up(){ if(drag){ postEvent({event:"manipulate",detail:drag.key+"="+drag.get()}); drag=null; } }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
+})();
+
+// =================== DICE SIM ==============================================
+MODULES.dice_sim = (function(){
+  var counts,rolls,sum,face,roll,queue,meanS;
+  function init(s){ counts=[0,0,0,0,0,0]; rolls=0; sum=0; face=1; roll=0; queue=0; meanS=new Spring(3.5,0.1); }
+  function layout(){}
+  function rollOnce(){ var v=1+(Math.random()*6|0); counts[v-1]++; rolls++; sum+=v; face=v; }
+  function update(dt){
+    if(roll>0){ roll-=dt; face=1+(Math.random()*6|0); if(roll<=0){ roll=0; } }
+    if(queue>0){ var batch=Math.min(4,queue); for(var i=0;i<batch;i++) rollOnce(); queue-=batch;
+      if(queue===0) postEvent({event:"discover",detail:"mean:"+(Math.round(sum/rolls*100)/100)}); }
+    if(rolls>0) meanS.to(sum/rolls); meanS.step();
+  }
+  function animating(){ return roll>0 || queue>0 || meanS.moving(); }
+  function draw(){
+    var ds=Math.min(64,W*0.18), dx=22, dy=H*0.13;
+    // die with tumble
+    ctx.save(); ctx.translate(dx+ds/2,dy+ds/2); var wob=roll>0?Math.sin(clock*30)*0.12:0; ctx.rotate(wob);
+    shadowOn(12,rgba(0,0,0,0.18),5); fillRR(-ds/2,-ds/2,ds,ds,14, "#FFFFFF"); shadowOff();
+    strokeRR(-ds/2,-ds/2,ds,ds,14, rgba(THEME.subtext,0.2),1.5); pips(ds,face); ctx.restore();
+    // stats
+    var sx=dx+ds+20;
+    text("rolls", sx, dy+8, 11, THEME.subtext,"left","600"); text(""+rolls, sx+44, dy+8, 13, THEME.onSurface,"left","800");
+    text("average", sx, dy+30, 11, THEME.subtext,"left","600"); text(""+(rolls?Math.round(meanS.cur*100)/100:"—"), sx+58, dy+30, 16, THEME.primary,"left","800");
+    text("expected 3.5", sx, dy+52, 11.5, THEME.subtext,"left","600");
+    // histogram
+    var hx=22, hy=H-128, hw=W-44, hh=64, bw=hw/6, mx=Math.max(1,Math.max.apply(null,counts));
+    // expected line
+    for(var i=0;i<6;i++){ var bh=counts[i]/mx*hh; var bx=hx+i*bw+4, by=hy+hh-bh;
+      fillRR(bx,hy+hh-1,bw-8,1,0,rgba(THEME.subtext,0.15));
+      if(bh>1){ shadowOn(6,rgba(THEME.secondary,0.35),2); gradRR(bx,by,bw-8,bh,5,THEME.secondary); shadowOff(); }
+      text(""+(i+1), hx+i*bw+bw/2, hy+hh+13, 11, THEME.subtext,"center","600");
+      if(counts[i]>0) text(""+counts[i], hx+i*bw+bw/2, by-9, 10, THEME.onSurface,"center","700"); }
+    // buttons
+    var by2=H-46, bwd=(W-54)/2;
+    button("roll", 22, by2, bwd, 40, "Roll", THEME.primary, false, function(){ face=1+(Math.random()*6|0); roll=0.45; rollOnce(); requestRender(); });
+    button("roll50", 32+bwd, by2, bwd, 40, "Roll ×50", THEME.secondary, false, function(){ queue+=50; requestRender(); });
+  }
+  function pips(s,v){ var r=s*0.075; var m={1:[[.5,.5]],2:[[.3,.3],[.7,.7]],3:[[.3,.3],[.5,.5],[.7,.7]],
+    4:[[.3,.3],[.7,.3],[.3,.7],[.7,.7]],5:[[.3,.3],[.7,.3],[.5,.5],[.3,.7],[.7,.7]],
+    6:[[.3,.25],[.7,.25],[.3,.5],[.7,.5],[.3,.75],[.7,.75]]};
+    (m[v]||m[1]).forEach(function(p){ ctx.fillStyle=THEME.onSurface; ctx.beginPath(); ctx.arc(-s/2+p[0]*s,-s/2+p[1]*s,r,0,TAU); ctx.fill(); }); }
+  function down(x,y){ for(var i=0;i<buttons.length;i++) if(hit(buttons[i],x,y)){ pressBtn(buttons[i]); buttons[i].onTap(); return; } }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down };
+})();
+
+// =================== NUMBER LINE ===========================================
+MODULES.number_line = (function(){
+  var mode,val,mod,start,delta,pos,target,hops,markX,arc;
+  function init(s){ mode=s.mode; val=s.params.value; mod=s.params.modulus; start=s.params.start; delta=s.params.delta;
+    pos=(mode==="modulo")?0:start; target=pos; hops=0; markX=new Spring(0,0.18); arc=0; }
+  var x0,x1,y,lo,hi,scale;
+  function layout(){ x0=26; x1=W-26; y=H*0.52;
+    if(mode==="modulo"){ lo=0; hi=Math.max(val,mod)+1; } else { lo=Math.min(start,start+delta)-2; hi=Math.max(start,start+delta)+2; }
+    scale=(x1-x0)/(hi-lo); markX.set(X(pos)); }
+  function X(v){ return x0+(v-lo)*scale; }
+  function update(dt){ markX.to(X(pos)).step(); arc=Math.max(0,arc-dt*2.2); }
+  function animating(){ return markX.moving()||arc>0; }
+  function draw(){
+    if(!scale) layout();
+    // baseline
+    ctx.strokeStyle=rgba(THEME.subtext,0.35); ctx.lineWidth=3; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x1,y); ctx.stroke();
+    for(var v=Math.ceil(lo);v<=Math.floor(hi);v++){ var px=X(v);
+      ctx.strokeStyle=rgba(THEME.subtext,0.3); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(px,y-7); ctx.lineTo(px,y+7); ctx.stroke();
+      text(""+v, px, y+22, 10.5, THEME.subtext,"center","600"); }
+    // completed hops as arcs (modulo)
+    if(mode==="modulo"){ var done=0; for(var k=0;k+mod<=pos+0.01;k+=mod){ drawHop(X(k),X(k+mod),0.5); } }
+    // moving marker
+    var mx=markX.cur;
+    glow(mx,y,16,THEME.primary,0.4);
+    shadowOn(8,rgba(THEME.primary,0.5),3); ctx.fillStyle=THEME.primary; ctx.beginPath(); ctx.arc(mx,y,11,0,TAU); ctx.fill(); shadowOff();
+    ctx.strokeStyle="#FFF"; ctx.lineWidth=2.5; ctx.stroke();
+    // titles + action
+    if(mode==="modulo"){ var done2=pos+mod>val;
+      text(val+" mod "+mod, W/2, H*0.18, 16, THEME.onSurface,"center","800");
+      text(done2?("remainder = "+pos):("at "+pos+" — keep jumping"), W/2, H-66, 13, done2?THEME.correct:THEME.subtext,"center","700");
+      button("jmp", W/2-115, H-48, 230, 40, done2?("Remainder is "+pos):("Jump + "+mod), done2?THEME.correct:THEME.primary, done2, jumpMod);
+    } else { var done3=hops>=Math.abs(delta);
+      text(start+(delta<0?" − "+(-delta):" + "+delta)+" = "+(start+delta), W/2, H*0.18, 16, THEME.onSurface,"center","800");
+      text(done3?("landed on "+pos):("at "+pos), W/2, H-66, 13, done3?THEME.correct:THEME.subtext,"center","700");
+      button("hop", W/2-115, H-48, 230, 40, done3?"Done ✓":(delta<0?"Hop left":"Hop right"), done3?THEME.correct:THEME.primary, done3, hop);
+    }
+  }
+  function drawHop(xa,xb,alpha){ var r=(xb-xa)/2, cx=(xa+xb)/2;
+    ctx.strokeStyle=rgba(THEME.tertiary,alpha); ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.arc(cx,y,r,Math.PI,TAU); ctx.stroke(); }
+  function jumpMod(){ if(pos+mod<=val){ pos+=mod; arc=1; postEvent({event:"manipulate",detail:"pos:"+pos});
+    if(pos+mod>val){ postEvent({event:"solve",detail:"remainder:"+pos}); celebrate(W/2,H*0.4); } requestRender(); } }
+  function hop(){ if(hops<Math.abs(delta)){ pos+=(delta<0?-1:1); hops++; arc=1; requestRender();
+    if(hops>=Math.abs(delta)){ postEvent({event:"solve",detail:"result:"+pos}); celebrate(W/2,H*0.4); } } }
+  function down(x,y){ for(var i=0;i<buttons.length;i++) if(hit(buttons[i],x,y)){ pressBtn(buttons[i]); buttons[i].onTap(); return; } }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down };
+})();
+
+// ===========================================================================
+//  Pointer handling
+// ===========================================================================
+function pt(e){ var r=cv.getBoundingClientRect(); var s=e.touches?e.touches[0]:e;
+  return { x:(s.clientX)-r.left, y:(s.clientY)-r.top }; }
+function bindPointers(){
+  function down(e){ if(!active) return; var p=pt(e); if(active.down) active.down(p.x,p.y); requestRender(); e.preventDefault(); }
+  function move(e){ if(!active||!active.move) return; var p=pt(e); active.move(p.x,p.y); requestRender(); e.preventDefault(); }
+  function up(e){ if(active&&active.up) active.up(); requestRender(); if(e&&e.preventDefault) e.preventDefault(); }
+  cv.addEventListener("touchstart",down,{passive:false}); cv.addEventListener("touchmove",move,{passive:false}); cv.addEventListener("touchend",up,{passive:false});
+  cv.addEventListener("mousedown",function(e){ down(e); function mm(ev){move(ev);} function mu(ev){up(ev);window.removeEventListener("mousemove",mm);window.removeEventListener("mouseup",mu);} window.addEventListener("mousemove",mm); window.addEventListener("mouseup",mu); });
+}
+
+// ===========================================================================
+//  Boot
+// ===========================================================================
+function boot(){
+  var p=document.getElementById("prompt"); p.textContent=SPEC.prompt||""; p.style.color=THEME.onSurface;
+  var g=document.getElementById("goal"); if(SPEC.goal){ g.textContent="✦ "+SPEC.goal; g.style.color=THEME.subtext; } else g.classList.add("hidden");
+  var mod=MODULES[SPEC.type];
+  if(!mod){ p.textContent="—"; return; }
+  function start(){ active=mod; entrance=0; lastTs=0; if(active.init) active.init(SPEC); resize(); requestRender(); postEvent({event:"open"}); }
+  if(SPEC.collapsed){ var cover=document.getElementById("cover"); cover.classList.remove("hidden");
+    var btn=document.getElementById("coverBtn"); btn.style.background=THEME.primary; btn.style.color="#FFF";
+    btn.addEventListener("click",function(){ cover.classList.add("hidden"); start(); }); }
+  else start();
+  bindPointers();
+  window.addEventListener("resize", resize);
+  if(window.ResizeObserver){ try{ new ResizeObserver(function(){ if(active) resize(); }).observe(document.getElementById("stage")); }catch(e){} }
+  // Layout-settling fallbacks; the last one force-reveals if the rAF loop never ran (flaky WebView).
+  [60,200,500,1100].forEach(function(ms){ setTimeout(function(){ if(!active) return; if(ms>=1100 && entrance<0.05) entrance=1; resize(); }, ms); });
+}
+if(document.readyState==="loading") window.addEventListener("load",boot); else setTimeout(boot,0);
+</script>
+</body>
+</html>

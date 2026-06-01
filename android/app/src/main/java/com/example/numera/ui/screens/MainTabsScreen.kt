@@ -72,6 +72,46 @@ import com.example.numera.ui.components.NumeraSkeletonCard
 import com.example.numera.ui.components.MathText
 import androidx.compose.foundation.BorderStroke
 import com.example.numera.ui.components.CommitmentRelicIcon
+import com.example.numera.ui.components.ToastController
+import com.example.numera.ui.components.ToastType
+import com.example.numera.ui.components.LocalToast
+import com.example.numera.ui.components.NumeraToastHost
+import com.example.numera.ui.components.rememberToastController
+import com.example.numera.ui.components.NumeraEmptyState
+import com.example.numera.ui.components.EmptyIllustration
+import com.example.numera.ui.components.NumeraSearchField
+import com.example.numera.ui.components.rememberDebouncedValue
+import com.example.numera.ui.components.rememberInfiniteScroll
+import com.example.numera.ui.components.rememberRevealWindow
+import com.example.numera.ui.components.LoadMoreFooter
+import com.example.numera.ui.components.runOptimistic
+import com.example.numera.ui.components.ArchiveRowSkeleton
+import com.example.numera.ui.components.LeaderboardRowSkeleton
+import com.example.numera.ui.components.NotificationSkeleton
+import com.example.numera.ui.components.ShopItemSkeleton
+import com.example.numera.ui.components.AchievementSkeleton
+import com.example.numera.ui.components.LessonCardSkeleton
+import com.example.numera.ui.components.SkeletonList
+import com.example.numera.ui.components.SkeletonLine
+import com.example.numera.ui.components.CommandPaletteController
+import com.example.numera.ui.components.CommandPaletteHost
+import com.example.numera.ui.components.CommandItem
+import com.example.numera.ui.components.CommandCategory
+import com.example.numera.ui.components.LocalCommandPalette
+import com.example.numera.ui.components.rememberCommandPaletteController
+import com.example.numera.ui.components.NumeraBreadcrumbs
+import com.example.numera.ui.components.Crumb
+import com.example.numera.ui.components.NumeraFilterRow
+import com.example.numera.ui.components.NumeraFilterChip
+import com.example.numera.ui.components.NumeraBottomSheet
+import com.example.numera.ui.components.SheetActionRow
+import com.example.numera.ui.components.SheetSectionLabel
+import com.example.numera.ui.components.ContextMenuArea
+import com.example.numera.ui.components.ContextAction
+import com.example.numera.ui.components.NumeraQuickPreview
+import com.example.numera.ui.components.QuickActionsBar
+import com.example.numera.ui.components.QuickAction
+import com.example.numera.ui.components.DisclosureSection
 import io.socket.client.Socket
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -187,6 +227,77 @@ fun MainTabsScreen(
         }
     }
 
+    val toastController = rememberToastController()
+    val commandPalette = rememberCommandPaletteController()
+
+    // Switch top-level tab, remembering where we came from so the Settings back-arrow returns there.
+    val goTab: (Int) -> Unit = { target ->
+        if (selectedTab != 5) previousTab = selectedTab
+        selectedTab = target
+    }
+
+    // The universal discovery surface: every section, the highest-intent actions, and settings are
+    // all reachable from one search box. Content (lessons/exercises) is searched server-side below.
+    val paletteCommands = remember(selectedTab) {
+        listOf(
+            CommandItem("Learn", CommandCategory.Navigate, NumeraIconType.Learn, "Level map & archive", "lessons home map levels") { goTab(0) },
+            CommandItem("Arena", CommandCategory.Navigate, NumeraIconType.Arena, "Ranked & duels", "versus pvp ranked match") { goTab(1) },
+            CommandItem("Quests", CommandCategory.Navigate, NumeraIconType.Quests, "Daily goals & dashboard", "home dashboard daily goals") { goTab(2) },
+            CommandItem("Shop", CommandCategory.Navigate, NumeraIconType.Shop, "Avatars, banners & boosts", "store buy coins items") { goTab(3) },
+            CommandItem("Profile", CommandCategory.Navigate, NumeraIconType.Profile, "Stats, collections & progress", "me account collections saved") { goTab(4) },
+            CommandItem("Continue Learning", CommandCategory.QuickAction, NumeraIconType.Learn, "Jump back into the level map", "resume keep going practice") { goTab(0) },
+            CommandItem("Daily Puzzle", CommandCategory.QuickAction, NumeraIconType.Calculator, "Today's bonus challenge", "puzzle daily bonus") {
+                onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "daily_puzzle"))
+            },
+            CommandItem("Ranked Match", CommandCategory.QuickAction, NumeraIconType.Arena, "Find a live opponent", "duel versus pvp compete") { goTab(1) },
+            CommandItem("Practice Mistakes", CommandCategory.QuickAction, NumeraIconType.Warning, "Review what you got wrong", "errors review redo srs") {
+                onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "mistakes_practice"))
+            },
+            CommandItem("Notifications", CommandCategory.QuickAction, NumeraIconType.Notification, "See your latest activity", "alerts inbox bell") { showNotificationsDialog = true },
+            CommandItem("Consistency Climb", CommandCategory.QuickAction, NumeraIconType.Streak, "Check your streak status", "streak commitment fire") { showCommitmentDialog = true },
+            CommandItem("Settings", CommandCategory.Settings, NumeraIconType.Settings, "Themes, account & security", "preferences theme security notifications dark mode logout") { goTab(5) }
+        )
+    }
+
+    // Debounced server-backed content search → launches the exercise straight from the palette.
+    val paletteSearch: suspend (String) -> List<CommandItem> = remember {
+        { q ->
+            val token = RetrofitClient.authToken ?: ""
+            val results = RetrofitClient.apiService.searchArchive(token, null, null, q, 8, 0)
+            results.map { ex ->
+                CommandItem(
+                    title = ex.title,
+                    category = CommandCategory.Exercises,
+                    icon = NumeraIconType.Learn,
+                    subtitle = ex.category,
+                    keywords = ex.question
+                ) {
+                    onStartSoloGame(
+                        SoloGame(
+                            category = ex.category,
+                            level = 0,
+                            gameMode = "archive_puzzle",
+                            title = ex.title,
+                            question = ex.question,
+                            correctAnswer = ex.correct_answer,
+                            optionsJson = ex.options.joinToString("|||"),
+                            explanation = ex.explanation,
+                            lessonTitle = ex.lessonTitle,
+                            lessonContent = ex.lessonContent,
+                            lessonFormula = ex.lessonFormula,
+                            examplesJson = ex.examples?.let { com.google.gson.Gson().toJson(it) }
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    CompositionLocalProvider(
+        LocalToast provides toastController,
+        LocalCommandPalette provides commandPalette
+    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             if (selectedTab == 5) {
@@ -339,6 +450,14 @@ fun MainTabsScreen(
                             )
                         }
 
+                        IconButton(onClick = { commandPalette.open() }) {
+                            com.example.numera.ui.components.NumeraIcon(
+                                type = com.example.numera.ui.components.NumeraIconType.Search,
+                                tint = MaterialTheme.colorScheme.primary,
+                                animate = false
+                            )
+                        }
+
                         IconButton(onClick = {
                             SoundManager.playClick()
                             com.example.numera.haptic.HapticManager.playSoft()
@@ -371,7 +490,8 @@ fun MainTabsScreen(
                         }) {
                             com.example.numera.ui.components.NumeraIcon(
                                     type = com.example.numera.ui.components.NumeraIconType.Settings,
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    animate = false
                             )
                         }
                     },
@@ -458,7 +578,13 @@ fun MainTabsScreen(
                         onShowCommitment = { showCommitmentDialog = true }
                     )
                     1 -> ArenaScreen(currentUser, onStartDuelGame)
-                    2 -> DashboardScreen(currentUser, onRefreshProfile = { refreshProfile() }, onShowUserProfile = { activeProfileDialogUserId = it })
+                    2 -> DashboardScreen(
+                        currentUser,
+                        onRefreshProfile = { refreshProfile() },
+                        onShowUserProfile = { activeProfileDialogUserId = it },
+                        onNavigateTab = { goTab(it) },
+                        onStartQuickGame = { onStartSoloGame(it) }
+                    )
                     3 -> ShopScreen(currentUser, { refreshProfile() })
                     4 -> ProfileScreen(currentUser, onLogout, onRefreshProfile = { refreshProfile() }, onShowUserProfile = { activeProfileDialogUserId = it }, unlockedRelicIds = unlockedRelicIds)
                     5 -> SettingsScreen(
@@ -489,38 +615,59 @@ fun MainTabsScreen(
                     notifications = notificationsList,
                     onDismissRequest = { showNotificationsDialog = false },
                     onMarkAllRead = {
+                        // Optimistic: clear unread badges instantly, then confirm with the server.
+                        notificationsList = notificationsList.map { if (it.read_state == 0) it.copy(read_state = 1) else it }
+                        unreadNotificationsCount = 0
                         scope.launch(Dispatchers.IO) {
                             try {
                                 val token = RetrofitClient.authToken ?: ""
                                 RetrofitClient.apiService.markNotificationsRead(token, MarkReadRequest(null))
-                                val updated = RetrofitClient.apiService.getNotifications(token)
-                                withContext(Dispatchers.Main) {
-                                    notificationsList = updated
-                                    unreadNotificationsCount = updated.count { it.read_state == 0 }
-                                }
                             } catch (e: Exception) {
                                 Log.e("MainTabsScreen", "Failed to mark notifications read: ${e.message}")
+                                // Recover: re-fetch the true state.
+                                try {
+                                    val token = RetrofitClient.authToken ?: ""
+                                    val updated = RetrofitClient.apiService.getNotifications(token)
+                                    withContext(Dispatchers.Main) {
+                                        notificationsList = updated
+                                        unreadNotificationsCount = updated.count { it.read_state == 0 }
+                                    }
+                                } catch (_: Exception) {}
                             }
                         }
                     },
                     onMarkSingleRead = { id ->
+                        // Optimistic: flip this one to read instantly, then confirm with the server.
+                        notificationsList = notificationsList.map { if (it.id == id) it.copy(read_state = 1) else it }
+                        unreadNotificationsCount = notificationsList.count { it.read_state == 0 }
                         scope.launch(Dispatchers.IO) {
                             try {
                                 val token = RetrofitClient.authToken ?: ""
                                 RetrofitClient.apiService.markNotificationsRead(token, MarkReadRequest(id))
-                                val updated = RetrofitClient.apiService.getNotifications(token)
-                                withContext(Dispatchers.Main) {
-                                    notificationsList = updated
-                                    unreadNotificationsCount = updated.count { it.read_state == 0 }
-                                }
                             } catch (e: Exception) {
                                 Log.e("MainTabsScreen", "Failed to mark single notification read: ${e.message}")
+                                try {
+                                    val token = RetrofitClient.authToken ?: ""
+                                    val updated = RetrofitClient.apiService.getNotifications(token)
+                                    withContext(Dispatchers.Main) {
+                                        notificationsList = updated
+                                        unreadNotificationsCount = updated.count { it.read_state == 0 }
+                                    }
+                                } catch (_: Exception) {}
                             }
                         }
                     }
                 )
             }
         }
+    }
+        NumeraToastHost(toastController)
+        CommandPaletteHost(
+            controller = commandPalette,
+            staticCommands = paletteCommands,
+            onSearch = paletteSearch
+        )
+    }
     }
 }
 
@@ -533,8 +680,11 @@ data class NavigationItem(val label: String, val iconType: com.example.numera.ui
 fun DashboardScreen(
     user: User?,
     onRefreshProfile: () -> Unit,
-    onShowUserProfile: (Int) -> Unit
+    onShowUserProfile: (Int) -> Unit,
+    onNavigateTab: (Int) -> Unit = {},
+    onStartQuickGame: (SoloGame) -> Unit = {}
 ) {
+    val toast = LocalToast.current
     var homeSubTab by remember { mutableStateOf(0) }
     var questsList by remember { mutableStateOf<List<Quest>>(emptyList()) }
     var leagueLeaderboard by remember { mutableStateOf<LeagueLeaderboardResponse?>(null) }
@@ -545,12 +695,26 @@ fun DashboardScreen(
 
     val scope = rememberCoroutineScope()
 
+    // Sort quests: completed-unclaimed first, then active by progress, claimed last.
+    fun sortQuests(list: List<Quest>): List<Quest> {
+        return list.sortedWith(compareBy<Quest> { quest ->
+            when {
+                quest.claimed == 1 -> 2
+                quest.current >= quest.target -> 0
+                else -> 1
+            }
+        }.thenByDescending { quest ->
+            if (quest.target > 0) quest.current.toFloat() / quest.target.toFloat() else 0f
+        })
+    }
+
     val fetchQuests = {
         scope.launch(Dispatchers.IO) {
             try {
                 val list = RetrofitClient.apiService.getQuests(RetrofitClient.authToken ?: "")
                 withContext(Dispatchers.Main) {
-                    questsList = list
+                    // Freeze the sort order at fetch time so claiming doesn't reshuffle the list mid-view
+                    questsList = sortQuests(list)
                 }
             } catch (e: Exception) {
                 Log.e("Dashboard", "Quests fetch err: ${e.message}")
@@ -587,17 +751,9 @@ fun DashboardScreen(
         }
     }
 
-    val sortedQuests = remember(questsList) {
-        questsList.sortedWith(compareBy<Quest> { quest ->
-            when {
-                quest.claimed == 1 -> 2
-                quest.current >= quest.target -> 0
-                else -> 1
-            }
-        }.thenByDescending { quest ->
-            if (quest.target > 0) quest.current.toFloat() / quest.target.toFloat() else 0f
-        })
-    }
+    // Render in the already-frozen fetch order so a claim updates the button in place
+    // without reshuffling. The list re-sorts only when the tab is refreshed (re-fetched).
+    val sortedQuests = questsList
 
     LaunchedEffect(homeSubTab) {
         if (homeSubTab == 0) {
@@ -651,6 +807,28 @@ fun DashboardScreen(
             }
         }
 
+        // Quick actions: the highest-intent moves on the home screen, one tap away.
+        QuickActionsBar(
+            hero = QuickAction(
+                label = "Continue Learning",
+                sublabel = "Pick up your climb on the level map",
+                icon = NumeraIconType.Learn
+            ) { onNavigateTab(0) },
+            tiles = listOf(
+                QuickAction(
+                    label = "Daily Puzzle",
+                    icon = NumeraIconType.Calculator,
+                    accent = MaterialTheme.colorScheme.tertiary
+                ) { onStartQuickGame(SoloGame(category = "General", level = 0, gameMode = "daily_puzzle")) },
+                QuickAction(
+                    label = "Ranked Match",
+                    icon = NumeraIconType.Arena,
+                    accent = MaterialTheme.colorScheme.secondary
+                ) { onNavigateTab(1) }
+            ),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+        )
+
         AnimatedContent(
             targetState = homeSubTab,
             transitionSpec = {
@@ -695,17 +873,14 @@ fun DashboardScreen(
 
                 if (sortedQuests.isEmpty()) {
                     item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Loading daily quests...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        SkeletonList(count = 3, modifier = Modifier.padding(top = 8.dp)) {
+                            AchievementSkeleton()
                         }
                     }
                 } else {
-                    items(sortedQuests) { quest ->
+                    items(sortedQuests, key = { it.type }) { quest ->
                         DuoCard(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().animateItem(),
                             borderColor = if (quest.current >= quest.target && quest.claimed == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                         ) {
                             Row(
@@ -795,12 +970,13 @@ fun DashboardScreen(
                                                                 if (res.success) {
                                                                     withContext(Dispatchers.Main) {
                                                                         SoundManager.playRewardClaim()
-                                                                        // Immediately mark claimed in local state for instant UI re-sort
+                                                                        toast.success("Quest reward claimed!")
+                                                                        // Mark claimed in place — keep the row's position.
+                                                                        // It only moves to the bottom when the tab is re-fetched.
                                                                         questsList = questsList.map { q ->
                                                                             if (q.type == quest.type) q.copy(claimed = 1) else q
                                                                         }
                                                                         onRefreshProfile()
-                                                                        fetchQuests()
                                                                     }
                                                                 }
                                                             } catch (e: Exception) {
@@ -880,11 +1056,8 @@ fun DashboardScreen(
                 val standings = leagueLeaderboard?.standings ?: emptyList()
                 if (standings.isEmpty()) {
                     item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Loading league leaderboard...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        SkeletonList(count = 4, modifier = Modifier.padding(top = 8.dp)) {
+                            LeaderboardRowSkeleton()
                         }
                     }
                 } else {
@@ -1053,12 +1226,11 @@ fun DashboardScreen(
                     }
                 } else if (globalLeaderboard.isEmpty()) {
                     item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("No global standings available.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                        }
+                        NumeraEmptyState(
+                            illustration = EmptyIllustration.Leaderboard,
+                            title = "No standings yet",
+                            message = "Be the first to climb. Solve a few problems and your name will rise onto the board."
+                        )
                     }
                 } else {
                     itemsIndexed(globalLeaderboard) { index, globalUser ->
@@ -1306,10 +1478,25 @@ fun LevelMapScreen(
     
     // Archive state
     var searchQuery by remember { mutableStateOf("") }
-    var selectedCategoryFilter by remember { mutableStateOf<String?>(null) }
-    var selectedStarsFilter by remember { mutableStateOf<Int?>(null) }
+    // Filter state is persisted so a user's preferred archive view survives leaving the tab.
+    var selectedCategoryFilter by remember { mutableStateOf<String?>(prefs.getString("archive_category", null)) }
+    var selectedStarsFilter by remember { mutableStateOf<Int?>(prefs.getInt("archive_stars", 0).takeIf { it in 1..5 }) }
+    LaunchedEffect(selectedCategoryFilter, selectedStarsFilter) {
+        prefs.edit()
+            .putString("archive_category", selectedCategoryFilter)
+            .putInt("archive_stars", selectedStarsFilter ?: 0)
+            .apply()
+    }
+    var showArchiveFilterSheet by remember { mutableStateOf(false) }
+    var archivePreviewItem by remember { mutableStateOf<ArchiveExercise?>(null) }
     var archiveResults by remember { mutableStateOf<List<ArchiveExercise>>(emptyList()) }
     var isArchiveLoading by remember { mutableStateOf(false) }
+    var isArchiveLoadingMore by remember { mutableStateOf(false) }
+    var archiveHasMore by remember { mutableStateOf(true) }
+    val archiveListState = rememberLazyListState()
+    val archivePageSize = 20
+    // Debounced query so typing fires one search per pause, not one per keystroke.
+    val debouncedQuery by rememberDebouncedValue(searchQuery, 300L)
 
     val scope = rememberCoroutineScope()
 
@@ -1351,29 +1538,77 @@ fun LevelMapScreen(
         }
     }
 
-    // Fetch archive search results when filters change
-    LaunchedEffect(searchQuery, selectedCategoryFilter, selectedStarsFilter) {
+    // Fetch the first archive page whenever the debounced query or filters change (resets paging).
+    LaunchedEffect(debouncedQuery, selectedCategoryFilter, selectedStarsFilter) {
         isArchiveLoading = true
-        scope.launch(Dispatchers.IO) {
-            try {
-                val token = RetrofitClient.authToken ?: ""
-                val results = RetrofitClient.apiService.searchArchive(
+        archiveHasMore = true
+        try {
+            val token = RetrofitClient.authToken ?: ""
+            val results = withContext(Dispatchers.IO) {
+                RetrofitClient.apiService.searchArchive(
                     token = token,
                     category = selectedCategoryFilter,
                     stars = selectedStarsFilter,
-                    query = if (searchQuery.isBlank()) null else searchQuery
+                    query = if (debouncedQuery.isBlank()) null else debouncedQuery,
+                    limit = archivePageSize,
+                    offset = 0
                 )
-                withContext(Dispatchers.Main) {
-                    archiveResults = results
-                    isArchiveLoading = false
+            }
+            archiveResults = results
+            archiveHasMore = results.isNotEmpty()
+        } catch (e: Exception) {
+            Log.e("ArchiveExplorer", "Failed to search archive: ${e.message}")
+        } finally {
+            isArchiveLoading = false
+        }
+    }
+
+    // Append the next archive page (infinite scroll). Preserves scroll position by appending.
+    val loadMoreArchive: () -> Unit = loadMore@{
+        if (isArchiveLoading || isArchiveLoadingMore || !archiveHasMore) return@loadMore
+        isArchiveLoadingMore = true
+        scope.launch {
+            try {
+                val token = RetrofitClient.authToken ?: ""
+                val more = withContext(Dispatchers.IO) {
+                    RetrofitClient.apiService.searchArchive(
+                        token = token,
+                        category = selectedCategoryFilter,
+                        stars = selectedStarsFilter,
+                        query = if (debouncedQuery.isBlank()) null else debouncedQuery,
+                        limit = archivePageSize,
+                        offset = archiveResults.size
+                    )
                 }
+                if (more.isEmpty()) archiveHasMore = false
+                else archiveResults = archiveResults + more
             } catch (e: Exception) {
-                Log.e("ArchiveExplorer", "Failed to search archive: ${e.message}")
-                withContext(Dispatchers.Main) {
-                    isArchiveLoading = false
-                }
+                Log.e("ArchiveExplorer", "Failed to load more archive: ${e.message}")
+            } finally {
+                isArchiveLoadingMore = false
             }
         }
+    }
+
+    // Single source of truth for opening an archive exercise — shared by the Solve button, the
+    // long-press context menu, and the quick-preview CTA so the launch stays consistent.
+    val launchArchiveItem: (ArchiveExercise) -> Unit = { item ->
+        onStartSoloGame(
+            SoloGame(
+                category = item.category,
+                level = 0,
+                gameMode = "archive_puzzle",
+                title = item.title,
+                question = item.question,
+                correctAnswer = item.correct_answer,
+                optionsJson = item.options.joinToString("|||"),
+                explanation = item.explanation,
+                lessonTitle = item.lessonTitle,
+                lessonContent = item.lessonContent,
+                lessonFormula = item.lessonFormula,
+                examplesJson = item.examples?.let { com.google.gson.Gson().toJson(it) }
+            )
+        )
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -1460,8 +1695,8 @@ fun LevelMapScreen(
             when (targetSubTab) {
             0 -> {
 
-                val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
-                val curveColorCapture = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+                val curveColorCapture = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -1892,18 +2127,11 @@ fun LevelMapScreen(
 
                     if (srsDueItems.isEmpty()) {
                         item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "All caught up! No active reviews due right now.",
-                                    textAlign = TextAlign.Center,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                                )
-                            }
+                            NumeraEmptyState(
+                                illustration = EmptyIllustration.Mistakes,
+                                title = "You're all caught up",
+                                message = "No reviews are due right now — your memory's looking sharp. Check back later."
+                            )
                         }
                     } else {
                         items(srsDueItems) { item ->
@@ -1973,128 +2201,188 @@ fun LevelMapScreen(
                     )
                     
                     Spacer(modifier = Modifier.height(8.dp))
-                    
-                    OutlinedTextField(
+
+                    // Breadcrumb: shows where the user is in the archive and lets them step back up
+                    // through their active filters with a single tap.
+                    val prettyCat = selectedCategoryFilter
+                        ?.replace('_', ' ')
+                        ?.split(' ')
+                        ?.joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+                    NumeraBreadcrumbs(
+                        items = buildList {
+                            val hasFilters = selectedCategoryFilter != null || selectedStarsFilter != null
+                            add(Crumb("Archive", onClick = if (hasFilters) {
+                                { selectedCategoryFilter = null; selectedStarsFilter = null }
+                            } else null))
+                            if (prettyCat != null) {
+                                add(Crumb(prettyCat, onClick = if (selectedStarsFilter != null) {
+                                    { selectedStarsFilter = null }
+                                } else null))
+                            }
+                            if (selectedStarsFilter != null) add(Crumb("$selectedStarsFilter★"))
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    NumeraSearchField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        leadingIcon = {
-                             com.example.numera.ui.components.NumeraIcon(
-                                 type = com.example.numera.ui.components.NumeraIconType.Search,
-                                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                             )
-                         },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        placeholder = "Search the archive…"
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
-                    val categories = listOf("arithmetic", "mental", "algebra", "calculus", "combinatorics", "number_theory")
+
+                    // Smart filter chips: instant, persistent, visually unmistakable. The full filter
+                    // set (topic + difficulty) also lives in a bottom sheet for focused control.
+                    val categoryOptions: List<Pair<String?, String>> = listOf(
+                        null to "All Topics",
+                        "arithmetic" to "Arithmetic",
+                        "mental" to "Mental Math",
+                        "algebra" to "Algebra",
+                        "calculus" to "Calculus",
+                        "combinatorics" to "Combinatorics",
+                        "number_theory" to "Number Theory"
+                    )
+                    val starOptions: List<Pair<Int?, String>> =
+                        listOf<Pair<Int?, String>>(null to "All Ratings") + (1..5).map { it to "⭐ $it" }
+
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .padding(vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (selectedCategoryFilter == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable { selectedCategoryFilter = null }
-                                .padding(horizontal = 14.dp, vertical = 10.dp)
-                        ) {
-                            Text(
-                                text = "All Categories",
-                                color = if (selectedCategoryFilter == null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
+                        NumeraFilterChip(
+                            label = "Filters",
+                            selected = selectedCategoryFilter != null || selectedStarsFilter != null,
+                            leadingIcon = NumeraIconType.Settings,
+                            onClick = { showArchiveFilterSheet = true }
+                        )
+                        Box(modifier = Modifier.weight(1f)) {
+                            NumeraFilterRow(
+                                options = categoryOptions,
+                                selected = selectedCategoryFilter,
+                                onSelect = { selectedCategoryFilter = it }
                             )
                         }
-                        categories.forEach { cat ->
-                            val isSelected = selectedCategoryFilter == cat
-                            Box(
+                    }
+
+                    if (showArchiveFilterSheet) {
+                        NumeraBottomSheet(
+                            onDismiss = { showArchiveFilterSheet = false },
+                            title = "Filter the archive",
+                            subtitle = "Narrow thousands of challenges down to exactly what you want to practice."
+                        ) {
+                            SheetSectionLabel("Topic")
+                            Row(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-                                    .clickable { selectedCategoryFilter = cat }
-                                    .padding(horizontal = 14.dp, vertical = 10.dp)
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
+                                categoryOptions.forEach { (value, label) ->
+                                    NumeraFilterChip(
+                                        label = label,
+                                        selected = value == selectedCategoryFilter,
+                                        onClick = { selectedCategoryFilter = value }
+                                    )
+                                }
+                            }
+                            // Progressive disclosure: most learners just pick a topic; difficulty
+                            // filtering stays tucked away until a power user opens it.
+                            DisclosureSection(
+                                title = "Difficulty",
+                                subtitle = "Filter by star rating",
+                                persistKey = "archive_difficulty_disclosure",
+                                initiallyExpanded = selectedStarsFilter != null
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    starOptions.forEach { (value, label) ->
+                                        NumeraFilterChip(
+                                            label = label,
+                                            selected = value == selectedStarsFilter,
+                                            onClick = { selectedStarsFilter = value }
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            DuoButton(
+                                text = "Show results",
+                                onClick = { showArchiveFilterSheet = false },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            if (selectedCategoryFilter != null || selectedStarsFilter != null) {
+                                Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = cat.uppercase(),
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                    text = "Clear all filters",
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
+                                    fontSize = 14.sp,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable {
+                                            selectedCategoryFilter = null
+                                            selectedStarsFilter = null
+                                        }
+                                        .padding(vertical = 10.dp),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                 )
                             }
                         }
                     }
-                    
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (selectedStarsFilter == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable { selectedStarsFilter = null }
-                                .padding(horizontal = 14.dp, vertical = 10.dp)
-                        ) {
-                            Text(
-                                text = "All Ratings",
-                                color = if (selectedStarsFilter == null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
-                            )
-                        }
-                        (1..5).forEach { starCount ->
-                            val isSelected = selectedStarsFilter == starCount
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-                                    .clickable { selectedStarsFilter = starCount }
-                                    .padding(horizontal = 14.dp, vertical = 10.dp)
-                            ) {
-                                Text(
-                                    text = "⭐ $starCount",
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
-                    }
-                    
+
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     if (isArchiveLoading) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        SkeletonList(
+                            count = 5,
+                            modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 16.dp)
                         ) {
-                            repeat(3) {
-                                NumeraSkeletonCard(height = 76.dp)
-                            }
+                            ArchiveRowSkeleton()
                         }
                     } else if (archiveResults.isEmpty()) {
                         Box(
                             modifier = Modifier.fillMaxWidth().weight(1f),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("No archive matching filters found.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), textAlign = TextAlign.Center)
+                            NumeraEmptyState(
+                                illustration = EmptyIllustration.Search,
+                                title = "Nothing matches that yet",
+                                message = "Try a different keyword, or clear your filters to explore the whole archive.",
+                                ctaLabel = if (searchQuery.isNotBlank() || selectedCategoryFilter != null || selectedStarsFilter != null) "Clear filters" else null,
+                                onCta = {
+                                    searchQuery = ""
+                                    selectedCategoryFilter = null
+                                    selectedStarsFilter = null
+                                }
+                            )
                         }
                     } else {
+                        rememberInfiniteScroll(
+                            listState = archiveListState,
+                            enabled = archiveHasMore,
+                            onLoadMore = loadMoreArchive
+                        )
                         LazyColumn(
+                            state = archiveListState,
                             modifier = Modifier.fillMaxWidth().weight(1f),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             items(archiveResults) { item ->
+                                ContextMenuArea(
+                                    actions = listOf(
+                                        ContextAction("Preview", NumeraIconType.Search) { archivePreviewItem = item },
+                                        ContextAction("Solve problem", NumeraIconType.Check) { launchArchiveItem(item) }
+                                    ),
+                                    onClick = { archivePreviewItem = item }
+                                ) {
                                 DuoCard(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
@@ -2145,36 +2433,26 @@ fun LevelMapScreen(
                                         }
                                         
                                         Text(
-                                            text = if (item.story.length > 150) item.story.take(150) + "..." else item.story,
-                                            fontSize = 13.sp,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                            text = item.question,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 3,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                         )
                                         
                                         Box(modifier = Modifier.align(Alignment.End)) {
                                             DuoButton(
                                                 text = "Solve Problem",
-                                                onClick = {
-                                                    onStartSoloGame(
-                                                        SoloGame(
-                                                            category = item.category,
-                                                            level = 0,
-                                                            gameMode = "archive_puzzle",
-                                                            title = item.title,
-                                                            question = item.question,
-                                                            correctAnswer = item.correct_answer,
-                                                            optionsJson = item.options.joinToString("|||"),
-                                                            explanation = item.explanation,
-                                                            lessonTitle = item.lessonTitle,
-                                                            lessonContent = item.lessonContent,
-                                                            lessonFormula = item.lessonFormula,
-                                                            examplesJson = item.examples?.let { com.google.gson.Gson().toJson(it) }
-                                                        )
-                                                    )
-                                                }
+                                                onClick = { launchArchiveItem(item) }
                                             )
                                         }
                                     }
                                 }
+                                }
+                            }
+                            item {
+                                LoadMoreFooter(isLoading = isArchiveLoadingMore)
                             }
                         }
                     }
@@ -2182,7 +2460,33 @@ fun LevelMapScreen(
             }
         }
     }
-    
+
+    // Quick preview: peek the problem (and its difficulty/topic) before committing to solve it.
+    archivePreviewItem?.let { item ->
+        NumeraQuickPreview(
+            onDismiss = { archivePreviewItem = null },
+            title = item.title,
+            subtitle = "${item.category.replace('_', ' ').replaceFirstChar { it.uppercase() }} · ${"⭐".repeat(item.stars)}",
+            primaryLabel = "Solve Problem",
+            onPrimary = { launchArchiveItem(item) }
+        ) {
+            Text(
+                text = item.question,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (item.lessonTitle != null) {
+                Text(
+                    text = "Concept: ${item.lessonTitle}",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+        }
+    }
+
     if (activeDebriefLevel != null && activeDebriefCategory != null) {
         LevelDebriefDialog(
             levelNum = activeDebriefLevel!!,
@@ -2786,14 +3090,11 @@ fun SocialScreen() {
 
         if (friendsList.isEmpty()) {
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No friends added yet. Add a user above to compare progress!", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), textAlign = TextAlign.Center)
-                }
+                NumeraEmptyState(
+                    illustration = EmptyIllustration.Friends,
+                    title = "No friends yet",
+                    message = "Add someone with the field above to compare progress and climb the ranks together."
+                )
             }
         } else {
             items(friendsList) { friend ->
@@ -3894,9 +4195,11 @@ fun UtilityShopItemCard(
 
 @Composable
 fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
+    val toast = LocalToast.current
     var featuredItems by remember { mutableStateOf<List<ShopItem>>(emptyList()) }
     var dailyItems by remember { mutableStateOf<List<ShopItem>>(emptyList()) }
     var utilityItems by remember { mutableStateOf<List<ShopItem>>(emptyList()) }
+    var catalogItems by remember { mutableStateOf<List<ShopItem>>(emptyList()) }
     var userUtilities by remember { mutableStateOf<List<UtilityBalance>>(emptyList()) }
     var inventoryIds by remember { mutableStateOf<List<String>>(emptyList()) }
     var shopErrorMessage by remember { mutableStateOf<String?>(null) }
@@ -3904,6 +4207,9 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
     var featuredExpiresInSeconds by remember { mutableStateOf<Long?>(null) }
     var selectedItemForDetail by remember { mutableStateOf<ShopItem?>(null) }
     var purchasedItemForReveal by remember { mutableStateOf<ShopItem?>(null) }
+    var showFullCatalog by remember { mutableStateOf(false) }
+    var catalogTypeFilter by remember { mutableStateOf<String?>(null) }
+    var isShopLoading by remember { mutableStateOf(true) }
 
     val scope = rememberCoroutineScope()
 
@@ -3913,9 +4219,11 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                 val token = RetrofitClient.authToken ?: ""
                 val res = RetrofitClient.apiService.getShop(token)
                 withContext(Dispatchers.Main) {
+                    isShopLoading = false
                     featuredItems = res.featuredItems ?: emptyList()
                     dailyItems = res.dailyItems ?: emptyList()
                     utilityItems = res.utilityItems ?: emptyList()
+                    catalogItems = res.catalogItems ?: emptyList()
                     userUtilities = res.utilities ?: emptyList()
                     inventoryIds = res.inventory
                     expiresInSeconds = res.expiresInSeconds
@@ -3927,6 +4235,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                 }
             } catch (e: Exception) {
                 Log.e("Shop", "Shop fetch err: ${e.message}")
+                withContext(Dispatchers.Main) { isShopLoading = false }
             }
         }
     }
@@ -3957,6 +4266,18 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
+            }
+
+            if (isShopLoading) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        LessonCardSkeleton()
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            ShopItemSkeleton()
+                            ShopItemSkeleton()
+                        }
+                    }
+                }
             }
 
             // Collection completion milestone progress card
@@ -4175,6 +4496,85 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     )
                 }
             }
+
+            // Full Catalog Section — every cosmetic, always purchasable (not gated by rotation)
+            if (catalogItems.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp)
+                            .clickable {
+                                com.example.numera.haptic.HapticManager.playSoft()
+                                showFullCatalog = !showFullCatalog
+                            },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "📚 FULL COLLECTION (${catalogItems.size})",
+                            fontWeight = FontWeight.Black,
+                            fontSize = 14.sp,
+                            color = Color.White
+                        )
+                        Icon(
+                            imageVector = if (showFullCatalog) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Toggle catalog",
+                            tint = Color.White
+                        )
+                    }
+                }
+
+                if (showFullCatalog) {
+                    item {
+                        Text(
+                            text = "Browse and buy any cosmetic directly — no waiting for the rotation.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                    }
+
+                    // Type filter chips
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            val types = listOf(null to "All", "avatar" to "Avatars", "banner" to "Banners", "badge" to "Badges", "theme" to "Themes")
+                            types.forEach { (typeVal, label) ->
+                                val isSel = catalogTypeFilter == typeVal
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(if (isSel) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.08f))
+                                        .clickable { catalogTypeFilter = typeVal }
+                                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = label,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSel) MaterialTheme.colorScheme.onPrimary else Color.White.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    val filteredCatalog = if (catalogTypeFilter == null) catalogItems
+                        else catalogItems.filter { it.type == catalogTypeFilter }
+
+                    items(filteredCatalog) { item ->
+                        DailyShopItemCard(
+                            item = item,
+                            inventoryIds = inventoryIds,
+                            user = user,
+                            onClick = { selectedItemForDetail = item }
+                        )
+                    }
+                }
+            }
         }
 
         // Cinematic Reveal Overlay Dialog
@@ -4387,7 +4787,8 @@ fun ProfileScreen(
     unlockedRelicIds: Set<String>
 ) {
     val scope = rememberCoroutineScope()
-    
+    val toast = LocalToast.current
+
     var shopData by remember { mutableStateOf<ShopResponse?>(null) }
     var inventoryLoading by remember { mutableStateOf(true) }
     var equipStatusMsg by remember { mutableStateOf<String?>(null) }
@@ -4683,6 +5084,7 @@ fun ProfileScreen(
                                                         RetrofitClient.apiService.equipItem(token, EquipRequest("avatar", item.value))
                                                         withContext(Dispatchers.Main) {
                                                             equipStatusMsg = "Equipped ${item.name}!"
+                                                            toast.success("Equipped ${item.name}!")
                                                             onRefreshProfile()
                                                         }
                                                     } catch (e: Exception) {
@@ -4739,6 +5141,7 @@ fun ProfileScreen(
                                                         RetrofitClient.apiService.equipItem(token, EquipRequest("banner", item.value))
                                                         withContext(Dispatchers.Main) {
                                                             equipStatusMsg = "Equipped ${item.name}!"
+                                                            toast.success("Equipped ${item.name}!")
                                                             onRefreshProfile()
                                                         }
                                                     } catch (e: Exception) {
@@ -4794,6 +5197,7 @@ fun ProfileScreen(
                                                         RetrofitClient.apiService.equipItem(token, EquipRequest("badge", item.value))
                                                         withContext(Dispatchers.Main) {
                                                             equipStatusMsg = "Equipped ${item.name}!"
+                                                            toast.success("Equipped ${item.name}!")
                                                             onRefreshProfile()
                                                         }
                                                     } catch (e: Exception) {
@@ -4919,69 +5323,6 @@ fun ProfileScreen(
                 }
             )
         }
-
-        // Skill Mastery Chart
-        Card(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = "Skill Mastery Chart",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = "Track your proficiency across core mathematical domains based on correct solutions.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                val mastery = user?.mastery ?: CategoryMastery(0, 0, 0, 0, 0, 0)
-                
-                MasteryBar(
-                    topicName = "Arithmetic",
-                    correctCount = mastery.arithmetic_correct,
-                    maxCount = maxOf(50, mastery.arithmetic_correct),
-                    color = Color(0xFF58CC02)
-                )
-                MasteryBar(
-                    topicName = "Mental Math",
-                    correctCount = mastery.mental_correct,
-                    maxCount = maxOf(50, mastery.mental_correct),
-                    color = Color(0xFFFFC000)
-                )
-                MasteryBar(
-                    topicName = "Algebra",
-                    correctCount = mastery.algebra_correct,
-                    maxCount = maxOf(50, mastery.algebra_correct),
-                    color = Color(0xFF1CB0F6)
-                )
-                MasteryBar(
-                    topicName = "Calculus & Analysis",
-                    correctCount = mastery.calculus_correct,
-                    maxCount = maxOf(50, mastery.calculus_correct),
-                    color = Color(0xFFFF4B4B)
-                )
-                MasteryBar(
-                    topicName = "Combinatorics",
-                    correctCount = mastery.combinatorics_correct,
-                    maxCount = maxOf(50, mastery.combinatorics_correct),
-                    color = Color(0xFFCE82FF)
-                )
-                MasteryBar(
-                    topicName = "Number Theory",
-                    correctCount = mastery.number_theory_correct,
-                    maxCount = maxOf(50, mastery.number_theory_correct),
-                    color = Color(0xFFFF9600)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         if (activityLoading) {
             NumeraPremiumLoader(cardPadding = 16.dp)
@@ -5269,11 +5610,8 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     if (achievementsList.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Loading achievements...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 13.sp)
+                        SkeletonList(count = 4, modifier = Modifier.padding(vertical = 8.dp)) {
+                            AchievementSkeleton()
                         }
                     } else {
                         val categoryAchievements = achievementsList.filter { 
@@ -5331,7 +5669,9 @@ fun ProfileScreen(
                                                 verticalAlignment = Alignment.Top
                                             ) {
                                                 sortedMilestones.forEachIndexed { index, milestone ->
-                                                    val isCompleted = milestone.progress >= milestone.target_value
+                                                    // Completion = server's source of truth (completed_at). progress can fall
+                                                    // back below target (e.g. a broken streak) while it stays claimable.
+                                                    val isCompleted = milestone.completed_at > 0 || milestone.progress >= milestone.target_value
                                                     val isClaimed = milestone.claimed == 1
                                                     
                                                     // Determine timeline states:
@@ -5353,11 +5693,19 @@ fun ProfileScreen(
                                                             .weight(1f)
                                                             .border(
                                                                 1.dp,
-                                                                if (state == "active" || state == "unclaimed") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f).copy(alpha = 0.3f),
+                                                                when (state) {
+                                                                    "claimed" -> CorrectGreen.copy(alpha = 0.45f)
+                                                                    "active", "unclaimed" -> MaterialTheme.colorScheme.primary
+                                                                    else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                                                },
                                                                 RoundedCornerShape(12.dp)
                                                             )
                                                             .background(
-                                                                if (state == "claimed") Color(0x1158CC02) else if (state == "unclaimed") MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent,
+                                                                when (state) {
+                                                                    "claimed" -> CorrectGreen.copy(alpha = 0.10f)
+                                                                    "unclaimed" -> MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                                                                    else -> Color.Transparent
+                                                                },
                                                                 RoundedCornerShape(12.dp)
                                                             )
                                                             .padding(6.dp)
@@ -5371,14 +5719,19 @@ fun ProfileScreen(
                                                                 when (state) {
                                                                     "claimed" -> {
                                                                         Box(
-                                                                            modifier = Modifier.size(20.dp).clip(CircleShape).background(CorrectGreen),
+                                                                            modifier = Modifier.size(22.dp).clip(CircleShape).background(CorrectGreen),
                                                                             contentAlignment = Alignment.Center
                                                                         ) {
-                                                                            Text("✓", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                                                                            NumeraIcon(
+                                                                                type = NumeraIconType.Check,
+                                                                                tint = Color.White,
+                                                                                animate = false,
+                                                                                modifier = Modifier.size(14.dp)
+                                                                            )
                                                                         }
                                                                     }
                                                                     "locked" -> {
-                                                                        NumeraIcon(type = NumeraIconType.Lock, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f).copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
+                                                                        NumeraIcon(type = NumeraIconType.Lock, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f), animate = false, modifier = Modifier.size(16.dp))
                                                                     }
                                                                     else -> {
                                                                         AchievementBadge(achievementId = milestone.id, modifier = Modifier.fillMaxSize())
@@ -5396,14 +5749,14 @@ fun ProfileScreen(
                                                                 color = if (state == "locked") MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
                                                             )
                                                             
-                                                            if (state != "claimed" && state != "locked") {
+                                                            if (state == "active") {
                                                                 Text(
                                                                     text = "${milestone.progress}/${milestone.target_value}",
                                                                     fontSize = 9.sp,
                                                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                                                     fontWeight = FontWeight.SemiBold
                                                                 )
-                                                                
+
                                                                 // Custom progress bar
                                                                 Box(
                                                                     modifier = Modifier
@@ -5421,6 +5774,8 @@ fun ProfileScreen(
                                                                 }
                                                             } else if (state == "claimed") {
                                                                 Text("Claimed", fontSize = 9.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
+                                                            } else if (state == "unclaimed") {
+                                                                Text("Ready!", fontSize = 9.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                                                             } else {
                                                                 Text("Locked", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                                                             }
@@ -5437,6 +5792,7 @@ fun ProfileScreen(
                                                                                 )
                                                                                 withContext(Dispatchers.Main) {
                                                                                     SoundManager.playRewardClaim()
+                                                                                    toast.achievement("Milestone reward claimed!")
                                                                                     onRefreshProfile()
                                                                                     fetchAchievements()
                                                                                 }
@@ -5652,24 +6008,32 @@ fun ProfileScreen(
                                                     fontWeight = FontWeight.Bold,
                                                     color = WrongRed,
                                                     modifier = Modifier.clickable {
-                                                        scope.launch(Dispatchers.IO) {
-                                                            try {
-                                                                val token = RetrofitClient.authToken ?: ""
-                                                                RetrofitClient.apiService.toggleFavorite(
-                                                                    token,
-                                                                    ToggleFavoriteRequest(
-                                                                        title = ex.title,
-                                                                        category = ex.category,
-                                                                        question = ex.question,
-                                                                        correct_answer = ex.correct_answer,
-                                                                        options = ex.options,
-                                                                        explanation = ex.explanation
-                                                                    )
-                                                                )
-                                                                fetchFavoritesAndCollections()
-                                                            } catch (e: Exception) {
-                                                                Log.e("Profile", "Unfavorite error", e)
-                                                            }
+                                                        // Optimistic: drop it from the list immediately, sync in the background.
+                                                        scope.launch {
+                                                            runOptimistic(
+                                                                apply = {
+                                                                    favoritesList = favoritesList.filterNot { it === ex }
+                                                                    toast.info("Removed from saved")
+                                                                },
+                                                                revert = { fetchFavoritesAndCollections() },
+                                                                call = {
+                                                                    val token = RetrofitClient.authToken ?: ""
+                                                                    withContext(Dispatchers.IO) {
+                                                                        RetrofitClient.apiService.toggleFavorite(
+                                                                            token,
+                                                                            ToggleFavoriteRequest(
+                                                                                title = ex.title,
+                                                                                category = ex.category,
+                                                                                question = ex.question,
+                                                                                correct_answer = ex.correct_answer,
+                                                                                options = ex.options,
+                                                                                explanation = ex.explanation
+                                                                            )
+                                                                        )
+                                                                    }
+                                                                },
+                                                                onError = { toast.error("Couldn't remove — restored it") }
+                                                            )
                                                         }
                                                     }
                                                 )
@@ -5741,19 +6105,28 @@ fun ProfileScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         if (newCollectionName.isNotBlank()) {
+                            val nameToCreate = newCollectionName.trim()
+                            val isPublic = isNewCollectionPublic
+                            newCollectionName = ""
+                            isNewCollectionPublic = false
+                            showCreateCollectionDialog = false
                             scope.launch(Dispatchers.IO) {
                                 try {
                                     val token = RetrofitClient.authToken ?: ""
-                                    RetrofitClient.apiService.createCollection(token, CreateCollectionRequest(newCollectionName.trim(), isNewCollectionPublic))
-                                    fetchFavoritesAndCollections()
+                                    RetrofitClient.apiService.createCollection(token, CreateCollectionRequest(nameToCreate, isPublic))
+                                    val colls = RetrofitClient.apiService.getCollections(token)
+                                    withContext(Dispatchers.Main) {
+                                        collectionsList = colls
+                                    }
                                 } catch (e: Exception) {
                                     Log.e("Profile", "Create collection error", e)
                                 }
                             }
+                        } else {
+                            newCollectionName = ""
+                            isNewCollectionPublic = false
+                            showCreateCollectionDialog = false
                         }
-                        newCollectionName = ""
-                        isNewCollectionPublic = false
-                        showCreateCollectionDialog = false
                     }) {
                         Text("Create")
                     }
@@ -5855,9 +6228,10 @@ fun ProfileScreen(
         }
 
         if (exerciseToAssign != null) {
+            val targetExercise = exerciseToAssign!!
             AlertDialog(
                 onDismissRequest = { exerciseToAssign = null },
-                title = { Text("Assign to Collection", fontWeight = FontWeight.Bold) },
+                title = { Text("Move to Collection", fontWeight = FontWeight.Bold) },
                 text = {
                     Column(
                         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -5865,16 +6239,16 @@ fun ProfileScreen(
                     ) {
                         TextButton(
                             onClick = {
+                                exerciseToAssign = null
                                 scope.launch(Dispatchers.IO) {
                                     try {
                                         val token = RetrofitClient.authToken ?: ""
-                                        RetrofitClient.apiService.assignCollection(token, AssignCollectionRequest(exerciseToAssign!!.id, null))
+                                        RetrofitClient.apiService.assignCollection(token, AssignCollectionRequest(targetExercise.id, null))
                                         fetchFavoritesAndCollections()
                                     } catch (e: Exception) {
                                         Log.e("Profile", "Assign collection error", e)
                                     }
                                 }
-                                exerciseToAssign = null
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -5883,16 +6257,16 @@ fun ProfileScreen(
                         collectionsList.forEach { col ->
                             TextButton(
                                 onClick = {
+                                    exerciseToAssign = null
                                     scope.launch(Dispatchers.IO) {
                                         try {
                                             val token = RetrofitClient.authToken ?: ""
-                                            RetrofitClient.apiService.assignCollection(token, AssignCollectionRequest(exerciseToAssign!!.id, col.id))
+                                            RetrofitClient.apiService.assignCollection(token, AssignCollectionRequest(targetExercise.id, col.id))
                                             fetchFavoritesAndCollections()
                                         } catch (e: Exception) {
                                             Log.e("Profile", "Assign collection error", e)
                                         }
                                     }
-                                    exerciseToAssign = null
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -5976,6 +6350,7 @@ fun SettingsScreen(
     onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val toast = LocalToast.current
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("numera_prefs", android.content.Context.MODE_PRIVATE) }
 
@@ -6906,7 +7281,8 @@ fun SettingsScreen(
                         com.example.numera.ui.components.NumeraIcon(
                             type = com.example.numera.ui.components.NumeraIconType.Settings,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
+                            animate = false
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Appearance & themes", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
@@ -6951,6 +7327,7 @@ fun SettingsScreen(
                                                         withContext(Dispatchers.Main) {
                                                             ThemeManager.currentTheme = themeKey
                                                             ThemeManager.saveSettings(context)
+                                                            toast.success("Theme applied")
                                                             onRefreshProfile()
                                                         }
                                                     }
@@ -8031,7 +8408,7 @@ fun LevelNode(
         category == "mental" -> Triple(Color(0xFF818CF8), Color(0xFF4F46E5), Color(0xFF3730A3))
         category == "arithmetic" -> Triple(Color(0xFF34D399), Color(0xFF059669), Color(0xFF065F46))
         category == "algebra" -> Triple(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFF92400E))
-        category == "number_theory" -> Triple(Color(0xFF06B6D4), Color(0xFF0891B2), Color(0xFF155E75))
+        category == "number_theory" -> Triple(Color(0xFF2DD4BF), Color(0xFF0D9488), Color(0xFF115E59))
         category == "calculus" -> Triple(Color(0xFF3B82F6), Color(0xFF2563EB), Color(0xFF1E3A8A))
         category == "combinatorics" -> Triple(Color(0xFFEC4899), Color(0xFFDB2777), Color(0xFF881337))
         else -> Triple(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFF92400E))
@@ -8658,7 +9035,7 @@ fun LevelDebriefDialog(
         category == "mental" -> Triple(Color(0xFF818CF8), Color(0xFF4F46E5), Color(0xFF3730A3))
         category == "arithmetic" -> Triple(Color(0xFF34D399), Color(0xFF059669), Color(0xFF065F46))
         category == "algebra" -> Triple(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFF92400E))
-        category == "number_theory" -> Triple(Color(0xFF06B6D4), Color(0xFF0891B2), Color(0xFF155E75))
+        category == "number_theory" -> Triple(Color(0xFF2DD4BF), Color(0xFF0D9488), Color(0xFF115E59))
         category == "calculus" -> Triple(Color(0xFF3B82F6), Color(0xFF2563EB), Color(0xFF1E3A8A))
         category == "combinatorics" -> Triple(Color(0xFFEC4899), Color(0xFFDB2777), Color(0xFF881337))
         else -> Triple(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFF92400E))
@@ -9183,27 +9560,13 @@ fun NotificationsDialog(
                     .heightIn(max = 400.dp)
             ) {
                 if (notifications.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 48.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "✨",
-                                fontSize = 36.sp,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "You're all caught up!",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                        }
-                    }
+                    NumeraEmptyState(
+                        illustration = EmptyIllustration.Notifications,
+                        title = "You're all caught up",
+                        message = "No new notifications right now. We'll let you know the moment something happens.",
+                        ctaLabel = "Continue Learning",
+                        onCta = onDismissRequest
+                    )
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxWidth(),
@@ -9306,11 +9669,13 @@ fun NotificationsDialog(
 
 @Composable
 fun WeeklyActivityChart(activityDays: List<ActivityDay>) {
-    val barColor = MaterialTheme.colorScheme.primary
+    val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
     val textColor = MaterialTheme.colorScheme.onSurface
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-    
+    val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.10f)
+    val mutedBarColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+
     val displayDays = remember(activityDays) {
         if (activityDays.isNullOrEmpty()) {
             val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
@@ -9325,67 +9690,148 @@ fun WeeklyActivityChart(activityDays: List<ActivityDay>) {
             activityDays.takeLast(7)
         }
     }
-    
+
     val maxSolved = remember(displayDays) {
         val maxVal = displayDays.maxOfOrNull { it.solved_count } ?: 0
         if (maxVal == 0) 10 else maxVal
     }
+    val totalSolved = remember(displayDays) { displayDays.sumOf { it.solved_count } }
+    val bestDay = remember(displayDays) { displayDays.maxOfOrNull { it.solved_count } ?: 0 }
+    val activeDays = remember(displayDays) { displayDays.count { it.solved_count > 0 } }
+    val todayStr = remember {
+        java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+    }
+
+    // Animate bars growing in
+    var animate by remember { mutableStateOf(false) }
+    LaunchedEffect(displayDays) { animate = false; animate = true }
+    val growth by animateFloatAsState(
+        targetValue = if (animate) 1f else 0f,
+        animationSpec = tween(900, easing = FastOutSlowInEasing),
+        label = "barGrowth"
+    )
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Study Activity (Last 7 Days)",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = "Your daily solved math equations.",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-            
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            primary.copy(alpha = 0.06f),
+                            MaterialTheme.colorScheme.surface
+                        )
+                    )
+                )
+                .padding(18.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Weekly Activity",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Equations solved over the last 7 days",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(primary.copy(alpha = 0.12f))
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = "🔥 $totalSolved",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Black,
+                        color = primary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Summary stat chips
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                @Composable
+                fun StatChip(label: String, value: String, accent: Color, modifier: Modifier) {
+                    Column(
+                        modifier = modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(accent.copy(alpha = 0.08f))
+                            .border(1.dp, accent.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                            .padding(vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(value, fontSize = 16.sp, fontWeight = FontWeight.Black, color = accent)
+                        Text(label, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                    }
+                }
+                StatChip("BEST DAY", bestDay.toString(), primary, Modifier.weight(1f))
+                StatChip("ACTIVE DAYS", "$activeDays/7", secondary, Modifier.weight(1f))
+                StatChip("DAILY AVG", (totalSolved / 7).toString(), MaterialTheme.colorScheme.tertiary, Modifier.weight(1f))
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
             val density = LocalDensity.current
-            val textPaint = remember(textColor, density) {
+            val valuePaint = remember(textColor, density) {
                 android.graphics.Paint().apply {
                     color = textColor.toArgb()
-                    textSize = with(density) { 10.sp.toPx() }
+                    textSize = with(density) { 11.sp.toPx() }
                     isAntiAlias = true
+                    isFakeBoldText = true
                     textAlign = android.graphics.Paint.Align.CENTER
                 }
             }
             val labelPaint = remember(labelColor, density) {
                 android.graphics.Paint().apply {
                     color = labelColor.toArgb()
-                    textSize = with(density) { 9.sp.toPx() }
+                    textSize = with(density) { 10.sp.toPx() }
                     isAntiAlias = true
                     textAlign = android.graphics.Paint.Align.CENTER
                 }
             }
+            val primaryArgb = primary
+            val secondaryArgb = secondary
 
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(160.dp)
+                    .height(170.dp)
             ) {
                 val canvasWidth = size.width
                 val canvasHeight = size.height
-                
-                val bottomLabelHeight = 40f
-                val topPadding = 20f
+
+                val bottomLabelHeight = 44f
+                val topPadding = 26f
                 val chartHeight = canvasHeight - bottomLabelHeight - topPadding
-                
+
                 val barCount = displayDays.size
-                val barWidth = 24.dp.toPx()
+                val barWidth = 26.dp.toPx()
                 val totalBarsWidth = barWidth * barCount
                 val spacing = (canvasWidth - totalBarsWidth) / (barCount + 1)
-                
+
+                // Subtle dashed gridlines
                 val gridLines = listOf(0f, 0.5f, 1.0f)
                 gridLines.forEach { fraction ->
                     val y = topPadding + chartHeight * (1f - fraction)
@@ -9393,51 +9839,73 @@ fun WeeklyActivityChart(activityDays: List<ActivityDay>) {
                         color = gridColor,
                         start = androidx.compose.ui.geometry.Offset(0f, y),
                         end = androidx.compose.ui.geometry.Offset(canvasWidth, y),
-                        strokeWidth = 1.dp.toPx()
+                        strokeWidth = 1.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f)
                     )
                 }
 
                 displayDays.forEachIndexed { index, day ->
                     val fraction = day.solved_count.toFloat() / maxSolved.toFloat()
-                    val currentBarHeight = chartHeight * fraction
-                    
+                    val currentBarHeight = chartHeight * fraction * growth
+                    val isToday = day.date == todayStr
+                    val isBest = day.solved_count == bestDay && bestDay > 0
+
                     val x = spacing + index * (barWidth + spacing)
                     val left = x
                     val right = x + barWidth
                     val bottom = topPadding + chartHeight
-                    val top = bottom - currentBarHeight
-                    
-                    val path = Path().apply {
-                        val rx = 6.dp.toPx()
-                        val ry = 6.dp.toPx()
+                    val rx = 8.dp.toPx()
+
+                    // Track (faint full-height capsule behind the bar)
+                    val trackPath = Path().apply {
                         moveTo(left, bottom)
-                        lineTo(left, top + ry)
-                        quadraticBezierTo(left, top, left + rx, top)
-                        lineTo(right - rx, top)
-                        quadraticBezierTo(right, top, right, top + ry)
+                        lineTo(left, topPadding + rx)
+                        quadraticBezierTo(left, topPadding, left + rx, topPadding)
+                        lineTo(right - rx, topPadding)
+                        quadraticBezierTo(right, topPadding, right, topPadding + rx)
                         lineTo(right, bottom)
                         close()
                     }
-                    
-                    drawPath(
-                        path = path,
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                barColor,
-                                barColor.copy(alpha = 0.4f)
+                    drawPath(path = trackPath, color = mutedBarColor)
+
+                    if (currentBarHeight > rx) {
+                        val top = bottom - currentBarHeight
+                        val barPath = Path().apply {
+                            moveTo(left, bottom)
+                            lineTo(left, top + rx)
+                            quadraticBezierTo(left, top, left + rx, top)
+                            lineTo(right - rx, top)
+                            quadraticBezierTo(right, top, right, top + rx)
+                            lineTo(right, bottom)
+                            close()
+                        }
+                        val barBrush = if (isToday || isBest) {
+                            Brush.verticalGradient(listOf(secondaryArgb, primaryArgb))
+                        } else {
+                            Brush.verticalGradient(listOf(primaryArgb, primaryArgb.copy(alpha = 0.55f)))
+                        }
+                        drawPath(path = barPath, brush = barBrush)
+
+                        // Glossy highlight on left edge
+                        drawLine(
+                            color = Color.White.copy(alpha = 0.35f),
+                            start = androidx.compose.ui.geometry.Offset(left + rx * 0.7f, top + rx),
+                            end = androidx.compose.ui.geometry.Offset(left + rx * 0.7f, bottom - rx),
+                            strokeWidth = 2.dp.toPx(),
+                            cap = StrokeCap.Round
+                        )
+
+                        // Value label above bar
+                        if (day.solved_count > 0 && growth > 0.7f) {
+                            drawContext.canvas.nativeCanvas.drawText(
+                                day.solved_count.toString(),
+                                x + barWidth / 2,
+                                top - 10f,
+                                valuePaint
                             )
-                        )
-                    )
-                    
-                    if (day.solved_count > 0) {
-                        drawContext.canvas.nativeCanvas.drawText(
-                            day.solved_count.toString(),
-                            x + barWidth / 2,
-                            top - 6f,
-                            textPaint
-                        )
+                        }
                     }
-                    
+
                     val dayLabel = try {
                         val sdfInput = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
                         val date = sdfInput.parse(day.date)
@@ -9447,10 +9915,11 @@ fun WeeklyActivityChart(activityDays: List<ActivityDay>) {
                         day.date
                     }
 
+                    labelPaint.isFakeBoldText = isToday
                     drawContext.canvas.nativeCanvas.drawText(
-                        dayLabel,
+                        if (isToday) "•$dayLabel" else dayLabel,
                         x + barWidth / 2,
-                        bottom + 20f,
+                        bottom + 26f,
                         labelPaint
                     )
                 }

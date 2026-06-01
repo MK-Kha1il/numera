@@ -309,16 +309,44 @@ fun ClaimButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val infiniteTransition = rememberInfiniteTransition(label = "ClaimPulse")
+    val shimmerX by infiniteTransition.animateFloat(
+        initialValue = -1f,
+        targetValue = 2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1600, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer"
+    )
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(700, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "scalePulse"
+    )
+
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(CorrectGreen)
+            .graphicsLayer(scaleX = scale, scaleY = scale)
+            .clip(RoundedCornerShape(10.dp))
+            .background(
+                Brush.horizontalGradient(
+                    colors = listOf(Color(0xFF58CC02), Color(0xFF86E800), Color(0xFF58CC02)),
+                    startX = shimmerX * 200f,
+                    endX = shimmerX * 200f + 200f
+                )
+            )
+            .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
             .clickable {
                 SoundManager.playClick()
-                com.example.numera.haptic.HapticManager.playSoft()
+                com.example.numera.haptic.HapticManager.playMedium()
                 onClick()
             }
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -326,7 +354,9 @@ fun ClaimButton(
             color = Color.White,
             fontWeight = FontWeight.Black,
             fontSize = 11.sp,
-            letterSpacing = 0.5.sp
+            letterSpacing = 0.8.sp,
+            maxLines = 1,
+            softWrap = false
         )
     }
 }

@@ -3,12 +3,15 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
-const dbPath = path.join(__dirname, 'numera.db');
+// DB location is env-overridable so tests (and alternate deployments) can point at a
+// throwaway database instead of the live numera.db. Defaults to the canonical file.
+const dbPath = process.env.NUMERA_DB_PATH || path.join(__dirname, 'numera.db');
 const db = new sqlite3.Database(dbPath);
 // WAL mode: allows concurrent reads during writes — critical for a live game server
 db.run("PRAGMA journal_mode=WAL;");
 db.run("PRAGMA foreign_keys = ON;");
 db.run("PRAGMA synchronous = NORMAL;"); // Safe with WAL; faster than FULL
+db.run("PRAGMA busy_timeout = 5000;");  // Wait up to 5s for a lock instead of throwing SQLITE_BUSY
 
 // Safe ALTER helper — silently ignores "duplicate column" errors from re-runs
 function safeAlter(sql) {
@@ -228,10 +231,13 @@ function initDb() {
       `);
 
       // 7. Achievements table
-      db.run(`DROP TABLE IF EXISTS user_achievements`);
-      db.run(`DROP TABLE IF EXISTS achievements`);
+      // NOTE: `achievements` is a CATALOG table (definitions). It is refreshed
+      // every boot via `DELETE FROM achievements` + re-seed below, so its rows
+      // always match the latest achievementsList. We intentionally do NOT drop
+      // `user_achievements` here — that table holds per-user progress/claims and
+      // dropping it on every restart wiped all players' achievement state.
       db.run(`
-        CREATE TABLE achievements (
+        CREATE TABLE IF NOT EXISTS achievements (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           description TEXT NOT NULL,
@@ -246,9 +252,9 @@ function initDb() {
         )
       `);
 
-      // 8. User achievements mapping table
+      // 8. User achievements mapping table (per-user progress — never dropped)
       db.run(`
-        CREATE TABLE user_achievements (
+        CREATE TABLE IF NOT EXISTS user_achievements (
           user_id INTEGER,
           achievement_id TEXT,
           progress INTEGER DEFAULT 0,
@@ -435,6 +441,232 @@ function initDb() {
         )
       `);
 
+      // ── NumeraRating System Tables ────────────────────────────────────────
+
+      // 20. Per-player, per-domain skill rating (mu/sigma Bayesian model)
+      db.run(`
+        CREATE TABLE IF NOT EXISTS user_ratings (
+          user_id        INTEGER NOT NULL,
+          domain         TEXT    NOT NULL,
+          mu             REAL    DEFAULT 1500,
+          sigma          REAL    DEFAULT 350,
+          display_rating INTEGER DEFAULT 0,
+          sessions_count INTEGER DEFAULT 0,
+          last_updated   INTEGER DEFAULT 0,
+          PRIMARY KEY (user_id, domain),
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+
+      // 21. Full session-by-session rating history for transparency + analytics
+      db.run(`
+        CREATE TABLE IF NOT EXISTS rating_history (
+          id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id             INTEGER NOT NULL,
+          domain              TEXT    NOT NULL,
+          mu_before           REAL,
+          sigma_before        REAL,
+          mu_after            REAL,
+          sigma_after         REAL,
+          display_before      INTEGER,
+          display_after       INTEGER,
+          delta               REAL,
+          performance_score   REAL,
+          expected_score      REAL,
+          components_json     TEXT,
+          explanation         TEXT,
+          session_category    TEXT,
+          session_level       INTEGER,
+          game_mode           TEXT,
+          created_at          INTEGER,
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+
+      // 22. Smurf / anomaly detection signals
+      db.run(`
+        CREATE TABLE IF NOT EXISTS smurf_signals (
+          user_id          INTEGER PRIMARY KEY,
+          anomaly_score    REAL    DEFAULT 0,
+          consecutive_high INTEGER DEFAULT 0,
+          flagged          INTEGER DEFAULT 0,
+          review_count     INTEGER DEFAULT 0,
+          last_checked     INTEGER DEFAULT 0,
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+
+      // 23. Per-domain learning velocity (EMA of rating delta per session)
+      db.run(`
+        CREATE TABLE IF NOT EXISTS learning_velocity (
+          user_id    INTEGER NOT NULL,
+          domain     TEXT    NOT NULL,
+          velocity   REAL    DEFAULT 0,
+          updated_at INTEGER DEFAULT 0,
+          PRIMARY KEY (user_id, domain),
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+
+      // 24. Anti-tilt session tracking
+      db.run(`
+        CREATE TABLE IF NOT EXISTS tilt_tracking (
+          user_id      INTEGER PRIMARY KEY,
+          loss_streak  INTEGER DEFAULT 0,
+          tilt_score   REAL    DEFAULT 0,
+          tilted       INTEGER DEFAULT 0,
+          last_session INTEGER DEFAULT 0,
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+
+      // 25. Season definitions
+      db.run(`
+        CREATE TABLE IF NOT EXISTS seasons (
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
+          name      TEXT    NOT NULL,
+          start_at  INTEGER NOT NULL,
+          end_at    INTEGER NOT NULL,
+          is_active INTEGER DEFAULT 0
+        )
+      `);
+
+      // 26. Season peak/final ratings per player per domain
+      db.run(`
+        CREATE TABLE IF NOT EXISTS season_ratings (
+          user_id       INTEGER NOT NULL,
+          season_id     INTEGER NOT NULL,
+          domain        TEXT    NOT NULL,
+          peak_display  INTEGER DEFAULT 0,
+          final_display INTEGER DEFAULT 0,
+          PRIMARY KEY (user_id, season_id, domain),
+          FOREIGN KEY (user_id)   REFERENCES users(id),
+          FOREIGN KEY (season_id) REFERENCES seasons(id)
+        )
+      `);
+
+      // Seed the first season if none exist
+      db.get("SELECT COUNT(*) AS cnt FROM seasons", (errS, row) => {
+        if (!errS && row && row.cnt === 0) {
+          const now = Math.floor(Date.now() / 1000);
+          const ninetyDays = 90 * 24 * 3600;
+          db.run(
+            "INSERT INTO seasons (name, start_at, end_at, is_active) VALUES (?, ?, ?, 1)",
+            ['Season 1: The First Theorem', now, now + ninetyDays]
+          );
+        }
+      });
+
+      // Indexes for rating system
+      db.run("CREATE INDEX IF NOT EXISTS idx_user_ratings_user_id ON user_ratings(user_id)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_rating_history_user_id ON rating_history(user_id)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_rating_history_domain ON rating_history(domain)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_season_ratings_season ON season_ratings(season_id)");
+
+      // ── End NumeraRating Tables ───────────────────────────────────────────
+
+      // ── Mathematical Learning Intelligence Engine Tables ─────────────────
+
+      // LIE-1. Per-user, per-concept learner profile (mastery, confidence, speed, etc.)
+      db.run(`
+        CREATE TABLE IF NOT EXISTS learner_profiles (
+          user_id               INTEGER NOT NULL,
+          concept_id            TEXT    NOT NULL,
+          mastery_score         REAL    DEFAULT 0,
+          confidence_score      REAL    DEFAULT 0.5,
+          avg_response_ms       REAL    DEFAULT 0,
+          retention_score       REAL    DEFAULT 1.0,
+          accuracy_rate         REAL    DEFAULT 0,
+          hint_usage_rate       REAL    DEFAULT 0,
+          calculator_usage_rate REAL    DEFAULT 0,
+          retry_rate            REAL    DEFAULT 0,
+          exposure_count        INTEGER DEFAULT 0,
+          correct_first_try     INTEGER DEFAULT 0,
+          learning_velocity     REAL    DEFAULT 0,
+          last_seen             INTEGER DEFAULT 0,
+          PRIMARY KEY (user_id, concept_id),
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+
+      // LIE-2. Misconception instances — named error patterns per user per concept
+      db.run(`
+        CREATE TABLE IF NOT EXISTS user_misconceptions (
+          id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id             INTEGER NOT NULL,
+          concept_id          TEXT    NOT NULL,
+          misconception_type  TEXT    NOT NULL,
+          misconception_label TEXT    NOT NULL,
+          frequency           INTEGER DEFAULT 1,
+          last_occurred       INTEGER DEFAULT 0,
+          severity            TEXT    DEFAULT 'low' CHECK(severity IN ('low','medium','high')),
+          persistence         REAL    DEFAULT 0.1,
+          resolved            INTEGER DEFAULT 0,
+          FOREIGN KEY (user_id) REFERENCES users(id),
+          UNIQUE (user_id, concept_id, misconception_type)
+        )
+      `);
+
+      // LIE-3. Retention schedule — FSRS-style spaced repetition per concept
+      db.run(`
+        CREATE TABLE IF NOT EXISTS retention_schedule (
+          user_id             INTEGER NOT NULL,
+          concept_id          TEXT    NOT NULL,
+          stability_days      REAL    DEFAULT 1,
+          last_review_ts      INTEGER DEFAULT 0,
+          next_review_ts      INTEGER DEFAULT 0,
+          review_count        INTEGER DEFAULT 0,
+          lapse_count         INTEGER DEFAULT 0,
+          retention_at_review REAL    DEFAULT 1.0,
+          PRIMARY KEY (user_id, concept_id),
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+
+      // LIE-4. Learning style signals — inferred explanation preferences
+      db.run(`
+        CREATE TABLE IF NOT EXISTS learning_style_signals (
+          user_id      INTEGER NOT NULL,
+          style_type   TEXT    NOT NULL,
+          signal_weight REAL   DEFAULT 0,
+          sample_count INTEGER DEFAULT 0,
+          last_updated INTEGER DEFAULT 0,
+          PRIMARY KEY (user_id, style_type),
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+
+      // LIE-5. Lesson analytics — system-level quality scores per template type
+      db.run(`
+        CREATE TABLE IF NOT EXISTS lesson_analytics (
+          template_type  TEXT PRIMARY KEY,
+          attempt_count  INTEGER DEFAULT 0,
+          success_count  INTEGER DEFAULT 0,
+          abandon_count  INTEGER DEFAULT 0,
+          avg_time_ms    REAL    DEFAULT 0,
+          hint_rate      REAL    DEFAULT 0,
+          confusion_score REAL   DEFAULT 0,
+          last_updated   INTEGER DEFAULT 0
+        )
+      `);
+
+      // LIE-6. Competitive skill profiles — per-concept ELO ratings for matchmaking
+      db.run(`
+        CREATE TABLE IF NOT EXISTS competitive_profiles (
+          user_id                  INTEGER NOT NULL,
+          concept_id               TEXT    NOT NULL,
+          skill_rating             INTEGER DEFAULT 1000,
+          consistency_rating       INTEGER DEFAULT 1000,
+          learning_velocity_rating INTEGER DEFAULT 1000,
+          match_count              INTEGER DEFAULT 0,
+          last_match_ts            INTEGER DEFAULT 0,
+          PRIMARY KEY (user_id, concept_id),
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+
+      // ── End Intelligence Engine Tables ────────────────────────────────────
+
       // Create indexes to optimize foreign key lookups
       db.run("CREATE INDEX IF NOT EXISTS idx_user_mistakes_user_id ON user_mistakes(user_id)");
       db.run("CREATE INDEX IF NOT EXISTS idx_friends_friend_id ON friends(friend_id)");
@@ -445,6 +677,11 @@ function initDb() {
       db.run("CREATE INDEX IF NOT EXISTS idx_security_logs_user_id ON security_audit_logs(user_id)");
       db.run("CREATE INDEX IF NOT EXISTS idx_saved_exercises_user_id ON saved_exercises(user_id)");
       db.run("CREATE INDEX IF NOT EXISTS idx_user_notifications_user_id ON user_notifications(user_id)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_learner_profiles_user_id ON learner_profiles(user_id)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_user_misconceptions_user_id ON user_misconceptions(user_id)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_retention_schedule_user_id ON retention_schedule(user_id)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_retention_schedule_next_review ON retention_schedule(next_review_ts)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_competitive_profiles_user_id ON competitive_profiles(user_id)");
 
 
 
@@ -860,7 +1097,7 @@ function initDb() {
           story: "First posed in $1644$, the Basel Problem asked for the exact sum of the reciprocals of the squares of the natural numbers. Euler shocked the math world by finding the sum in $1734$.",
           question: "What is the exact sum of the infinite series: $$\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{1}{1^2} + \\frac{1}{2^2} + \\frac{1}{3^2} + \\dots$$?",
           correct_answer: "pi^2 / 6",
-          options: JSON.stringify(["$\frac{\pi}{4}$", "$\frac{\pi^2}{8}$", "$\frac{\pi^2}{6}$", "$2$"]),
+          options: JSON.stringify(["$\\frac{\\pi}{4}$", "$\\frac{\\pi^2}{8}$", "$\\frac{\\pi^2}{6}$", "$2$"]),
           explanation: "Euler showed that the sum converges to: $$\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}$$ using the Taylor expansion of $\\frac{\\sin(x)}{x}$.",
           difficulty: "Master",
           category: "Calculus",
@@ -872,7 +1109,7 @@ function initDb() {
           story: "The Gaussian integral, also known as the Euler-Poisson integral, is the integral of the Gaussian function $e^{-x^2}$ over the entire real line. It is central to probability theory.",
           question: "What is the value of the definite integral: $$\\int_{-\\infty}^{+\\infty} e^{-x^2} \\, dx$$?",
           correct_answer: "sqrt(pi)",
-          options: JSON.stringify(["$\pi$", "$\sqrt{\pi}$", "$\frac{1}{2}\sqrt{\pi}$", "$1$"]),
+          options: JSON.stringify(["$\\pi$", "$\\sqrt{\\pi}$", "$\\frac{1}{2}\\sqrt{\\pi}$", "$1$"]),
           explanation: "This is solved by converting to polar coordinates: $$\\left(\\int_{-\\infty}^{+\\infty} e^{-x^2}\\,dx\\right)^2 = \\int_0^{2\\pi}\\int_0^{\\infty} r e^{-r^2} \\, dr \\, d\\theta = \\pi \\implies \\text{Integral} = \\sqrt{\\pi}$$",
           difficulty: "Master",
           category: "Calculus",
@@ -908,7 +1145,7 @@ function initDb() {
           story: "The Dirichlet integral is the improper integral of the sinc function $\\frac{\\sin(x)}{x}$ over the positive real line. It cannot be integrated using standard elementary antiderivatives.",
           question: "What is the value of the integral: $$\\int_0^{\\infty} \\frac{\\sin(x)}{x} \\, dx$$?",
           correct_answer: "pi / 2",
-          options: JSON.stringify(["$\frac{\pi}{4}$", "$\frac{\pi}{2}$", "$\pi$", "$\infty$"]),
+          options: JSON.stringify(["$\\frac{\\pi}{4}$", "$\\frac{\\pi}{2}$", "$\\pi$", "$\\infty$"]),
           explanation: "Using Laplace transforms or contour integration, the integral is shown to equal $\\frac{\\pi}{2}$. This is known as the Dirichlet integral.",
           difficulty: "Master",
           category: "Calculus",
