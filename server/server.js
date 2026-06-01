@@ -37,6 +37,8 @@ const {
   normalizeLevelForGenerator,
 } = require('./lib/progression');
 const { getUserWithMastery, checkAndResetQuestsAndLeagues } = require('./services/userService');
+const { updateAchievements } = require('./services/achievementService');
+const { getArchiveTemplateType, checkTipSafety, attachTipToProblem } = require('./services/tipService');
 
 const app = express();
 
@@ -69,6 +71,7 @@ app.use(require('./routes/mistakes'));
 app.use(require('./routes/leaderboard'));
 app.use(require('./routes/auth'));
 app.use(require('./routes/quests'));
+app.use(require('./routes/dailyPuzzle'));
 
 // Landing Page & Status Dashboard
 app.get('/', (req, res) => {
@@ -418,180 +421,9 @@ const ready = initDb()
 // authenticateToken is imported from ./middleware/auth (stateful JWT + session check).
 
 // Achievements Progression Calculation Helper
-function updateAchievements(userId, callback) {
-  db.get("SELECT * FROM users WHERE id = ?", [userId], (errUser, user) => {
-    if (errUser || !user) return callback && callback();
-    
-    db.get("SELECT * FROM user_mastery WHERE user_id = ?", [userId], (errMastery, mastery) => {
-      const masteryArithmetic = mastery ? (mastery.arithmetic_correct || 0) : 0;
-      const masteryMental = mastery ? (mastery.mental_correct || 0) : 0;
-      const masteryAlgebra = mastery ? (mastery.algebra_correct || 0) : 0;
-      const masteryCalculus = mastery ? (mastery.calculus_correct || 0) : 0;
-      const masteryCombinatorics = mastery ? (mastery.combinatorics_correct || 0) : 0;
-      const masteryNumberTheory = mastery ? (mastery.number_theory_correct || 0) : 0;
-      
-      db.get("SELECT COUNT(*) AS count FROM friends WHERE (user_id = ? OR friend_id = ?) AND status = 'accepted'", [userId, userId], (errFriends, rowFriends) => {
-        const friendsCount = rowFriends ? rowFriends.count : 0;
-        
-        db.get("SELECT COUNT(*) AS count FROM user_inventory WHERE user_id = ?", [userId], (errInv, rowInv) => {
-          const shopCount = rowInv ? rowInv.count : 0;
-          
-          db.all("SELECT * FROM achievements", (errAchs, achs) => {
-            if (errAchs || !achs) return callback && callback();
-            
-            let processedCount = 0;
-            if (achs.length === 0) return callback && callback();
-            
-            achs.forEach(ach => {
-              let progress = 0;
-              const type = ach.target_type;
-              
-              if (type === 'solved_count') progress = user.solved_count || 0;
-              else if (type === 'streak') progress = Math.max(user.streak || 0, user.max_streak || 0);
-              else if (type === 'arena_wins') progress = user.arena_wins || 0;
-              else if (type === 'level') progress = user.level || 1;
-              else if (type === 'shop_count') progress = shopCount;
-              else if (type === 'perfect_exercises_count') progress = user.perfect_exercises_count || 0;
-              else if (type === 'perfect_levels_count') progress = user.perfect_levels_count || 0;
-              else if (type === 'mastery_arithmetic') progress = masteryArithmetic;
-              else if (type === 'mastery_mental') progress = masteryMental;
-              else if (type === 'mastery_algebra') progress = masteryAlgebra;
-              else if (type === 'mastery_calculus') progress = masteryCalculus;
-              else if (type === 'mastery_combinatorics') progress = masteryCombinatorics;
-              else if (type === 'mastery_number_theory') progress = masteryNumberTheory;
-              else if (type === 'friends_count') progress = friendsCount;
-              else if (type === 'daily_puzzles_solved') progress = user.daily_puzzles_solved || 0;
-              else if (type === 'archive_solved') progress = user.archive_solved || 0;
-              else if (type === 'seasonal_spring') progress = user.seasonal_spring_count || 0;
-              else if (type === 'seasonal_summer') progress = user.seasonal_summer_count || 0;
-              else if (type === 'calculator_sixseven') progress = user.calculator_sixseven_count || 0;
-              else if (type === 'speed_demon') progress = user.speed_demon_count || 0;
-              
-              const finalProgress = Math.min(progress, ach.target_value);
-              const isCompleted = finalProgress >= ach.target_value;
-              const completedAt = isCompleted ? Math.floor(Date.now() / 1000) : 0;
-              
-              db.get("SELECT completed_at FROM user_achievements WHERE user_id = ? AND achievement_id = ?", [userId, ach.id], (errX, prevRow) => {
-                const alreadyCompleted = prevRow && prevRow.completed_at > 0;
-                
-                db.run(`
-                  INSERT INTO user_achievements (user_id, achievement_id, progress, completed_at)
-                  VALUES (?, ?, ?, ?)
-                  ON CONFLICT(user_id, achievement_id) DO UPDATE SET
-                    progress = excluded.progress,
-                    completed_at = CASE WHEN user_achievements.completed_at = 0 THEN excluded.completed_at ELSE user_achievements.completed_at END
-                  WHERE claimed = 0
-                `, [userId, ach.id, finalProgress, completedAt], () => {
-                  if (isCompleted && !alreadyCompleted) {
-                    db.run(
-                      `INSERT INTO user_notifications (user_id, title, message, type, read_state, created_at)
-                       VALUES (?, 'Achievement Completed! 🏆', ?, 'achievement', 0, ?)`,
-                      [userId, `You completed the achievement: ${ach.name}! Claim it for rewards.`, Math.floor(Date.now() / 1000)]
-                    );
-                  }
-                  
-                  processedCount++;
-                  if (processedCount === achs.length) {
-                    if (callback) callback();
-                  }
-                });
-              });
-            });
-          });
-        });
-      });
-    });
-  });
-}
+// updateAchievements imported from ./services/achievementService
 
-function getArchiveTemplateType(title, category) {
-  const t = (title || '').toLowerCase();
-  const c = (category || '').toLowerCase();
-  
-  if (t.includes('totient')) return 'euler_totient';
-  if (t.includes('gcd') || t.includes('greatest common divisor')) return 'gcd';
-  if (t.includes('divisor')) return 'divisors';
-  if (t.includes('pigeonhole')) return 'pigeonhole';
-  if (t.includes('fermat')) return 'fermat_little';
-  if (t.includes('euler\'s identity') || t.includes('euler\'s formula') || t.includes('euler identity')) return 'euler_identity';
-  if (t.includes('limit')) return 'limit';
-  if (t.includes('derivative') || t.includes('differentiation')) return 'derivative';
-  if (t.includes('integral') || t.includes('integration')) return 'integral';
-  if (t.includes('determinant')) return 'matrix_determinant';
-  if (t.includes('trace')) return 'matrix_trace';
-  if (t.includes('combination') || t.includes('stars and bars') || t.includes('catalan') || t.includes('handshaking') || t.includes('choose')) return 'combinations';
-  if (t.includes('permutation') || t.includes('derangement') || t.includes('arrange')) return 'permutations';
-  if (t.includes('probability') || t.includes('birthday paradox') || t.includes('gambler\'s ruin')) return 'probability';
-  if (t.includes('congruence') || t.includes('chinese remainder') || t.includes('wilson\'s theorem') || t.includes('modulo') || t.includes('prime')) return 'modulo';
-  if (t.includes('pythagorean') || t.includes('triangle')) return 'pythagorean';
-  
-  if (c.includes('number theory')) return 'modulo';
-  if (c.includes('combinatorics')) return 'combinations';
-  if (c.includes('calculus')) return 'limit';
-  if (c.includes('algebra')) return 'linear_two_step';
-  if (c.includes('mental')) return 'mental_add';
-  if (c.includes('arithmetic')) return 'arithmetic_add';
-  
-  return 'arithmetic_add';
-}
-
-function checkTipSafety(tipText, correctAnswer) {
-  if (!tipText || !correctAnswer) return true;
-  
-  const cleanAnswer = correctAnswer.toString().replace(/\$/g, '').trim().toLowerCase();
-  const cleanTip = tipText.toString().replace(/\$/g, '').trim().toLowerCase();
-  
-  if (cleanAnswer.length === 0) return true;
-  
-  const index = cleanTip.indexOf(cleanAnswer);
-  if (index !== -1) {
-    if (cleanAnswer.length === 1) {
-      const regex = new RegExp('\\b' + cleanAnswer + '\\b');
-      if (regex.test(cleanTip)) {
-        return false;
-      }
-    } else {
-      return false;
-    }
-  }
-  return true;
-}
-
-function attachTipToProblem(problem, isArchive) {
-  if (!problem) return problem;
-  const templateType = problem.templateType || getArchiveTemplateType(problem.title, problem.category);
-  const tipData = tipsMap[templateType];
-  
-  if (!tipData) {
-    problem.tip = "Focus on the core concepts shown in the lesson.";
-    return problem;
-  }
-  
-  const rawTip = tipData.tip || '';
-  const correctAnswer = problem.correctAnswer || problem.correct_answer || '';
-  
-  const isSafe = checkTipSafety(rawTip, correctAnswer);
-  
-  if (isSafe) {
-    problem.tip = rawTip;
-  } else {
-    if (isArchive) {
-      problem.tip = tipData.conceptualReminder || "Remember the fundamental properties of this math topic.";
-    } else {
-      problem.tip = "Tip unavailable for this exercise.";
-    }
-  }
-  
-  problem.tipMetadata = {
-    concept: tipData.concept,
-    subskill: tipData.subskill,
-    difficulty: tipData.difficulty,
-    learningObjective: tipData.learningObjective,
-    commonMistakes: tipData.commonMistakes
-  };
-  
-  return problem;
-}
+// getArchiveTemplateType, checkTipSafety, attachTipToProblem imported from ./services/tipService
 
 
 // getUserWithMastery + checkAndResetQuestsAndLeagues imported from ./services/userService
@@ -1659,118 +1491,7 @@ app.get('/api/archive/search', authenticateToken, (req, res) => {
 // Fetch user daily quests standings
 // Quests endpoints (/api/quests*) moved to routes/quests.js
 
-// Get the active calendar-day puzzle
-app.get('/api/math/daily-puzzle', authenticateToken, (req, res) => {
-  db.all("SELECT * FROM archive_exercises WHERE stars >= 3", (err, exercises) => {
-    if (err) return res.status(500).json({ error: err.message });
-    
-    let puzzle;
-    if (exercises && exercises.length > 0) {
-      const dayIndex = Math.floor(Date.now() / 86400000) % exercises.length;
-      puzzle = exercises[dayIndex];
-    } else {
-      puzzle = generateArchiveProblem('Number Theory', 4);
-    }
-    
-    const lesson = getLessonForArchive(puzzle.title, puzzle.category, puzzle.stars);
-    
-    db.get("SELECT daily_puzzle_today FROM user_quests WHERE user_id = ?", [req.user.id], (errQ, q) => {
-      const solved = q ? q.daily_puzzle_today >= 1 : false;
-      const parsedOptions = typeof puzzle.options === 'string' ? JSON.parse(puzzle.options) : puzzle.options;
-      
-      // Normalize correct_answer to exactly match one of the options
-      // (some archive exercises store plain text answers while options have LaTeX formatting)
-      let normalizedAnswer = puzzle.correct_answer;
-      if (parsedOptions && parsedOptions.length > 0 && !parsedOptions.includes(normalizedAnswer)) {
-        const stripLatex = (s) => s.replace(/\$/g, '').replace(/\\dots/g, '...').replace(/\\\\dots/g, '...').trim();
-        const plainAnswer = stripLatex(normalizedAnswer);
-        const matchingOption = parsedOptions.find(opt => stripLatex(opt) === plainAnswer);
-        if (matchingOption) {
-          normalizedAnswer = matchingOption;
-        }
-      }
-      
-      const puzzleResponse = {
-        id: puzzle.id || 9999,
-        title: puzzle.title,
-        story: puzzle.story,
-        question: puzzle.question,
-        correct_answer: normalizedAnswer,
-        options: parsedOptions,
-        explanation: puzzle.explanation,
-        category: puzzle.category,
-        stars: puzzle.stars,
-        source: puzzle.source,
-        solved_today: solved,
-        lessonTitle: lesson.lessonTitle,
-        lessonContent: lesson.lessonContent,
-        lessonFormula: lesson.lessonFormula,
-        examples: lesson.examples,
-        lessonSections: lesson.sections || null
-      };
-      
-      res.json(attachTipToProblem(puzzleResponse, true));
-    });
-  });
-});
-
-// Submit evaluation for the daily puzzle
-app.post('/api/math/daily-puzzle/submit', authenticateToken, idempotency, (req, res) => {
-  const { correct } = req.body;
-  if (correct === undefined) {
-    return res.status(400).json({ error: 'Correctness boolean required' });
-  }
-  
-  if (!correct) {
-    return res.json({ success: false, message: 'Incorrect answer. Try again!' });
-  }
-  
-  db.get("SELECT daily_puzzle_today FROM user_quests WHERE user_id = ?", [req.user.id], (errQ, q) => {
-    if (errQ) return res.status(500).json({ error: errQ.message });
-    
-    const alreadySolved = q ? q.daily_puzzle_today >= 1 : false;
-    if (alreadySolved) {
-      return res.json({ success: true, message: 'Already solved today!', alreadySolved: true });
-    }
-    
-    db.run("UPDATE user_quests SET daily_puzzle_today = 1 WHERE user_id = ?", [req.user.id], () => {
-      db.get("SELECT xp, level, coins, rank, daily_puzzles_solved FROM users WHERE id = ?", [req.user.id], (errU, user) => {
-        if (errU || !user) return res.status(500).json({ error: 'User details not found' });
-        
-        let newXp = user.xp + 50;
-        let newLevel = user.level;
-        while (newXp >= newLevel * 100) {
-          newXp -= newLevel * 100;
-          newLevel += 1;
-        }
-        
-        const newCoins = user.coins + 30;
-        const newSolvedCount = (user.daily_puzzles_solved || 0) + 1;
-        
-        db.run(
-          "UPDATE users SET xp = ?, level = ?, coins = ?, daily_puzzles_solved = ? WHERE id = ?",
-          [newXp, newLevel, newCoins, newSolvedCount, req.user.id],
-          (updateErr) => {
-            if (updateErr) return res.status(500).json({ error: updateErr.message });
-            
-            updateAchievements(req.user.id, () => {
-              res.json({
-                success: true,
-                message: 'Daily puzzle marked solved, rewards credited and achievements updated.',
-                rewardCoins: 30,
-                rewardXp: 50,
-                xp: newXp,
-                level: newLevel,
-                coins: newCoins,
-                rank: user.rank || 'Unranked (Placement: 0/5)'
-              });
-            });
-          }
-        );
-      });
-    });
-  });
-});
+// Daily puzzle endpoints (/api/math/daily-puzzle*) moved to routes/dailyPuzzle.js
 
 // Get league leaderboard details
 app.get('/api/league/leaderboard', authenticateToken, (req, res) => {

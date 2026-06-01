@@ -74,6 +74,13 @@ test('extracted routers are mounted (notifications, srs, library)', async () => 
   }
 });
 
+test('daily puzzle endpoint responds with a puzzle', async () => {
+  const { token } = await registerUser(ctx.base);
+  const res = await api(ctx.base, 'GET', '/api/math/daily-puzzle', { token });
+  assert.strictEqual(res.status, 200);
+  assert.ok(res.body && res.body.question, 'puzzle has a question');
+});
+
 test('idempotency: same Idempotency-Key replays the identical response', async () => {
   const { token } = await registerUser(ctx.base);
   const key = require('crypto').randomUUID();
