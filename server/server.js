@@ -28,13 +28,7 @@ const Orchestrator       = require('./mathEngine/problemOrchestrator');
 // Centralized config + extracted cross-cutting middleware (see config.js, middleware/).
 const { JWT_SECRET, PORT, EXTRA_CORS_ORIGINS } = require('./config');
 const { securityHeaders, securityLog, isLocalIp } = require('./middleware/security');
-const {
-  globalRateLimiter,
-  checkFailedLogins,
-  recordFailedLogin,
-  clearFailedLogins,
-  rateLimiter,
-} = require('./middleware/rateLimit');
+const { globalRateLimiter } = require('./middleware/rateLimit');
 const { authenticateToken } = require('./middleware/auth');
 const {
   calculateRank,
@@ -42,6 +36,7 @@ const {
   getRankValue,
   normalizeLevelForGenerator,
 } = require('./lib/progression');
+const { getUserWithMastery, checkAndResetQuestsAndLeagues } = require('./services/userService');
 
 const app = express();
 
@@ -72,6 +67,7 @@ app.use(require('./routes/srs'));
 app.use(require('./routes/library'));
 app.use(require('./routes/mistakes'));
 app.use(require('./routes/leaderboard'));
+app.use(require('./routes/auth'));
 
 // Landing Page & Status Dashboard
 app.get('/', (req, res) => {
@@ -407,8 +403,6 @@ app.get('/download-apk', (req, res) => {
   });
 });
 
-const crypto = require('crypto'); // used for session UUIDs (JWT_SECRET/PORT come from ./config)
-
 // Initialize Database, then apply any pending versioned migrations.
 // `ready` resolves once the schema is initialized + migrated; tests await it before
 // issuing requests. In standalone mode a failure is fatal.
@@ -599,353 +593,9 @@ function attachTipToProblem(problem, isArchive) {
 }
 
 
-function getUserWithMastery(userId, callback) {
-  db.get("SELECT * FROM users WHERE id = ?", [userId], (err, user) => {
-    if (err || !user) return callback(err || new Error("User not found"));
-    
-    db.get("SELECT * FROM user_mastery WHERE user_id = ?", [userId], (errM, mastery) => {
-      const masteryObj = {
-        arithmetic_correct: mastery ? mastery.arithmetic_correct : 0,
-        mental_correct: mastery ? mastery.mental_correct : 0,
-        algebra_correct: mastery ? mastery.algebra_correct : 0,
-        calculus_correct: mastery ? mastery.calculus_correct : 0,
-        combinatorics_correct: mastery ? mastery.combinatorics_correct : 0,
-        number_theory_correct: mastery ? mastery.number_theory_correct : 0
-      };
-      
-      const fullUser = {
-        id: user.id,
-        username: user.username,
-        xp: user.xp,
-        level: user.level,
-        coins: user.coins,
-        rank: user.rank,
-        streak: user.streak,
-        active_badge: user.active_badge,
-        theme: user.theme,
-        avatar: user.avatar,
-        active_banner: user.active_banner || 'banner_default',
-        assessment_taken: user.assessment_taken || 0,
-        league: user.league || 'Bronze',
-        league_points: user.league_points || 0,
-        solved_count: user.solved_count || 0,
-        arena_wins: user.arena_wins || 0,
-        elo: user.elo || 1000,
-        competitive_matches: user.competitive_matches || 0,
-        total_coins_earned: user.total_coins_earned !== undefined ? user.total_coins_earned : 100,
-        total_coins_spent: user.total_coins_spent || 0,
-        xp_booster_uses_left: user.xp_booster_uses_left || 0,
-        max_streak: user.max_streak || 0,
-        commitment_state: user.commitment_state || 'active',
-        burnout_risk: user.burnout_risk || 'low',
-        consistency_index: user.consistency_index || 0.0,
-        burnout_counter: user.burnout_counter || 0,
-        last_telemetry_check: user.last_telemetry_check || 0,
-        mastery: masteryObj
-      };
-      callback(null, fullUser);
-    });
-  });
-}
+// getUserWithMastery + checkAndResetQuestsAndLeagues imported from ./services/userService
 
-function checkAndResetQuestsAndLeagues(userId, callback) {
-  const now = Math.floor(Date.now() / 1000);
-  
-  // 1. Ensure user_quests and user_mastery exist
-  db.get("SELECT * FROM user_quests WHERE user_id = ?", [userId], (err, questRow) => {
-    if (err) {
-      console.error(err);
-      return callback && callback();
-    }
-    
-    const initQuestsAndMastery = (cb) => {
-      db.run("INSERT OR IGNORE INTO user_quests (user_id, last_quest_reset) VALUES (?, ?)", [userId, now], () => {
-        db.run("INSERT OR IGNORE INTO user_mastery (user_id) VALUES (?)", [userId], () => {
-          cb();
-        });
-      });
-    };
-    
-    const proceedWithResets = () => {
-      db.get("SELECT * FROM user_quests WHERE user_id = ?", [userId], (errQ, qRow) => {
-        if (errQ || !qRow) return callback && callback();
-        
-        let questPromise = Promise.resolve();
-        // Check daily quest reset (86400 seconds)
-        if (now - qRow.last_quest_reset >= 86400) {
-          questPromise = new Promise((resolveQ) => {
-            db.run(`
-              UPDATE user_quests SET
-                solved_today = 0,
-                duels_today = 0,
-                mistakes_today = 0,
-                daily_puzzle_today = 0,
-                solved_claimed = 0,
-                duels_claimed = 0,
-                mistakes_claimed = 0,
-                daily_puzzle_claimed = 0,
-                last_quest_reset = ?
-              WHERE user_id = ?
-            `, [now, userId], resolveQ);
-          });
-        }
-        
-        questPromise.then(() => {
-          // Check weekly league reset (7 * 86400 seconds)
-          db.get("SELECT league, league_points, last_league_reset FROM users WHERE id = ?", [userId], (errU, uRow) => {
-            if (errU || !uRow) return callback && callback();
-            
-            let lastLeagueReset = uRow.last_league_reset || 0;
-            if (lastLeagueReset === 0) {
-              db.run("UPDATE users SET last_league_reset = ? WHERE id = ?", [now, userId], () => {
-                callback && callback();
-              });
-              return;
-            }
-            
-            if (now - lastLeagueReset >= 7 * 86400) {
-              const currentLeague = uRow.league || 'Bronze';
-              
-              db.all(
-                "SELECT id, league_points FROM users WHERE league = ? ORDER BY league_points DESC",
-                [currentLeague],
-                (errStand, standings) => {
-                  if (errStand || !standings) return callback && callback();
-                  
-                  const rankIndex = standings.findIndex(s => s.id === userId);
-                  const totalInLeague = standings.length;
-                  
-                  let newLeague = currentLeague;
-                  const leaguesOrder = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
-                  const currentIdx = leaguesOrder.indexOf(currentLeague);
-                  
-                  if (rankIndex !== -1) {
-                    const userPoints = standings[rankIndex].league_points;
-                    const shouldPromote = (rankIndex < 3 && userPoints > 0) || (userPoints > 100);
-                    const shouldDemote = (rankIndex >= totalInLeague - 3 && totalInLeague >= 5 && currentIdx > 0);
-                    
-                    if (shouldPromote && currentIdx < leaguesOrder.length - 1) {
-                      newLeague = leaguesOrder[currentIdx + 1];
-                    } else if (shouldDemote && currentIdx > 0) {
-                      newLeague = leaguesOrder[currentIdx - 1];
-                    }
-                  }
-                  
-                  db.run(
-                    "UPDATE users SET league = ?, league_points = 0, last_league_reset = ? WHERE id = ?",
-                    [newLeague, now, userId],
-                    () => {
-                      callback && callback();
-                    }
-                  );
-                }
-              );
-            } else {
-              callback && callback();
-            }
-          });
-        });
-      });
-    };
-    
-    if (!questRow) {
-      initQuestsAndMastery(proceedWithResets);
-    } else {
-      proceedWithResets();
-    }
-  });
-}
-
-// -------------------------------------------------------------
-// AUTH ENDPOINTS
-// -------------------------------------------------------------
-
-app.post('/api/auth/register', checkFailedLogins, rateLimiter(5, 60000), (req, res) => {
-  const { username, password, avatar } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password required' });
-  }
-  
-  // Strict alphanumeric/underscore regex validation & length check
-  const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
-  if (!usernameRegex.test(username)) {
-    return res.status(400).json({ 
-      error: 'Username must be 3-20 characters long and contain only letters, numbers, and underscores.' 
-    });
-  }
-  if (typeof password !== 'string' || password.length < 8 || password.length > 100) {
-    return res.status(400).json({ error: 'Password must be between 8 and 100 characters' });
-  }
-
-  const salt = bcrypt.genSaltSync(10);
-  const hash = bcrypt.hashSync(password, salt);
-  const chosenAvatar = avatar || 'avatar_pythagoras';
-  const now = Math.floor(Date.now() / 1000);
-
-  db.run(
-    `INSERT INTO users (username, password_hash, last_active, avatar, last_league_reset) VALUES (?, ?, ?, ?, ?)`,
-    [username, hash, now, chosenAvatar, now],
-    function(err) {
-      if (err) {
-        if (err.message.includes('UNIQUE')) {
-          return res.status(400).json({ error: 'Username already exists' });
-        }
-        return res.status(500).json({ error: err.message });
-      }
-      
-      const newUserId = this.lastID;
-      // Initialize quests & mastery rows
-      db.run("INSERT OR IGNORE INTO user_quests (user_id, last_quest_reset) VALUES (?, ?)", [newUserId, now], () => {
-        db.run("INSERT OR IGNORE INTO user_mastery (user_id) VALUES (?)", [newUserId], () => {
-          db.run(
-            `INSERT INTO user_notifications (user_id, title, message, type, read_state, created_at) 
-             VALUES (?, 'Welcome to Numera! 🚀', 'Start your math journey by taking the diagnostic placement test or jump straight into Level 1!', 'welcome', 0, ?)`,
-            [newUserId, now],
-            () => {
-              sendLoginResponse(newUserId, username, req, res);
-            }
-          );
-        });
-      });
-    }
-  );
-});
-
-function sendLoginResponse(userId, username, req, res) {
-  const sessionId = crypto.randomUUID();
-  const userAgent = req.headers['user-agent'] || 'unknown';
-  const ipAddress = req.ip;
-  const createdAt = Math.floor(Date.now() / 1000);
-  const expiresAt = createdAt + (7 * 24 * 60 * 60); // 7 days session lifetime
-
-  db.run(
-    "INSERT INTO user_sessions (id, user_id, user_agent, ip_address, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)",
-    [sessionId, userId, userAgent, ipAddress, createdAt, expiresAt],
-    (errSession) => {
-      if (errSession) {
-        console.error("[SECURITY] Failed to write session to DB:", errSession.message);
-        return res.status(500).json({ error: 'Session creation failed' });
-      }
-      
-      const token = jwt.sign({ id: userId, username, sessionId }, JWT_SECRET, { expiresIn: '7d' });
-      clearFailedLogins(ipAddress);
-      
-      getUserWithMastery(userId, (errU, fullUser) => {
-        if (errU) return res.status(500).json({ error: errU.message });
-        res.json({ token, user: fullUser });
-      });
-    }
-  );
-}
-
-app.post('/api/auth/login', checkFailedLogins, rateLimiter(10, 60000), (req, res) => {
-  const { username, password } = req.body;
-  const ipAddress = req.ip;
-  if (!username || !password) {
-    recordFailedLogin(ipAddress);
-    return res.status(400).json({ error: 'Username and password required' });
-  }
-
-  db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, user) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-      recordFailedLogin(ipAddress);
-      securityLog(user ? user.id : null, 'auth_failure', ipAddress, `Failed login attempt for user: ${username}`);
-      return res.status(400).json({ error: 'Invalid username or password' });
-    }
-
-    checkAndResetQuestsAndLeagues(user.id, () => {
-      const now = Math.floor(Date.now() / 1000);
-      const dayInSecs = 86400;
-
-      if (user.last_active > 0) {
-        const elapsed = now - user.last_active;
-        if (elapsed > 2 * dayInSecs) {
-          // Missed a day! Check if they have a streak shield
-          db.get("SELECT quantity FROM user_utilities WHERE user_id = ? AND item_id = 'item_streak_shield'", [user.id], (errShield, shieldRow) => {
-            const hasShield = shieldRow && shieldRow.quantity > 0;
-            if (hasShield) {
-              // Consume 1 shield, keep streak, set state = 'protected'
-              db.run("UPDATE user_utilities SET quantity = quantity - 1 WHERE user_id = ? AND item_id = 'item_streak_shield'", [user.id], () => {
-                db.run(
-                  "UPDATE users SET commitment_state = 'protected', last_active = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
-                  [now, user.id],
-                  () => {
-                    sendLoginResponse(user.id, username, req, res);
-                  }
-                );
-              });
-            } else {
-              // No shield! They enter fading state (preserve the climb count for recovery)
-              // If they were already in fading state or too much time has passed (> 3 days), they finally reset to 0.
-              if (user.commitment_state === 'fading' || elapsed > 3 * dayInSecs) {
-                db.run(
-                  "UPDATE users SET streak = 0, commitment_state = 'active', last_active = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
-                  [now, user.id],
-                  () => {
-                    sendLoginResponse(user.id, username, req, res);
-                  }
-                );
-              } else {
-                db.run(
-                  "UPDATE users SET commitment_state = 'fading', last_active = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
-                  [now, user.id],
-                  () => {
-                    sendLoginResponse(user.id, username, req, res);
-                  }
-                );
-              }
-            }
-          });
-        } else if (elapsed > dayInSecs) {
-          // Showed up next day!
-          const newStreak = user.streak + 1;
-          db.run(
-            "UPDATE users SET streak = ?, commitment_state = 'active', last_active = ?, max_streak = CASE WHEN ? > max_streak THEN ? ELSE max_streak END WHERE id = ?",
-            [newStreak, now, newStreak, newStreak, user.id],
-            () => {
-              sendLoginResponse(user.id, username, req, res);
-            }
-          );
-        } else {
-          // Logged in multiple times today
-          db.run(
-            "UPDATE users SET last_active = ? WHERE id = ?",
-            [now, user.id],
-            () => {
-              sendLoginResponse(user.id, username, req, res);
-            }
-          );
-        }
-      } else {
-        // First login
-        db.run(
-          "UPDATE users SET streak = 1, commitment_state = 'active', last_active = ?, max_streak = 1 WHERE id = ?",
-          [now, user.id],
-          () => {
-            sendLoginResponse(user.id, username, req, res);
-          }
-        );
-      }
-    });
-  });
-});
-
-app.post('/api/auth/logout', authenticateToken, (req, res) => {
-  db.run("DELETE FROM user_sessions WHERE id = ?", [req.user.sessionId], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true, message: 'Successfully logged out' });
-  });
-});
-
-app.get('/api/auth/me', authenticateToken, (req, res) => {
-  checkAndResetQuestsAndLeagues(req.user.id, () => {
-    getUserWithMastery(req.user.id, (err, fullUser) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(fullUser);
-    });
-  });
-});
+// AUTH endpoints (/api/auth/*) + sendLoginResponse moved to routes/auth.js
 
 // Helper to update consistency climb, max climb, burnout risk, and index
 function updateCommitmentAndBurnout(userId, solvedCountThisSession, callback) {
