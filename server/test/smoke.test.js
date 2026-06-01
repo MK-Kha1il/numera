@@ -74,6 +74,17 @@ test('extracted routers are mounted (notifications, srs, library)', async () => 
   }
 });
 
+test('account routes are reachable (not shadowed by /api/user/:userId)', async () => {
+  const { token } = await registerUser(ctx.base);
+  // These GETs share the /api/user/* prefix with the :userId param route; the account
+  // router must be matched first so they are not rejected as an "invalid user ID".
+  for (const route of ['/api/user/sessions', '/api/user/security-logs']) {
+    const res = await api(ctx.base, 'GET', route, { token });
+    assert.strictEqual(res.status, 200, `${route} should respond 200, not be shadowed`);
+    assert.ok(Array.isArray(res.body), `${route} returns an array`);
+  }
+});
+
 test('daily puzzle endpoint responds with a puzzle', async () => {
   const { token } = await registerUser(ctx.base);
   const res = await api(ctx.base, 'GET', '/api/math/daily-puzzle', { token });
