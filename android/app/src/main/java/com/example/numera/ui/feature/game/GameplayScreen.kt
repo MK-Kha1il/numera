@@ -1,0 +1,999 @@
+package com.example.numera.ui.feature.game
+
+import android.util.Log
+import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.numera.data.network.*
+import com.example.numera.sound.SoundManager
+import com.example.numera.theme.*
+import com.example.numera.ui.components.DuoButton
+import com.example.numera.ui.components.DuoCard
+import com.example.numera.ui.components.VictoryParticles
+import com.example.numera.ui.components.MathText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import com.example.numera.ui.components.RankBadge
+import com.example.numera.ui.components.NumeraPremiumLoader
+import com.example.numera.ui.components.NumeraSlideOver
+import com.example.numera.ui.components.NumeraIcon
+import com.example.numera.ui.components.NumeraIconType
+
+/**
+ * The per-problem gameplay UI carved out of SoloGameScreen (the old "Main Gameplay Screen" Box:
+ * progress header + reference slide-over, the equation card with the favorite/save dialog and
+ * tooltip, the Tip/Calc/Try-Paper tool buttons, the MCQ/typed/timed answer interface, the feedback
+ * banner, and the whiteboard/calculator/tip slide-up overlays).
+ *
+ * State stays owned by SoloGameScreen: written values come in as MutableState (re-delegated with
+ * `by` below so the moved body is verbatim) and the reward/advance + answer logic come in as
+ * callbacks (handleAnswer / isCurrentAnswerCorrect / continueOrFinish / logCalculatorTelemetry).
+ * Guarded by GameplayScreenTest (correct/wrong banner, advance, review dialog, out-of-hearts) and
+ * RecapScreenTest (finish -> recap).
+ */
+@Composable
+fun GameplayScreen(
+    category: String,
+    level: Int,
+    isLegacyPuzzle: Boolean,
+    gameMode: String,
+    currentProblem: com.example.numera.data.network.MathProblem,
+    currentProblemIdx: Int,
+    problemsList: List<com.example.numera.data.network.MathProblem>,
+    currentExerciseType: ExerciseType,
+    lessonTitle: String?,
+    lessonContent: String?,
+    lessonFormula: String?,
+    totalTime: Float,
+    timeLeft: Float,
+    heartsLeft: Int,
+    shakeOffset: androidx.compose.ui.unit.Dp,
+    isSavingSession: Boolean,
+    gamePrefs: android.content.SharedPreferences,
+    scope: kotlinx.coroutines.CoroutineScope,
+    hasAnsweredState: androidx.compose.runtime.MutableState<Boolean>,
+    selectedAnswerState: androidx.compose.runtime.MutableState<String>,
+    typedInputState: androidx.compose.runtime.MutableState<String>,
+    activeExplanationState: androidx.compose.runtime.MutableState<String?>,
+    answeredWrongForCurrentState: androidx.compose.runtime.MutableState<Boolean>,
+    showReferenceState: androidx.compose.runtime.MutableState<Boolean>,
+    showSaveDialogState: androidx.compose.runtime.MutableState<Boolean>,
+    showFavoriteTooltipState: androidx.compose.runtime.MutableState<Boolean>,
+    showScratchpadPromptState: androidx.compose.runtime.MutableState<Boolean>,
+    showWhiteboardState: androidx.compose.runtime.MutableState<Boolean>,
+    showCalculatorState: androidx.compose.runtime.MutableState<Boolean>,
+    showTipState: androidx.compose.runtime.MutableState<Boolean>,
+    showReviewDialogState: androidx.compose.runtime.MutableState<Boolean>,
+    favoritedQuestionsState: androidx.compose.runtime.MutableState<Set<String>>,
+    whiteboardStrokes: androidx.compose.runtime.snapshots.SnapshotStateList<com.example.numera.ui.components.ScratchStroke>,
+    whiteboardRedoStrokes: androidx.compose.runtime.snapshots.SnapshotStateList<com.example.numera.ui.components.ScratchStroke>,
+    calculatorInputState: androidx.compose.runtime.MutableState<String>,
+    calculatorResultState: androidx.compose.runtime.MutableState<String>,
+    calculatorMemoryState: androidx.compose.runtime.MutableState<Double>,
+    calculatorHistoryState: androidx.compose.runtime.MutableState<List<String>>,
+    calcIsErrorState: androidx.compose.runtime.MutableState<Boolean>,
+    handleAnswer: (Boolean) -> Unit,
+    isCurrentAnswerCorrect: () -> Boolean,
+    continueOrFinish: (Boolean) -> Unit,
+    logCalculatorTelemetry: (String?) -> Unit,
+) {
+    var hasAnswered by hasAnsweredState
+    var selectedAnswer by selectedAnswerState
+    var typedInput by typedInputState
+    var activeExplanation by activeExplanationState
+    var answeredWrongForCurrent by answeredWrongForCurrentState
+    var showReference by showReferenceState
+    var showSaveDialog by showSaveDialogState
+    var showFavoriteTooltip by showFavoriteTooltipState
+    var showScratchpadPrompt by showScratchpadPromptState
+    var showWhiteboard by showWhiteboardState
+    var showCalculator by showCalculatorState
+    var showTip by showTipState
+    var showReviewDialog by showReviewDialogState
+    var favoritedQuestions by favoritedQuestionsState
+
+    // Main Gameplay Screen
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(Spacing.l),
+            verticalArrangement = Arrangement.Top
+        ) {
+        // Progress header
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Spacing.s)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (gameMode == "mistakes_practice") "GROWTH PRACTICE" else if (isLegacyPuzzle) "LEGACY PUZZLE" else "${category.uppercase()} · LEVEL $level",
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                    Text(
+                        text = "Exercise ${currentProblemIdx + 1} of ${problemsList.size}",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    // Reference: open the concept/formula reminder without leaving the exercise.
+                    val hasReference = !lessonFormula.isNullOrEmpty() || !lessonContent.isNullOrEmpty()
+                    if (hasReference) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f))
+                                .clickable {
+                                    SoundManager.playClick()
+                                    com.example.numera.haptic.HapticManager.playSoft()
+                                    showReference = true
+                                }
+                                .padding(horizontal = Spacing.s, vertical = 5.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                                NumeraIcon(type = NumeraIconType.Tip, tint = MaterialTheme.colorScheme.secondary, animate = false, modifier = Modifier.size(IconSize.s))
+                                Text("Reference", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (showReference) {
+                NumeraSlideOver(
+                    onDismiss = { showReference = false },
+                    title = lessonTitle ?: "Reference",
+                    subtitle = "Quick reminder — your progress is saved"
+                ) {
+                    if (!lessonFormula.isNullOrEmpty()) {
+                        Text("FORMULA", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 11.sp, letterSpacing = 0.8.sp)
+                        DuoCard(modifier = Modifier.fillMaxWidth()) {
+                            val f = lessonFormula!!
+                            if (f.contains("$") || f.contains("\\")) {
+                                MathText(text = f, fontSizePx = 26, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.fillMaxWidth())
+                            } else {
+                                Text(f, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
+                    }
+                    if (!lessonContent.isNullOrEmpty()) {
+                        Text("CONCEPT", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 11.sp, letterSpacing = 0.8.sp)
+                        val c = lessonContent!!
+                        if (c.contains("$") || c.contains("\\")) {
+                            MathText(text = c, fontSizePx = 16, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.fillMaxWidth())
+                        } else {
+                            Text(c, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, lineHeight = 20.sp)
+                        }
+                    }
+                }
+            }
+
+            // Exercise Mode Label & Countdown
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val modeLabel = when (currentExerciseType) {
+                    ExerciseType.MCQ -> if (gameMode == "level" && currentProblemIdx == 0) "Guided Exercise" else "Exercise"
+                    ExerciseType.TYPED -> "Independent Exercise"
+                    ExerciseType.TIMED -> "Timed Mastery"
+                }
+                
+                Text(
+                    text = modeLabel,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 12.sp
+                )
+
+                if (gameMode == "level") {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        repeat(3) { i ->
+                            val active = i < heartsLeft
+                            Text(
+                                text = if (active) "❤️" else "🖤",
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+
+                if (currentExerciseType == ExerciseType.TIMED) {
+                    val sec = timeLeft.toInt()
+                    val pulseScale = if (timeLeft <= 5f) {
+                        1f + 0.15f * kotlin.math.sin(timeLeft * Math.PI * 2).toFloat().coerceAtLeast(0f)
+                    } else 1f
+                    
+                    Text(
+                        text = "⏱️ ${sec}s",
+                        color = if (timeLeft <= 5f) WrongRed else DuoSecondary,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 14.sp,
+                        modifier = Modifier.drawBehind {
+                            // Subtle pulse drawing
+                        }
+                    )
+                }
+            }
+
+            // Timed progress bar
+            if (currentExerciseType == ExerciseType.TIMED) {
+                val progress = timeLeft / totalTime
+                val color = when {
+                    timeLeft > 10f -> CorrectGreen
+                    timeLeft > 5f -> DuoTertiary
+                    else -> WrongRed
+                }
+                LinearProgressIndicator(
+                    progress = progress,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = color,
+                    trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                )
+            }
+        }
+
+        // Active Equation Card with Screen Shake
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 80.dp, max = 180.dp)
+                .padding(vertical = Spacing.s)
+                .offset(x = shakeOffset)
+        ) {
+            DuoCard(
+                modifier = Modifier.fillMaxSize(),
+                borderColor = if (hasAnswered) {
+                    if (isCurrentAnswerCorrect()) CorrectGreen else WrongRed
+                } else {
+                    MaterialTheme.colorScheme.outline
+                }
+            ) {
+                val questionLength = currentProblem.question.length
+                val adaptiveFontSize = when {
+                    questionLength > 200 -> 13.sp
+                    questionLength > 120 -> 15.sp
+                    questionLength > 60  -> if (isLegacyPuzzle) 15.sp else 18.sp
+                    else                 -> if (isLegacyPuzzle) 16.sp else 22.sp
+                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 60.dp, max = 180.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = Spacing.l, vertical = Spacing.m),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (currentProblem.question.contains("$") || currentProblem.question.contains("\\")) {
+                        val mathFontSize = if (questionLength > 120) 28 else 38
+                        MathText(
+                            text = currentProblem.question,
+                            fontSizePx = mathFontSize,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        Text(
+                            text = currentProblem.question,
+                            fontSize = adaptiveFontSize,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+
+            val isFav = favoritedQuestions.contains(currentProblem.question)
+            IconButton(
+                onClick = {
+                    com.example.numera.haptic.HapticManager.playMedium()
+                    showSaveDialog = true
+                },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(Spacing.s)
+            ) {
+                com.example.numera.ui.components.NumeraIcon(
+                    type = com.example.numera.ui.components.NumeraIconType.Favorite,
+                    filled = isFav,
+                    tint = if (isFav) WrongRed else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                )
+            }
+
+            if (showSaveDialog) {
+                androidx.compose.ui.window.Dialog(onDismissRequest = { showSaveDialog = false }) {
+                    androidx.compose.material3.Card(
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
+                            Text("Exercise Options", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+
+                            // Save this question
+                            val isSaved = isFav
+                            androidx.compose.material3.OutlinedButton(
+                                onClick = {
+                                    showSaveDialog = false
+                                    val nextFavState = !isSaved
+                                    favoritedQuestions = if (nextFavState)
+                                        favoritedQuestions + currentProblem.question
+                                    else favoritedQuestions - currentProblem.question
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            val token = RetrofitClient.authToken ?: ""
+                                            RetrofitClient.apiService.toggleFavorite(token,
+                                                com.example.numera.data.network.ToggleFavoriteRequest(
+                                                    title = if (isLegacyPuzzle) "Archive Exercise" else "Level $level Exercise",
+                                                    category = category,
+                                                    question = currentProblem.question,
+                                                    correct_answer = currentProblem.correctAnswer,
+                                                    options = currentProblem.options,
+                                                    explanation = currentProblem.explanation
+                                                ))
+                                        } catch (e: Exception) {
+                                            Log.e("SoloGame", "Failed to toggle favorite: ${e.message}")
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(if (isSaved) "❤️  Unsave This Question" else "❤️  Save This Question", fontWeight = FontWeight.Bold)
+                            }
+
+                            // Save entire level
+                            androidx.compose.material3.Button(
+                                onClick = {
+                                    showSaveDialog = false
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            val token = RetrofitClient.authToken ?: ""
+                                            problemsList.forEach { prob ->
+                                                try {
+                                                    RetrofitClient.apiService.toggleFavorite(token,
+                                                        com.example.numera.data.network.ToggleFavoriteRequest(
+                                                            title = "Level $level Exercise",
+                                                            category = category,
+                                                            question = prob.question,
+                                                            correct_answer = prob.correctAnswer,
+                                                            options = prob.options,
+                                                            explanation = prob.explanation
+                                                        ))
+                                                } catch (_: Exception) {}
+                                            }
+                                            withContext(Dispatchers.Main) {
+                                                favoritedQuestions = favoritedQuestions + problemsList.map { it.question }.toSet()
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.e("SoloGame", "Failed to save level: ${e.message}")
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                            ) {
+                                Text("📁  Save Entire Level", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                            }
+
+                            // Retry this exercise
+                            androidx.compose.material3.Button(
+                                onClick = {
+                                    showSaveDialog = false
+                                    hasAnswered = false
+                                    selectedAnswer = ""
+                                    typedInput = ""
+                                    activeExplanation = null
+                                    answeredWrongForCurrent = false
+                                    com.example.numera.haptic.HapticManager.playSoft()
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                            ) {
+                                Text("🔄  Retry This Exercise", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
+                            }
+
+                            TextButton(onClick = { showSaveDialog = false }, modifier = Modifier.align(Alignment.End)) {
+                                Text("Cancel")
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (showFavoriteTooltip) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = Spacing.xxxl, end = Spacing.m)
+                        .width(200.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .border(1.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(8.dp))
+                        .padding(Spacing.s)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+                    ) {
+                        Text(
+                            text = "❤️ Save this equation for offline review in your notebook!",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = {
+                                showFavoriteTooltip = false
+                                gamePrefs.edit().putBoolean("dismissed_favorite_tooltip", true).apply()
+                            },
+                            modifier = Modifier.size(IconSize.s)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Close",
+                                modifier = Modifier.size(Spacing.m),
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (currentExerciseType == ExerciseType.MCQ || currentExerciseType == ExerciseType.TYPED) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(Spacing.m)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                    ) {
+                        AnimatedVisibility(
+                            visible = showScratchpadPrompt,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(10.dp))
+                                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
+                                    .padding(horizontal = 10.dp, vertical = 5.dp)
+                            ) {
+                                Text(
+                                    text = "💡 Need scratch space?",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.s),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Tip Button
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                MaterialTheme.colorScheme.tertiary,
+                                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.8f)
+                                            )
+                                        )
+                                    )
+                                    .clickable {
+                                        com.example.numera.haptic.HapticManager.playSoft()
+                                        showCalculator = false
+                                        showWhiteboard = false
+                                        showTip = true
+                                    }
+                                    .padding(horizontal = Spacing.m, vertical = Spacing.s),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    com.example.numera.ui.components.NumeraIcon(
+                                        type = com.example.numera.ui.components.NumeraIconType.Tip,
+                                        tint = MaterialTheme.colorScheme.onTertiary,
+                                        modifier = Modifier.size(IconSize.s),
+                                        animate = false
+                                    )
+                                    Text(
+                                        text = "TIP",
+                                        color = MaterialTheme.colorScheme.onTertiary,
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 11.sp,
+                                        letterSpacing = 0.8.sp
+                                    )
+                                }
+                            }
+
+                            // Calculator Button
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                MaterialTheme.colorScheme.secondary,
+                                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
+                                            )
+                                        )
+                                    )
+                                    .clickable {
+                                        com.example.numera.haptic.HapticManager.playSoft()
+                                        showTip = false
+                                        showWhiteboard = false
+                                        showCalculator = true
+                                        logCalculatorTelemetry(null)
+                                    }
+                                    .padding(horizontal = Spacing.m, vertical = Spacing.s),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    com.example.numera.ui.components.NumeraIcon(
+                                        type = com.example.numera.ui.components.NumeraIconType.Calculator,
+                                        tint = MaterialTheme.colorScheme.onSecondary,
+                                        modifier = Modifier.size(IconSize.s),
+                                        animate = false
+                                    )
+                                    Text(
+                                        text = "CALC",
+                                        color = MaterialTheme.colorScheme.onSecondary,
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 11.sp,
+                                        letterSpacing = 0.8.sp
+                                    )
+                                }
+                            }
+
+                            // Try Paper Button
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                MaterialTheme.colorScheme.primary,
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                            )
+                                        )
+                                    )
+                                    .border(BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)), shape = RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        com.example.numera.haptic.HapticManager.playSoft()
+                                        showTip = false
+                                        showCalculator = false
+                                        showWhiteboard = true
+                                        showScratchpadPrompt = false
+                                    }
+                                    .padding(horizontal = Spacing.m, vertical = Spacing.s),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    com.example.numera.ui.components.NumeraIcon(
+                                        type = com.example.numera.ui.components.NumeraIconType.Scratchpad,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(IconSize.s),
+                                        animate = false
+                                    )
+                                    Text(
+                                        text = "TRY PAPER",
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 11.sp,
+                                        letterSpacing = 0.8.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+        }
+    }
+}
+
+        // Answer Interface using slide transition — takes remaining space and is scrollable
+        AnimatedContent(
+            targetState = currentProblemIdx,
+            transitionSpec = {
+                slideInHorizontally { width -> width } + fadeIn() togetherWith
+                        slideOutHorizontally { width -> -width } + fadeOut()
+            },
+            label = "problem_transition",
+            modifier = Modifier.weight(1f)
+        ) { targetIdx ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(Spacing.s)
+            ) {
+                // Interactive Mathematical Discovery surface — shown only when the
+                // server's Adaptive Visual Intelligence attached a manipulative, and
+                // only while the learner is still working the problem.
+                currentProblem.interactiveVisualJson
+                    ?.takeIf { it.isNotBlank() && !hasAnswered }
+                    ?.let { visJson ->
+                        DuoCard(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = "✦ DISCOVER",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Black,
+                                    letterSpacing = 1.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 14.dp, top = 10.dp)
+                                )
+                                com.example.numera.ui.components.InteractiveVisual(
+                                    specJson = visJson
+                                )
+                            }
+                        }
+                    }
+
+                if (currentExerciseType == ExerciseType.TYPED) {
+                    // Typed answer layout
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.s)
+                    ) {
+                        Text(
+                            text = "Type the correct numerical value:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        )
+                        
+                        OutlinedTextField(
+                            value = typedInput,
+                            onValueChange = { if (!hasAnswered) typedInput = it },
+                            placeholder = { Text("Value...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            enabled = !hasAnswered,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = if (currentProblem.correctAnswer.all { it.isDigit() || it == '-' || it == '.' || it == '/' }) KeyboardType.Number else KeyboardType.Text,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    if (!hasAnswered && typedInput.trim().isNotEmpty()) {
+                                        hasAnswered = true
+                                        handleAnswer(isCurrentAnswerCorrect())
+                                    }
+                                }
+                            )
+                        )
+
+                        if (!hasAnswered) {
+                            DuoButton(
+                                text = "Check Answer",
+                                enabled = typedInput.trim().isNotEmpty(),
+                                onClick = {
+                                    hasAnswered = true
+                                    handleAnswer(isCurrentAnswerCorrect())
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                } else {
+                    // MCQ choices layout (used in Exercise 1 and 3)
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        currentProblem.options.forEach { option ->
+                            val isSelected = selectedAnswer == option
+                            val isCorrect = currentProblem.correctAnswer == option
+                            
+                            val outlineColor = if (hasAnswered) {
+                                if (isCorrect) CorrectGreen else if (isSelected) WrongRed else MaterialTheme.colorScheme.outline
+                            } else {
+                                MaterialTheme.colorScheme.outline
+                            }
+                            
+                            val depthColor = if (hasAnswered) {
+                                if (isCorrect) CorrectGreenPressed else if (isSelected) WrongRedPressed else MaterialTheme.colorScheme.outline
+                            } else {
+                                DuoBorder
+                            }
+
+                            val bgColor = if (hasAnswered) {
+                                if (isCorrect) CorrectGreen.copy(alpha = 0.1f)
+                                else if (isSelected) WrongRed.copy(alpha = 0.1f)
+                                else MaterialTheme.colorScheme.surfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.surface
+                            }
+
+                            val textColor = if (hasAnswered) {
+                                if (isCorrect) CorrectGreenPressed else if (isSelected) WrongRedPressed else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                            } else {
+                                MaterialTheme.colorScheme.onBackground
+                            }
+
+                            val bottomDepth = Spacing.xs
+                            val isPressed = remember { mutableStateOf(false) }
+                            val offset = if (isPressed.value && !hasAnswered) bottomDepth else Spacing.zero
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .pointerInput(hasAnswered) {
+                                        if (!hasAnswered) {
+                                            detectTapGestures(
+                                                onPress = {
+                                                    isPressed.value = true
+                                                    tryAwaitRelease()
+                                                    isPressed.value = false
+                                                },
+                                                onTap = {
+                                                    hasAnswered = true
+                                                    selectedAnswer = option
+                                                    com.example.numera.haptic.HapticManager.playSoft()
+                                                    handleAnswer(option == currentProblem.correctAnswer)
+                                                }
+                                            )
+                                        }
+                                    }
+                                    .drawBehind {
+                                        if (!hasAnswered) {
+                                            drawRoundRect(
+                                                color = depthColor,
+                                                cornerRadius = CornerRadius(Spacing.l.toPx(), Spacing.l.toPx())
+                                            )
+                                        }
+                                    }
+                                    .padding(bottom = if (isPressed.value && !hasAnswered) Spacing.zero else bottomDepth)
+                                    .offset(y = offset)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(bgColor)
+                                    .border(
+                                        BorderStroke(1.5.dp, outlineColor),
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+                                    .padding(Spacing.l),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    if (option.contains("$") || option.contains("\\")) {
+                                        MathText(
+                                            text = option,
+                                            fontSizePx = 32,
+                                            color = textColor,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    } else {
+                                        Text(
+                                            text = option,
+                                            color = textColor,
+                                            fontSize = 17.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                    
+                                    if (hasAnswered) {
+                                        if (isCorrect) {
+                                            Icon(Icons.Default.CheckCircle, contentDescription = "Correct", tint = CorrectGreen)
+                                        } else if (isSelected) {
+                                            Icon(Icons.Default.Clear, contentDescription = "Wrong", tint = WrongRed)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(Spacing.s))
+
+        // Mistake Banner sliding sheet
+        AnimatedVisibility(
+            visible = hasAnswered,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            val correct = isCurrentAnswerCorrect()
+
+            val isLast = currentProblemIdx >= problemsList.size - 1
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = Spacing.xs),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (correct) CorrectGreen.copy(alpha = 0.08f) else WrongRed.copy(alpha = 0.08f)
+                ),
+                border = BorderStroke(1.5.dp, if (correct) CorrectGreen.copy(alpha = 0.3f) else WrongRed.copy(alpha = 0.3f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (correct) "✨ EXCELLENT JOB!" else "💡 NOT QUITE RIGHT",
+                            fontWeight = FontWeight.Black,
+                            fontSize = 14.sp,
+                            color = if (correct) CorrectGreen else WrongRed,
+                            letterSpacing = 1.sp
+                        )
+
+                        if (!correct) {
+                            Text(
+                                text = "Correct: ${currentProblem.correctAnswer}",
+                                fontWeight = FontWeight.Bold,
+                                color = CorrectGreen,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+
+                    // Encouraging microcopy when wrong
+                    if (!correct) {
+                        val encouragement = when (currentProblemIdx) {
+                            0 -> "Mistakes are proof that you're trying!"
+                            1 -> "Let's analyze and perfect the steps."
+                            else -> "You're getting closer every time!"
+                        }
+                        Text(
+                            text = encouragement,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        if (!correct) {
+                            // "Review Solution" option
+                            DuoButton(
+                                text = "Review Solution",
+                                onClick = { showReviewDialog = true },
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+
+                        // "Continue" option (either next question or finish game)
+                        DuoButton(
+                            text = if (isSavingSession) "Saving..." else (if (isLast) "Finish Game" else "Continue"),
+                            enabled = !isSavingSession,
+                            onClick = { continueOrFinish(isLast) },
+                            modifier = Modifier.weight(1f),
+                            color = if (correct) CorrectGreen else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+        }
+    } // Closes the main Column
+
+        // Slide-up whiteboard overlay
+        AnimatedVisibility(
+            visible = showWhiteboard,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            com.example.numera.ui.components.ScratchPad(
+                strokes = whiteboardStrokes,
+                redoStrokes = whiteboardRedoStrokes,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.55f),
+                onClose = {
+                    showWhiteboard = false
+                }
+            )
+        }
+
+        // Slide-up scientific calculator overlay
+        CalculatorOverlay(
+            visible = showCalculator,
+            onClose = { showCalculator = false },
+            inputState = calculatorInputState,
+            resultState = calculatorResultState,
+            memoryState = calculatorMemoryState,
+            historyState = calculatorHistoryState,
+            errorState = calcIsErrorState,
+            logTelemetry = { logCalculatorTelemetry(it) },
+        )
+
+        // Slide-up tip overlay
+        TipOverlay(
+            visible = showTip,
+            onClose = { showTip = false },
+            problem = problemsList.getOrNull(currentProblemIdx),
+        )
+    } // Closes the wrapping Box
+}
