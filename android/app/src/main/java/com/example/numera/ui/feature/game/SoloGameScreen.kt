@@ -600,6 +600,116 @@ fun SoloGameScreen(
         selectedAnswer == currentProblem.correctAnswer
     }
 
+    // Tapped from the feedback banner's primary button. On the last exercise it computes rewards,
+    // persists the session (SRS + completeSession) and flips to the recap; otherwise it advances to
+    // the next exercise and resets per-question state. Hoisted out of the button's onClick so the
+    // gameplay UI can be extracted with this as a single callback (it owns ~15 reward/session vars).
+    fun continueOrFinish(isLast: Boolean) {
+        if (isLast) {
+            isSavingSession = true
+            val baseXP = solvedCount * 20
+            val baseCoins = solvedCount * 5
+
+            if (gameMode == "daily_puzzle") {
+                xpReward = 50
+                coinReward = 30
+            } else if (gameMode == "mistakes_practice") {
+                xpReward = solvedCount * 15
+                coinReward = solvedCount * 10
+            } else {
+                xpReward = baseXP
+                coinReward = baseCoins
+            }
+
+            // Calculate Bonuses
+            if (gameMode == "level") {
+                if (correctFirstTryCount == problemsList.size) {
+                    comboBonusGained = 15
+                }
+                if (currentExerciseType == ExerciseType.TIMED && timeLeft > 0f && !answeredWrongForCurrent) {
+                    speedBonusGained = timeLeft.toInt()
+                }
+            }
+
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val token = RetrofitClient.authToken ?: ""
+
+                    if (gameMode == "level") {
+                        val calculatedQuality = if (problemsList.isNotEmpty()) {
+                            (solvedCount * 5) / problemsList.size
+                        } else {
+                            0
+                        }
+                        try {
+                            RetrofitClient.apiService.submitSrsReview(
+                                token, SrsReviewRequest(topic = "${category}_${level}", quality = calculatedQuality)
+                            )
+                        } catch (e: Exception) {
+                            Log.e("SoloGame", "SRS submission failed: ${e.message}")
+                        }
+                    }
+
+                    if (gameMode == "level" || gameMode == "archive_puzzle" || gameMode == "legacy_puzzle" || gameMode == "daily_puzzle") {
+                        val saveRes = RetrofitClient.apiService.completeSession(
+                            token, CompleteSessionRequest(
+                                xpGained = xpReward,
+                                coinsGained = coinReward,
+                                solvedCount = solvedCount,
+                                category = category,
+                                level = if (gameMode == "level") level else null,
+                                errorsCount = errorsCount,
+                                speedBonus = speedBonusGained,
+                                comboBonus = comboBonusGained,
+                                gameMode = gameMode,
+                                totalTime = ((System.currentTimeMillis() - sessionStartTime) / 1000).toInt()
+                            )
+                        )
+
+                        withContext(Dispatchers.Main) {
+                            levelUpOccurred = saveRes.levelUp
+                            xpReward = saveRes.xpGained ?: xpReward
+                            coinReward = saveRes.coinsGained ?: coinReward
+                            streakBonusActive = saveRes.streakBonusActive ?: false
+                            criticalBonusActive = saveRes.criticalBonusActive ?: false
+                            userXP = saveRes.xp
+                            userLevel = saveRes.level
+                            userCoins = saveRes.coins
+                            userRank = saveRes.rank
+
+                            if (levelUpOccurred) {
+                                SoundManager.playLevelUp()
+                                com.example.numera.haptic.HapticManager.playMajorReward()
+                            } else {
+                                SoundManager.playRewardClaim()
+                                com.example.numera.haptic.HapticManager.playMajorReward()
+                            }
+                        }
+                    }
+                    withContext(Dispatchers.Main) {
+                        isGameOver = true
+                        isSavingSession = false
+                    }
+                } catch (e: Exception) {
+                    Log.e("SoloGame", "Failed to submit session: ${e.message}")
+                    withContext(Dispatchers.Main) {
+                        isGameOver = true
+                        isSavingSession = false
+                    }
+                }
+            }
+        } else {
+            // Proceed to next question
+            currentProblemIdx++
+            hasAnswered = false
+            selectedAnswer = ""
+            typedInput = ""
+            activeExplanation = null
+            answeredWrongForCurrent = false
+            showWhiteboard = false
+        }
+    }
+
     LaunchedEffect(errorsCount) {
         if (gameMode == "level") {
             val currentHearts = (3 - errorsCount).coerceAtLeast(0)
@@ -1511,111 +1621,7 @@ fun SoloGameScreen(
                         DuoButton(
                             text = if (isSavingSession) "Saving..." else (if (isLast) "Finish Game" else "Continue"),
                             enabled = !isSavingSession,
-                            onClick = {
-                                if (isLast) {
-                                    isSavingSession = true
-                                    val baseXP = solvedCount * 20
-                                    val baseCoins = solvedCount * 5
-                                    
-                                    if (gameMode == "daily_puzzle") {
-                                        xpReward = 50
-                                        coinReward = 30
-                                    } else if (gameMode == "mistakes_practice") {
-                                        xpReward = solvedCount * 15
-                                        coinReward = solvedCount * 10
-                                    } else {
-                                        xpReward = baseXP
-                                        coinReward = baseCoins
-                                    }
-
-                                    // Calculate Bonuses
-                                    if (gameMode == "level") {
-                                        if (correctFirstTryCount == problemsList.size) {
-                                            comboBonusGained = 15
-                                        }
-                                        if (currentExerciseType == ExerciseType.TIMED && timeLeft > 0f && !answeredWrongForCurrent) {
-                                            speedBonusGained = timeLeft.toInt()
-                                        }
-                                    }
-
-                                    scope.launch(Dispatchers.IO) {
-                                        try {
-                                            val token = RetrofitClient.authToken ?: ""
-                                            
-                                            if (gameMode == "level") {
-                                                val calculatedQuality = if (problemsList.isNotEmpty()) {
-                                                    (solvedCount * 5) / problemsList.size
-                                                } else {
-                                                    0
-                                                }
-                                                try {
-                                                    RetrofitClient.apiService.submitSrsReview(
-                                                        token, SrsReviewRequest(topic = "${category}_${level}", quality = calculatedQuality)
-                                                    )
-                                                } catch (e: Exception) {
-                                                    Log.e("SoloGame", "SRS submission failed: ${e.message}")
-                                                }
-                                            }
-
-                                            if (gameMode == "level" || gameMode == "archive_puzzle" || gameMode == "legacy_puzzle" || gameMode == "daily_puzzle") {
-                                                val saveRes = RetrofitClient.apiService.completeSession(
-                                                    token, CompleteSessionRequest(
-                                                        xpGained = xpReward,
-                                                        coinsGained = coinReward,
-                                                        solvedCount = solvedCount,
-                                                        category = category,
-                                                        level = if (gameMode == "level") level else null,
-                                                        errorsCount = errorsCount,
-                                                        speedBonus = speedBonusGained,
-                                                        comboBonus = comboBonusGained,
-                                                        gameMode = gameMode,
-                                                        totalTime = ((System.currentTimeMillis() - sessionStartTime) / 1000).toInt()
-                                                    )
-                                                )
-                                                
-                                                withContext(Dispatchers.Main) {
-                                                    levelUpOccurred = saveRes.levelUp
-                                                    xpReward = saveRes.xpGained ?: xpReward
-                                                    coinReward = saveRes.coinsGained ?: coinReward
-                                                    streakBonusActive = saveRes.streakBonusActive ?: false
-                                                    criticalBonusActive = saveRes.criticalBonusActive ?: false
-                                                    userXP = saveRes.xp
-                                                    userLevel = saveRes.level
-                                                    userCoins = saveRes.coins
-                                                    userRank = saveRes.rank
-                                                    
-                                                    if (levelUpOccurred) {
-                                                        SoundManager.playLevelUp()
-                                                        com.example.numera.haptic.HapticManager.playMajorReward()
-                                                    } else {
-                                                        SoundManager.playRewardClaim()
-                                                        com.example.numera.haptic.HapticManager.playMajorReward()
-                                                    }
-                                                }
-                                            }
-                                            withContext(Dispatchers.Main) {
-                                                isGameOver = true
-                                                isSavingSession = false
-                                            }
-                                        } catch (e: Exception) {
-                                            Log.e("SoloGame", "Failed to submit session: ${e.message}")
-                                            withContext(Dispatchers.Main) {
-                                                isGameOver = true
-                                                isSavingSession = false
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    // Proceed to next question
-                                    currentProblemIdx++
-                                    hasAnswered = false
-                                    selectedAnswer = ""
-                                    typedInput = ""
-                                    activeExplanation = null
-                                    answeredWrongForCurrent = false
-                                    showWhiteboard = false
-                                }
-                            },
+                            onClick = { continueOrFinish(isLast) },
                             modifier = Modifier.weight(1f),
                             color = if (correct) CorrectGreen else MaterialTheme.colorScheme.primary
                         )
