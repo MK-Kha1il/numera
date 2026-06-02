@@ -13,6 +13,16 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
+/**
+ * Test seam: the KaTeX renderer below runs inside a [WebView], which JVM (Robolectric) UI tests
+ * can't drive — its async load/measure/draw makes the Compose semantics tree settle unreliably,
+ * so assertions on math content flake. Tests set this to a plain-[androidx.compose.material3.Text]
+ * renderer that keeps the same string in the semantics tree, making gameplay/lesson tests
+ * deterministic. Null in production, where the real WebView renders. See OverlayTest / gameplay
+ * tests. Reset to null in an @After so it never leaks across tests.
+ */
+internal var mathTextRendererForTest: (@Composable (String, Modifier, Color, Int) -> Unit)? = null
+
 @Composable
 fun MathText(
     text: String,
@@ -20,6 +30,11 @@ fun MathText(
     color: Color = MaterialTheme.colorScheme.onSurface,
     fontSizePx: Int = 42
 ) {
+    mathTextRendererForTest?.let { render ->
+        render(text, modifier, color, fontSizePx)
+        return
+    }
+
     val hexColor = String.format("#%06X", 0xFFFFFF and color.toArgb())
     val htmlContent = remember(text, hexColor, fontSizePx) {
         buildMathHtml(text, hexColor, fontSizePx)
