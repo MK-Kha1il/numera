@@ -43,8 +43,12 @@ test/                node:test smoke (real route stack) + unit tests.
 ### Android (`android/app/src/main/java/com/example/numera/`)
 ```
 MainActivity.kt, Navigation.kt   Entry + nav graph.
-ui/screens/                      Screens. NOTE: MainTabsScreen.kt and SoloGameScreen.kt
-                                 are large "God files" pending decomposition.
+ui/screens/                      Standalone screens: AuthScreens, DuelGameScreen,
+                                 PlacementTestScreen, + the MainTabsScreen "shell" (606 lines:
+                                 Scaffold + bottom-nav + host wiring only).
+ui/feature/<domain>/             Decomposed top-level screens (dashboard, archive, arena,
+                                 social, shop, profile, settings, game). One domain per package.
+ui/dialogs/                      LevelDebrief / CommitmentStatus / Notifications dialogs.
 ui/components/                   Reusable component library (primitives + composites).
 theme/                           Color.kt, Type.kt (Typography), Theme.kt, DesignTokens.kt.
 data/network/                    ApiService (Retrofit), Models (Gson), RetrofitClient, SocketClient.
@@ -105,12 +109,15 @@ Building something new? Put it in the right place from the start:
 
 ## Architecture status (stabilization sprint, in progress)
 
-The codebase is mid-decomposition. **Done:** Phase 0 test/lint net; the **server `server.js`
-God file is fully split** — `config.js`, `middleware/`, `lib/`, 5 `services/`, and 20
-`routes/*` routers (server.js 5,096 → ~1,100 lines, just bootstrap + Socket.IO). **Pending:**
-the Android `MainTabsScreen.kt` (~9.9k) / `SoloGameScreen.kt` (~2.8k) God files into
-`ui/feature/<domain>/` packages, plus the cross-cutting items in `docs/AUDIT.md`. See the
-sprint plan and `docs/Architecture.md`.
+**Done:** Phase 0 test/lint net; the **server `server.js` God file is fully split** —
+`config.js`, `middleware/`, `lib/`, 5 `services/`, and 20 `routes/*` routers (server.js
+5,096 → ~1,100 lines, just bootstrap + Socket.IO). The **Android `MainTabsScreen.kt` God file
+is fully split** — 9,933 → 606 lines (shell only); its screens/dialogs/helpers moved verbatim
+into `ui/feature/<domain>/` + `ui/dialogs/`. `SoloGameScreen.kt` relocated to `ui/feature/game/`
+with its calculator engine / lesson helpers extracted. **Pending:** carving the still-monolithic
+~2,600-line `SoloGameScreen` composable into sub-screens (needs a Compose test net first),
+design-token migration in the split screens, plus the cross-cutting items in `docs/AUDIT.md`.
+See the sprint plan and `docs/Architecture.md`.
 
 ## Subsystem docs
 - [Architecture](docs/Architecture.md) · [DataFlow](docs/DataFlow.md) · [Security](docs/Security.md)

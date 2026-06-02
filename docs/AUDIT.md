@@ -11,18 +11,30 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
   `middleware/{auth,rateLimit,security}.js`, `lib/progression.js`, 5 `services/*`, and **20
   `routes/<domain>` routers**. What remains in server.js is bootstrap + the Socket.IO duel
   logic. Each move was verbatim, guarded by `npm test` (22) + `eslint` (0 errors).
-- ⬜ Android God files (`MainTabsScreen.kt` ~9.9k, `SoloGameScreen.kt` ~2.8k) → `ui/feature/
-  <domain>/` packages. Highest-value remaining refactor; gated by the gradle compile check.
+- ✅ **`MainTabsScreen.kt` God file fully decomposed** (9,933 → **606 lines**, −94%): now just
+  the Scaffold + bottom-nav + host wiring + `NavigationItem` + the `LocalToast`/
+  `LocalCommandPalette` mounts. Its 7 screens, shop sub-composables, dialogs and helpers were
+  moved **verbatim** into `ui/feature/{dashboard,archive,arena,social,shop,profile,settings}/`
+  + `ui/dialogs/`, one screen per commit, each gated by a green `assembleDebug`.
+- 🟡 **`SoloGameScreen.kt` relocated to `ui/feature/game/`** and its self-contained helpers
+  extracted (`CalcEngine.kt`, `ExerciseType.kt`, `LessonComponents.kt`; 2,806 → 2,657 lines).
+  The main `SoloGameScreen` composable itself is still a single ~2,600-line function with ~30
+  intertwined hoisted state vars + inline calculator/whiteboard/tip overlays — carving it into
+  `LessonScreen`/`GameplayScreen`/`RecapScreen` is a **behavior-changing** refactor deferred
+  until there is a UI/Compose test net (too risky to do blind under the compiler alone).
 
 ## 2. Folder structure
 - ✅ Server: `config.js`, `middleware/`, `lib/`, `services/`, `routes/`, `test/` — clear
   ownership boundaries, one domain per router.
-- ⬜ Android `ui/feature/<domain>/` reorg pending (paired with the God-file split).
+- ✅ Android `ui/feature/<domain>/` reorg **done**: `feature/{dashboard,archive,arena,social,
+  shop,profile,settings,game}/`, `ui/dialogs/`, with `ui/screens/` now holding only the
+  remaining standalone screens (Auth, Duel, Placement) + the thin `MainTabsScreen` shell.
 
 ## 3. Duplicate logic
-- ✅ Earlier work removed a duplicated expression parser (`evaluateExpression`/`CalcParser`).
+- ✅ Earlier work removed a duplicated expression parser; the calculator engine is now its own
+  `ui/feature/game/CalcEngine.kt` (`evaluateExpression`/`CalcParser`, pure, unit-testable).
 - 🟢 Rate limiters consolidated into one module. ⬜ Client answer-handling still duplicated 3×
-  in `SoloGameScreen` (extract `handleAnswer()` during the split).
+  in `SoloGameScreen` — deferred with the in-function split (needs a Compose test net first).
 
 ## 4. Component audit (Android)
 - 🟢 Component library is already well-classified (primitives / feedback / premium
@@ -30,11 +42,16 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
 
 ## 5. Design system
 - ✅ Removed duplicate unused `AppTypography`; typography now single-sourced in `Type.kt`.
-- ⬜ Migrate raw `16.dp`/`Color(0x…)` literals in the big screens to tokens (do during split).
+- ⬜ Migrate raw `16.dp`/`Color(0x…)`/`RoundedCornerShape(…)` literals in the now-split feature
+  screens to the `theme/` tokens. **Intentionally kept separate from the file split** (the
+  moves were strictly verbatim so any regression is easy to bisect); this is the natural next
+  pass now that each screen is an isolated, readable file.
 
 ## 6. State management (Android)
-- ⬜ Not deeply audited this pass; the God-file split is a prerequisite to meaningfully
-  improve hoisting/recomposition. Flagged for the split phase.
+- 🟡 The God-file split (prerequisite) is **done** — each screen's `remember`/`mutableStateOf`
+  hoisting and CompositionLocal use (`LocalToast`, `LocalCommandPalette`) is now isolated and
+  legible per file. ⬜ A focused recomposition-hygiene pass (hoist, `key` lazy items, avoid
+  brush/lambda allocation in hot paths) per feature screen is the remaining follow-up.
 
 ## 7. API layer
 - 🟢 Client API access already centralized (`ApiService`/`RetrofitClient`), with idempotency
@@ -99,7 +116,13 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
   tests use a throwaway DB; `server.js` exports the app and only listens when run directly.
 
 ## Recommended next steps (in order)
-1. Split `server.js` routes into `routes/<domain>` (test net guards each move).
-2. Split `MainTabsScreen.kt`/`SoloGameScreen.kt` into `ui/feature/<domain>/`, migrating raw
-   design values to tokens and de-duplicating `handleAnswer` as you go.
-3. Structured logger; client fetch parallelization; ownership-check pass; achievement chains.
+1. ✅ Split `server.js` routes into `routes/<domain>` (test net guarded each move).
+2. ✅ Split `MainTabsScreen.kt` into `ui/feature/<domain>/` + `ui/dialogs/` (606-line shell
+   remains); `SoloGameScreen.kt` relocated to `feature/game/` with helpers extracted.
+3. **Add a Compose/UI test net (Robolectric or instrumented), then** carve the ~2,600-line
+   `SoloGameScreen` composable into `LessonScreen`/`GameplayScreen`/`RecapScreen` + overlay
+   composables and de-dup the 3× `handleAnswer` — deferred until tests exist (state-hoisting
+   refactor the compiler can't fully guard).
+4. Design-token migration pass over the split feature screens (raw `dp`/`Color`/shape literals
+   → `theme/` tokens); recomposition-hygiene pass.
+5. Structured logger; client fetch parallelization; ownership-check pass; achievement chains.
