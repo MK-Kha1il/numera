@@ -17,15 +17,17 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
   moved **verbatim** into `ui/feature/{dashboard,archive,arena,social,shop,profile,settings}/`
   + `ui/dialogs/`, one screen per commit, each gated by a green `assembleDebug`.
 - 🟡 **`SoloGameScreen.kt` relocated to `ui/feature/game/`** and decomposed in safe slices
-  (2,806 → **2,239 lines**): self-contained helpers (`CalcEngine.kt`, `ExerciseType.kt`,
-  `LessonComponents.kt`) + the two cleanly-separable overlays — `CalculatorOverlay.kt` (state
+  (2,806 → **2,014 lines**): self-contained helpers (`CalcEngine.kt`, `ExerciseType.kt`,
+  `LessonComponents.kt`); the two cleanly-separable overlays — `CalculatorOverlay.kt` (state
   hoisted: kept in the parent as `MutableState`, re-delegated with `by` so input/memory/history
   still persist across open/close) and `TipOverlay.kt` (read-only; takes the active
-  `MathProblem?`). Each was a behavior-preserving move, gated by `assembleDebug`. **Still
-  monolithic:** the lesson→gameplay→recap `AnimatedContent` + retry dialogs (~2k lines, ~30
-  intertwined hoisted state vars). Splitting *those* into `LessonScreen`/`GameplayScreen`/
-  `RecapScreen` is the genuinely behavior-changing part — deferred until a Compose/Robolectric
-  test net exists (needs `ApiService` made injectable first; too risky blind under the compiler).
+  `MathProblem?`); and now **`LessonScreen.kt`** — the concept-first lesson early-return block,
+  carved out once the UI test net existed. The lesson carve was the first *verified* one:
+  `SoloGameScreenTest` (a mocked `getProblems` → lesson renders) guarded it, so the extraction
+  was confirmed behavior-preserving rather than blind. **Still monolithic:** the gameplay
+  `AnimatedContent` + recap/retry dialogs (~30 intertwined hoisted state vars) — the hardest
+  part; carving `GameplayScreen`/`RecapScreen` needs more gameplay-interaction tests first
+  (the gameplay tree renders unreliably under Robolectric, so those tests need care).
 
 ## 2. Folder structure
 - ✅ Server: `config.js`, `middleware/`, `lib/`, `services/`, `routes/`, `test/` — clear
@@ -134,23 +136,24 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
 - ✅ ESLint v9 + Prettier (`npm run lint`/`format`), 0 errors. `db.js` made env-overridable so
   tests use a throwaway DB; `server.js` exports the app and only listens when run directly.
 - ✅ **Android JVM Compose UI test net** (Robolectric, `gradlew testDebugUnitTest`, no device) —
-  the client's missing Phase-0 net. 7 tests: a harness smoke test, the carved-out overlays
-  (`CalculatorOverlay`/`TipOverlay`) + `MasteryBar` (pure-composable rendering), and a
-  screen-level `SocialScreenTest` that injects a **MockK** `ApiService` via the new
-  `RetrofitClient.setApiServiceForTest()` seam and asserts fetched data renders. This is the
-  net the lesson→gameplay→recap split needs; the pattern (mock ApiService → render → assert)
-  now extends to any screen.
+  the client's missing Phase-0 net. 9 tests: a harness smoke test; the carved-out overlays
+  (`CalculatorOverlay` render + a key-press→CalcEngine **interaction** test, `TipOverlay`) and
+  `MasteryBar` (pure composables); a screen-level `SocialScreenTest` that injects a **MockK**
+  `ApiService` via the new `RetrofitClient.setApiServiceForTest()` seam and asserts fetched data
+  renders; and `SoloGameScreenTest` (mock `getProblems` → the fetched lesson renders) which
+  **guarded the LessonScreen carve**. The pattern (mock ApiService → render → assert) extends to
+  any screen; verified-safe carving is now the workflow for the rest of SoloGameScreen.
 
 ## Recommended next steps (in order)
 1. ✅ Split `server.js` routes into `routes/<domain>` (test net guarded each move).
 2. ✅ Split `MainTabsScreen.kt` into `ui/feature/<domain>/` + `ui/dialogs/` (606-line shell
    remains); `SoloGameScreen.kt` relocated to `feature/game/` with helpers extracted.
-3. SoloGameScreen carve-up: ✅ overlays out (CalculatorOverlay, TipOverlay; 2,806 → 2,239) and
-   ✅ the **Compose/Robolectric test net + injectable `ApiService` now exist** (the stated
-   prerequisite). ⬜ Remaining = the lesson→gameplay→recap `AnimatedContent` + retry dialogs +
-   de-dup the 3× `handleAnswer`. Now unblocked: write a SoloGameScreen flow test (mock
-   `getProblems`) to pin behavior, *then* carve — the net makes that state-hoisting refactor
-   verifiable instead of blind.
+3. SoloGameScreen carve-up: ✅ overlays out (CalculatorOverlay, TipOverlay), ✅ the
+   Compose/Robolectric test net + injectable `ApiService`, and ✅ **`LessonScreen` extracted**
+   (verified by `SoloGameScreenTest`; 2,806 → 2,014). ⬜ Remaining = `GameplayScreen` +
+   `RecapScreen`/retry dialogs + de-dup the 3× `handleAnswer`. These need a few
+   gameplay-interaction tests first (the gameplay semantics tree renders unreliably under
+   Robolectric — needs care) so each carve stays verified, not blind.
 4. ✅ Design-token migration (raw `dp`/shape → `theme/` tokens) DONE across the split screens.
    ⬜ Remaining: optional `Color`-literal → token pass + recomposition-hygiene pass.
 5. ✅ Structured logger DONE; ✅ ownership-check pass DONE (profile_private fix); ✅ client
