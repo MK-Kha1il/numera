@@ -7,15 +7,16 @@ needed) · **🟡 partial** (started, foundation laid) · **⬜ pending** (plann
 Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior test net.
 
 ## 1. Architecture & separation of concerns
-- 🟡 Server cross-cutting layer extracted from the 5k-line `server.js` into `config.js` +
-  `middleware/{auth,rateLimit,security}.js`. Routes (~75) still inline → **⬜ split into
-  `routes/<domain>` + `services/`** (target documented in Architecture.md).
+- ✅ **`server.js` God file fully decomposed** (5,096 → ~1,100 lines): `config.js`,
+  `middleware/{auth,rateLimit,security}.js`, `lib/progression.js`, 5 `services/*`, and **20
+  `routes/<domain>` routers**. What remains in server.js is bootstrap + the Socket.IO duel
+  logic. Each move was verbatim, guarded by `npm test` (22) + `eslint` (0 errors).
 - ⬜ Android God files (`MainTabsScreen.kt` ~9.9k, `SoloGameScreen.kt` ~2.8k) → `ui/feature/
-  <domain>/` packages. Highest-value remaining refactor; gated behind the now-existing
-  server test net + the gradle compile check.
+  <domain>/` packages. Highest-value remaining refactor; gated by the gradle compile check.
 
 ## 2. Folder structure
-- 🟡 Server now has `config.js`, `middleware/`, `test/`. Target `routes/`, `services/` pending.
+- ✅ Server: `config.js`, `middleware/`, `lib/`, `services/`, `routes/`, `test/` — clear
+  ownership boundaries, one domain per router.
 - ⬜ Android `ui/feature/<domain>/` reorg pending (paired with the God-file split).
 
 ## 3. Duplicate logic

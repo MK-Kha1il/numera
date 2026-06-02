@@ -29,10 +29,11 @@ without shipping a new APK.
 2. **Middleware (`middleware/`)** — `auth.js` (stateful JWT: a valid signature must also map
    to a live row in `user_sessions`), `rateLimit.js` (global + per-route + brute-force),
    `security.js` (hardening headers, audit logging, private-IP detection).
-3. **Routes** — ~75 endpoints grouped by domain (auth, math, assessment, srs, archive,
-   mistakes, quests, daily-puzzle, league, shop, user, friends, leaderboard, achievements,
-   favorites, collections, notifications, engine, rating). *Currently still inline in
-   `server.js`; target is one `express.Router()` per domain under `routes/`.*
+3. **Routes (`routes/`)** — ~75 endpoints grouped into **20 domain routers** (auth, math,
+   assessment, srs, archive, mistakes, quests, dailyPuzzle, league, shop, account,
+   achievements, friends, leaderboard, library, notifications, engine, rating, publicProfile,
+   commitment), each an `express.Router()` mounted in `server.js`. DB-touching logic shared
+   across routers lives in `services/`; pure helpers in `lib/`.
 4. **Math/learning engine (`mathEngine/`)** — see [MathEngine.md](MathEngine.md). Pure-ish
    modules: generation, validation, adaptivity, rating, retention, misconceptions, lessons.
 5. **Data access** — `db.js` (the main read connection + schema baseline), `dbx.js` (a
@@ -62,10 +63,11 @@ from the main connection's autocommit reads/writes. Reward routes use `withTrans
 
 ## Known architectural debt (stabilization sprint)
 
-- **God files:** `server.js` (~5k lines) and `MainTabsScreen.kt` (~9.9k) / `SoloGameScreen.kt`
-  (~2.8k) concentrate too many responsibilities. The cross-cutting server layer has been
-  extracted (`config.js`, `middleware/`); routes and the Compose screens are the remaining
-  decomposition into `routes/*` and `ui/feature/<domain>/*`.
+- **God files:** the server `server.js` God file has been **fully decomposed** (5k → ~1.1k
+  lines: `config.js`, `middleware/`, `lib/`, `services/`, 20 `routes/*` routers; what remains
+  is bootstrap + the Socket.IO duel logic). The Android `MainTabsScreen.kt` (~9.9k) /
+  `SoloGameScreen.kt` (~2.8k) remain to be split into `ui/feature/<domain>/*` — the next major
+  refactor.
 - **No UI test net:** server has node:test coverage; the Android side relies on the compiler.
 
 ## Quality gates

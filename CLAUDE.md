@@ -17,16 +17,24 @@ docs/         Subsystem documentation (start with Architecture.md)
 
 ### Server (`server/`)
 ```
-server.js            App + ~75 routes (being decomposed; see "Architecture status").
-                     Exports { app, server, io, db, ready }; listens only when run directly.
+server.js            Bootstrap only: middleware wiring + 20 router mounts + DB init + the
+                     Socket.IO matchmaking/duel logic. Exports { app, server, io, db, ready };
+                     listens only when run directly. (~1.1k lines, was a 5k God file.)
 config.js            Single source for env config (JWT_SECRET, PORT, CORS origins).
+routes/              One express.Router per domain (20): auth, math, shop, quests, dailyPuzzle,
+                     account, achievements, friends, leaderboard, league, library, mistakes,
+                     srs, notifications, assessment, archive, engine, rating, publicProfile,
+                     commitment. Each declares its own /api/... paths + imports its own deps.
+services/            DB-touching business logic shared across routes: userService,
+                     achievementService, commitmentService, tipService, rankRewardService.
+lib/                 Pure, unit-tested utilities (progression.js: rank/level helpers).
+middleware/          auth.js (stateful JWT), rateLimit.js, security.js (headers/audit log).
 db.js                SQLite schema (CREATE IF NOT EXISTS baseline) + initDb().
 migrations.js        Versioned, run-once migrations layered on top of db.js.
 dbx.js               Promisified write connection + withTransaction() (ACID).
 cache.js             In-process TTL cache (Redis-shaped for a future swap).
 idempotency.js       Stripe-style Idempotency-Key middleware for reward endpoints.
 backup.js            VACUUM INTO snapshot tool (npm run backup).
-middleware/          auth.js (stateful JWT), rateLimit.js, security.js (headers/audit log).
 mathEngine/          The learning-intelligence engine (see docs/MathEngine.md).
 mathGenerator.js     Problem-generation facade over mathEngine.
 test/                node:test smoke (real route stack) + unit tests.
@@ -78,10 +86,12 @@ sound/, haptic/                  Feedback managers.
 
 ## Architecture status (stabilization sprint, in progress)
 
-The codebase is mid-decomposition. Done: Phase 0 test/lint net; server cross-cutting layer
-extracted into `config.js` + `middleware/`. **Pending:** splitting `server.js` routes into
-`routes/*` routers and the Android `MainTabsScreen.kt`/`SoloGameScreen.kt` God files into
-`ui/feature/<domain>/` packages. See the sprint plan and `docs/Architecture.md`.
+The codebase is mid-decomposition. **Done:** Phase 0 test/lint net; the **server `server.js`
+God file is fully split** — `config.js`, `middleware/`, `lib/`, 5 `services/`, and 20
+`routes/*` routers (server.js 5,096 → ~1,100 lines, just bootstrap + Socket.IO). **Pending:**
+the Android `MainTabsScreen.kt` (~9.9k) / `SoloGameScreen.kt` (~2.8k) God files into
+`ui/feature/<domain>/` packages, plus the cross-cutting items in `docs/AUDIT.md`. See the
+sprint plan and `docs/Architecture.md`.
 
 ## Subsystem docs
 - [Architecture](docs/Architecture.md) · [DataFlow](docs/DataFlow.md) · [Security](docs/Security.md)
