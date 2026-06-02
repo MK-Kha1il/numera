@@ -15,7 +15,7 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
 
   db.get(
     `
-    SELECT id, username, xp, level, coins, rank, active_badge, theme, avatar, active_banner, solved_count, arena_wins, elo, competitive_matches
+    SELECT id, username, xp, level, coins, rank, active_badge, theme, avatar, active_banner, solved_count, arena_wins, elo, competitive_matches, profile_private
     FROM users
     WHERE id = ?
   `,
@@ -23,6 +23,13 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
     (err, user) => {
       if (err) return res.status(500).json({ error: err.message });
       if (!user) return res.status(404).json({ error: 'User not found' });
+
+      // Honor the "private profile" setting: a user may always view their own profile,
+      // but another user's profile is hidden when they have opted into privacy. Without
+      // this check the profile_private toggle (set in account settings) did nothing.
+      if (user.profile_private === 1 && targetId !== req.user.id) {
+        return res.status(403).json({ error: 'This profile is private.', private: true });
+      }
 
       db.get(`SELECT * FROM user_mastery WHERE user_id = ?`, [targetId], (errM, mastery) => {
         const mast = mastery || {

@@ -101,6 +101,33 @@ test('commitment status responds for an authed user', async () => {
   assert.ok(res.body && typeof res.body.commitmentState === 'string', 'has commitmentState');
 });
 
+test('GET /api/user/:id honors the profile_private setting (authz/privacy)', async () => {
+  const alice = await registerUser(ctx.base);
+  const bob = await registerUser(ctx.base);
+
+  // By default Bob can view Alice's public profile.
+  const open = await api(ctx.base, 'GET', `/api/user/${alice.user.id}`, { token: bob.token });
+  assert.strictEqual(open.status, 200);
+  assert.strictEqual(open.body.username, alice.username);
+
+  // Alice opts into a private profile.
+  const setPriv = await api(ctx.base, 'POST', '/api/user/privacy', {
+    token: alice.token,
+    body: { telemetryEnabled: true, profilePrivate: true },
+  });
+  assert.strictEqual(setPriv.status, 200);
+
+  // Now another user is blocked with 403 + { private: true }...
+  const blocked = await api(ctx.base, 'GET', `/api/user/${alice.user.id}`, { token: bob.token });
+  assert.strictEqual(blocked.status, 403, 'private profile is hidden from others');
+  assert.strictEqual(blocked.body.private, true);
+
+  // ...but Alice can always view her own profile.
+  const own = await api(ctx.base, 'GET', `/api/user/${alice.user.id}`, { token: alice.token });
+  assert.strictEqual(own.status, 200, 'owner can always view their own profile');
+  assert.strictEqual(own.body.username, alice.username);
+});
+
 test('idempotency: same Idempotency-Key replays the identical response', async () => {
   const { token } = await registerUser(ctx.base);
   const key = require('crypto').randomUUID();
