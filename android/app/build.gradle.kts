@@ -22,6 +22,10 @@ android {
         }
     }
     compileOptions {
+        // Java 17 is the app's TARGET bytecode level — do not bump to a newer JDK here.
+        // Android (D8/R8 + ART) caps the shippable target at 17 (21 is only partially
+        // desugared); there is no Java 21/26 language feature that can reach a packaged
+        // Android app, so a higher target buys nothing and is unsupported by the toolchain.
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -48,6 +52,13 @@ android {
 }
 
 kotlin {
+    // Pin the compile + unit-test toolchain to JDK 17 (an LTS Android aligns with). This is the
+    // JDK that compiles the code AND runs `testDebugUnitTest` — keep it at 17 (or a future
+    // Android-supported LTS like 21), NOT 26:
+    //   • Robolectric (the JVM Compose UI test net) supports ~17–21, not 26 — bumping this
+    //     would break `testDebugUnitTest`.
+    //   • It's independent of the Gradle daemon JDK (that can be 26); Gradle provisions a
+    //     JDK 17 for the toolchain regardless of the dev's installed JDK.
     jvmToolchain(17)
 }
 
