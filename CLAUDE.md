@@ -56,11 +56,13 @@ sound/, haptic/                  Feedback managers.
 - **Server:** `cd server; npm start` (port 3000). Needs `server/.env` with `JWT_SECRET`
   (required in production; dev auto-generates an ephemeral one with a warning).
 - **Android:** `Start_Numera_Server.bat` then `Launch Numera.lnk` (builds APK + installs in BlueStacks).
-- **Build APK manually:**
+- **Build APK manually:** the system `JAVA_HOME` (Program Files JDK) is what the launcher
+  (`launch-numera.ps1`) and Gradle use — no override needed:
   ```powershell
-  $env:JAVA_HOME = "$env:APPDATA\.minecraft\runtime\java-runtime-gamma\windows\java-runtime-gamma"
   cd android; .\gradlew.bat assembleDebug
   ```
+  (Currently JDK 26; builds green. It's non-LTS, so if a future Gradle/AGP upgrade complains,
+  install an LTS Temurin 17/21 and point `JAVA_HOME` there.)
 
 ## How to verify changes
 
