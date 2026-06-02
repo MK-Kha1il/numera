@@ -590,6 +590,16 @@ fun SoloGameScreen(
         }
     }
 
+    // Single source of truth for "did the learner answer the current problem correctly?" — this
+    // exact branch was previously inlined three times (card border, feedback banner, typed-submit),
+    // see AUDIT #3. TYPED compares the trimmed typed value case-insensitively; MCQ/TIMED compare the
+    // tapped option to the answer.
+    fun isCurrentAnswerCorrect(): Boolean = if (currentExerciseType == ExerciseType.TYPED) {
+        typedInput.trim().equals(currentProblem.correctAnswer.trim(), ignoreCase = true)
+    } else {
+        selectedAnswer == currentProblem.correctAnswer
+    }
+
     LaunchedEffect(errorsCount) {
         if (gameMode == "level") {
             val currentHearts = (3 - errorsCount).coerceAtLeast(0)
@@ -1119,12 +1129,7 @@ fun SoloGameScreen(
             DuoCard(
                 modifier = Modifier.fillMaxSize(),
                 borderColor = if (hasAnswered) {
-                    val correct = if (currentExerciseType == ExerciseType.TYPED) {
-                        typedInput.trim().equals(currentProblem.correctAnswer.trim(), ignoreCase = true)
-                    } else {
-                        selectedAnswer == currentProblem.correctAnswer
-                    }
-                    if (correct) CorrectGreen else WrongRed
+                    if (isCurrentAnswerCorrect()) CorrectGreen else WrongRed
                 } else {
                     MaterialTheme.colorScheme.outline
                 }
@@ -1557,8 +1562,7 @@ fun SoloGameScreen(
                                 onDone = {
                                     if (!hasAnswered && typedInput.trim().isNotEmpty()) {
                                         hasAnswered = true
-                                        val correct = typedInput.trim().equals(currentProblem.correctAnswer.trim(), ignoreCase = true)
-                                        handleAnswer(correct)
+                                        handleAnswer(isCurrentAnswerCorrect())
                                     }
                                 }
                             )
@@ -1570,8 +1574,7 @@ fun SoloGameScreen(
                                 enabled = typedInput.trim().isNotEmpty(),
                                 onClick = {
                                     hasAnswered = true
-                                    val correct = typedInput.trim().equals(currentProblem.correctAnswer.trim(), ignoreCase = true)
-                                    handleAnswer(correct)
+                                    handleAnswer(isCurrentAnswerCorrect())
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 color = MaterialTheme.colorScheme.primary
@@ -1704,11 +1707,7 @@ fun SoloGameScreen(
             exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
             modifier = Modifier.fillMaxWidth()
         ) {
-            val correct = if (currentExerciseType == ExerciseType.TYPED) {
-                typedInput.trim().equals(currentProblem.correctAnswer.trim(), ignoreCase = true)
-            } else {
-                selectedAnswer == currentProblem.correctAnswer
-            }
+            val correct = isCurrentAnswerCorrect()
 
             val isLast = currentProblemIdx >= problemsList.size - 1
 
