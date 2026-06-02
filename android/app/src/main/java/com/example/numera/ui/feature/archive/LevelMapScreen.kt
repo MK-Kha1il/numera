@@ -744,7 +744,15 @@ fun LevelMapScreen(
                     }
 
                     // Render dynamic sequential levels
-                    items(mapItems) { item ->
+                    items(
+                        mapItems,
+                        key = {
+                            when (it) {
+                                is LearnMapItem.StageHeader -> "stage_${it.stageNum}"
+                                is LearnMapItem.LevelNodeItem -> "level_${it.levelNum}"
+                            }
+                        }
+                    ) { item ->
                         when (item) {
                             is LearnMapItem.StageHeader -> {
                                 StageHeaderCard(
@@ -881,7 +889,7 @@ fun LevelMapScreen(
                             )
                         }
                     } else {
-                        items(srsDueItems) { item ->
+                        items(srsDueItems, key = { it.id }) { item ->
                             val lastUnderscoreIdx = item.topic.lastIndexOf('_')
                             val srsCat = if (lastUnderscoreIdx != -1) item.topic.substring(0, lastUnderscoreIdx) else item.topic
                             val srsLvl = if (lastUnderscoreIdx != -1) item.topic.substring(lastUnderscoreIdx + 1).toIntOrNull() ?: 1 else 1
@@ -1122,7 +1130,7 @@ fun LevelMapScreen(
                             modifier = Modifier.fillMaxWidth().weight(1f),
                             verticalArrangement = Arrangement.spacedBy(Spacing.l)
                         ) {
-                            items(archiveResults) { item ->
+                            items(archiveResults, key = { it.id }) { item ->
                                 ContextMenuArea(
                                     actions = listOf(
                                         ContextAction("Preview", NumeraIconType.Search) { archivePreviewItem = item },

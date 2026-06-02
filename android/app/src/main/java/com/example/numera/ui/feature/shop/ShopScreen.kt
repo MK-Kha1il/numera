@@ -310,7 +310,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     }
                 }
 
-                items(dailyItems) { item ->
+                items(dailyItems, key = { "daily_${it.id}" }) { item ->
                     DailyShopItemCard(
                         item = item,
                         inventoryIds = inventoryIds,
@@ -332,7 +332,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     )
                 }
 
-                items(utilityItems) { item ->
+                items(utilityItems, key = { "utility_${it.id}" }) { item ->
                     val qty = userUtilities.find { it.item_id == item.id }?.quantity ?: 0
                     UtilityShopItemCard(
                         item = item,
@@ -411,7 +411,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     val filteredCatalog = if (catalogTypeFilter == null) catalogItems
                         else catalogItems.filter { it.type == catalogTypeFilter }
 
-                    items(filteredCatalog) { item ->
+                    items(filteredCatalog, key = { "catalog_${it.id}" }) { item ->
                         DailyShopItemCard(
                             item = item,
                             inventoryIds = inventoryIds,
