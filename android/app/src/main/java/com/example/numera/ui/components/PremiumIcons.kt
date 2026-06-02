@@ -12,6 +12,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
+import com.example.numera.theme.MedalGold
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.cos
@@ -758,7 +759,7 @@ fun CommitmentRelicIcon(
             "relic_spark" -> Color(0xFFFF9E80)
             "relic_rhythm" -> Color(0xFF80D8FF)
             "relic_dedication" -> Color(0xFFB9F6CA)
-            "relic_sage" -> Color(0xFFFFD700)
+            "relic_sage" -> MedalGold
             "relic_comeback" -> Color(0xFFFF8A80)
             "relic_burnout_shield" -> Color(0xFFEA80FC)
             else -> onSurface60

@@ -153,7 +153,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                                 text = "🏆 COSMETIC COLLECTION UNLOCKED",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Black,
-                                color = Color(0xFFFFD700),
+                                color = MedalGold,
                                 letterSpacing = 0.8.sp
                             )
                             Text(
@@ -202,14 +202,14 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                         if (user?.xp_booster_uses_left != null && user.xp_booster_uses_left > 0) {
                             Surface(
                                 shape = RoundedCornerShape(CornerRadius.m),
-                                color = Color(0xFFFFD700).copy(alpha = 0.2f),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFD700))
+                                color = MedalGold.copy(alpha = 0.2f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MedalGold)
                             ) {
                                 Text(
                                     text = "⚡ XP Booster: ${user.xp_booster_uses_left} left",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFD4AF37),
+                                    color = MilestoneGold,
                                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
                                 )
                             }
@@ -264,7 +264,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                             text = "★ FEATURED HERO EXHIBIT",
                             fontWeight = FontWeight.Black,
                             fontSize = 14.sp,
-                            color = Color(0xFFFFD700)
+                            color = MedalGold
                         )
                         featuredExpiresInSeconds?.let { sec ->
                             Text(

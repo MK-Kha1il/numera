@@ -319,7 +319,7 @@ fun MainTabsScreen(
                                     when (climbState) {
                                         "fading" -> Color(0xFFEF5350)
                                         "protected" -> Color(0xFF42A5F5)
-                                        else -> Color(0xFFFFD700)
+                                        else -> MedalGold
                                     },
                                     RoundedCornerShape(CornerRadius.m)
                                 )
@@ -353,7 +353,7 @@ fun MainTabsScreen(
                                 .padding(end = 6.dp)
                                 .clip(RoundedCornerShape(CornerRadius.m))
                                 .background(Color(0xFFFFFDF0))
-                                .border(1.dp, Color(0xFFFFD700), RoundedCornerShape(CornerRadius.m))
+                                .border(1.dp, MedalGold, RoundedCornerShape(CornerRadius.m))
                                 .padding(horizontal = Spacing.s, vertical = Spacing.xs)
                         ) {
                             Text(

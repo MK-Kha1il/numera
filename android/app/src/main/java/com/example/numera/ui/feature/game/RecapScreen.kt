@@ -135,7 +135,7 @@ fun RecapScreen(
                 text = if (levelUpOccurred) "🎉 LEVEL UP!" else if (isMilestone) "Theorem Documented!" else "Session Complete!",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isMilestone) Color(0xFFD4AF37) else CorrectGreen
+                color = if (isMilestone) MilestoneGold else CorrectGreen
             )
 
             // Stats Dashboard Grid
