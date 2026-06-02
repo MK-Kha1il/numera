@@ -133,16 +133,24 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
   leaderboard, idempotency replay) + `symbolic.js` unit tests. `npm test` = 14 passing.
 - ✅ ESLint v9 + Prettier (`npm run lint`/`format`), 0 errors. `db.js` made env-overridable so
   tests use a throwaway DB; `server.js` exports the app and only listens when run directly.
+- ✅ **Android JVM Compose UI test net** (Robolectric, `gradlew testDebugUnitTest`, no device) —
+  the client's missing Phase-0 net. 7 tests: a harness smoke test, the carved-out overlays
+  (`CalculatorOverlay`/`TipOverlay`) + `MasteryBar` (pure-composable rendering), and a
+  screen-level `SocialScreenTest` that injects a **MockK** `ApiService` via the new
+  `RetrofitClient.setApiServiceForTest()` seam and asserts fetched data renders. This is the
+  net the lesson→gameplay→recap split needs; the pattern (mock ApiService → render → assert)
+  now extends to any screen.
 
 ## Recommended next steps (in order)
 1. ✅ Split `server.js` routes into `routes/<domain>` (test net guarded each move).
 2. ✅ Split `MainTabsScreen.kt` into `ui/feature/<domain>/` + `ui/dialogs/` (606-line shell
    remains); `SoloGameScreen.kt` relocated to `feature/game/` with helpers extracted.
-3. SoloGameScreen carve-up: ✅ the self-contained overlays are out (CalculatorOverlay,
-   TipOverlay; 2,806 → 2,239). ⬜ Remaining = the lesson→gameplay→recap `AnimatedContent` +
-   retry dialogs + de-dup the 3× `handleAnswer`. **Add a Compose/Robolectric test net first**
-   (make `ApiService` injectable) — that part is a real state-hoisting refactor the compiler
-   can't fully guard.
+3. SoloGameScreen carve-up: ✅ overlays out (CalculatorOverlay, TipOverlay; 2,806 → 2,239) and
+   ✅ the **Compose/Robolectric test net + injectable `ApiService` now exist** (the stated
+   prerequisite). ⬜ Remaining = the lesson→gameplay→recap `AnimatedContent` + retry dialogs +
+   de-dup the 3× `handleAnswer`. Now unblocked: write a SoloGameScreen flow test (mock
+   `getProblems`) to pin behavior, *then* carve — the net makes that state-hoisting refactor
+   verifiable instead of blind.
 4. ✅ Design-token migration (raw `dp`/shape → `theme/` tokens) DONE across the split screens.
    ⬜ Remaining: optional `Color`-literal → token pass + recomposition-hygiene pass.
 5. ✅ Structured logger DONE; ✅ ownership-check pass DONE (profile_private fix); ✅ client

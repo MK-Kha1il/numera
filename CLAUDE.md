@@ -73,8 +73,11 @@ sound/, haptic/                  Feedback managers.
 - **Server:** `cd server; npm test` (node:test — boots the real app on an ephemeral port
   against a throwaway DB) and `npm run lint` (ESLint v9, 0 errors expected). Tests set
   `NUMERA_DB_PATH` so they never touch the live `numera.db`.
-- **Android:** `gradlew assembleDebug` must be green (the compile is the safety net — there
-  is no UI test suite yet).
+- **Android:** `gradlew assembleDebug` must be green, and `gradlew testDebugUnitTest` runs the
+  **JVM Compose UI test net** (Robolectric — no device/emulator). Tests live in
+  `app/src/test/`; render screens/components with `createComposeRule()` and inject a mocked
+  `ApiService` via `RetrofitClient.setApiServiceForTest(...)` for network-driven screens
+  (see `ui/feature/social/SocialScreenTest.kt`). First run downloads the Robolectric SDK jar.
 - **End-to-end:** start the server bat + launch the app in BlueStacks.
 
 ## Conventions & invariants (do not regress)
