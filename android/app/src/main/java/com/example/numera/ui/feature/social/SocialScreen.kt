@@ -135,7 +135,7 @@ fun SocialScreen() {
                 )
             }
         } else {
-            items(friendsList) { friend ->
+            items(friendsList, key = { it.id }) { friend ->
                 DuoCard(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier

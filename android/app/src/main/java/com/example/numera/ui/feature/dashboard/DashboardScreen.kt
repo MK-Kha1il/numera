@@ -470,7 +470,7 @@ fun DashboardScreen(
                                         fontWeight = FontWeight.ExtraBold,
                                         fontSize = 16.sp,
                                         color = when (index) {
-                                            0 -> Color(0xFFFFD700)
+                                            0 -> MedalGold
                                             1 -> Color(0xFFC0C0C0)
                                             2 -> Color(0xFFCD7F32)
                                             else -> MaterialTheme.colorScheme.onBackground
@@ -627,7 +627,7 @@ fun DashboardScreen(
                                         fontWeight = FontWeight.ExtraBold,
                                         fontSize = 16.sp,
                                         color = when (index) {
-                                            0 -> Color(0xFFFFD700)
+                                            0 -> MedalGold
                                             1 -> Color(0xFFC0C0C0)
                                             2 -> Color(0xFFCD7F32)
                                             else -> MaterialTheme.colorScheme.onBackground

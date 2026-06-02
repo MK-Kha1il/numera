@@ -51,7 +51,7 @@ fun ArenaScreen(
             sock?.off("duel_start")
 
             sock?.on("friend_room_created") { args ->
-                val data = args[0] as JSONObject
+                val data = args.getOrNull(0) as? JSONObject ?: return@on
                 val code = data.getString("roomCode")
                 scope.launch(Dispatchers.Main) {
                     friendRoomCode = code
@@ -59,7 +59,7 @@ fun ArenaScreen(
             }
 
             sock?.on("friend_room_error") { args ->
-                val data = args[0] as JSONObject
+                val data = args.getOrNull(0) as? JSONObject ?: return@on
                 val msg = data.getString("message")
                 scope.launch(Dispatchers.Main) {
                     friendRoomError = msg
@@ -68,7 +68,7 @@ fun ArenaScreen(
             }
 
             sock?.on("duel_start") { args ->
-                val data = args[0] as JSONObject
+                val data = args.getOrNull(0) as? JSONObject ?: return@on
                 val roomId = data.getString("roomId")
                 val opponentObj = data.getJSONObject("opponent")
 

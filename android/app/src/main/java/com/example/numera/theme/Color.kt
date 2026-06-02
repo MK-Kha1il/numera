@@ -113,6 +113,10 @@ val SunsetSurfaceCard = Color(0xFFFFF0E5)
 val SunsetOnSurface = Color(0xFF3A1C0E)
 val SunsetBorder = Color(0xFFFDD5C0)
 
+// Bright "trophy" gold (cross-theme) — medals, stars, coin/level accents. The brighter sibling
+// of MilestoneGold; previously inlined as Color(0xFFFFD700) in a dozen places.
+val MedalGold          = Color(0xFFFFD700)
+
 // Milestone Achievement (cross-theme — used for levels 10, 20, 30, 40, 50, 60)
 val MilestoneGold      = Color(0xFFD4AF37)
 val MilestoneGoldDark  = Color(0xFF9E7C00)

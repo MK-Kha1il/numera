@@ -96,7 +96,7 @@ fun NotificationsDialog(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
-                        items(notifications) { item ->
+                        items(notifications, key = { it.id }) { item ->
                             val isUnread = item.read_state == 0
                             val cardBg = if (isUnread) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                             val cardBorder = if (isUnread) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
