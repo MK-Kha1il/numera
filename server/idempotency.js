@@ -20,6 +20,7 @@
  */
 
 const { db } = require('./db');
+const logger = require('./logger');
 
 function run(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -96,7 +97,7 @@ function idempotency(req, res, next) {
     })
     .catch((err) => {
       // Fail open: never block gameplay because the idempotency layer hiccuped.
-      console.error('[idempotency]', err.message);
+      logger.error('[idempotency]', err.message);
       next();
     });
 }

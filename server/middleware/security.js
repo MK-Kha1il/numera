@@ -1,6 +1,7 @@
 // Security primitives shared across the app: HTTP hardening headers, the audit-log
 // writer, and the private/loopback IP check used to exempt LAN/dev traffic from limits.
 const { db } = require('../db');
+const logger = require('../logger');
 
 // Defense-in-depth HTTP response headers, applied to every request.
 function securityHeaders(req, res, next) {
@@ -21,13 +22,13 @@ function securityHeaders(req, res, next) {
 function securityLog(userId, eventType, ip, details) {
   const now = Math.floor(Date.now() / 1000);
   // eslint-disable-next-line no-console
-  console.warn(`[SECURITY AUDIT] Event: ${eventType} | User: ${userId} | IP: ${ip} | Details: ${details}`);
+  logger.warn(`[SECURITY AUDIT] Event: ${eventType} | User: ${userId} | IP: ${ip} | Details: ${details}`);
   db.run(
     'INSERT INTO security_audit_logs (timestamp, user_id, event_type, ip_address, details) VALUES (?, ?, ?, ?, ?)',
     [now, userId, eventType, ip, details],
     (err) => {
       // eslint-disable-next-line no-console
-      if (err) console.error('[SECURITY] Failed to write audit log:', err.message);
+      if (err) logger.error('[SECURITY] Failed to write audit log:', err.message);
     }
   );
 }

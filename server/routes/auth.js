@@ -10,6 +10,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { checkFailedLogins, rateLimiter, recordFailedLogin, clearFailedLogins } = require('../middleware/rateLimit');
 const { securityLog } = require('../middleware/security');
 const { getUserWithMastery, checkAndResetQuestsAndLeagues } = require('../services/userService');
+const logger = require('../logger');
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ function sendLoginResponse(userId, username, req, res) {
     [sessionId, userId, userAgent, ipAddress, createdAt, expiresAt],
     (errSession) => {
       if (errSession) {
-        console.error('[SECURITY] Failed to write session to DB:', errSession.message);
+        logger.error('[SECURITY] Failed to write session to DB:', errSession.message);
         return res.status(500).json({ error: 'Session creation failed' });
       }
 

@@ -1,6 +1,7 @@
 // Shared per-user data services (DB-touching, callback-style to match the rest of the
 // codebase). Used by many routes, so they live here rather than in any single router.
 const { db } = require('../db');
+const logger = require('../logger');
 
 // Load a user joined with their mastery row, shaped into the full client-facing user object.
 function getUserWithMastery(userId, callback) {
@@ -60,7 +61,7 @@ function checkAndResetQuestsAndLeagues(userId, callback) {
   // 1. Ensure user_quests and user_mastery exist
   db.get('SELECT * FROM user_quests WHERE user_id = ?', [userId], (err, questRow) => {
     if (err) {
-      console.error(err);
+      logger.error(err);
       return callback && callback();
     }
 

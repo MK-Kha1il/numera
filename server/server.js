@@ -58,6 +58,7 @@ app.use(require('./routes/shop'));
 app.use(require('./routes/account'));
 app.use(require('./routes/friends'));
 app.use(require('./routes/achievements'));
+const logger = require('./logger');
 app.use(require('./routes/engine'));
 app.use(require('./routes/assessment'));
 app.use(require('./routes/archive'));
@@ -396,7 +397,7 @@ app.get('/download-apk', (req, res) => {
       if (!res.headersSent) {
         res.status(404).send('APK is still compiling or not found. Please compile using Gradle first.');
       } else {
-        console.error('Download interrupted or aborted by client:', err.message);
+        logger.error('Download interrupted or aborted by client:', err.message);
       }
     }
   });
@@ -408,7 +409,7 @@ app.get('/download-apk', (req, res) => {
 const ready = initDb()
   .then(() => runMigrations(db))
   .catch(err => {
-    console.error("Database initialization failed:", err);
+    logger.error("Database initialization failed:", err);
     if (require.main === module) process.exit(1);
     throw err;
   });
@@ -578,7 +579,7 @@ setInterval(() => {
 }, 1500).unref();
 
 io.on('connection', (socket) => {
-  console.log(`Socket connected: ${socket.id}`);
+  logger.info(`Socket connected: ${socket.id}`);
 
   socket.on('join_queue', (data) => {
     const userId = socket.userId;
@@ -610,10 +611,10 @@ io.on('connection', (socket) => {
 
       if (mode === 'casual') {
         casualQueue.push(playerInfo);
-        console.log(`User ${username} joined CASUAL Arena queue. Elo: ${elo}`);
+        logger.info(`User ${username} joined CASUAL Arena queue. Elo: ${elo}`);
       } else {
         rankedQueue.push(playerInfo);
-        console.log(`User ${username} joined RANKED Arena queue. Elo: ${elo}`);
+        logger.info(`User ${username} joined RANKED Arena queue. Elo: ${elo}`);
       }
     });
   });
@@ -622,7 +623,7 @@ io.on('connection', (socket) => {
     const cleanQueue = (q) => {
       const idx = q.findIndex(item => item.socketId === socket.id);
       if (idx !== -1) {
-        console.log(`User ${q[idx].username} left Arena queue.`);
+        logger.info(`User ${q[idx].username} left Arena queue.`);
         q.splice(idx, 1);
       }
     };
@@ -641,7 +642,7 @@ io.on('connection', (socket) => {
         p2: room.p2,
         problems: room.problems
       });
-      console.log(`Socket ${socket.id} joined duel room ${roomId}`);
+      logger.info(`Socket ${socket.id} joined duel room ${roomId}`);
     }
   });
 
@@ -665,7 +666,7 @@ io.on('connection', (socket) => {
       
       socket.join(code);
       socket.emit('friend_room_created', { roomCode: code });
-      console.log(`Friend Room ${code} created by ${username}`);
+      logger.info(`Friend Room ${code} created by ${username}`);
     });
   });
 
@@ -686,7 +687,7 @@ io.on('connection', (socket) => {
       const rank = row ? row.rank : 'Unranked (Placement: 0/5)';
 
       socket.join(roomCode);
-      console.log(`Friend Room ${roomCode} joined by ${username}`);
+      logger.info(`Friend Room ${roomCode} joined by ${username}`);
 
       // Start friend duel immediately (which is treated as casual, no Elo cost)
       const problems = [];
@@ -739,7 +740,7 @@ io.on('connection', (socket) => {
       // If correct solution submitted in <350ms, flag as suspicious timing
       if (isCorrect && elapsed < 350) {
         room[playerKey].suspiciousTimingFlags = (room[playerKey].suspiciousTimingFlags || 0) + 1;
-        console.warn(`[Anti-Cheat] Suspicious solver timing detected for ${room[playerKey].username}: ${elapsed}ms. Flags: ${room[playerKey].suspiciousTimingFlags}`);
+        logger.warn(`[Anti-Cheat] Suspicious solver timing detected for ${room[playerKey].username}: ${elapsed}ms. Flags: ${room[playerKey].suspiciousTimingFlags}`);
       }
 
       room[playerKey].problemStartTime = now;
@@ -761,7 +762,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`Socket disconnected: ${socket.id}`);
+    logger.info(`Socket disconnected: ${socket.id}`);
     const cleanQueue = (q) => {
       const idx = q.findIndex(item => item.socketId === socket.id);
       if (idx !== -1) q.splice(idx, 1);
@@ -802,7 +803,7 @@ function startDuel(p1, p2, isRanked) {
     opponent: { p1: rooms[roomId].p1, p2: rooms[roomId].p2 },
     problems
   });
-  console.log(`Duel started between ${p1.username} and ${p2.username}. Ranked: ${isRanked}`);
+  logger.info(`Duel started between ${p1.username} and ${p2.username}. Ranked: ${isRanked}`);
 }
 
 function startDuelWithBot(player, isRanked) {
@@ -834,7 +835,7 @@ function startDuelWithBot(player, isRanked) {
   });
 
   simulateBot(roomId);
-  console.log(`Duel started with Bot for user ${player.username}. Ranked: ${isRanked}`);
+  logger.info(`Duel started with Bot for user ${player.username}. Ranked: ${isRanked}`);
 }
 
 function simulateBot(roomId) {
@@ -1091,7 +1092,7 @@ function setupAdbReverse() {
 // app/server/io/db are exported instead so the test harness controls the lifecycle.
 if (require.main === module) {
   server.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+    logger.info(`Server listening on port ${PORT}`);
     setupAdbReverse();
     // Continuously attempt setup every 10 seconds in case the emulator is started after the server
     setInterval(setupAdbReverse, 10000);

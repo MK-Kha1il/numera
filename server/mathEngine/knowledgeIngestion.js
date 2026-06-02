@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const { validateTemplate } = require('./validation');
+const logger = require('../logger');
 
 /**
  * Runs the controlled ingestion pipeline.
@@ -22,7 +23,7 @@ function runIngestionPipeline(db) {
       return reject(new Error(`Failed to parse rawIngestionData.json: ${err.message}`));
     }
 
-    console.log(`[Ingestion] Found ${rawData.length} raw mathematical structures to analyze.`);
+    logger.info(`[Ingestion] Found ${rawData.length} raw mathematical structures to analyze.`);
 
     let ingestedCount = 0;
     let validatedCount = 0;
@@ -30,7 +31,7 @@ function runIngestionPipeline(db) {
 
     const processNext = (idx) => {
       if (idx >= rawData.length) {
-        console.log(`[Ingestion] Pipeline completed. Validated: ${validatedCount}, Imported: ${ingestedCount}, Duplicates: ${duplicateCount}`);
+        logger.info(`[Ingestion] Pipeline completed. Validated: ${validatedCount}, Imported: ${ingestedCount}, Duplicates: ${duplicateCount}`);
         return resolve({ validatedCount, ingestedCount, duplicateCount });
       }
 
@@ -39,7 +40,7 @@ function runIngestionPipeline(db) {
       // 1. Validation Layer Audit
       const audit = validateTemplate(item);
       if (!audit.isValid) {
-        console.warn(`[Ingestion] Skipping invalid structure of type ${item.type}. Errors: ${audit.errors.join("; ")}`);
+        logger.warn(`[Ingestion] Skipping invalid structure of type ${item.type}. Errors: ${audit.errors.join("; ")}`);
         return processNext(idx + 1);
       }
 
@@ -51,7 +52,7 @@ function runIngestionPipeline(db) {
         [item.type, item.question_pattern],
         (err, row) => {
           if (err) {
-            console.error(`[Ingestion] Database error checking duplicate: ${err.message}`);
+            logger.error(`[Ingestion] Database error checking duplicate: ${err.message}`);
             return processNext(idx + 1);
           }
 
@@ -74,10 +75,10 @@ function runIngestionPipeline(db) {
             [item.category, item.level_range, item.type, item.question_pattern, rulesStr, item.explanation_pattern, audit.estimatedElo, now],
             function(insertErr) {
               if (insertErr) {
-                console.error(`[Ingestion] Failed to insert template: ${insertErr.message}`);
+                logger.error(`[Ingestion] Failed to insert template: ${insertErr.message}`);
               } else {
                 ingestedCount++;
-                console.log(`[Ingestion] Successfully validated & imported knowledge template of type ${item.type} (ID: ${this.lastID}).`);
+                logger.info(`[Ingestion] Successfully validated & imported knowledge template of type ${item.type} (ID: ${this.lastID}).`);
               }
               processNext(idx + 1);
             }

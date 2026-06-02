@@ -9,6 +9,7 @@ const bcrypt = require('bcryptjs');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { securityLog } = require('../middleware/security');
+const logger = require('../logger');
 
 const router = express.Router();
 
@@ -41,7 +42,7 @@ router.post('/api/user/settings', authenticateToken, (req, res) => {
 
       // Stateful session invalidation: delete all active sessions for the user to force relogin
       db.run('DELETE FROM user_sessions WHERE user_id = ?', [req.user.id], (errSessions) => {
-        if (errSessions) console.error('[SECURITY] Failed to invalidate sessions on password change:', errSessions.message);
+        if (errSessions) logger.error('[SECURITY] Failed to invalidate sessions on password change:', errSessions.message);
         securityLog(req.user.id, 'password_changed', req.ip, 'Password changed successfully. All user sessions invalidated.');
         res.json({ success: true, message: 'Password updated successfully. All other sessions have been invalidated.' });
       });
@@ -85,7 +86,7 @@ router.post('/api/user/change-email/request', authenticateToken, (req, res) => {
     (err) => {
       if (err) return res.status(500).json({ error: err.message });
 
-      console.log(`[EMAIL VERIFICATION] Sent to user ${req.user.id} (${cleanEmail}): ${code}`);
+      logger.info(`[EMAIL VERIFICATION] Sent to user ${req.user.id} (${cleanEmail}): ${code}`);
       res.json({ success: true, message: 'Verification code sent!', code: code });
     }
   );

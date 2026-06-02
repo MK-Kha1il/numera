@@ -2,6 +2,7 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
+const logger = require('./logger');
 
 // DB location is env-overridable so tests (and alternate deployments) can point at a
 // throwaway database instead of the live numera.db. Defaults to the canonical file.
@@ -17,7 +18,7 @@ db.run("PRAGMA busy_timeout = 5000;");  // Wait up to 5s for a lock instead of t
 function safeAlter(sql) {
   db.run(sql, (err) => {
     if (err && !err.message.includes('duplicate column')) {
-      console.error('[DB] Migration error:', err.message, '|', sql);
+      logger.error('[DB] Migration error:', err.message, '|', sql);
     }
   });
 }
@@ -1428,7 +1429,7 @@ function initDb() {
         db.run("CREATE INDEX IF NOT EXISTS idx_sessions_user     ON user_sessions(user_id)");
         db.run("CREATE INDEX IF NOT EXISTS idx_sessions_expires  ON user_sessions(expires_at)");
         if (err) {
-          console.error("Error seeding archive exercises:", err);
+          logger.error("Error seeding archive exercises:", err);
           reject(err);
         } else {
           // Seed default developer/test users so the app always works out of the box
@@ -1445,10 +1446,10 @@ function initDb() {
               'INSERT OR IGNORE INTO users (username, password_hash, last_active, avatar, last_league_reset) VALUES (?, ?, ?, ?, ?)',
               [u.username, hash, now, u.avatar, now],
               (seedErr) => {
-                if (seedErr) console.warn(`Default user '${u.username}' seed skip:`, seedErr.message);
+                if (seedErr) logger.warn(`Default user '${u.username}' seed skip:`, seedErr.message);
                 seeded++;
                 if (seeded === defaultUsers.length) {
-                  console.log('Database initialized and seeded successfully.');
+                  logger.info('Database initialized and seeded successfully.');
                   resolve();
                 }
               }

@@ -1,6 +1,7 @@
 // Centralized runtime configuration. Reads process.env once and exposes typed-ish
 // constants so the rest of the server never touches process.env directly.
 const crypto = require('crypto');
+const logger = require('./logger');
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const isProduction = NODE_ENV === 'production';
@@ -13,12 +14,12 @@ let JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   if (isProduction) {
     // eslint-disable-next-line no-console
-    console.error('[FATAL] JWT_SECRET is required in production. Refusing to start.');
+    logger.error('[FATAL] JWT_SECRET is required in production. Refusing to start.');
     process.exit(1);
   }
   JWT_SECRET = crypto.randomBytes(32).toString('hex');
   // eslint-disable-next-line no-console
-  console.warn(
+  logger.warn(
     '[config] JWT_SECRET not set — generated an ephemeral dev secret. ' +
       'Sessions will not survive a restart. Set JWT_SECRET in .env for stable sessions.'
   );

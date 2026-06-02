@@ -21,6 +21,7 @@ const TeachingEngine = require('../mathEngine/teachingEngine');
 const AnalyticsEngine = require('../mathEngine/analyticsEngine');
 const CompetitiveEngine = require('../mathEngine/competitiveEngine');
 const Orchestrator = require('../mathEngine/problemOrchestrator');
+const logger = require('../logger');
 
 const router = express.Router();
 
@@ -89,7 +90,7 @@ router.get('/api/math/problems', authenticateToken, async (req, res) => {
       problems,
     });
   } catch (err) {
-    console.error('[/api/math/problems]', err);
+    logger.error('[/api/math/problems]', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -171,7 +172,7 @@ router.post('/api/math/telemetry', authenticateToken, (req, res) => {
           refreshIngestedTemplates();
         }
       })
-      .catch((err) => console.error('[Telemetry-Ingestion] Ingestion pipeline failed:', err.message));
+      .catch((err) => logger.error('[Telemetry-Ingestion] Ingestion pipeline failed:', err.message));
   }
 
   // 4. Feed the Intelligence Engine — fire-and-forget, never blocks the response
@@ -216,7 +217,7 @@ router.post('/api/math/telemetry', authenticateToken, (req, res) => {
         await TeachingEngine.recordStyleSignal(db, userId, signal.style, signal.outcome);
       }
     } catch (e) {
-      console.error('[Telemetry-Engine]', e.message);
+      logger.error('[Telemetry-Engine]', e.message);
     }
   })();
 
@@ -238,7 +239,7 @@ router.post('/api/math/calculator/log', authenticateToken, (req, res) => {
     [userId, category, level, question, template_type, game_mode, now],
     (err) => {
       if (err) {
-        console.error('Failed to log calculator analytics:', err.message);
+        logger.error('Failed to log calculator analytics:', err.message);
       }
 
       if (inputExpression === '67') {
@@ -446,7 +447,7 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
                     await CompetitiveEngine.updateCompetitiveRating(db, req.user.id, cId, outcome);
                   }
                 } catch (e) {
-                  console.error('[Complete-CompetitiveEngine]', e.message);
+                  logger.error('[Complete-CompetitiveEngine]', e.message);
                 }
               })();
 

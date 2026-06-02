@@ -12,6 +12,7 @@ const TeachingEngine = require('../mathEngine/teachingEngine');
 const AnalyticsEngine = require('../mathEngine/analyticsEngine');
 const CompetitiveEngine = require('../mathEngine/competitiveEngine');
 const Orchestrator = require('../mathEngine/problemOrchestrator');
+const logger = require('../logger');
 
 const router = express.Router();
 
@@ -77,7 +78,7 @@ router.post('/api/engine/event', authenticateToken, async (req, res) => {
       misconception: misconception && misconception.id !== 'unclassified' ? misconception : null,
     });
   } catch (err) {
-    console.error('[Engine/event]', err);
+    logger.error('[Engine/event]', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -101,7 +102,7 @@ router.get('/api/engine/next', authenticateToken, async (req, res) => {
       learningStyle: styleProfile.dominant,
     });
   } catch (err) {
-    console.error('[Engine/next]', err);
+    logger.error('[Engine/next]', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -116,7 +117,7 @@ router.get('/api/engine/learner', authenticateToken, async (req, res) => {
     const summary = await AnalyticsEngine.getUserSessionSummary(db, req.user.id);
     res.json({ concepts: snapshot, learningStyle: style, difficultySpikes: spikes, summary });
   } catch (err) {
-    console.error('[Engine/learner]', err);
+    logger.error('[Engine/learner]', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -131,7 +132,7 @@ router.get('/api/engine/learner/concept/:conceptId', authenticateToken, async (r
     const liveRetention = await RetentionEngine.getLiveRetention(db, req.user.id, req.params.conceptId);
     res.json({ profile, misconceptions, retention, liveRetention });
   } catch (err) {
-    console.error('[Engine/learner/concept]', err);
+    logger.error('[Engine/learner/concept]', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -144,7 +145,7 @@ router.get('/api/engine/misconceptions', authenticateToken, async (req, res) => 
     const misconceptions = await MisconceptionEngine.getActiveMisconceptions(db, req.user.id, limit);
     res.json({ misconceptions });
   } catch (err) {
-    console.error('[Engine/misconceptions]', err);
+    logger.error('[Engine/misconceptions]', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -157,7 +158,7 @@ router.get('/api/engine/retention/due', authenticateToken, async (req, res) => {
     const decaying = await RetentionEngine.getDecayingConcepts(db, req.user.id);
     res.json({ overdue, decaying, totalDue: overdue.length + decaying.length });
   } catch (err) {
-    console.error('[Engine/retention/due]', err);
+    logger.error('[Engine/retention/due]', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -172,7 +173,7 @@ router.post('/api/engine/retention/review', authenticateToken, async (req, res) 
     const result = await RetentionEngine.recordReview(db, req.user.id, conceptId, clampedRating);
     res.json({ success: true, ...result });
   } catch (err) {
-    console.error('[Engine/retention/review]', err);
+    logger.error('[Engine/retention/review]', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -192,7 +193,7 @@ router.get('/api/engine/analytics/recommendations', authenticateToken, async (re
       stagnantConcepts: stagnant.map((s) => ({ conceptId: s.concept_id, velocity: s.learning_velocity })),
     });
   } catch (err) {
-    console.error('[Engine/analytics/recommendations]', err);
+    logger.error('[Engine/analytics/recommendations]', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -204,7 +205,7 @@ router.get('/api/engine/competitive/profile', authenticateToken, async (req, res
     const profile = await CompetitiveEngine.getCompetitiveProfile(db, req.user.id);
     res.json(profile);
   } catch (err) {
-    console.error('[Engine/competitive/profile]', err);
+    logger.error('[Engine/competitive/profile]', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -219,7 +220,7 @@ router.post('/api/engine/competitive/update', authenticateToken, async (req, res
     const result = await CompetitiveEngine.updateCompetitiveRating(db, req.user.id, conceptId, clampedOutcome, opponentRating);
     res.json({ success: true, ...result });
   } catch (err) {
-    console.error('[Engine/competitive/update]', err);
+    logger.error('[Engine/competitive/update]', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -232,7 +233,7 @@ router.get('/api/engine/competitive/matchpool', authenticateToken, async (req, r
     const candidates = await CompetitiveEngine.findMatch(db, req.user.id, profile.overallRating);
     res.json({ candidates, userRating: profile.overallRating, userTier: profile.tier });
   } catch (err) {
-    console.error('[Engine/competitive/matchpool]', err);
+    logger.error('[Engine/competitive/matchpool]', err);
     res.status(500).json({ error: err.message });
   }
 });

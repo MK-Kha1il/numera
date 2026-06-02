@@ -1,3 +1,4 @@
+const logger = require('./logger');
 'use strict';
 
 /**
@@ -120,12 +121,12 @@ function runMigrations(db) {
       .sort((a, b) => a.version - b.version);
 
     if (pending.length === 0) {
-      console.log(`[migrations] schema up to date (v${current}).`);
+      logger.info(`[migrations] schema up to date (v${current}).`);
       return;
     }
 
     for (const m of pending) {
-      console.log(`[migrations] applying v${m.version}: ${m.name}`);
+      logger.info(`[migrations] applying v${m.version}: ${m.name}`);
       await run('BEGIN');
       try {
         await m.up(run);
@@ -136,7 +137,7 @@ function runMigrations(db) {
         await run('COMMIT');
       } catch (err) {
         await run('ROLLBACK').catch(() => {});
-        console.error(
+        logger.error(
           `[migrations] FAILED at v${m.version} (${m.name}):`,
           err.message
         );
@@ -144,7 +145,7 @@ function runMigrations(db) {
       }
     }
 
-    console.log(
+    logger.info(
       `[migrations] done. schema now at v${pending[pending.length - 1].version}.`
     );
   })();
