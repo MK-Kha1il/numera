@@ -112,7 +112,7 @@ fun DuelGameScreen(
         socket.emit("join_duel_room", joinData)
 
         socket.on("room_status") { args ->
-            val data = args[0] as JSONObject
+            val data = args.getOrNull(0) as? JSONObject ?: return@on
             scope.launch(Dispatchers.Main) {
                 if (data.has("problems") && problemsList.isEmpty()) {
                     val pArray = data.getJSONArray("problems").toString()
@@ -152,7 +152,7 @@ fun DuelGameScreen(
         }
 
         socket.on("duel_end") { args ->
-            val data = args[0] as JSONObject
+            val data = args.getOrNull(0) as? JSONObject ?: return@on
             val winnerId = data.getInt("winnerId")
             scope.launch(Dispatchers.Main) {
                 duelWinnerId = winnerId
