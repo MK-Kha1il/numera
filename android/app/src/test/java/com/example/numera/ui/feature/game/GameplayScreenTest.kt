@@ -75,6 +75,27 @@ class GameplayScreenTest {
     return fakeApi
   }
 
+  /** Stub a no-lesson level with a single MCQ problem (correct = "right"). */
+  private fun stubSingleMcqLevel(): ApiService {
+    val fakeApi = mockk<ApiService>()
+    coEvery { fakeApi.getProblems(any(), any(), any(), any()) } returns MathLevelResponse(
+      category = "Algebra",
+      level = 1,
+      lessonTitle = null,
+      problems = listOf(
+        MathProblem(
+          question = "Only question here.",
+          correctAnswer = "right",
+          options = listOf("wrong", "right", "other"),
+          explanation = "right is correct.",
+        ),
+      ),
+    )
+    RetrofitClient.authToken = "test-token"
+    RetrofitClient.setApiServiceForTest(fakeApi)
+    return fakeApi
+  }
+
   private fun launchAndAwaitGameplay() {
     stubPlainLevel()
     compose.setContent {
@@ -140,5 +161,43 @@ class GameplayScreenTest {
       compose.onAllNodesWithText(q1).fetchSemanticsNodes().isNotEmpty()
     }
     compose.onNodeWithText(q1).assertIsDisplayed()
+  }
+
+  /**
+   * In level mode, three mistakes empties the 3 hearts and triggers the out-of-hearts retry
+   * prompt. Drives that deterministically WITHOUT the TIMED problem's countdown: stay on the MCQ
+   * (idx 0), answer wrong, reset via Review Solution -> Retry Exercise, repeat. The third wrong
+   * pushes errorsCount to 3 and the dialog appears. This guards the OutOfHeartsDialog carve.
+   */
+  @Test
+  fun threeMistakes_inLevelMode_showsOutOfHeartsDialog() {
+    stubSingleMcqLevel()
+    compose.setContent {
+      SoloGameScreen(category = "Algebra", level = 1, gameMode = "level", onFinishGame = {})
+    }
+    compose.waitUntil(timeoutMillis = 10_000) {
+      compose.onAllNodesWithText("Only question here.").fetchSemanticsNodes().isNotEmpty()
+    }
+    // First two mistakes: each time reopen the problem via Review Solution -> Retry Exercise.
+    repeat(2) {
+      compose.onNodeWithText("wrong").performClick()
+      compose.waitUntil(timeoutMillis = 5_000) {
+        compose.onAllNodesWithText("REVIEW SOLUTION").fetchSemanticsNodes().isNotEmpty()
+      }
+      compose.waitForIdle()
+      compose.onNodeWithText("REVIEW SOLUTION").performClick()
+      compose.waitUntil(timeoutMillis = 5_000) {
+        compose.onAllNodesWithText("RETRY EXERCISE").fetchSemanticsNodes().isNotEmpty()
+      }
+      compose.waitForIdle()
+      compose.onNodeWithText("RETRY EXERCISE").performClick()
+      compose.waitForIdle()
+    }
+    // Third mistake empties the hearts -> out-of-hearts dialog.
+    compose.onNodeWithText("wrong").performClick()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose.onAllNodesWithText("💔 OUT OF HEARTS").fetchSemanticsNodes().isNotEmpty()
+    }
+    compose.onNodeWithText("💔 OUT OF HEARTS").assertIsDisplayed()
   }
 }

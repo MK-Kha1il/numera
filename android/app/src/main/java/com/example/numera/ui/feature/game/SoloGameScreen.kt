@@ -1665,77 +1665,28 @@ fun SoloGameScreen(
     } // Closes the wrapping Box
 
     if (showRetryDialogPrompt) {
-        AlertDialog(
-            onDismissRequest = {},
-            title = {
-                Text(
-                    text = "💔 OUT OF HEARTS",
-                    fontWeight = FontWeight.Black,
-                    fontSize = 18.sp,
-                    color = WrongRed
-                )
-            },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(Spacing.m)
-                ) {
-                    Text(
-                        text = "You made 3 mistakes and failed the level.",
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "You currently have $retryTokensLeft Retry Tokens in your inventory.",
-                        fontSize = 14.sp
-                    )
-                    if (retryTokensLeft > 0) {
-                        Text(
-                            text = "Use a Retry Token to restore your hearts and continue playing this level without losing progress!",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    } else {
-                        Text(
-                            text = "You don't have any Retry Tokens left. You can purchase them in the Shop tab.",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
+        OutOfHeartsDialog(
+            retryTokensLeft = retryTokensLeft,
+            onUseRetryToken = {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        val token = RetrofitClient.authToken ?: ""
+                        RetrofitClient.apiService.consumeRetryToken(token)
+                        withContext(Dispatchers.Main) {
+                            retryTokensLeft -= 1
+                            errorsCount = 0
+                            heartsLeft = 3
+                            showRetryDialogPrompt = false
+                        }
+                    } catch (e: Exception) {
+                        Log.e("SoloGame", "Failed to consume retry token: ${e.message}")
                     }
                 }
             },
-            confirmButton = {
-                if (retryTokensLeft > 0) {
-                    DuoButton(
-                        text = "Use Retry Token ($retryTokensLeft left)",
-                        onClick = {
-                            scope.launch(Dispatchers.IO) {
-                                try {
-                                    val token = RetrofitClient.authToken ?: ""
-                                    RetrofitClient.apiService.consumeRetryToken(token)
-                                    withContext(Dispatchers.Main) {
-                                        retryTokensLeft -= 1
-                                        errorsCount = 0
-                                        heartsLeft = 3
-                                        showRetryDialogPrompt = false
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("SoloGame", "Failed to consume retry token: ${e.message}")
-                                }
-                            }
-                        },
-                        color = CorrectGreen
-                    )
-                }
+            onExit = {
+                showRetryDialogPrompt = false
+                onFinishGame()
             },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showRetryDialogPrompt = false
-                        onFinishGame()
-                    }
-                ) {
-                    Text("Exit Level", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                }
-            }
         )
     }
 }
