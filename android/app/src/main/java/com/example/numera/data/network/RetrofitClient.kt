@@ -32,6 +32,15 @@ object RetrofitClient {
     lateinit var apiService: ApiService
         private set
 
+    /**
+     * Test seam: inject a fake/mock [ApiService] for JVM (Robolectric) UI tests so screens can be
+     * rendered without a real network/server. Not for production use — `init`/`setBaseUrl` build
+     * the real client.
+     */
+    internal fun setApiServiceForTest(service: ApiService) {
+        apiService = service
+    }
+
     fun init(context: Context) {
         val prefs = context.getSharedPreferences("numera_prefs", Context.MODE_PRIVATE)
         authToken = prefs.getString("auth_token", null)
