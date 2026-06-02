@@ -16,18 +16,24 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
   `LocalCommandPalette` mounts. Its 7 screens, shop sub-composables, dialogs and helpers were
   moved **verbatim** into `ui/feature/{dashboard,archive,arena,social,shop,profile,settings}/`
   + `ui/dialogs/`, one screen per commit, each gated by a green `assembleDebug`.
-- 🟡 **`SoloGameScreen.kt` relocated to `ui/feature/game/`** and decomposed in safe slices
-  (2,806 → **2,014 lines**): self-contained helpers (`CalcEngine.kt`, `ExerciseType.kt`,
-  `LessonComponents.kt`); the two cleanly-separable overlays — `CalculatorOverlay.kt` (state
-  hoisted: kept in the parent as `MutableState`, re-delegated with `by` so input/memory/history
-  still persist across open/close) and `TipOverlay.kt` (read-only; takes the active
-  `MathProblem?`); and now **`LessonScreen.kt`** — the concept-first lesson early-return block,
-  carved out once the UI test net existed. The lesson carve was the first *verified* one:
-  `SoloGameScreenTest` (a mocked `getProblems` → lesson renders) guarded it, so the extraction
-  was confirmed behavior-preserving rather than blind. **Still monolithic:** the gameplay
-  `AnimatedContent` + recap/retry dialogs (~30 intertwined hoisted state vars) — the hardest
-  part; carving `GameplayScreen`/`RecapScreen` needs more gameplay-interaction tests first
-  (the gameplay tree renders unreliably under Robolectric, so those tests need care).
+- ✅ **`SoloGameScreen.kt` fully decomposed** (2,806 → **890 lines**, −68%): self-contained
+  helpers (`CalcEngine.kt`, `ExerciseType.kt`, `LessonComponents.kt`); the overlays
+  `CalculatorOverlay.kt` + `TipOverlay.kt`; `LessonScreen.kt` (concept-first lesson block); and
+  now the hard, intertwined remainder — **`GameplayScreen.kt`** (the ~870-line per-problem
+  MCQ/typed/timed UI: header, equation card, save/tooltip, tool buttons, answer interface,
+  feedback banner, slide-up overlays), **`RecapScreen.kt`** (the `isGameOver` end screen),
+  **`ReviewSolutionDialog.kt`** and **`OutOfHeartsDialog.kt`**. What remains in SoloGameScreen is
+  the data-load `LaunchedEffect`s, the per-question state, `handleAnswer`/`isCurrentAnswerCorrect`/
+  `continueOrFinish`, the timer/hearts effects, and the early-return wiring to the carved screens.
+  **Every gameplay carve was verified, not blind:** the prerequisite was solving a Robolectric
+  reliability problem (the gameplay semantics tree settled unreliably — the async-measured KaTeX
+  `MathText` WebView was the main culprit). Fix = a **`MathText` test seam** (renders a plain
+  `Text` with the same string under test) + plain-text test problems (no `$`/`\`, so the gameplay
+  path never touches `MathText`) + a tall viewport + `waitForIdle` before tapping animated
+  banners. `GameplayScreenTest`/`RecapScreenTest` then drive the real answer flow (correct/wrong
+  banner, advance, review dialog, out-of-hearts, finish→recap), verified stable across 3+ reruns.
+  Parent keeps owning state — written states pass as `MutableState` (re-delegated with `by` so the
+  body moves verbatim), logic passes as callbacks.
 
 ## 2. Folder structure
 - ✅ Server: `config.js`, `middleware/`, `lib/`, `services/`, `routes/`, `test/` — clear
@@ -39,8 +45,10 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
 ## 3. Duplicate logic
 - ✅ Earlier work removed a duplicated expression parser; the calculator engine is now its own
   `ui/feature/game/CalcEngine.kt` (`evaluateExpression`/`CalcParser`, pure, unit-testable).
-- 🟢 Rate limiters consolidated into one module. ⬜ Client answer-handling still duplicated 3×
-  in `SoloGameScreen` — deferred with the in-function split (needs a Compose test net first).
+- 🟢 Rate limiters consolidated into one module. ✅ **Client answer-handling de-duplicated**: the
+  "is the current answer correct?" branch (TYPED → trimmed case-insensitive equals; MCQ/TIMED →
+  selectedAnswer == correctAnswer), previously inlined 3–4× (card border, feedback banner,
+  typed-submit paths), is now one `isCurrentAnswerCorrect()` helper. Guarded by `GameplayScreenTest`.
 
 ## 4. Component audit (Android)
 - 🟢 Component library is already well-classified (primitives / feedback / premium
@@ -136,24 +144,33 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
 - ✅ ESLint v9 + Prettier (`npm run lint`/`format`), 0 errors. `db.js` made env-overridable so
   tests use a throwaway DB; `server.js` exports the app and only listens when run directly.
 - ✅ **Android JVM Compose UI test net** (Robolectric, `gradlew testDebugUnitTest`, no device) —
-  the client's missing Phase-0 net. 9 tests: a harness smoke test; the carved-out overlays
+  the client's missing Phase-0 net. **15 tests**: a harness smoke test; the carved-out overlays
   (`CalculatorOverlay` render + a key-press→CalcEngine **interaction** test, `TipOverlay`) and
   `MasteryBar` (pure composables); a screen-level `SocialScreenTest` that injects a **MockK**
   `ApiService` via the new `RetrofitClient.setApiServiceForTest()` seam and asserts fetched data
-  renders; and `SoloGameScreenTest` (mock `getProblems` → the fetched lesson renders) which
-  **guarded the LessonScreen carve**. The pattern (mock ApiService → render → assert) extends to
-  any screen; verified-safe carving is now the workflow for the rest of SoloGameScreen.
+  renders; `SoloGameScreenTest` (mock `getProblems` → the fetched lesson renders, guarded the
+  LessonScreen carve); and the **gameplay-interaction** net — `GameplayScreenTest` (correct MCQ →
+  success banner, wrong MCQ → mistake banner + correct answer, Review Solution → solution dialog,
+  Continue → advance, three mistakes → out-of-hearts) and `RecapScreenTest` (finish a session →
+  recap) — which guarded the `GameplayScreen`/`RecapScreen`/dialog carves. **Robolectric
+  reliability** (the gameplay tree settled unreliably, mainly the async-measured KaTeX `MathText`
+  WebView) is solved primarily by using **plain-text test problems** (no `$`/`\`, so the gameplay
+  path never instantiates `MathText`), a tall `@Config(qualifiers="w411dp-h2000dp")` viewport, and
+  `waitForIdle()` before tapping animated banners. A `MathText` test seam (internal renderer
+  override → plain `Text` with the same string) is also in place as defensive infra for any future
+  test that must render math. The pattern (mock ApiService → render → drive → assert) extends to
+  any screen.
 
 ## Recommended next steps (in order)
 1. ✅ Split `server.js` routes into `routes/<domain>` (test net guarded each move).
 2. ✅ Split `MainTabsScreen.kt` into `ui/feature/<domain>/` + `ui/dialogs/` (606-line shell
    remains); `SoloGameScreen.kt` relocated to `feature/game/` with helpers extracted.
-3. SoloGameScreen carve-up: ✅ overlays out (CalculatorOverlay, TipOverlay), ✅ the
-   Compose/Robolectric test net + injectable `ApiService`, and ✅ **`LessonScreen` extracted**
-   (verified by `SoloGameScreenTest`; 2,806 → 2,014). ⬜ Remaining = `GameplayScreen` +
-   `RecapScreen`/retry dialogs + de-dup the 3× `handleAnswer`. These need a few
-   gameplay-interaction tests first (the gameplay semantics tree renders unreliably under
-   Robolectric — needs care) so each carve stays verified, not blind.
+3. ✅ **SoloGameScreen carve-up COMPLETE** (2,806 → 890): overlays (CalculatorOverlay, TipOverlay),
+   the Compose/Robolectric test net + injectable `ApiService`, `LessonScreen`, and — once the
+   gameplay-interaction net made it verifiable — `GameplayScreen`, `RecapScreen`,
+   `ReviewSolutionDialog`, `OutOfHeartsDialog` + the `handleAnswer` de-dup. ⬜ Optional follow-up:
+   `GameplayScreen.kt` is itself ~1k lines (one cohesive composable); a further split of its
+   answer-interface / save-options sub-blocks could land later, plus the recomposition-hygiene pass.
 4. ✅ Design-token migration (raw `dp`/shape → `theme/` tokens) DONE across the split screens.
    ⬜ Remaining: optional `Color`-literal → token pass + recomposition-hygiene pass.
 5. ✅ Structured logger DONE; ✅ ownership-check pass DONE (profile_private fix); ✅ client
