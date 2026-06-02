@@ -39,7 +39,7 @@ Server runs on **port 3000**. Visit `http://localhost:3000/` for the live status
 
 1. Build the APK:
    ```powershell
-   $env:JAVA_HOME="C:\Users\khali\AppData\Roaming\.minecraft\runtime\java-runtime-gamma\windows\java-runtime-gamma"
+   $env:JAVA_HOME=" "
    cd android
    .\gradlew.bat assembleDebug
    ```
