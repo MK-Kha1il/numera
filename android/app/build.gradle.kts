@@ -37,6 +37,14 @@ android {
         excludes += "/META-INF/{AL2.0,LGPL2.1}"
       }
     }
+
+    testOptions {
+      unitTests {
+        // Robolectric needs the merged Android resources/manifest on the unit-test classpath
+        // so Compose UI tests can run on the JVM (no device/emulator).
+        isIncludeAndroidResources = true
+      }
+    }
 }
 
 kotlin {
@@ -72,6 +80,16 @@ dependencies {
   // Local tests: jUnit, coroutines, Android runner
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)
+
+  // JVM Compose UI test net (Robolectric — runs on the JVM, no device/emulator):
+  testImplementation(composeBom)
+  testImplementation(libs.androidx.compose.ui.test.junit4)
+  testImplementation(libs.robolectric)
+  testImplementation(libs.androidx.test.ext.junit)
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.mockk)
+  // createComposeRule() needs the test ComponentActivity; ui-test-manifest is already a
+  // debugImplementation below, which is on the unit-test classpath for the debug variant.
 
   // Instrumented tests: jUnit rules and runners
   androidTestImplementation(libs.androidx.test.core)
