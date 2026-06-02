@@ -86,6 +86,23 @@ sound/, haptic/                  Feedback managers.
 - **LaTeX in JS strings needs double backslashes** (`"\\frac"`). A single `\f`/`\p` is a
   silent control-char/escape bug (fixed a batch of these in db.js seed data).
 
+## Where new code goes (keep the structure — don't regrow God files)
+
+Building something new? Put it in the right place from the start:
+
+- **New server endpoint** → add it to the matching `routes/<domain>.js` router (or create a new
+  one and mount it in `server.js`). **Never** add routes back into `server.js` — that file is
+  bootstrap + Socket.IO only.
+- **DB-touching logic shared by ≥2 routes** → a function in `services/` (e.g. `userService`).
+  Import it into the routers that need it. **Pure** helpers (no DB/IO) → `lib/`, with a unit test.
+- **New Android screen / feature** → its own file under `ui/feature/<domain>/` (not appended to
+  `MainTabsScreen.kt`). Reusable widgets → `ui/components/`; dialogs → `ui/dialogs/`.
+- **Design values** (spacing, radius, color, type) → use the tokens in `theme/` — no raw
+  `16.dp` / `Color(0x…)` / `RoundedCornerShape(…)` literals in new code.
+- **Schema change** → append a new version to `migrations.js` (never edit a shipped one).
+- **A file is getting big (>~600 lines)?** Stop and split it by responsibility *before* it
+  becomes the next God file. Verify with the commands above after each extraction.
+
 ## Architecture status (stabilization sprint, in progress)
 
 The codebase is mid-decomposition. **Done:** Phase 0 test/lint net; the **server `server.js`
