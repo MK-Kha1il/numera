@@ -36,6 +36,8 @@ fun MathText(
                 }
                 setBackgroundColor(0)
                 webViewClient = WebViewClient()
+                // Pass all touch events up so parent Compose handlers (answer tap, etc.) work
+                setOnTouchListener { _, _ -> false }
             }
         },
         update = { webView ->

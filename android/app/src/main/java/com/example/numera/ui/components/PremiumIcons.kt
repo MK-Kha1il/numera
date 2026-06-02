@@ -18,7 +18,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 enum class NumeraIconType {
-    Learn, Arena, Quests, Shop, Profile, Settings, Lock, Warning, Back, Close, Search, Streak, Trophy, XP, Coins, Scratchpad, Favorite, Notification, Calculator, Tip
+    Learn, Arena, Quests, Shop, Profile, Settings, Lock, Warning, Back, Close, Search, Streak, Trophy, XP, Coins, Scratchpad, Favorite, Notification, Calculator, Tip,
+    Check, ChevronRight, ChevronUp, ChevronDown
 }
 
 @Composable
@@ -653,6 +654,38 @@ fun NumeraIcon(
                 drawLine(color = tint, start = Offset(w * 0.5f, h * 0.08f), end = Offset(w * 0.5f, h * 0.14f), strokeWidth = strokeWidth * 0.8f, cap = cap)
                 drawLine(color = tint, start = Offset(w * 0.2f, h * 0.38f), end = Offset(w * 0.26f, h * 0.38f), strokeWidth = strokeWidth * 0.8f, cap = cap)
                 drawLine(color = tint, start = Offset(w * 0.8f, h * 0.38f), end = Offset(w * 0.74f, h * 0.38f), strokeWidth = strokeWidth * 0.8f, cap = cap)
+            }
+            NumeraIconType.Check -> {
+                val checkPath = Path().apply {
+                    moveTo(w * 0.24f, h * 0.52f)
+                    lineTo(w * 0.43f, h * 0.71f)
+                    lineTo(w * 0.78f, h * 0.30f)
+                }
+                drawPath(path = checkPath, color = tint, style = Stroke(width = strokeWidth * 1.1f, cap = cap, join = join))
+            }
+            NumeraIconType.ChevronRight -> {
+                val p = Path().apply {
+                    moveTo(w * 0.40f, h * 0.26f)
+                    lineTo(w * 0.64f, h * 0.50f)
+                    lineTo(w * 0.40f, h * 0.74f)
+                }
+                drawPath(path = p, color = tint, style = Stroke(width = strokeWidth, cap = cap, join = join))
+            }
+            NumeraIconType.ChevronUp -> {
+                val p = Path().apply {
+                    moveTo(w * 0.26f, h * 0.60f)
+                    lineTo(w * 0.50f, h * 0.36f)
+                    lineTo(w * 0.74f, h * 0.60f)
+                }
+                drawPath(path = p, color = tint, style = Stroke(width = strokeWidth, cap = cap, join = join))
+            }
+            NumeraIconType.ChevronDown -> {
+                val p = Path().apply {
+                    moveTo(w * 0.26f, h * 0.40f)
+                    lineTo(w * 0.50f, h * 0.64f)
+                    lineTo(w * 0.74f, h * 0.40f)
+                }
+                drawPath(path = p, color = tint, style = Stroke(width = strokeWidth, cap = cap, join = join))
             }
         }
     }

@@ -113,6 +113,14 @@ val SunsetSurfaceCard = Color(0xFFFFF0E5)
 val SunsetOnSurface = Color(0xFF3A1C0E)
 val SunsetBorder = Color(0xFFFDD5C0)
 
+// Milestone Achievement (cross-theme — used for levels 10, 20, 30, 40, 50, 60)
+val MilestoneGold      = Color(0xFFD4AF37)
+val MilestoneGoldDark  = Color(0xFF9E7C00)
+val MilestoneBg        = Color(0xFFFFFDF0)
+val MilestoneSurface   = Color(0xFFFFF9DF)
+val MilestoneBorder    = Color(0xFFE6CA65)
+val MilestoneOnSurface = Color(0xFF4C3E08)
+
 // Midnight Galaxy Theme
 val MidnightBg = Color(0xFFF5F5FA)
 val MidnightPrimary = Color(0xFF3F3B6C)

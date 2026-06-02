@@ -124,7 +124,9 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Query("category") category: String?,
         @Query("stars") stars: Int?,
-        @Query("q") query: String?
+        @Query("q") query: String?,
+        @Query("limit") limit: Int = 20,
+        @Query("offset") offset: Int = 0
     ): List<ArchiveExercise>
 
     @GET("api/mistakes")

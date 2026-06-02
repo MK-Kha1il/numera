@@ -1,4 +1,4 @@
-package com.example.numera.ui.screens
+package com.example.numera.ui.feature.game
 
 import android.util.Log
 import androidx.compose.animation.*
@@ -38,6 +38,8 @@ import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.VictoryParticles
 import com.example.numera.ui.components.MathText
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,6 +50,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
 import com.example.numera.ui.components.RankBadge
 import com.example.numera.ui.components.NumeraPremiumLoader
+import com.example.numera.ui.components.NumeraSlideOver
+import com.example.numera.ui.components.NumeraIcon
+import com.example.numera.ui.components.NumeraIconType
 
 @Composable
 fun SoloGameScreen(
@@ -96,6 +101,7 @@ fun SoloGameScreen(
     var lessonContent by remember { mutableStateOf<String?>(null) }
     var lessonFormula by remember { mutableStateOf<String?>(null) }
     var examplesList by remember { mutableStateOf<List<MathExample>>(emptyList()) }
+    var lessonSections by remember { mutableStateOf<LessonSections?>(null) }
     var showLesson by remember { mutableStateOf(false) }
     
     var errorsCount by remember { mutableIntStateOf(0) }
@@ -117,16 +123,16 @@ fun SoloGameScreen(
 
     var shakeTrigger by remember { mutableIntStateOf(0) }
     val shakeOffset by animateDpAsState(
-        targetValue = if (shakeTrigger % 2 == 1) 10.dp else 0.dp,
+        targetValue = if (shakeTrigger % 2 == 1) 10.dp else Spacing.zero,
         animationSpec = keyframes {
             durationMillis = 300
-            0.dp at 0
+            Spacing.zero at 0
             (-10).dp at 50
             10.dp at 100
             (-8).dp at 150
-            8.dp at 200
+            Spacing.s at 200
             (-4).dp at 250
-            0.dp at 300
+            Spacing.zero at 300
         },
         label = "shake"
     )
@@ -151,11 +157,17 @@ fun SoloGameScreen(
 
     // Whiteboard / Scratchpad states
     var showWhiteboard by remember { mutableStateOf(false) }
-    
+
+    // Slide-over reference panel — lets the learner peek the concept/formula mid-exercise.
+    var showReference by remember { mutableStateOf(false) }
+
     // Calculator states
     var showCalculator by remember { mutableStateOf(false) }
-    var calculatorInput by remember { mutableStateOf("") }
-    var calculatorResult by remember { mutableStateOf("") }
+    val calculatorInputState = remember { mutableStateOf("") }
+    val calculatorResultState = remember { mutableStateOf("") }
+    val calculatorMemoryState = remember { mutableStateOf(0.0) }
+    val calculatorHistoryState = remember { mutableStateOf<List<String>>(emptyList()) }
+    val calcIsErrorState = remember { mutableStateOf(false) }
     
     // Tip states
     var showTip by remember { mutableStateOf(false) }
@@ -166,6 +178,7 @@ fun SoloGameScreen(
     var showScratchpadPrompt by remember { mutableStateOf(false) }
     var timeSpentOnQuestion by remember { mutableIntStateOf(0) }
     var favoritedQuestions by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var showSaveDialog by remember { mutableStateOf(false) }
 
     fun logCalculatorTelemetry(expression: String? = null) {
         scope.launch(Dispatchers.IO) {
@@ -197,38 +210,56 @@ fun SoloGameScreen(
             try {
                 val token = RetrofitClient.authToken ?: ""
                 
-                try {
-                    val favs = RetrofitClient.apiService.getFavorites(token)
-                    withContext(Dispatchers.Main) {
-                        favoritedQuestions = favs.map { it.question }.toSet()
+                coroutineScope {
+                    val favsDeferred = async {
+                        try {
+                            RetrofitClient.apiService.getFavorites(token)
+                        } catch (e: Exception) {
+                            Log.e("SoloGame", "Failed to load favorites: ${e.message}")
+                            null
+                        }
                     }
-                } catch (e: Exception) {
-                    Log.e("SoloGame", "Failed to load favorites: ${e.message}")
-                }
-                
-                // Fetch profile to get initial streak & stats
-                try {
-                    val profile = RetrofitClient.apiService.getProfile(token)
-                    withContext(Dispatchers.Main) {
-                        currentStreakDays = profile.streak
-                        userRank = profile.rank
-                        userLevel = profile.level
-                        userXP = profile.xp
-                        userCoins = profile.coins
+                    val profileDeferred = async {
+                        try {
+                            RetrofitClient.apiService.getProfile(token)
+                        } catch (e: Exception) {
+                            Log.e("SoloGame", "Failed to load user profile: ${e.message}")
+                            null
+                        }
                     }
-                } catch (e: Exception) {
-                    Log.e("SoloGame", "Failed to load user profile: ${e.message}")
-                }
+                    val shopDeferred = async {
+                        try {
+                            RetrofitClient.apiService.getShop(token)
+                        } catch (e: Exception) {
+                            Log.e("SoloGame", "Failed to load shop utilities: ${e.message}")
+                            null
+                        }
+                    }
 
-                // Fetch retry tokens from shop utilities
-                try {
-                    val shop = RetrofitClient.apiService.getShop(token)
-                    val retryTokenUtility = shop.utilities?.find { it.item_id == "item_retry_token" }
-                    withContext(Dispatchers.Main) {
-                        retryTokensLeft = retryTokenUtility?.quantity ?: 0
+                    val favs = favsDeferred.await()
+                    val profile = profileDeferred.await()
+                    val shop = shopDeferred.await()
+
+                    favs?.let {
+                        withContext(Dispatchers.Main) {
+                            favoritedQuestions = it.map { fav -> fav.question }.toSet()
+                        }
                     }
-                } catch (e: Exception) {
-                    Log.e("SoloGame", "Failed to load shop utilities: ${e.message}")
+                    profile?.let {
+                        withContext(Dispatchers.Main) {
+                            currentStreakDays = it.streak
+                            userRank = it.rank
+                            userLevel = it.level
+                            userXP = it.xp
+                            userCoins = it.coins
+                        }
+                    }
+                    shop?.let {
+                        val retryTokenUtility = it.utilities?.find { item -> item.item_id == "item_retry_token" }
+                        withContext(Dispatchers.Main) {
+                            retryTokensLeft = retryTokenUtility?.quantity ?: 0
+                        }
+                    }
                 }
 
                 when (gameMode) {
@@ -244,14 +275,20 @@ fun SoloGameScreen(
                                     explanation = match.explanation
                                 )
                             )
-                            val targetLevel = if (match.stars > 0) match.stars * 6 else 18
+                            // Fetch lesson using the puzzle's actual category and difficulty tier
+                            val targetLevel = when {
+                                match.stars >= 4 -> 45
+                                match.stars >= 3 -> 30
+                                match.stars >= 2 -> 18
+                                else -> 9
+                            }
                             try {
                                 val response = RetrofitClient.apiService.getProblems(token, match.category, targetLevel, count = 1)
                                 withContext(Dispatchers.Main) {
                                     lessonTitle = response.lessonTitle
                                     lessonContent = response.lessonContent
                                     lessonFormula = response.lessonFormula
-                                    examplesList = response.examples ?: emptyList()
+                                    examplesList = response.examples ?: emptyList(); lessonSections = response.lessonSections
                                     showLesson = !response.lessonTitle.isNullOrEmpty()
                                 }
                             } catch (e: Exception) {
@@ -278,18 +315,25 @@ fun SoloGameScreen(
                                 lessonTitle = lessonT
                                 lessonContent = lessonC
                                 lessonFormula = lessonF
-                                examplesList = examples ?: emptyList()
+                                examplesList = examples ?: emptyList(); lessonSections = puzzle.lessonSections
                                 showLesson = true
                             }
                         } else {
-                            val targetLevel = if (puzzle.stars != null && puzzle.stars > 0) puzzle.stars * 6 else 18
+                            // Derive a contextually appropriate lesson level from the puzzle's difficulty tier
+                            val puzzleCategory = puzzle.category ?: "arithmetic"
+                            val targetLevel = when {
+                                puzzle.stars != null && puzzle.stars >= 4 -> 45
+                                puzzle.stars != null && puzzle.stars >= 3 -> 30
+                                puzzle.stars != null && puzzle.stars >= 2 -> 18
+                                else -> 9
+                            }
                             try {
-                                val response = RetrofitClient.apiService.getProblems(token, puzzle.category ?: "arithmetic", targetLevel, count = 1)
+                                val response = RetrofitClient.apiService.getProblems(token, puzzleCategory, targetLevel, count = 1)
                                 withContext(Dispatchers.Main) {
                                     lessonTitle = response.lessonTitle
                                     lessonContent = response.lessonContent
                                     lessonFormula = response.lessonFormula
-                                    examplesList = response.examples ?: emptyList()
+                                    examplesList = response.examples ?: emptyList(); lessonSections = response.lessonSections
                                     showLesson = !response.lessonTitle.isNullOrEmpty()
                                 }
                             } catch (e: Exception) {
@@ -344,7 +388,7 @@ fun SoloGameScreen(
                                         lessonTitle = response.lessonTitle
                                         lessonContent = response.lessonContent
                                         lessonFormula = response.lessonFormula
-                                        examplesList = response.examples ?: emptyList()
+                                        examplesList = response.examples ?: emptyList(); lessonSections = response.lessonSections
                                         showLesson = !response.lessonTitle.isNullOrEmpty()
                                     }
                                 } catch (e: Exception) {
@@ -360,7 +404,7 @@ fun SoloGameScreen(
                             lessonTitle = response.lessonTitle
                             lessonContent = response.lessonContent
                             lessonFormula = response.lessonFormula
-                            examplesList = response.examples ?: emptyList()
+                            examplesList = response.examples ?: emptyList(); lessonSections = response.lessonSections
                             showLesson = !response.lessonTitle.isNullOrEmpty()
                         }
                     }
@@ -436,7 +480,7 @@ fun SoloGameScreen(
 
     if (problemsList.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.l)) {
                 Text("Error loading mathematical exercise set.", color = MaterialTheme.colorScheme.onBackground)
                 DuoButton(onClick = onFinishGame, text = "Go Back")
             }
@@ -445,166 +489,89 @@ fun SoloGameScreen(
     }
 
     if (showLesson && lessonTitle != null) {
-        val isMilestone = (level > 0) && (level % 10 == 0)
-        
-        val primaryColor = if (isMilestone) Color(0xFFD4AF37) else MaterialTheme.colorScheme.primary
-        val bgColor = if (isMilestone) Color(0xFFFFFDF0) else MaterialTheme.colorScheme.background
-        val cardBgColor = if (isMilestone) Color(0xFFFFF9DF) else MaterialTheme.colorScheme.surfaceVariant
-        val borderColor = if (isMilestone) Color(0xFFE6CA65) else MaterialTheme.colorScheme.outline
-        val onSurfaceColor = if (isMilestone) Color(0xFF4C3E08) else MaterialTheme.colorScheme.onBackground
-        
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(bgColor)
-                .padding(16.dp)
-        ) {
-            Text(
-                text = if (isMilestone) "🌟 MILESTONE THEOREM" else "LESSON",
-                color = primaryColor,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 14.sp,
-                letterSpacing = 1.sp
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = lessonTitle ?: "",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Black,
-                color = onSurfaceColor,
-                lineHeight = 32.sp
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                if (!lessonContent.isNullOrEmpty()) {
-                    if (lessonContent!!.contains("$") || lessonContent!!.contains("\\")) {
-                        MathText(
-                            text = lessonContent!!,
-                            fontSizePx = 36,
-                            color = onSurfaceColor.copy(alpha = 0.85f),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    } else {
-                        Text(
-                            text = lessonContent!!,
-                            fontSize = 16.sp,
-                            color = onSurfaceColor.copy(alpha = 0.85f),
-                            lineHeight = 24.sp
-                        )
-                    }
-                }
-                
-                if (!lessonFormula.isNullOrEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(cardBgColor)
-                            .border(1.5.dp, borderColor, RoundedCornerShape(16.dp))
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "CORE FORMULA / CONCEPT",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = primaryColor,
-                                letterSpacing = 0.5.sp
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            val formulaText = if (!lessonFormula!!.contains("$") && !lessonFormula!!.contains("\\(") && !lessonFormula!!.contains("\\[")) {
-                                "$$${lessonFormula!!}$$"
-                            } else {
-                                lessonFormula!!
-                            }
-                            MathText(
-                                text = formulaText,
-                                fontSizePx = 42,
-                                color = onSurfaceColor,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-                
-                if (examplesList.isNotEmpty()) {
-                    Text(
-                        text = "WORKED EXAMPLES",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = primaryColor,
-                        letterSpacing = 0.5.sp
-                    )
-                    
-                    examplesList.forEachIndexed { index, ex ->
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(MaterialTheme.colorScheme.surface)
-                                .border(1.5.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = "Example ${index + 1}",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = primaryColor
-                            )
-                            
-                            if (ex.question.contains("$") || ex.question.contains("\\")) {
-                                MathText(text = ex.question, fontSizePx = 32, color = onSurfaceColor)
-                            } else {
-                                Text(text = ex.question, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = onSurfaceColor)
-                            }
-                            
-                            Text(
-                                text = "Answer: ${ex.answer}",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = CorrectGreen
-                            )
-                            
-                            if (ex.explanation.isNotEmpty()) {
-                                Divider(color = borderColor.copy(alpha = 0.3f))
-                                if (ex.explanation.contains("$") || ex.explanation.contains("\\")) {
-                                    MathText(text = ex.explanation, fontSizePx = 28, color = onSurfaceColor.copy(alpha = 0.7f))
-                                } else {
-                                    Text(text = ex.explanation, fontSize = 13.sp, color = onSurfaceColor.copy(alpha = 0.7f))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            DuoButton(
-                text = "Start Exercises",
-                onClick = {
-                    showLesson = false
-                    SoundManager.playClick()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                color = primaryColor
-            )
-        }
+        LessonScreen(
+            level = level,
+            lessonTitle = lessonTitle,
+            lessonContent = lessonContent,
+            lessonFormula = lessonFormula,
+            examplesList = examplesList,
+            lessonSections = lessonSections,
+            onStart = {
+                showLesson = false
+                SoundManager.playClick()
+            },
+        )
         return
     }
 
     val currentProblem = problemsList[currentProblemIdx]
+
+    fun handleAnswer(isCorrect: Boolean) {
+        if (isCorrect) {
+            SoundManager.playCorrect()
+            com.example.numera.haptic.HapticManager.playSuccess()
+            showParticles = true
+            score += 20
+            solvedCount++
+            correctStreak++
+            if (!answeredWrongForCurrent) {
+                correctFirstTryCount++
+                perfectStreakCount++
+                maxPerfectStreak = maxOf(maxPerfectStreak, perfectStreakCount)
+            }
+            if (gameMode == "mistakes_practice" && currentProblemIdx < mistakeIdsList.size) {
+                val mId = mistakeIdsList[currentProblemIdx]
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        RetrofitClient.apiService.resolveMistake(
+                            token = RetrofitClient.authToken ?: "",
+                            request = ResolveMistakeRequest(mId)
+                        )
+                    } catch (e: Exception) {
+                        Log.e("SoloGame", "Failed to resolve mistake: ${e.message}")
+                    }
+                }
+            }
+            if (gameMode == "daily_puzzle") {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        RetrofitClient.apiService.submitDailyPuzzle(
+                            token = RetrofitClient.authToken ?: "",
+                            request = DailyPuzzleSubmitRequest(correct = true)
+                        )
+                    } catch (e: Exception) {
+                        Log.e("SoloGame", "Failed to submit daily puzzle: ${e.message}")
+                    }
+                }
+            }
+        } else {
+            SoundManager.playWrong()
+            com.example.numera.haptic.HapticManager.playError()
+            errorsCount++
+            answeredWrongForCurrent = true
+            perfectStreakCount = 0
+            activeExplanation = currentProblem.explanation
+            shakeTrigger++
+            if (gameMode != "mistakes_practice") {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        RetrofitClient.apiService.addMistake(
+                            token = RetrofitClient.authToken ?: "",
+                            request = AddMistakeRequest(
+                                category = if (category.isEmpty()) "General" else category,
+                                question = currentProblem.question,
+                                correct_answer = currentProblem.correctAnswer,
+                                options = currentProblem.options,
+                                explanation = currentProblem.explanation
+                            )
+                        )
+                    } catch (e: Exception) {
+                        Log.e("SoloGame", "Failed to add mistake: ${e.message}")
+                    }
+                }
+            }
+        }
+    }
 
     // Determine current exercise type
     val currentExerciseType = remember(currentProblemIdx, gameMode, currentProblem) {
@@ -683,7 +650,7 @@ fun SoloGameScreen(
             },
             text = {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.m),
                     modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
                     Text("Let's analyze the correct logic:", fontWeight = FontWeight.Bold)
@@ -693,7 +660,7 @@ fun SoloGameScreen(
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.05f))
                             .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                            .padding(12.dp)
+                            .padding(Spacing.m)
                     ) {
                         Column {
                             Text("Question:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
@@ -720,14 +687,14 @@ fun SoloGameScreen(
                         Text("Work step-by-step to isolate the variables and evaluate the expression.", fontSize = 14.sp)
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Spacing.s))
                     Text("💡 Tip: Retry the question to lock in the logic!", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                 }
             },
             confirmButton = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                 ) {
                     DuoButton(
                         text = "Retry Exercise",
@@ -761,9 +728,9 @@ fun SoloGameScreen(
 
     if (isGameOver) {
         val isMilestone = (level > 0) && (level % 10 == 0)
-        val bgColor = if (isMilestone) Color(0xFFFFFDF0) else MaterialTheme.colorScheme.background
-        val cardOutlineColor = if (isMilestone) Color(0xFFE6CA65) else MaterialTheme.colorScheme.outline
-        val primaryColor = if (isMilestone) Color(0xFFD4AF37) else MaterialTheme.colorScheme.primary
+        val bgColor = if (isMilestone) MilestoneBg else MaterialTheme.colorScheme.background
+        val cardOutlineColor = if (isMilestone) MilestoneBorder else MaterialTheme.colorScheme.outline
+        val primaryColor = if (isMilestone) MilestoneGold else MaterialTheme.colorScheme.primary
 
         var statsCardVisible by remember { mutableStateOf(false) }
         var levelCardVisible by remember { mutableStateOf(false) }
@@ -795,7 +762,7 @@ fun SoloGameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(bgColor)
-                .padding(16.dp),
+                .padding(Spacing.l),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -803,7 +770,7 @@ fun SoloGameScreen(
                     .fillMaxWidth(0.95f)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(Spacing.l)
             ) {
                 Text(
                     text = if (isMilestone) "🏆 MILESTONE MASTERED" else "LEVEL RECAP",
@@ -831,8 +798,8 @@ fun SoloGameScreen(
                             .clip(RoundedCornerShape(24.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                             .border(1.5.dp, cardOutlineColor, RoundedCornerShape(24.dp))
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(Spacing.l),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.m)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -876,7 +843,7 @@ fun SoloGameScreen(
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
                             Text("✨ Consistency Climb:", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 13.sp)
                             Text("$currentStreakDays Days", fontWeight = FontWeight.Bold, color = DuoTertiary)
@@ -908,7 +875,7 @@ fun SoloGameScreen(
                             progress = progressFractionAnim,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(12.dp)
+                                .height(Spacing.m)
                                 .clip(RoundedCornerShape(6.dp)),
                             color = primaryColor,
                             trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
@@ -928,9 +895,9 @@ fun SoloGameScreen(
                             .clip(RoundedCornerShape(16.dp))
                             .background(primaryColor.copy(alpha = 0.05f))
                             .border(1.dp, primaryColor.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
-                            .padding(12.dp),
+                            .padding(Spacing.m),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.l)
                     ) {
                         RankBadge(rankName = userRank, modifier = Modifier.size(54.dp))
                         Column {
@@ -948,12 +915,12 @@ fun SoloGameScreen(
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(primaryColor.copy(alpha = 0.05f))
                             .border(1.dp, primaryColor.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                            .padding(8.dp)
+                            .padding(Spacing.s)
                     ) {
                         if (isMilestone) {
                             Text("🏅 Milestone Theorem 2.0x Multiplier Applied!", color = primaryColor, fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -967,7 +934,7 @@ fun SoloGameScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Spacing.l))
 
                 DuoButton(
                     text = "Continue",
@@ -989,13 +956,13 @@ fun SoloGameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+                .padding(Spacing.l),
+            verticalArrangement = Arrangement.Top
         ) {
         // Progress header
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(Spacing.s)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1009,12 +976,64 @@ fun SoloGameScreen(
                     fontSize = 14.sp
                 )
 
-                Text(
-                    text = "Exercise ${currentProblemIdx + 1} of ${problemsList.size}",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                    Text(
+                        text = "Exercise ${currentProblemIdx + 1} of ${problemsList.size}",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    // Reference: open the concept/formula reminder without leaving the exercise.
+                    val hasReference = !lessonFormula.isNullOrEmpty() || !lessonContent.isNullOrEmpty()
+                    if (hasReference) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f))
+                                .clickable {
+                                    SoundManager.playClick()
+                                    com.example.numera.haptic.HapticManager.playSoft()
+                                    showReference = true
+                                }
+                                .padding(horizontal = Spacing.s, vertical = 5.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                                NumeraIcon(type = NumeraIconType.Tip, tint = MaterialTheme.colorScheme.secondary, animate = false, modifier = Modifier.size(IconSize.s))
+                                Text("Reference", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (showReference) {
+                NumeraSlideOver(
+                    onDismiss = { showReference = false },
+                    title = lessonTitle ?: "Reference",
+                    subtitle = "Quick reminder — your progress is saved"
+                ) {
+                    if (!lessonFormula.isNullOrEmpty()) {
+                        Text("FORMULA", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 11.sp, letterSpacing = 0.8.sp)
+                        DuoCard(modifier = Modifier.fillMaxWidth()) {
+                            val f = lessonFormula!!
+                            if (f.contains("$") || f.contains("\\")) {
+                                MathText(text = f, fontSizePx = 26, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.fillMaxWidth())
+                            } else {
+                                Text(f, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
+                    }
+                    if (!lessonContent.isNullOrEmpty()) {
+                        Text("CONCEPT", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 11.sp, letterSpacing = 0.8.sp)
+                        val c = lessonContent!!
+                        if (c.contains("$") || c.contains("\\")) {
+                            MathText(text = c, fontSizePx = 16, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.fillMaxWidth())
+                        } else {
+                            Text(c, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, lineHeight = 20.sp)
+                        }
+                    }
+                }
             }
 
             // Exercise Mode Label & Countdown
@@ -1024,9 +1043,9 @@ fun SoloGameScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val modeLabel = when (currentExerciseType) {
-                    ExerciseType.MCQ -> "Warmup MCQ"
-                    ExerciseType.TYPED -> "Typed Focus"
-                    ExerciseType.TIMED -> "Timed Challenge ⚡"
+                    ExerciseType.MCQ -> if (gameMode == "level" && currentProblemIdx == 0) "Guided Exercise" else "Exercise"
+                    ExerciseType.TYPED -> "Independent Exercise"
+                    ExerciseType.TIMED -> "Timed Mastery"
                 }
                 
                 Text(
@@ -1038,7 +1057,7 @@ fun SoloGameScreen(
 
                 if (gameMode == "level") {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         repeat(3) { i ->
@@ -1093,8 +1112,8 @@ fun SoloGameScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .padding(vertical = 12.dp)
+                .heightIn(min = 80.dp, max = 180.dp)
+                .padding(vertical = Spacing.s)
                 .offset(x = shakeOffset)
         ) {
             DuoCard(
@@ -1110,24 +1129,34 @@ fun SoloGameScreen(
                     MaterialTheme.colorScheme.outline
                 }
             ) {
+                val questionLength = currentProblem.question.length
+                val adaptiveFontSize = when {
+                    questionLength > 200 -> 13.sp
+                    questionLength > 120 -> 15.sp
+                    questionLength > 60  -> if (isLegacyPuzzle) 15.sp else 18.sp
+                    else                 -> if (isLegacyPuzzle) 16.sp else 22.sp
+                }
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
+                        .fillMaxWidth()
+                        .heightIn(min = 60.dp, max = 180.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = Spacing.l, vertical = Spacing.m),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     if (currentProblem.question.contains("$") || currentProblem.question.contains("\\")) {
+                        val mathFontSize = if (questionLength > 120) 28 else 38
                         MathText(
                             text = currentProblem.question,
-                            fontSizePx = 52,
+                            fontSizePx = mathFontSize,
                             color = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
                         Text(
                             text = currentProblem.question,
-                            fontSize = if (isLegacyPuzzle) 16.sp else 26.sp,
+                            fontSize = adaptiveFontSize,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground,
                             textAlign = TextAlign.Center
@@ -1139,42 +1168,12 @@ fun SoloGameScreen(
             val isFav = favoritedQuestions.contains(currentProblem.question)
             IconButton(
                 onClick = {
-                    val nextFavState = !isFav
                     com.example.numera.haptic.HapticManager.playMedium()
-                    favoritedQuestions = if (nextFavState) {
-                        favoritedQuestions + currentProblem.question
-                    } else {
-                        favoritedQuestions - currentProblem.question
-                    }
-                    scope.launch(Dispatchers.IO) {
-                        try {
-                            val token = RetrofitClient.authToken ?: ""
-                            RetrofitClient.apiService.toggleFavorite(
-                                token,
-                                com.example.numera.data.network.ToggleFavoriteRequest(
-                                    title = if (isLegacyPuzzle) "Archive Exercise" else "Level $level Exercise",
-                                    category = category,
-                                    question = currentProblem.question,
-                                    correct_answer = currentProblem.correctAnswer,
-                                    options = currentProblem.options,
-                                    explanation = currentProblem.explanation
-                                )
-                            )
-                        } catch (e: Exception) {
-                            Log.e("SoloGame", "Failed to toggle favorite: ${e.message}")
-                            withContext(Dispatchers.Main) {
-                                favoritedQuestions = if (isFav) {
-                                    favoritedQuestions + currentProblem.question
-                                } else {
-                                    favoritedQuestions - currentProblem.question
-                                }
-                            }
-                        }
-                    }
+                    showSaveDialog = true
                 },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(8.dp)
+                    .padding(Spacing.s)
             ) {
                 com.example.numera.ui.components.NumeraIcon(
                     type = com.example.numera.ui.components.NumeraIconType.Favorite,
@@ -1183,20 +1182,122 @@ fun SoloGameScreen(
                 )
             }
 
+            if (showSaveDialog) {
+                androidx.compose.ui.window.Dialog(onDismissRequest = { showSaveDialog = false }) {
+                    androidx.compose.material3.Card(
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
+                            Text("Exercise Options", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+
+                            // Save this question
+                            val isSaved = isFav
+                            androidx.compose.material3.OutlinedButton(
+                                onClick = {
+                                    showSaveDialog = false
+                                    val nextFavState = !isSaved
+                                    favoritedQuestions = if (nextFavState)
+                                        favoritedQuestions + currentProblem.question
+                                    else favoritedQuestions - currentProblem.question
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            val token = RetrofitClient.authToken ?: ""
+                                            RetrofitClient.apiService.toggleFavorite(token,
+                                                com.example.numera.data.network.ToggleFavoriteRequest(
+                                                    title = if (isLegacyPuzzle) "Archive Exercise" else "Level $level Exercise",
+                                                    category = category,
+                                                    question = currentProblem.question,
+                                                    correct_answer = currentProblem.correctAnswer,
+                                                    options = currentProblem.options,
+                                                    explanation = currentProblem.explanation
+                                                ))
+                                        } catch (e: Exception) {
+                                            Log.e("SoloGame", "Failed to toggle favorite: ${e.message}")
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(if (isSaved) "❤️  Unsave This Question" else "❤️  Save This Question", fontWeight = FontWeight.Bold)
+                            }
+
+                            // Save entire level
+                            androidx.compose.material3.Button(
+                                onClick = {
+                                    showSaveDialog = false
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            val token = RetrofitClient.authToken ?: ""
+                                            problemsList.forEach { prob ->
+                                                try {
+                                                    RetrofitClient.apiService.toggleFavorite(token,
+                                                        com.example.numera.data.network.ToggleFavoriteRequest(
+                                                            title = "Level $level Exercise",
+                                                            category = category,
+                                                            question = prob.question,
+                                                            correct_answer = prob.correctAnswer,
+                                                            options = prob.options,
+                                                            explanation = prob.explanation
+                                                        ))
+                                                } catch (_: Exception) {}
+                                            }
+                                            withContext(Dispatchers.Main) {
+                                                favoritedQuestions = favoritedQuestions + problemsList.map { it.question }.toSet()
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.e("SoloGame", "Failed to save level: ${e.message}")
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                            ) {
+                                Text("📁  Save Entire Level", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                            }
+
+                            // Retry this exercise
+                            androidx.compose.material3.Button(
+                                onClick = {
+                                    showSaveDialog = false
+                                    hasAnswered = false
+                                    selectedAnswer = ""
+                                    typedInput = ""
+                                    activeExplanation = null
+                                    answeredWrongForCurrent = false
+                                    com.example.numera.haptic.HapticManager.playSoft()
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                            ) {
+                                Text("🔄  Retry This Exercise", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
+                            }
+
+                            TextButton(onClick = { showSaveDialog = false }, modifier = Modifier.align(Alignment.End)) {
+                                Text("Cancel")
+                            }
+                        }
+                    }
+                }
+            }
+
             if (showFavoriteTooltip) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = 48.dp, end = 12.dp)
+                        .padding(top = Spacing.xxxl, end = Spacing.m)
                         .width(200.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                         .border(1.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(8.dp))
-                        .padding(8.dp)
+                        .padding(Spacing.s)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                     ) {
                         Text(
                             text = "❤️ Save this equation for offline review in your notebook!",
@@ -1209,12 +1310,12 @@ fun SoloGameScreen(
                                 showFavoriteTooltip = false
                                 gamePrefs.edit().putBoolean("dismissed_favorite_tooltip", true).apply()
                             },
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(IconSize.s)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Clear,
                                 contentDescription = "Close",
-                                modifier = Modifier.size(12.dp),
+                                modifier = Modifier.size(Spacing.m),
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         }
@@ -1226,11 +1327,11 @@ fun SoloGameScreen(
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(12.dp)
+                        .padding(Spacing.m)
                 ) {
                     Column(
                         horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
                     ) {
                         AnimatedVisibility(
                             visible = showScratchpadPrompt,
@@ -1253,39 +1354,46 @@ fun SoloGameScreen(
                         }
 
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.s),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Tip Button
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.secondaryContainer)
-                                    .border(BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)), shape = RoundedCornerShape(12.dp))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                MaterialTheme.colorScheme.tertiary,
+                                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.8f)
+                                            )
+                                        )
+                                    )
                                     .clickable {
                                         com.example.numera.haptic.HapticManager.playSoft()
                                         showCalculator = false
                                         showWhiteboard = false
                                         showTip = true
                                     }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    .padding(horizontal = Spacing.m, vertical = Spacing.s),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     com.example.numera.ui.components.NumeraIcon(
                                         type = com.example.numera.ui.components.NumeraIconType.Tip,
-                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onTertiary,
+                                        modifier = Modifier.size(IconSize.s),
                                         animate = false
                                     )
                                     Text(
                                         text = "TIP",
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp
+                                        color = MaterialTheme.colorScheme.onTertiary,
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 11.sp,
+                                        letterSpacing = 0.8.sp
                                     )
                                 }
                             }
@@ -1294,8 +1402,14 @@ fun SoloGameScreen(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.tertiaryContainer)
-                                    .border(BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f)), shape = RoundedCornerShape(12.dp))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                MaterialTheme.colorScheme.secondary,
+                                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
+                                            )
+                                        )
+                                    )
                                     .clickable {
                                         com.example.numera.haptic.HapticManager.playSoft()
                                         showTip = false
@@ -1303,24 +1417,25 @@ fun SoloGameScreen(
                                         showCalculator = true
                                         logCalculatorTelemetry(null)
                                     }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    .padding(horizontal = Spacing.m, vertical = Spacing.s),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     com.example.numera.ui.components.NumeraIcon(
                                         type = com.example.numera.ui.components.NumeraIconType.Calculator,
-                                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSecondary,
+                                        modifier = Modifier.size(IconSize.s),
                                         animate = false
                                     )
                                     Text(
                                         text = "CALC",
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp
+                                        color = MaterialTheme.colorScheme.onSecondary,
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 11.sp,
+                                        letterSpacing = 0.8.sp
                                     )
                                 }
                             }
@@ -1345,7 +1460,7 @@ fun SoloGameScreen(
                                         showWhiteboard = true
                                         showScratchpadPrompt = false
                                     }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    .padding(horizontal = Spacing.m, vertical = Spacing.s),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(
@@ -1355,7 +1470,7 @@ fun SoloGameScreen(
                                     com.example.numera.ui.components.NumeraIcon(
                                         type = com.example.numera.ui.components.NumeraIconType.Scratchpad,
                                         tint = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.size(16.dp),
+                                        modifier = Modifier.size(IconSize.s),
                                         animate = false
                                     )
                                     Text(
@@ -1373,24 +1488,51 @@ fun SoloGameScreen(
     }
 }
 
-        // Answer Interface using slide transition
+        // Answer Interface using slide transition — takes remaining space and is scrollable
         AnimatedContent(
             targetState = currentProblemIdx,
             transitionSpec = {
                 slideInHorizontally { width -> width } + fadeIn() togetherWith
                         slideOutHorizontally { width -> -width } + fadeOut()
             },
-            label = "problem_transition"
+            label = "problem_transition",
+            modifier = Modifier.weight(1f)
         ) { targetIdx ->
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(Spacing.s)
             ) {
+                // Interactive Mathematical Discovery surface — shown only when the
+                // server's Adaptive Visual Intelligence attached a manipulative, and
+                // only while the learner is still working the problem.
+                currentProblem.interactiveVisualJson
+                    ?.takeIf { it.isNotBlank() && !hasAnswered }
+                    ?.let { visJson ->
+                        DuoCard(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = "✦ DISCOVER",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Black,
+                                    letterSpacing = 1.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 14.dp, top = 10.dp)
+                                )
+                                com.example.numera.ui.components.InteractiveVisual(
+                                    specJson = visJson
+                                )
+                            }
+                        }
+                    }
+
                 if (currentExerciseType == ExerciseType.TYPED) {
                     // Typed answer layout
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
                         Text(
                             text = "Type the correct numerical value:",
@@ -1416,46 +1558,7 @@ fun SoloGameScreen(
                                     if (!hasAnswered && typedInput.trim().isNotEmpty()) {
                                         hasAnswered = true
                                         val correct = typedInput.trim().equals(currentProblem.correctAnswer.trim(), ignoreCase = true)
-                                        if (correct) {
-                                            SoundManager.playCorrect()
-                                            com.example.numera.haptic.HapticManager.playSuccess()
-                                            showParticles = true
-                                            score += 20
-                                            solvedCount++
-                                            correctStreak++
-                                            if (!answeredWrongForCurrent) {
-                                                correctFirstTryCount++
-                                                perfectStreakCount++
-                                                maxPerfectStreak = maxOf(maxPerfectStreak, perfectStreakCount)
-                                            }
-                                        } else {
-                                            SoundManager.playWrong()
-                                            com.example.numera.haptic.HapticManager.playError()
-                                            errorsCount++
-                                            answeredWrongForCurrent = true
-                                            perfectStreakCount = 0
-                                            activeExplanation = currentProblem.explanation
-                                            shakeTrigger++
-
-                                            if (gameMode != "mistakes_practice") {
-                                                scope.launch(Dispatchers.IO) {
-                                                    try {
-                                                        RetrofitClient.apiService.addMistake(
-                                                            token = RetrofitClient.authToken ?: "",
-                                                            request = AddMistakeRequest(
-                                                                category = if (category.isEmpty()) "General" else category,
-                                                                question = currentProblem.question,
-                                                                correct_answer = currentProblem.correctAnswer,
-                                                                options = currentProblem.options,
-                                                                explanation = currentProblem.explanation
-                                                            )
-                                                        )
-                                                    } catch (e: Exception) {
-                                                        Log.e("SoloGame", "Failed to add mistake: ${e.message}")
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        handleAnswer(correct)
                                     }
                                 }
                             )
@@ -1468,46 +1571,7 @@ fun SoloGameScreen(
                                 onClick = {
                                     hasAnswered = true
                                     val correct = typedInput.trim().equals(currentProblem.correctAnswer.trim(), ignoreCase = true)
-                                    if (correct) {
-                                        SoundManager.playCorrect()
-                                        com.example.numera.haptic.HapticManager.playSuccess()
-                                        showParticles = true
-                                        score += 20
-                                        solvedCount++
-                                        correctStreak++
-                                        if (!answeredWrongForCurrent) {
-                                            correctFirstTryCount++
-                                            perfectStreakCount++
-                                            maxPerfectStreak = maxOf(maxPerfectStreak, perfectStreakCount)
-                                        }
-                                    } else {
-                                        SoundManager.playWrong()
-                                        com.example.numera.haptic.HapticManager.playError()
-                                        errorsCount++
-                                        answeredWrongForCurrent = true
-                                        perfectStreakCount = 0
-                                        activeExplanation = currentProblem.explanation
-                                        shakeTrigger++
-
-                                        if (gameMode != "mistakes_practice") {
-                                            scope.launch(Dispatchers.IO) {
-                                                try {
-                                                    RetrofitClient.apiService.addMistake(
-                                                        token = RetrofitClient.authToken ?: "",
-                                                        request = AddMistakeRequest(
-                                                            category = if (category.isEmpty()) "General" else category,
-                                                            question = currentProblem.question,
-                                                            correct_answer = currentProblem.correctAnswer,
-                                                            options = currentProblem.options,
-                                                            explanation = currentProblem.explanation
-                                                        )
-                                                    )
-                                                } catch (e: Exception) {
-                                                    Log.e("SoloGame", "Failed to add mistake: ${e.message}")
-                                                }
-                                            }
-                                        }
-                                    }
+                                    handleAnswer(correct)
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 color = MaterialTheme.colorScheme.primary
@@ -1550,9 +1614,9 @@ fun SoloGameScreen(
                                 MaterialTheme.colorScheme.onBackground
                             }
 
-                            val bottomDepth = 4.dp
+                            val bottomDepth = Spacing.xs
                             val isPressed = remember { mutableStateOf(false) }
-                            val offset = if (isPressed.value && !hasAnswered) bottomDepth else 0.dp
+                            val offset = if (isPressed.value && !hasAnswered) bottomDepth else Spacing.zero
 
                             Box(
                                 modifier = Modifier
@@ -1569,73 +1633,7 @@ fun SoloGameScreen(
                                                     hasAnswered = true
                                                     selectedAnswer = option
                                                     com.example.numera.haptic.HapticManager.playSoft()
-                                                    if (option == currentProblem.correctAnswer) {
-                                                        SoundManager.playCorrect()
-                                                        com.example.numera.haptic.HapticManager.playSuccess()
-                                                        showParticles = true
-                                                        score += 20
-                                                        solvedCount++
-                                                        correctStreak++
-                                                        if (!answeredWrongForCurrent) {
-                                                            correctFirstTryCount++
-                                                            perfectStreakCount++
-                                                            maxPerfectStreak = maxOf(maxPerfectStreak, perfectStreakCount)
-                                                        }
-                                                        
-                                                        if (gameMode == "mistakes_practice" && currentProblemIdx < mistakeIdsList.size) {
-                                                            val mId = mistakeIdsList[currentProblemIdx]
-                                                            scope.launch(Dispatchers.IO) {
-                                                                try {
-                                                                    RetrofitClient.apiService.resolveMistake(
-                                                                        token = RetrofitClient.authToken ?: "",
-                                                                        request = ResolveMistakeRequest(mId)
-                                                                    )
-                                                                } catch (e: Exception) {
-                                                                    Log.e("SoloGame", "Failed to resolve mistake: ${e.message}")
-                                                                }
-                                                            }
-                                                        }
-                                                        
-                                                        if (gameMode == "daily_puzzle") {
-                                                            scope.launch(Dispatchers.IO) {
-                                                                try {
-                                                                    RetrofitClient.apiService.submitDailyPuzzle(
-                                                                        token = RetrofitClient.authToken ?: "",
-                                                                        request = DailyPuzzleSubmitRequest(correct = true)
-                                                                    )
-                                                                } catch (e: Exception) {
-                                                                    Log.e("SoloGame", "Failed to submit daily puzzle: ${e.message}")
-                                                                }
-                                                            }
-                                                        }
-                                                    } else {
-                                                        SoundManager.playWrong()
-                                                        com.example.numera.haptic.HapticManager.playError()
-                                                        errorsCount++
-                                                        answeredWrongForCurrent = true
-                                                        perfectStreakCount = 0
-                                                        activeExplanation = currentProblem.explanation
-                                                        shakeTrigger++
-                                                        
-                                                        if (gameMode != "mistakes_practice") {
-                                                            scope.launch(Dispatchers.IO) {
-                                                                try {
-                                                                    RetrofitClient.apiService.addMistake(
-                                                                        token = RetrofitClient.authToken ?: "",
-                                                                        request = AddMistakeRequest(
-                                                                            category = if (category.isEmpty()) "General" else category,
-                                                                            question = currentProblem.question,
-                                                                            correct_answer = currentProblem.correctAnswer,
-                                                                            options = currentProblem.options,
-                                                                            explanation = currentProblem.explanation
-                                                                        )
-                                                                    )
-                                                                } catch (e: Exception) {
-                                                                    Log.e("SoloGame", "Failed to add mistake: ${e.message}")
-                                                                }
-                                                            }
-                                                        }
-                                                    }
+                                                    handleAnswer(option == currentProblem.correctAnswer)
                                                 }
                                             )
                                         }
@@ -1644,11 +1642,11 @@ fun SoloGameScreen(
                                         if (!hasAnswered) {
                                             drawRoundRect(
                                                 color = depthColor,
-                                                cornerRadius = CornerRadius(16.dp.toPx(), 16.dp.toPx())
+                                                cornerRadius = CornerRadius(Spacing.l.toPx(), Spacing.l.toPx())
                                             )
                                         }
                                     }
-                                    .padding(bottom = if (isPressed.value && !hasAnswered) 0.dp else bottomDepth)
+                                    .padding(bottom = if (isPressed.value && !hasAnswered) Spacing.zero else bottomDepth)
                                     .offset(y = offset)
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(bgColor)
@@ -1656,7 +1654,7 @@ fun SoloGameScreen(
                                         BorderStroke(1.5.dp, outlineColor),
                                         shape = RoundedCornerShape(16.dp)
                                     )
-                                    .padding(16.dp),
+                                    .padding(Spacing.l),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(
@@ -1697,7 +1695,7 @@ fun SoloGameScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Spacing.s))
 
         // Mistake Banner sliding sheet
         AnimatedVisibility(
@@ -1717,7 +1715,7 @@ fun SoloGameScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = Spacing.xs),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = if (correct) CorrectGreen.copy(alpha = 0.08f) else WrongRed.copy(alpha = 0.08f)
@@ -1917,317 +1915,24 @@ fun SoloGameScreen(
             )
         }
 
-        // Slide-up calculator overlay
-        AnimatedVisibility(
+        // Slide-up scientific calculator overlay
+        CalculatorOverlay(
             visible = showCalculator,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.55f)
-                    .clickable(enabled = false) {}
-                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                    .background(MaterialTheme.colorScheme.surface),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "🧮 Calculator",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        IconButton(onClick = { showCalculator = false }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Close")
-                        }
-                    }
-
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(72.dp)
-                            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.End
-                        ) {
-                            Text(
-                                text = calculatorInput.ifEmpty { "0" },
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1
-                            )
-                            if (calculatorResult.isNotEmpty()) {
-                                Text(
-                                    text = "= $calculatorResult",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    maxLines = 1
-                                )
-                            }
-                        }
-                    }
-
-                    val keys = listOf(
-                        listOf("C", "(", ")", "⌫"),
-                        listOf("7", "8", "9", "/"),
-                        listOf("4", "5", "6", "*"),
-                        listOf("1", "2", "3", "-"),
-                        listOf("0", ".", "π", "+"),
-                        listOf("e", "sqrt(", "=", "=")
-                    )
-
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        keys.forEach { row ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                var skipNext = false
-                                row.forEachIndexed { colIdx, key ->
-                                    if (skipNext) {
-                                        skipNext = false
-                                        return@forEachIndexed
-                                    }
-                                    
-                                    val isEquals = key == "="
-                                    val isDouble = isEquals && colIdx < row.size - 1 && row[colIdx + 1] == "="
-                                    
-                                    val weight = if (isDouble) 2f else 1f
-                                    if (isDouble) skipNext = true
-                                    
-                                    val containerColor = when (key) {
-                                        "C" -> WrongRed.copy(alpha = 0.15f)
-                                        "⌫" -> MaterialTheme.colorScheme.secondaryContainer
-                                        "=", "+", "-", "*", "/" -> MaterialTheme.colorScheme.primaryContainer
-                                        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                    }
-                                    val contentColor = when (key) {
-                                        "C" -> WrongRed
-                                        "=", "+", "-", "*", "/" -> MaterialTheme.colorScheme.onPrimaryContainer
-                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                    }
-                                    
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(weight)
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .background(containerColor)
-                                            .clickable {
-                                                com.example.numera.haptic.HapticManager.playSoft()
-                                                when (key) {
-                                                    "C" -> {
-                                                        calculatorInput = ""
-                                                        calculatorResult = ""
-                                                    }
-                                                    "⌫" -> {
-                                                        if (calculatorInput.isNotEmpty()) {
-                                                            calculatorInput = calculatorInput.dropLast(1)
-                                                        }
-                                                    }
-                                                    "=" -> {
-                                                        try {
-                                                            if (calculatorInput.isNotEmpty()) {
-                                                                val res = evaluateExpression(calculatorInput)
-                                                                calculatorResult = if (res % 1.0 == 0.0) res.toInt().toString() else String.format("%.4f", res)
-                                                                if (Math.abs(res - 67.0) < 1e-9) {
-                                                                    logCalculatorTelemetry("67")
-                                                                } else {
-                                                                    logCalculatorTelemetry(calculatorInput)
-                                                                }
-                                                            }
-                                                        } catch (e: Exception) {
-                                                            calculatorResult = "Error"
-                                                        }
-                                                    }
-                                                    else -> {
-                                                        calculatorInput += key
-                                                    }
-                                                }
-                                                
-                                                if (key != "=" && key != "C") {
-                                                    try {
-                                                        if (calculatorInput.isNotEmpty()) {
-                                                            val res = evaluateExpression(calculatorInput)
-                                                            calculatorResult = if (res % 1.0 == 0.0) res.toInt().toString() else String.format("%.4f", res)
-                                                        } else {
-                                                            calculatorResult = ""
-                                                        }
-                                                    } catch (e: Exception) {
-                                                        // ignore invalid expressions mid-typing
-                                                    }
-                                                }
-                                            }
-                                            .padding(vertical = 10.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = key,
-                                            fontSize = 18.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = contentColor
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+            onClose = { showCalculator = false },
+            inputState = calculatorInputState,
+            resultState = calculatorResultState,
+            memoryState = calculatorMemoryState,
+            historyState = calculatorHistoryState,
+            errorState = calcIsErrorState,
+            logTelemetry = { logCalculatorTelemetry(it) },
+        )
 
         // Slide-up tip overlay
-        AnimatedVisibility(
+        TipOverlay(
             visible = showTip,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.55f)
-                    .clickable(enabled = false) {}
-                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                    .background(MaterialTheme.colorScheme.surface),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "💡 Study Tip",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        IconButton(onClick = { showTip = false }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Close")
-                        }
-                    }
-
-                    if (problemsList.isNotEmpty() && currentProblemIdx < problemsList.size) {
-                        val problem = problemsList[currentProblemIdx]
-                        val tipText = problem.tip ?: "Focus on the core concepts shown in the lesson."
-                        
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
-                                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                                .padding(14.dp)
-                        ) {
-                            if (tipText.contains("$") || tipText.contains("\\")) {
-                                MathText(
-                                    text = tipText,
-                                    fontSizePx = 36,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            } else {
-                                Text(
-                                    text = tipText,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-
-                        problem.tipMetadata?.let { metadata ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(1.dp)
-                                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                            )
-                            
-                            Text(
-                                text = "Metadata Details",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                            
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                metadata.concept?.let {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Text("• Concept:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                                        Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
-                                    }
-                                }
-                                metadata.subskill?.let {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Text("• Subskill:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                                        Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
-                                    }
-                                }
-                                metadata.difficulty?.let {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Text("• Difficulty:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                                        Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
-                                    }
-                                }
-                                metadata.learningObjective?.let {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Text("• Objective:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                                        Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
-                                    }
-                                }
-                                metadata.commonMistakes?.let {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Text("• Common Pitfall:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = WrongRed)
-                                        Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        Text(
-                            text = "No active problem to display tips for.",
-                            fontSize = 15.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-            }
-        }
+            onClose = { showTip = false },
+            problem = problemsList.getOrNull(currentProblemIdx),
+        )
     } // Closes the wrapping Box
 
     if (showRetryDialogPrompt) {
@@ -2243,7 +1948,7 @@ fun SoloGameScreen(
             },
             text = {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(Spacing.m)
                 ) {
                     Text(
                         text = "You made 3 mistakes and failed the level.",
@@ -2306,180 +2011,3 @@ fun SoloGameScreen(
     }
 }
 
-enum class ExerciseType {
-    MCQ, TYPED, TIMED
-}
-
-private fun evaluateExpression(expr: String): Double {
-    val cleaned = expr.replace(" ", "")
-                      .replace("π", "pi")
-                      .lowercase()
-    
-    var pos = -1
-    var ch = 0
-
-    fun nextChar() {
-        ch = if (++pos < cleaned.length) cleaned[pos].code else -1
-    }
-
-    fun eat(charToEat: Int): Boolean {
-        while (ch == ' '.code) nextChar()
-        if (ch == charToEat) {
-            nextChar()
-            return true
-        }
-        return false
-    }
-
-    fun parseFactor(): Double {
-        if (eat('+'.code)) return parseFactor() // unary plus
-        if (eat('-'.code)) return -parseFactor() // unary minus
-
-        var x: Double
-        val startPos = pos
-        if (eat('('.code)) { // parentheses
-            // Local function to allow recursion inside parseFactor
-            fun parseExpr(): Double {
-                fun parseTermLocal(): Double {
-                    fun parseFactLocal(): Double {
-                        if (eat('+'.code)) return parseFactLocal()
-                        if (eat('-'.code)) return -parseFactLocal()
-                        var xl: Double
-                        val startPosL = pos
-                        if (eat('('.code)) {
-                            xl = parseExpr()
-                            eat(')'.code)
-                        } else if ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) {
-                            while ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) nextChar()
-                            xl = cleaned.substring(startPosL, pos).toDouble()
-                        } else if (ch >= 'a'.code && ch <= 'z'.code) {
-                            while (ch >= 'a'.code && ch <= 'z'.code) nextChar()
-                            val str = cleaned.substring(startPosL, pos)
-                            if (str == "pi") {
-                                xl = Math.PI
-                            } else if (str == "e") {
-                                xl = Math.E
-                            } else if (str == "sqrt") {
-                                eat('('.code)
-                                xl = Math.sqrt(parseExpr())
-                                eat(')'.code)
-                            } else {
-                                throw RuntimeException("Unknown function/constant: $str")
-                            }
-                        } else {
-                            throw RuntimeException("Unexpected character: " + ch.toChar())
-                        }
-                        return xl
-                    }
-                    var xl = parseFactLocal()
-                    while (true) {
-                        if (eat('*'.code)) xl *= parseFactLocal()
-                        else if (eat('/'.code)) xl /= parseFactLocal()
-                        else return xl
-                    }
-                }
-                var xl = parseTermLocal()
-                while (true) {
-                    if (eat('+'.code)) xl += parseTermLocal()
-                    else if (eat('-'.code)) xl -= parseTermLocal()
-                    else return xl
-                }
-            }
-            x = parseExpr()
-            eat(')'.code)
-        } else if ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) { // numbers
-            while ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) nextChar()
-            x = cleaned.substring(startPos, pos).toDouble()
-        } else if (ch >= 'a'.code && ch <= 'z'.code) { // functions or constants
-            while (ch >= 'a'.code && ch <= 'z'.code) nextChar()
-            val str = cleaned.substring(startPos, pos)
-            if (str == "pi") {
-                x = Math.PI
-            } else if (str == "e") {
-                x = Math.E
-            } else if (str == "sqrt") {
-                eat('('.code)
-                // Local function to allow recursion inside parseFactor
-                fun parseExpr(): Double {
-                    fun parseTermLocal(): Double {
-                        fun parseFactLocal(): Double {
-                            if (eat('+'.code)) return parseFactLocal()
-                            if (eat('-'.code)) return -parseFactLocal()
-                            var xl: Double
-                            val startPosL = pos
-                            if (eat('('.code)) {
-                                xl = parseExpr()
-                                eat(')'.code)
-                            } else if ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) {
-                                while ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) nextChar()
-                                xl = cleaned.substring(startPosL, pos).toDouble()
-                            } else if (ch >= 'a'.code && ch <= 'z'.code) {
-                                while (ch >= 'a'.code && ch <= 'z'.code) nextChar()
-                                val str = cleaned.substring(startPosL, pos)
-                                if (str == "pi") {
-                                    xl = Math.PI
-                                } else if (str == "e") {
-                                    xl = Math.E
-                                } else if (str == "sqrt") {
-                                    eat('('.code)
-                                    xl = Math.sqrt(parseExpr())
-                                    eat(')'.code)
-                                } else {
-                                    throw RuntimeException("Unknown function/constant: $str")
-                                }
-                            } else {
-                                throw RuntimeException("Unexpected character: " + ch.toChar())
-                            }
-                            return xl
-                        }
-                        var xl = parseFactLocal()
-                        while (true) {
-                            if (eat('*'.code)) xl *= parseFactLocal()
-                            else if (eat('/'.code)) xl /= parseFactLocal()
-                            else return xl
-                        }
-                    }
-                    var xl = parseTermLocal()
-                    while (true) {
-                        if (eat('+'.code)) xl += parseTermLocal()
-                        else if (eat('-'.code)) xl -= parseTermLocal()
-                        else return xl
-                    }
-                }
-                x = Math.sqrt(parseExpr())
-                eat(')'.code)
-            } else {
-                throw RuntimeException("Unknown function/constant: $str")
-            }
-        } else {
-            throw RuntimeException("Unexpected character: " + ch.toChar())
-        }
-
-        return x
-    }
-
-    fun parseTerm(): Double {
-        var x = parseFactor()
-        while (true) {
-            if (eat('*'.code)) x *= parseFactor() // multiplication
-            else if (eat('/'.code)) x /= parseFactor() // division
-            else return x
-        }
-    }
-
-    fun parseExpression(): Double {
-        var x = parseTerm()
-        while (true) {
-            if (eat('+'.code)) x += parseTerm() // addition
-            else if (eat('-'.code)) x -= parseTerm() // subtraction
-            else return x
-        }
-    }
-
-    nextChar()
-    val res = parseExpression()
-    if (pos < cleaned.length) {
-        throw RuntimeException("Unexpected character: " + ch.toChar())
-    }
-    return res
-}

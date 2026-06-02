@@ -18,6 +18,7 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.compose.ui.platform.LocalContext
 import com.example.numera.data.network.RetrofitClient
 import com.example.numera.ui.screens.*
+import com.example.numera.ui.feature.game.SoloGameScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

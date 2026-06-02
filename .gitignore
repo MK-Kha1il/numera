@@ -5,6 +5,8 @@ server/*.db-wal
 server/*.db-shm
 server/.env
 server/public/numera.apk
+# Local DB backup snapshots (durability artifacts, not source)
+server/backups/
 
 # ── Android build outputs ────────────────────────────────────────────────────
 android/.gradle/

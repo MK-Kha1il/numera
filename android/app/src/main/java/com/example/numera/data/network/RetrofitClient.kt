@@ -32,6 +32,15 @@ object RetrofitClient {
     lateinit var apiService: ApiService
         private set
 
+    /**
+     * Test seam: inject a fake/mock [ApiService] for JVM (Robolectric) UI tests so screens can be
+     * rendered without a real network/server. Not for production use — `init`/`setBaseUrl` build
+     * the real client.
+     */
+    internal fun setApiServiceForTest(service: ApiService) {
+        apiService = service
+    }
+
     fun init(context: Context) {
         val prefs = context.getSharedPreferences("numera_prefs", Context.MODE_PRIVATE)
         authToken = prefs.getString("auth_token", null)
@@ -93,6 +102,27 @@ object RetrofitClient {
                         .header("Authorization", token)
                         .build()
                 } ?: chain.request()
+                chain.proceed(req)
+            }
+            // Stamp an Idempotency-Key on POST requests so reward-granting calls
+            // (purchase, claim, level-complete, …) are not double-applied if the
+            // request is retried. This is an APPLICATION interceptor, so the key
+            // is generated once per call and reused across OkHttp's automatic
+            // connection-failure retries — the server replays the stored result
+            // instead of granting twice. The server ignores the header on routes
+            // without idempotency mounted, so stamping every POST is harmless.
+            // A call site may set its own key; we only add one when absent.
+            .addInterceptor { chain ->
+                val original = chain.request()
+                val req = if (original.method.equals("POST", ignoreCase = true) &&
+                    original.header("Idempotency-Key") == null
+                ) {
+                    original.newBuilder()
+                        .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
+                        .build()
+                } else {
+                    original
+                }
                 chain.proceed(req)
             }
             // Handle 401 → global logout signal

@@ -108,7 +108,10 @@ data class MathProblem(
     val options: List<String>,
     val explanation: String,
     val tip: String? = null,
-    val tipMetadata: TipMetadata? = null
+    val tipMetadata: TipMetadata? = null,
+    // Declarative interactive-visual spec (JSON string) chosen by the server's
+    // Adaptive Visual Intelligence. Forwarded verbatim to the canvas renderer.
+    val interactiveVisualJson: String? = null
 )
 
 @Serializable
@@ -116,6 +119,39 @@ data class MathExample(
     val question: String,
     val answer: String,
     val explanation: String
+)
+
+// Concept-first lesson sections (server: conceptLessons.js). All optional so
+// legacy lessons without rich content deserialize cleanly to null.
+@Serializable
+data class LessonRepresentation(
+    val kind: String? = null,   // number_line | area_model | real_world | symbolic | balance | grid
+    val label: String = "",
+    val body: String = ""
+)
+
+@Serializable
+data class LessonMistake(
+    val label: String = "",
+    val why: String? = null,
+    val fix: String? = null
+)
+
+@Serializable
+data class LessonConnection(
+    val concept: String? = null,
+    val note: String = ""
+)
+
+@Serializable
+data class LessonSections(
+    val intuitionHook: String? = null,
+    val whatItIs: String? = null,
+    val whyItWorks: String? = null,
+    val whenToUse: String? = null,
+    val representations: List<LessonRepresentation>? = null,
+    val commonMistakes: List<LessonMistake>? = null,
+    val connections: List<LessonConnection>? = null
 )
 
 @Serializable
@@ -126,6 +162,7 @@ data class MathLevelResponse(
     val lessonContent: String? = null,
     val lessonFormula: String? = null,
     val examples: List<MathExample>? = null,
+    val lessonSections: LessonSections? = null,
     val problems: List<MathProblem>
 )
 
@@ -147,18 +184,19 @@ data class LegacyExercise(
 data class ArchiveExercise(
     val id: Int,
     val title: String,
-    val story: String,
+    val story: String = "",
     val question: String,
     val correct_answer: String,
     val options: List<String>,
     val explanation: String,
     val category: String,
-    val stars: Int,
-    val source: String,
+    val stars: Int = 3,
+    val source: String = "Favorites",
     val lessonTitle: String? = null,
     val lessonContent: String? = null,
     val lessonFormula: String? = null,
     val examples: List<MathExample>? = null,
+    val lessonSections: LessonSections? = null,
     val collection_id: Int? = null,
     val tip: String? = null,
     val tipMetadata: TipMetadata? = null
@@ -205,6 +243,7 @@ data class DailyPuzzle(
     val lessonContent: String? = null,
     val lessonFormula: String? = null,
     val examples: List<MathExample>? = null,
+    val lessonSections: LessonSections? = null,
     val tip: String? = null,
     val tipMetadata: TipMetadata? = null
 )
@@ -400,6 +439,7 @@ data class ShopResponse(
     val featuredItems: List<ShopItem>? = null,
     val dailyItems: List<ShopItem>? = null,
     val utilityItems: List<ShopItem>? = null,
+    val catalogItems: List<ShopItem>? = null,
     val utilities: List<UtilityBalance>? = null,
     val expiresInSeconds: Long? = null,
     val featuredExpiresInSeconds: Long? = null,
