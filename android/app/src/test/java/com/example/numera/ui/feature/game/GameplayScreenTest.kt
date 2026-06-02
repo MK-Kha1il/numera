@@ -108,6 +108,22 @@ class GameplayScreenTest {
   }
 
   @Test
+  fun reviewSolution_afterWrongAnswer_opensSolutionDialog() {
+    launchAndAwaitGameplay()
+    compose.onNodeWithText("alpha").performClick()
+    // DuoButton uppercases its label.
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose.onAllNodesWithText("REVIEW SOLUTION").fetchSemanticsNodes().isNotEmpty()
+    }
+    compose.waitForIdle()
+    compose.onNodeWithText("REVIEW SOLUTION").performClick()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose.onAllNodesWithText("💡 SOLUTION BREAKDOWN").fetchSemanticsNodes().isNotEmpty()
+    }
+    compose.onNodeWithText("💡 SOLUTION BREAKDOWN").assertIsDisplayed()
+  }
+
+  @Test
   fun continueAfterCorrect_advancesToSecondProblem() {
     launchAndAwaitGameplay()
     compose.onNodeWithText("bravo").performClick()

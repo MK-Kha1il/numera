@@ -648,87 +648,19 @@ fun SoloGameScreen(
 
     // Review Solution Detailed Modal
     if (showReviewDialog) {
-        AlertDialog(
-            onDismissRequest = { showReviewDialog = false },
-            title = {
-                Text(
-                    text = "💡 SOLUTION BREAKDOWN",
-                    fontWeight = FontWeight.Black,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(Spacing.m),
-                    modifier = Modifier.verticalScroll(rememberScrollState())
-                ) {
-                    Text("Let's analyze the correct logic:", fontWeight = FontWeight.Bold)
-                    
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.05f))
-                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                            .padding(Spacing.m)
-                    ) {
-                        Column {
-                            Text("Question:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                            if (currentProblem.question.contains("$") || currentProblem.question.contains("\\")) {
-                                MathText(text = currentProblem.question, fontSizePx = 30, color = MaterialTheme.colorScheme.onSurface)
-                            } else {
-                                Text(text = currentProblem.question, fontWeight = FontWeight.Bold)
-                            }
-                            
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text("Correct Answer:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                            Text(text = currentProblem.correctAnswer, fontWeight = FontWeight.ExtraBold, color = CorrectGreen)
-                        }
-                    }
-
-                    if (!currentProblem.explanation.isNullOrEmpty()) {
-                        Text("Explanation:", fontWeight = FontWeight.Bold)
-                        if (currentProblem.explanation.contains("$") || currentProblem.explanation.contains("\\")) {
-                            MathText(text = currentProblem.explanation, fontSizePx = 28, color = MaterialTheme.colorScheme.onSurface)
-                        } else {
-                            Text(text = currentProblem.explanation, fontSize = 14.sp)
-                        }
-                    } else {
-                        Text("Work step-by-step to isolate the variables and evaluate the expression.", fontSize = 14.sp)
-                    }
-
-                    Spacer(modifier = Modifier.height(Spacing.s))
-                    Text("💡 Tip: Retry the question to lock in the logic!", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+        ReviewSolutionDialog(
+            problem = currentProblem,
+            onRetry = {
+                showReviewDialog = false
+                hasAnswered = false
+                selectedAnswer = ""
+                typedInput = ""
+                activeExplanation = null
+                if (currentExerciseType == ExerciseType.TIMED) {
+                    timeLeft = 20f
                 }
             },
-            confirmButton = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
-                ) {
-                    DuoButton(
-                        text = "Retry Exercise",
-                        onClick = {
-                            showReviewDialog = false
-                            hasAnswered = false
-                            selectedAnswer = ""
-                            typedInput = ""
-                            activeExplanation = null
-                            if (currentExerciseType == ExerciseType.TIMED) {
-                                timeLeft = 20f
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        color = CorrectGreen
-                    )
-                    DuoButton(
-                        text = "Close",
-                        onClick = { showReviewDialog = false },
-                        modifier = Modifier.weight(0.8f),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            }
+            onDismiss = { showReviewDialog = false },
         )
     }
 
