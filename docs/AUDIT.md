@@ -16,12 +16,16 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
   `LocalCommandPalette` mounts. Its 7 screens, shop sub-composables, dialogs and helpers were
   moved **verbatim** into `ui/feature/{dashboard,archive,arena,social,shop,profile,settings}/`
   + `ui/dialogs/`, one screen per commit, each gated by a green `assembleDebug`.
-- 🟡 **`SoloGameScreen.kt` relocated to `ui/feature/game/`** and its self-contained helpers
-  extracted (`CalcEngine.kt`, `ExerciseType.kt`, `LessonComponents.kt`; 2,806 → 2,657 lines).
-  The main `SoloGameScreen` composable itself is still a single ~2,600-line function with ~30
-  intertwined hoisted state vars + inline calculator/whiteboard/tip overlays — carving it into
-  `LessonScreen`/`GameplayScreen`/`RecapScreen` is a **behavior-changing** refactor deferred
-  until there is a UI/Compose test net (too risky to do blind under the compiler alone).
+- 🟡 **`SoloGameScreen.kt` relocated to `ui/feature/game/`** and decomposed in safe slices
+  (2,806 → **2,239 lines**): self-contained helpers (`CalcEngine.kt`, `ExerciseType.kt`,
+  `LessonComponents.kt`) + the two cleanly-separable overlays — `CalculatorOverlay.kt` (state
+  hoisted: kept in the parent as `MutableState`, re-delegated with `by` so input/memory/history
+  still persist across open/close) and `TipOverlay.kt` (read-only; takes the active
+  `MathProblem?`). Each was a behavior-preserving move, gated by `assembleDebug`. **Still
+  monolithic:** the lesson→gameplay→recap `AnimatedContent` + retry dialogs (~2k lines, ~30
+  intertwined hoisted state vars). Splitting *those* into `LessonScreen`/`GameplayScreen`/
+  `RecapScreen` is the genuinely behavior-changing part — deferred until a Compose/Robolectric
+  test net exists (needs `ApiService` made injectable first; too risky blind under the compiler).
 
 ## 2. Folder structure
 - ✅ Server: `config.js`, `middleware/`, `lib/`, `services/`, `routes/`, `test/` — clear
@@ -134,10 +138,11 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
 1. ✅ Split `server.js` routes into `routes/<domain>` (test net guarded each move).
 2. ✅ Split `MainTabsScreen.kt` into `ui/feature/<domain>/` + `ui/dialogs/` (606-line shell
    remains); `SoloGameScreen.kt` relocated to `feature/game/` with helpers extracted.
-3. **Add a Compose/UI test net (Robolectric or instrumented), then** carve the ~2,600-line
-   `SoloGameScreen` composable into `LessonScreen`/`GameplayScreen`/`RecapScreen` + overlay
-   composables and de-dup the 3× `handleAnswer` — deferred until tests exist (state-hoisting
-   refactor the compiler can't fully guard).
+3. SoloGameScreen carve-up: ✅ the self-contained overlays are out (CalculatorOverlay,
+   TipOverlay; 2,806 → 2,239). ⬜ Remaining = the lesson→gameplay→recap `AnimatedContent` +
+   retry dialogs + de-dup the 3× `handleAnswer`. **Add a Compose/Robolectric test net first**
+   (make `ApiService` injectable) — that part is a real state-hoisting refactor the compiler
+   can't fully guard.
 4. ✅ Design-token migration (raw `dp`/shape → `theme/` tokens) DONE across the split screens.
    ⬜ Remaining: optional `Color`-literal → token pass + recomposition-hygiene pass.
 5. ✅ Structured logger DONE; ✅ ownership-check pass DONE (profile_private fix); ✅ client
