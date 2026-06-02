@@ -98,13 +98,20 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
   allow-list (was wide open). 🟢 Already strong: bcrypt, stateful JWT sessions, layered rate
   limiting + brute-force protection, 10KB body cap, parameterized SQL, security headers,
   audit logging, idempotent transactional economy. Full picture in Security.md.
-- ⬜ Per-route ownership-check audit for any `:userId`/resource-id routes (spot-check during
-  the route split).
+- ✅ **Per-route ownership audit DONE.** Every `:userId`/resource-id route scopes its SQL to
+  `req.user.id` (library collections/favorites, rating explanation, engine concept, friends
+  accept, shop, account, …) — no IDOR. The one gap found + fixed: `profile_private` was
+  settable but enforced nowhere, so `GET /api/user/:userId` exposed a user's profile even
+  after they went private. Now own-profile is always viewable; others' private profiles return
+  403 `{ private: true }`. Smoke test added (`npm test` 22 → 23).
 
 ## 15. Logging & observability
-- 🟢 Security events go to `security_audit_logs`. ⬜ Replace ad-hoc `console.*` (~40 sites)
-  with a structured leveled logger (`server/logger.js`) — deferred (churny, low risk, low
-  verification value until routes are split).
+- 🟢 Security events go to `security_audit_logs`.
+- ✅ **Structured leveled logger added** (`server/logger.js`): console-compatible, `LOG_LEVEL`
+  gating (error<warn<info<debug; JSON lines in prod, readable in dev; Error args expanded;
+  error/warn→stderr). Replaced ~53 runtime `console.*` sites across server.js, config, db,
+  migrations, idempotency, middleware/security, userService, routes/{engine,math,account,auth},
+  and knowledgeIngestion. CLI tools (`backup.js`, `seed_users.js`) keep `console` by design.
 
 ## 16. Documentation
 - ✅ Created `CLAUDE.md` + `docs/{Architecture,Security,DataFlow,MathEngine,ProgressionSystem,
@@ -130,4 +137,6 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
    refactor the compiler can't fully guard).
 4. ✅ Design-token migration (raw `dp`/shape → `theme/` tokens) DONE across the split screens.
    ⬜ Remaining: optional `Color`-literal → token pass + recomposition-hygiene pass.
-5. Structured logger; client fetch parallelization; ownership-check pass; achievement chains.
+5. ✅ Structured logger DONE; ✅ ownership-check pass DONE (profile_private fix).
+   ⬜ Remaining: client game-load fetch parallelization (3 sequential calls → `async`);
+   achievement progression chains (a feature, out of stabilization scope).
