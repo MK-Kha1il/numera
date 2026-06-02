@@ -90,8 +90,11 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
   verified backups all in place. No action needed.
 
 ## 13. Performance
-- 🟢 Hot reads cached (`cache.js`); economy paths transactional. ⬜ Parallelize the 3
-  sequential client fetches on game load (`async`); recomposition hygiene during the split.
+- 🟢 Hot reads cached (`cache.js`); economy paths transactional.
+- ✅ **Client game-load fetches parallelized**: SoloGameScreen already fanned out its 3 loads
+  (favorites/profile/shop) via `coroutineScope { async }`; DuelGameScreen's independent
+  profile+favorites loads were sequential and are now concurrent too (join waits on max, not
+  sum). ⬜ Remaining: recomposition-hygiene pass over the split screens.
 
 ## 14. Security
 - ✅ `JWT_SECRET` now **required in production** (was silently ephemeral). ✅ CORS locked to an
@@ -137,6 +140,6 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
    refactor the compiler can't fully guard).
 4. ✅ Design-token migration (raw `dp`/shape → `theme/` tokens) DONE across the split screens.
    ⬜ Remaining: optional `Color`-literal → token pass + recomposition-hygiene pass.
-5. ✅ Structured logger DONE; ✅ ownership-check pass DONE (profile_private fix).
-   ⬜ Remaining: client game-load fetch parallelization (3 sequential calls → `async`);
-   achievement progression chains (a feature, out of stabilization scope).
+5. ✅ Structured logger DONE; ✅ ownership-check pass DONE (profile_private fix); ✅ client
+   game-load fetch parallelization DONE (Solo already fanned out; Duel now concurrent).
+   ⬜ Remaining: recomposition-hygiene pass; achievement chains (a feature, out of scope).
