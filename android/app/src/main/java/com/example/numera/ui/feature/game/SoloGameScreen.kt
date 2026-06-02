@@ -1,4 +1,4 @@
-﻿package com.example.numera.ui.screens
+package com.example.numera.ui.feature.game
 
 import android.util.Log
 import androidx.compose.animation.*
