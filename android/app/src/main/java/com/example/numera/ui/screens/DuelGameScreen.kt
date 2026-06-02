@@ -43,6 +43,8 @@ import com.example.numera.data.network.SocketClient
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -88,14 +90,17 @@ fun DuelGameScreen(
         }
 
         try {
-            val profile = withContext(Dispatchers.IO) {
-                RetrofitClient.apiService.getProfile(RetrofitClient.authToken ?: "")
+            // Profile and favorites are independent — fetch them concurrently so the duel
+            // join isn't gated on two sequential round-trips (max latency, not sum).
+            val token = RetrofitClient.authToken ?: ""
+            coroutineScope {
+                val profileDeferred = async(Dispatchers.IO) { RetrofitClient.apiService.getProfile(token) }
+                val favsDeferred = async(Dispatchers.IO) { RetrofitClient.apiService.getFavorites(token) }
+                val profile = profileDeferred.await()
+                val favs = favsDeferred.await()
+                myUserId = profile.id
+                favoritedQuestions = favs.map { it.question }.toSet()
             }
-            myUserId = profile.id
-            val favs = withContext(Dispatchers.IO) {
-                RetrofitClient.apiService.getFavorites(RetrofitClient.authToken ?: "")
-            }
-            favoritedQuestions = favs.map { it.question }.toSet()
         } catch (e: Exception) {
             Log.e("DuelGame", "Profile/favorites fetch err: ${e.message}")
         }
