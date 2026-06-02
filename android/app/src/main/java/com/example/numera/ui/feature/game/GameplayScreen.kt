@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -346,6 +347,7 @@ fun GameplayScreen(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(Spacing.s)
+                    .testTag("favorite-toggle")
             ) {
                 com.example.numera.ui.components.NumeraIcon(
                     type = com.example.numera.ui.components.NumeraIconType.Favorite,
@@ -355,105 +357,68 @@ fun GameplayScreen(
             }
 
             if (showSaveDialog) {
-                androidx.compose.ui.window.Dialog(onDismissRequest = { showSaveDialog = false }) {
-                    androidx.compose.material3.Card(
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
-                            Text("Exercise Options", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
-
-                            // Save this question
-                            val isSaved = isFav
-                            androidx.compose.material3.OutlinedButton(
-                                onClick = {
-                                    showSaveDialog = false
-                                    val nextFavState = !isSaved
-                                    favoritedQuestions = if (nextFavState)
-                                        favoritedQuestions + currentProblem.question
-                                    else favoritedQuestions - currentProblem.question
-                                    scope.launch(Dispatchers.IO) {
-                                        try {
-                                            val token = RetrofitClient.authToken ?: ""
-                                            RetrofitClient.apiService.toggleFavorite(token,
-                                                com.example.numera.data.network.ToggleFavoriteRequest(
-                                                    title = if (isLegacyPuzzle) "Archive Exercise" else "Level $level Exercise",
-                                                    category = category,
-                                                    question = currentProblem.question,
-                                                    correct_answer = currentProblem.correctAnswer,
-                                                    options = currentProblem.options,
-                                                    explanation = currentProblem.explanation
-                                                ))
-                                        } catch (e: Exception) {
-                                            Log.e("SoloGame", "Failed to toggle favorite: ${e.message}")
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text(if (isSaved) "❤️  Unsave This Question" else "❤️  Save This Question", fontWeight = FontWeight.Bold)
-                            }
-
-                            // Save entire level
-                            androidx.compose.material3.Button(
-                                onClick = {
-                                    showSaveDialog = false
-                                    scope.launch(Dispatchers.IO) {
-                                        try {
-                                            val token = RetrofitClient.authToken ?: ""
-                                            problemsList.forEach { prob ->
-                                                try {
-                                                    RetrofitClient.apiService.toggleFavorite(token,
-                                                        com.example.numera.data.network.ToggleFavoriteRequest(
-                                                            title = "Level $level Exercise",
-                                                            category = category,
-                                                            question = prob.question,
-                                                            correct_answer = prob.correctAnswer,
-                                                            options = prob.options,
-                                                            explanation = prob.explanation
-                                                        ))
-                                                } catch (_: Exception) {}
-                                            }
-                                            withContext(Dispatchers.Main) {
-                                                favoritedQuestions = favoritedQuestions + problemsList.map { it.question }.toSet()
-                                            }
-                                        } catch (e: Exception) {
-                                            Log.e("SoloGame", "Failed to save level: ${e.message}")
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                            ) {
-                                Text("📁  Save Entire Level", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
-                            }
-
-                            // Retry this exercise
-                            androidx.compose.material3.Button(
-                                onClick = {
-                                    showSaveDialog = false
-                                    hasAnswered = false
-                                    selectedAnswer = ""
-                                    typedInput = ""
-                                    activeExplanation = null
-                                    answeredWrongForCurrent = false
-                                    com.example.numera.haptic.HapticManager.playSoft()
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                            ) {
-                                Text("🔄  Retry This Exercise", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
-                            }
-
-                            TextButton(onClick = { showSaveDialog = false }, modifier = Modifier.align(Alignment.End)) {
-                                Text("Cancel")
+                SaveOptionsDialog(
+                    isSaved = isFav,
+                    onToggleFavorite = {
+                        showSaveDialog = false
+                        val nextFavState = !isFav
+                        favoritedQuestions = if (nextFavState)
+                            favoritedQuestions + currentProblem.question
+                        else favoritedQuestions - currentProblem.question
+                        scope.launch(Dispatchers.IO) {
+                            try {
+                                val token = RetrofitClient.authToken ?: ""
+                                RetrofitClient.apiService.toggleFavorite(token,
+                                    com.example.numera.data.network.ToggleFavoriteRequest(
+                                        title = if (isLegacyPuzzle) "Archive Exercise" else "Level $level Exercise",
+                                        category = category,
+                                        question = currentProblem.question,
+                                        correct_answer = currentProblem.correctAnswer,
+                                        options = currentProblem.options,
+                                        explanation = currentProblem.explanation
+                                    ))
+                            } catch (e: Exception) {
+                                Log.e("SoloGame", "Failed to toggle favorite: ${e.message}")
                             }
                         }
-                    }
-                }
+                    },
+                    onSaveLevel = {
+                        showSaveDialog = false
+                        scope.launch(Dispatchers.IO) {
+                            try {
+                                val token = RetrofitClient.authToken ?: ""
+                                problemsList.forEach { prob ->
+                                    try {
+                                        RetrofitClient.apiService.toggleFavorite(token,
+                                            com.example.numera.data.network.ToggleFavoriteRequest(
+                                                title = "Level $level Exercise",
+                                                category = category,
+                                                question = prob.question,
+                                                correct_answer = prob.correctAnswer,
+                                                options = prob.options,
+                                                explanation = prob.explanation
+                                            ))
+                                    } catch (_: Exception) {}
+                                }
+                                withContext(Dispatchers.Main) {
+                                    favoritedQuestions = favoritedQuestions + problemsList.map { it.question }.toSet()
+                                }
+                            } catch (e: Exception) {
+                                Log.e("SoloGame", "Failed to save level: ${e.message}")
+                            }
+                        }
+                    },
+                    onRetryExercise = {
+                        showSaveDialog = false
+                        hasAnswered = false
+                        selectedAnswer = ""
+                        typedInput = ""
+                        activeExplanation = null
+                        answeredWrongForCurrent = false
+                        com.example.numera.haptic.HapticManager.playSoft()
+                    },
+                    onDismiss = { showSaveDialog = false },
+                )
             }
 
             if (showFavoriteTooltip) {

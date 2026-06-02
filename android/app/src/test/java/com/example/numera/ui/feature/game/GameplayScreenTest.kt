@@ -3,6 +3,7 @@ package com.example.numera.ui.feature.game
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.example.numera.data.network.ApiService
@@ -161,6 +162,17 @@ class GameplayScreenTest {
       compose.onAllNodesWithText(q1).fetchSemanticsNodes().isNotEmpty()
     }
     compose.onNodeWithText(q1).assertIsDisplayed()
+  }
+
+  @Test
+  fun favoriteButton_opensSaveOptionsDialog() {
+    launchAndAwaitGameplay()
+    compose.onNodeWithTag("favorite-toggle").performClick()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose.onAllNodesWithText("Exercise Options").fetchSemanticsNodes().isNotEmpty()
+    }
+    compose.onNodeWithText("Exercise Options").assertIsDisplayed()
+    compose.onNodeWithText("📁  Save Entire Level").assertIsDisplayed()
   }
 
   /**
