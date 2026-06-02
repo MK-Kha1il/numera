@@ -1,5 +1,6 @@
 package com.example.numera.ui.components
 
+import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,6 +44,11 @@ fun MathText(
     AndroidView(
         factory = { context ->
             WebView(context).apply {
+                // Software layer: the hardware (GPU) WebView render path crashes with a native
+                // SIGSEGV in libhwui's Skia-GL pipeline on emulated GPUs (e.g. BlueStacks). KaTeX
+                // here is static math, so software rendering has no meaningful perf cost and is the
+                // standard workaround for these libhwui WebView crashes.
+                setLayerType(View.LAYER_TYPE_SOFTWARE, null)
                 settings.apply {
                     javaScriptEnabled = true
                     domStorageEnabled = true
