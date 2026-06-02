@@ -118,16 +118,16 @@ fun ArenaScreen(
     ) {
         if (matchmakingMode != null) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(24.dp),
+                modifier = Modifier.fillMaxSize().padding(Spacing.xl),
                 contentAlignment = Alignment.Center
             ) {
                 DuoCard(
                     modifier = Modifier.fillMaxWidth().wrapContentHeight()
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(Spacing.xl),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.l)
                     ) {
                         com.example.numera.ui.components.MathIconSpinner()
 
@@ -158,7 +158,7 @@ fun ArenaScreen(
                             textAlign = TextAlign.Center
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(Spacing.l))
 
                         DuoButton(
                             text = "Cancel Search",
@@ -173,16 +173,16 @@ fun ArenaScreen(
             }
         } else if (friendLobbyState == "create") {
             Box(
-                modifier = Modifier.fillMaxSize().padding(24.dp),
+                modifier = Modifier.fillMaxSize().padding(Spacing.xl),
                 contentAlignment = Alignment.Center
             ) {
                 DuoCard(
                     modifier = Modifier.fillMaxWidth().wrapContentHeight()
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(Spacing.xl),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.l)
                     ) {
                         Text(
                             text = "FRIEND LOBBY CREATED",
@@ -220,7 +220,7 @@ fun ArenaScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(Spacing.l))
 
                         DuoButton(
                             text = "Cancel Lobby",
@@ -236,16 +236,16 @@ fun ArenaScreen(
             }
         } else if (friendLobbyState == "join_input" || friendLobbyState == "join") {
             Box(
-                modifier = Modifier.fillMaxSize().padding(24.dp),
+                modifier = Modifier.fillMaxSize().padding(Spacing.xl),
                 contentAlignment = Alignment.Center
             ) {
                 DuoCard(
                     modifier = Modifier.fillMaxWidth().wrapContentHeight()
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(Spacing.xl),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.l)
                     ) {
                         Text(
                             text = "JOIN FRIEND LOBBY",
@@ -278,7 +278,7 @@ fun ArenaScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(Spacing.s))
 
                         DuoButton(
                             text = "Join Lobby",
@@ -305,16 +305,16 @@ fun ArenaScreen(
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.fillMaxSize().padding(Spacing.l),
+                verticalArrangement = Arrangement.spacedBy(Spacing.l)
             ) {
                 // Player Stats Header
                 item {
                     DuoCard(modifier = Modifier.fillMaxWidth()) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(Spacing.l),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.l)
                         ) {
                             RankBadge(
                                 rankName = user?.rank,
@@ -336,7 +336,7 @@ fun ArenaScreen(
                                     color = MaterialTheme.colorScheme.primary
                                 )
 
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(Spacing.xs))
 
                                 val matches = user?.competitive_matches ?: 0
                                 val wins = user?.arena_wins ?: 0
@@ -359,7 +359,7 @@ fun ArenaScreen(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = Spacing.s)
                     )
                 }
 
@@ -370,8 +370,8 @@ fun ArenaScreen(
                         borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                     ) {
                         Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier.padding(Spacing.l),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -408,8 +408,8 @@ fun ArenaScreen(
                         borderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
                     ) {
                         Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier.padding(Spacing.l),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -447,8 +447,8 @@ fun ArenaScreen(
                         borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
                     ) {
                         Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier.padding(Spacing.l),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -471,7 +471,7 @@ fun ArenaScreen(
                             }
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                             ) {
                                 DuoButton(
                                     text = "Create Room",

@@ -96,8 +96,8 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(Spacing.l),
+            verticalArrangement = Arrangement.spacedBy(Spacing.l)
         ) {
             item {
                 Text(
@@ -110,15 +110,15 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     text = "Exchange your Math Coins earned from levels and duels for visual upgrades and utilities.",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                    modifier = Modifier.padding(vertical = 4.dp)
+                    modifier = Modifier.padding(vertical = Spacing.xs)
                 )
             }
 
             if (isShopLoading) {
                 item {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.l)) {
                         LessonCardSkeleton()
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
                             ShopItemSkeleton()
                             ShopItemSkeleton()
                         }
@@ -138,11 +138,11 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     rarity = "Legendary",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp)
+                        .padding(vertical = Spacing.xs)
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -181,7 +181,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp),
+                            .padding(vertical = Spacing.xs),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -201,7 +201,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                         }
                         if (user?.xp_booster_uses_left != null && user.xp_booster_uses_left > 0) {
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(CornerRadius.m),
                                 color = Color(0xFFFFD700).copy(alpha = 0.2f),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFD700))
                             ) {
@@ -225,7 +225,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                         color = WrongRed,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        modifier = Modifier.padding(horizontal = Spacing.s)
                     )
                 }
             }
@@ -256,7 +256,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
             featuredItems.firstOrNull()?.let { heroItem ->
                 item {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.s),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -290,7 +290,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
             if (dailyItems.isNotEmpty()) {
                 item {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = Spacing.s),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -328,7 +328,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                         fontWeight = FontWeight.Black,
                         fontSize = 14.sp,
                         color = Color.White,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = Spacing.s)
                     )
                 }
 
@@ -349,7 +349,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 16.dp)
+                            .padding(top = Spacing.l)
                             .clickable {
                                 com.example.numera.haptic.HapticManager.playSoft()
                                 showFullCatalog = !showFullCatalog
@@ -377,7 +377,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                             text = "Browse and buy any cosmetic directly — no waiting for the rotation.",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                            modifier = Modifier.padding(bottom = 4.dp)
+                            modifier = Modifier.padding(bottom = Spacing.xs)
                         )
                     }
 
@@ -385,7 +385,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     item {
                         Row(
                             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
                             val types = listOf(null to "All", "avatar" to "Avatars", "banner" to "Banners", "badge" to "Badges", "theme" to "Themes")
                             types.forEach { (typeVal, label) ->
@@ -395,7 +395,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                                         .clip(RoundedCornerShape(20.dp))
                                         .background(if (isSel) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.08f))
                                         .clickable { catalogTypeFilter = typeVal }
-                                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                                        .padding(horizontal = 14.dp, vertical = Spacing.s)
                                 ) {
                                     Text(
                                         text = label,
@@ -474,7 +474,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.l)
                     ) {
                         Box(
                             modifier = Modifier

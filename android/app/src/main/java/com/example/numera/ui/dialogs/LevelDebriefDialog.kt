@@ -225,13 +225,13 @@ fun LevelDebriefDialog(
         DuoCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(Spacing.l),
             borderColor = startColor
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
+                    .padding(Spacing.s),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Header with Subject Tag & Close button
@@ -242,9 +242,9 @@ fun LevelDebriefDialog(
                 ) {
                     Box(
                         modifier = Modifier
-                            .background(startColor.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
-                            .border(1.dp, startColor, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .background(startColor.copy(alpha = 0.15f), RoundedCornerShape(CornerRadius.s))
+                            .border(1.dp, startColor, RoundedCornerShape(CornerRadius.s))
+                            .padding(horizontal = Spacing.s, vertical = Spacing.xs)
                     ) {
                         Text(
                             text = debrief.categoryName.uppercase(),
@@ -261,7 +261,7 @@ fun LevelDebriefDialog(
                             com.example.numera.haptic.HapticManager.playSoft()
                             onDismissRequest()
                         },
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(IconSize.m)
                     ) {
                         com.example.numera.ui.components.NumeraIcon(
                             type = com.example.numera.ui.components.NumeraIconType.Close,
@@ -270,7 +270,7 @@ fun LevelDebriefDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Spacing.l))
 
                 // Title
                 Text(
@@ -281,7 +281,7 @@ fun LevelDebriefDialog(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(Spacing.xs))
 
                 // Level indicator
                 Text(
@@ -292,20 +292,20 @@ fun LevelDebriefDialog(
                     letterSpacing = 1.sp
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Spacing.l))
 
                 // ELO Difficulty Badge
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(CornerRadius.m))
                         .padding(horizontal = 14.dp, vertical = 10.dp)
                 ) {
                     com.example.numera.ui.components.NumeraIcon(
                         type = com.example.numera.ui.components.NumeraIconType.Arena,
                         tint = startColor,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(IconSize.s)
                     )
                     Text(
                         text = "Target ELO: ${debrief.eloRating}",
@@ -337,19 +337,19 @@ fun LevelDebriefDialog(
                     letterSpacing = 0.5.sp
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Spacing.s))
 
                 // Concepts List
                 Row(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     debrief.concepts.forEach { concept ->
                         Box(
                             modifier = Modifier
-                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(CornerRadius.s))
+                                .padding(horizontal = 10.dp, vertical = Spacing.xs)
                         ) {
                             Text(
                                 text = concept,

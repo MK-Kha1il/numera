@@ -74,7 +74,7 @@ fun WeeklyActivityChart(activityDays: List<ActivityDay>) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = Spacing.l, vertical = Spacing.s),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -112,9 +112,9 @@ fun WeeklyActivityChart(activityDays: List<ActivityDay>) {
                 }
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(CornerRadius.m))
                         .background(primary.copy(alpha = 0.12f))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .padding(horizontal = Spacing.m, vertical = 6.dp)
                 ) {
                     Text(
                         text = "🔥 $totalSolved",
@@ -130,16 +130,16 @@ fun WeeklyActivityChart(activityDays: List<ActivityDay>) {
             // Summary stat chips
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s)
             ) {
                 @Composable
                 fun StatChip(label: String, value: String, accent: Color, modifier: Modifier) {
                     Column(
                         modifier = modifier
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(CornerRadius.m))
                             .background(accent.copy(alpha = 0.08f))
-                            .border(1.dp, accent.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                            .padding(vertical = 8.dp),
+                            .border(1.dp, accent.copy(alpha = 0.2f), RoundedCornerShape(CornerRadius.m))
+                            .padding(vertical = Spacing.s),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(value, fontSize = 16.sp, fontWeight = FontWeight.Black, color = accent)
@@ -214,7 +214,7 @@ fun WeeklyActivityChart(activityDays: List<ActivityDay>) {
                     val left = x
                     val right = x + barWidth
                     val bottom = topPadding + chartHeight
-                    val rx = 8.dp.toPx()
+                    val rx = Spacing.s.toPx()
 
                     // Track (faint full-height capsule behind the bar)
                     val trackPath = Path().apply {

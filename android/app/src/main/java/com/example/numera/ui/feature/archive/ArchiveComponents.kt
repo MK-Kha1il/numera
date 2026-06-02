@@ -133,7 +133,7 @@ fun LevelNode(
                             imageVector = Icons.Default.Lock,
                             contentDescription = "Locked",
                             tint = contentColor,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(IconSize.m)
                         )
                     } else if (isActive) {
                         Icon(
@@ -165,7 +165,7 @@ fun LevelNode(
                         shape = RoundedCornerShape(6.dp)
                     )
                     .border(1.dp, Color.White.copy(alpha = 0.6f), shape = RoundedCornerShape(6.dp))
-                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                    .padding(horizontal = Spacing.s, vertical = 2.dp)
             ) {
                 Text(
                     text = "START",
@@ -207,7 +207,7 @@ fun StageHeaderCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 24.dp)
+            .padding(horizontal = 20.dp, vertical = Spacing.xl)
             .background(
                 brush = Brush.horizontalGradient(
                     colors = listOf(
@@ -215,7 +215,7 @@ fun StageHeaderCard(
                         endColor.copy(alpha = 0.05f)
                     )
                 ),
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(CornerRadius.xl)
             )
             .border(
                 width = 1.5.dp,
@@ -225,13 +225,13 @@ fun StageHeaderCard(
                         endColor.copy(alpha = 0.2f)
                     )
                 ),
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(CornerRadius.xl)
             )
             .padding(20.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(Spacing.l)
         ) {
             Box(
                 contentAlignment = Alignment.Center,
@@ -241,7 +241,7 @@ fun StageHeaderCard(
                         brush = Brush.verticalGradient(
                             colors = listOf(startColor, endColor)
                         ),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(CornerRadius.l)
                     )
             ) {
                 Text(
@@ -260,7 +260,7 @@ fun StageHeaderCard(
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 1.5.sp
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(Spacing.xs))
                 Text(
                     text = description,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),

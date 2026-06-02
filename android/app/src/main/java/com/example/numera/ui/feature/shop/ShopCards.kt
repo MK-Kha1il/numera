@@ -141,8 +141,8 @@ fun RarityCardFrame(
     val borderBrush = getRarityBorderBrush(rarity)
     
     val elevation = when (rarity.lowercase()) {
-        "mythic" -> 12.dp
-        "legendary" -> 8.dp
+        "mythic" -> Spacing.m
+        "legendary" -> Spacing.s
         "epic" -> 6.dp
         else -> 2.dp
     }
@@ -152,9 +152,9 @@ fun RarityCardFrame(
             .border(
                 width = if (rarity.lowercase() in listOf("mythic", "legendary")) 2.dp else 1.dp,
                 brush = borderBrush,
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(CornerRadius.l)
             ),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(CornerRadius.l),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF161622).copy(alpha = 0.85f)
         ),
@@ -172,7 +172,7 @@ fun RarityCardFrame(
                     )
             )
             
-            Box(modifier = Modifier.padding(12.dp)) {
+            Box(modifier = Modifier.padding(Spacing.m)) {
                 content()
             }
             
@@ -244,7 +244,7 @@ fun HeroShowcasePanel(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(vertical = Spacing.xs)
             .border(2.dp, rarityColor.copy(alpha = 0.7f), RoundedCornerShape(20.dp)),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2E).copy(alpha = 0.95f))
@@ -260,9 +260,9 @@ fun HeroShowcasePanel(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(Spacing.l),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(Spacing.m)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -281,7 +281,7 @@ fun HeroShowcasePanel(
                             com.example.numera.haptic.HapticManager.playSoft()
                             onDismissShowcase()
                         },
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(IconSize.m)
                     ) {
                         com.example.numera.ui.components.NumeraIcon(
                             type = com.example.numera.ui.components.NumeraIconType.Close,
@@ -294,7 +294,7 @@ fun HeroShowcasePanel(
                     modifier = Modifier
                         .size(140.dp)
                         .graphicsLayer {
-                            translationY = 4.dp.toPx() * kotlin.math.sin(rotation * Math.PI / 180).toFloat()
+                            translationY = Spacing.xs.toPx() * kotlin.math.sin(rotation * Math.PI / 180).toFloat()
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -313,9 +313,9 @@ fun HeroShowcasePanel(
                     Box(
                         modifier = Modifier
                             .size(100.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(CornerRadius.l))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .border(2.dp, rarityColor, RoundedCornerShape(16.dp)),
+                            .border(2.dp, rarityColor, RoundedCornerShape(CornerRadius.l)),
                         contentAlignment = Alignment.Center
                     ) {
                         when (item.type) {
@@ -356,7 +356,7 @@ fun HeroShowcasePanel(
                     )
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
                         Text(
                             text = (item.rarity ?: "Common").uppercase(),
@@ -383,12 +383,12 @@ fun HeroShowcasePanel(
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                    modifier = Modifier.padding(horizontal = Spacing.s)
                 )
                 
                 if (item.required_rank != null) {
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(CornerRadius.s),
                         color = (if (isLocked) WrongRed else CorrectGreen).copy(alpha = 0.1f),
                         border = androidx.compose.foundation.BorderStroke(1.dp, if (isLocked) WrongRed else CorrectGreen)
                     ) {
@@ -449,7 +449,7 @@ fun HeroShowcasePanel(
                     ) {
                         if (item.discountActive == true && item.originalCost != null) {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.s),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
@@ -460,7 +460,7 @@ fun HeroShowcasePanel(
                                 )
                                 Box(
                                     modifier = Modifier
-                                        .background(WrongRed, RoundedCornerShape(4.dp))
+                                        .background(WrongRed, RoundedCornerShape(Spacing.xs))
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
                                     Text(
@@ -545,14 +545,14 @@ fun FeaturedShopItemCard(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(Spacing.l)
         ) {
             Box(
                 modifier = Modifier
                     .size(80.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(CornerRadius.m))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .border(1.dp, rarityColor.copy(alpha = 0.5f), RoundedCornerShape(12.dp)),
+                    .border(1.dp, rarityColor.copy(alpha = 0.5f), RoundedCornerShape(CornerRadius.m)),
                 contentAlignment = Alignment.Center
             ) {
                 when (item.type) {
@@ -587,7 +587,7 @@ fun FeaturedShopItemCard(
                     fontSize = 11.sp,
                     color = rarityColor
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(Spacing.xs))
                 Text(
                     text = item.description ?: "",
                     fontSize = 12.sp,
@@ -606,8 +606,8 @@ fun FeaturedShopItemCard(
                     )
                     Box(
                         modifier = Modifier
-                            .background(WrongRed, RoundedCornerShape(4.dp))
-                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                            .background(WrongRed, RoundedCornerShape(Spacing.xs))
+                            .padding(horizontal = Spacing.xs, vertical = 2.dp)
                     ) {
                         Text(
                             text = "OFFER",
@@ -618,7 +618,7 @@ fun FeaturedShopItemCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(Spacing.xs))
 
                 if (isEquipped) {
                     Text(
@@ -691,7 +691,7 @@ fun ShopHeroCard(
                 .fillMaxWidth()
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(Spacing.l)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -736,7 +736,7 @@ fun ShopHeroCard(
                             .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                             Text("🔒", fontSize = 32.sp)
                             Text("Rank locked", fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f))
                         }
@@ -746,7 +746,7 @@ fun ShopHeroCard(
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs)
             ) {
                 Text(
                     text = item.name,
@@ -761,7 +761,7 @@ fun ShopHeroCard(
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 12.dp)
+                        modifier = Modifier.padding(horizontal = Spacing.m)
                     )
                 }
             }
@@ -778,7 +778,7 @@ fun ShopHeroCard(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         style = TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(Spacing.s))
                 }
 
                 if (isEquipped) {
@@ -836,14 +836,14 @@ fun DailyShopItemCard(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(Spacing.m)
         ) {
             Box(
                 modifier = Modifier
                     .size(54.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(CornerRadius.s))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .border(1.dp, rarityColor.copy(alpha = 0.3f), RoundedCornerShape(8.dp)),
+                    .border(1.dp, rarityColor.copy(alpha = 0.3f), RoundedCornerShape(CornerRadius.s)),
                 contentAlignment = Alignment.Center
             ) {
                 when (item.type) {
@@ -942,12 +942,12 @@ fun UtilityShopItemCard(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(Spacing.m)
         ) {
             Box(
                 modifier = Modifier
                     .size(54.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(CornerRadius.s))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {

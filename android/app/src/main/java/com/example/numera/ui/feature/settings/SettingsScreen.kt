@@ -156,7 +156,7 @@ fun SettingsScreen(
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Box(
                                         modifier = Modifier
-                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), RoundedCornerShape(Spacing.xs))
                                             .clickable {
                                                 prefs.edit().putBoolean("tooltip_haptics_dismissed", true).apply()
                                                 showHapticsTooltip = false
@@ -180,13 +180,13 @@ fun SettingsScreen(
                         )
                     }
                     if (showHapticsTooltip) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(Spacing.xs))
                         Text(
                             text = "💡 Tactical vibration confirms correct actions, achievements, and clicks. Tap 'Info ?' to dismiss.",
                             fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 4.dp)
+                            modifier = Modifier.padding(horizontal = Spacing.xs)
                         )
                     }
                 }
@@ -213,9 +213,9 @@ fun SettingsScreen(
                         )
                     }
                     if (!isSoundMuted) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(Spacing.s))
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xs),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("Vol: ${(soundVolume * 100).toInt()}%", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), modifier = Modifier.width(55.dp))
@@ -289,7 +289,7 @@ fun SettingsScreen(
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Box(
                                         modifier = Modifier
-                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), RoundedCornerShape(Spacing.xs))
                                             .clickable {
                                                 prefs.edit().putBoolean("tooltip_motion_dismissed", true).apply()
                                                 showMotionTooltip = false
@@ -312,13 +312,13 @@ fun SettingsScreen(
                         )
                     }
                     if (showMotionTooltip) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(Spacing.xs))
                         Text(
                             text = "💡 Reduced motion simplifies tab transition fades and eliminates particle bursts. Tap 'Info ?' to dismiss.",
                             fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 4.dp)
+                            modifier = Modifier.padding(horizontal = Spacing.xs)
                         )
                     }
                 }
@@ -367,7 +367,7 @@ fun SettingsScreen(
             },
             SearchableSettingItem("Change Username", "Change your game display name", "profile account edit name tags details") {
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { showUsernameDialog = true }.padding(vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { showUsernameDialog = true }.padding(vertical = Spacing.xs),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -380,7 +380,7 @@ fun SettingsScreen(
             },
             SearchableSettingItem("Email Management", "Configure registered recovery email address", "account recovery security email details") {
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { showEmailDialog = true }.padding(vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { showEmailDialog = true }.padding(vertical = Spacing.xs),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -393,7 +393,7 @@ fun SettingsScreen(
             },
             SearchableSettingItem("Active Sessions", "Audit devices connected to your credentials", "security logs logins active sessions device list") {
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { showSessionsDialog = true }.padding(vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { showSessionsDialog = true }.padding(vertical = Spacing.xs),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -406,7 +406,7 @@ fun SettingsScreen(
             },
             SearchableSettingItem("Security Activity Log", "Review login logs and credential events", "audit telemetry logins history security list") {
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { showLogsDialog = true }.padding(vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { showLogsDialog = true }.padding(vertical = Spacing.xs),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -553,13 +553,13 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(bottom = 32.dp)
+            .padding(bottom = Spacing.xxl)
     ) {
         // Toolbar Bar Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 8.dp, bottom = 12.dp, start = 12.dp, end = 16.dp),
+                .padding(top = Spacing.s, bottom = Spacing.m, start = Spacing.m, end = Spacing.l),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = {
@@ -571,7 +571,7 @@ fun SettingsScreen(
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(Spacing.xs))
             Text(
                 text = "Settings",
                 fontSize = 22.sp,
@@ -584,7 +584,7 @@ fun SettingsScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
+                .padding(horizontal = Spacing.l, vertical = 6.dp)
         ) {
             OutlinedTextField(
                 value = searchQuery,
@@ -603,7 +603,7 @@ fun SettingsScreen(
                             com.example.numera.ui.components.NumeraIcon(
                                 type = com.example.numera.ui.components.NumeraIconType.Close,
                                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(IconSize.s)
                             )
                         }
                     }
@@ -629,24 +629,24 @@ fun SettingsScreen(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                modifier = Modifier.padding(horizontal = Spacing.xl, vertical = Spacing.s)
             )
             if (filteredSettings.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    modifier = Modifier.fillMaxWidth().padding(Spacing.xxl),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("No settings matched your search query.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 13.sp)
                 }
             } else {
                 Card(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+                    shape = RoundedCornerShape(CornerRadius.l),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        modifier = Modifier.padding(Spacing.l),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.l)
                     ) {
                         filteredSettings.forEachIndexed { index, item ->
                             item.content()
@@ -661,22 +661,22 @@ fun SettingsScreen(
             // Grouped Category Mode
 
             // 1. QUICK PREFERENCES ROW (At the top)
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+            Column(modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)) {
                 Text(
                     text = "Quick Preferences",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
+                    modifier = Modifier.padding(start = Spacing.s, bottom = 6.dp)
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                 ) {
                     // Dark Mode compact
                     Card(
                         modifier = Modifier.weight(1f).height(65.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(CornerRadius.m),
                         onClick = {
                             ThemeManager.isDarkMode = !ThemeManager.isDarkMode
                             ThemeManager.saveSettings(context)
@@ -704,7 +704,7 @@ fun SettingsScreen(
                     // Haptics compact
                     Card(
                         modifier = Modifier.weight(1f).height(65.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(CornerRadius.m),
                         onClick = {
                             val nextVal = !com.example.numera.haptic.HapticManager.isEnabled
                             com.example.numera.haptic.HapticManager.isEnabled = nextVal
@@ -733,7 +733,7 @@ fun SettingsScreen(
                     // Quick Mute compact
                     Card(
                         modifier = Modifier.weight(1f).height(65.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(CornerRadius.m),
                         onClick = {
                             val nextMute = !isSoundMuted
                             isSoundMuted = nextMute
@@ -762,22 +762,22 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Spacing.m))
 
             // 2. ACCOUNT SECTION CARD
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+                shape = RoundedCornerShape(CornerRadius.l),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(modifier = Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         com.example.numera.ui.components.NumeraIcon(
                             type = com.example.numera.ui.components.NumeraIconType.Profile,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Spacing.s))
                         Text("Account settings", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
@@ -793,7 +793,7 @@ fun SettingsScreen(
                     // Password Changing block
                     var showPasswordSection by remember { mutableStateOf(false) }
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showPasswordSection = !showPasswordSection }.padding(vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { showPasswordSection = !showPasswordSection }.padding(vertical = Spacing.xs),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -824,9 +824,9 @@ fun SettingsScreen(
                                 visualTransformation = PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(CornerRadius.m)
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(Spacing.s))
                             OutlinedTextField(
                                 value = newPassword,
                                 onValueChange = { newPassword = it },
@@ -835,9 +835,9 @@ fun SettingsScreen(
                                 visualTransformation = PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(CornerRadius.m)
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(Spacing.s))
                             OutlinedTextField(
                                 value = confirmPassword,
                                 onValueChange = { confirmPassword = it },
@@ -846,7 +846,7 @@ fun SettingsScreen(
                                 visualTransformation = PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(CornerRadius.m)
                             )
                             pwStatusMsg?.let { msg ->
                                 Spacer(modifier = Modifier.height(6.dp))
@@ -907,7 +907,7 @@ fun SettingsScreen(
                                 },
                                 enabled = !pwIsLoading,
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(CornerRadius.m)
                             ) {
                                 if (pwIsLoading) {
                                     CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
@@ -928,22 +928,22 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Spacing.m))
 
             // 3. GAMEPLAY SECTION CARD
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+                shape = RoundedCornerShape(CornerRadius.l),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(modifier = Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         com.example.numera.ui.components.NumeraIcon(
                             type = com.example.numera.ui.components.NumeraIconType.Arena,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Spacing.s))
                         Text("Gameplay options", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
@@ -965,15 +965,15 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Spacing.m))
 
             // 4. APPEARANCE SECTION CARD
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+                shape = RoundedCornerShape(CornerRadius.l),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(modifier = Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         com.example.numera.ui.components.NumeraIcon(
                             type = com.example.numera.ui.components.NumeraIconType.Settings,
@@ -981,7 +981,7 @@ fun SettingsScreen(
                             modifier = Modifier.size(20.dp),
                             animate = false
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Spacing.s))
                         Text("Appearance & themes", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
@@ -989,7 +989,7 @@ fun SettingsScreen(
                     // Accent theme equip blocks
                     Text("🎨 Equipped Theme Accent", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     Text("Unlock and choose your math identity", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Spacing.xs))
                     
                     val themesList = listOf(
                         "duolingo" to "Duo",
@@ -1013,7 +1013,7 @@ fun SettingsScreen(
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
-                                        .clip(RoundedCornerShape(8.dp))
+                                        .clip(RoundedCornerShape(CornerRadius.s))
                                         .background(if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
                                         .clickable {
                                             scope.launch(Dispatchers.IO) {
@@ -1033,7 +1033,7 @@ fun SettingsScreen(
                                                 }
                                             }
                                         }
-                                        .padding(vertical = 8.dp),
+                                        .padding(vertical = Spacing.s),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
@@ -1064,22 +1064,22 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Spacing.m))
 
             // 5. NOTIFICATIONS CARD
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+                shape = RoundedCornerShape(CornerRadius.l),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(modifier = Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         com.example.numera.ui.components.NumeraIcon(
                             type = com.example.numera.ui.components.NumeraIconType.Notification,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Spacing.s))
                         Text("Granular notification control", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
@@ -1106,22 +1106,22 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Spacing.m))
 
             // 6. PRIVACY & SECURITY CARD
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+                shape = RoundedCornerShape(CornerRadius.l),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(modifier = Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         com.example.numera.ui.components.NumeraIcon(
                             type = com.example.numera.ui.components.NumeraIconType.Lock,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Spacing.s))
                         Text("Privacy & Security controls", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
@@ -1175,14 +1175,14 @@ fun SettingsScreen(
                             shape = RoundedCornerShape(10.dp)
                         ) {
                             if (exportLoading) {
-                                CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+                                CircularProgressIndicator(modifier = Modifier.size(IconSize.s), color = Color.White, strokeWidth = 2.dp)
                             } else {
                                 Text("Export", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
                     if (exportFinished) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(Spacing.xs))
                         Text(
                             text = "✅ File exported to: $exportFilePath",
                             fontSize = 10.sp,
@@ -1214,29 +1214,29 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Spacing.m))
 
             // 7. HELP & SUPPORT CARD (Visual Placeholders)
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+                shape = RoundedCornerShape(CornerRadius.l),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(modifier = Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         com.example.numera.ui.components.NumeraIcon(
                             type = com.example.numera.ui.components.NumeraIconType.Warning,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Spacing.s))
                         Text("Help & Support", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
                     // FAQ row
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showFaqDialog = true }.padding(vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { showFaqDialog = true }.padding(vertical = Spacing.xs),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1250,7 +1250,7 @@ fun SettingsScreen(
 
                     // Contact row
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showContactDialog = true }.padding(vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { showContactDialog = true }.padding(vertical = Spacing.xs),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1264,7 +1264,7 @@ fun SettingsScreen(
 
                     // Report bug row
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showBugDialog = true }.padding(vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { showBugDialog = true }.padding(vertical = Spacing.xs),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1278,7 +1278,7 @@ fun SettingsScreen(
 
                     // Feature Request row
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showFeatureDialog = true }.padding(vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { showFeatureDialog = true }.padding(vertical = Spacing.xs),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1292,7 +1292,7 @@ fun SettingsScreen(
 
                     // Community Guidelines row
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showGuidelinesDialog = true }.padding(vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { showGuidelinesDialog = true }.padding(vertical = Spacing.xs),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1305,22 +1305,22 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Spacing.m))
 
             // 8. ABOUT CARD (At the bottom, low visual priority)
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+                shape = RoundedCornerShape(CornerRadius.l),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(modifier = Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         com.example.numera.ui.components.NumeraIcon(
                             type = com.example.numera.ui.components.NumeraIconType.Learn,
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Spacing.s))
                         Text("About Numera", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
                     
@@ -1335,7 +1335,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Privacy Policy", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
 
@@ -1344,7 +1344,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Terms of Service", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
 
@@ -1353,21 +1353,21 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Credits & Contributors", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Spacing.l))
 
             // Logout Button
             Button(
                 onClick = onLogout,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(CornerRadius.m),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = Spacing.l)
                     .height(50.dp)
             ) {
                 Text("Log Out Account", color = Color.White, fontWeight = FontWeight.Bold)
@@ -1390,14 +1390,14 @@ fun SettingsScreen(
             onDismissRequest = { if (!isLoading) showUsernameDialog = false },
             title = { Text("Change Username", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                     Text("Your username is how friends identify you in duels.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     OutlinedTextField(
                         value = newUsername,
                         onValueChange = { newUsername = it },
                         label = { Text("New Username") },
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(CornerRadius.m),
                         modifier = Modifier.fillMaxWidth()
                     )
                     statusMsg?.let { msg ->
@@ -1444,7 +1444,7 @@ fun SettingsScreen(
                         }
                     },
                     enabled = !isLoading,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(CornerRadius.m)
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
@@ -1476,7 +1476,7 @@ fun SettingsScreen(
             onDismissRequest = { if (!isLoading) showEmailDialog = false },
             title = { Text("Email Management", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                     if (!showVerifyInput) {
                         Text("Link your email address to recover your account.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         OutlinedTextField(
@@ -1484,7 +1484,7 @@ fun SettingsScreen(
                             onValueChange = { emailText = it },
                             label = { Text("Email Address") },
                             singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(CornerRadius.m),
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
@@ -1497,7 +1497,7 @@ fun SettingsScreen(
                             onValueChange = { codeText = it },
                             label = { Text("Verification Code") },
                             singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(CornerRadius.m),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -1556,7 +1556,7 @@ fun SettingsScreen(
                         }
                     },
                     enabled = !isLoading,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(CornerRadius.m)
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
@@ -1616,10 +1616,10 @@ fun SettingsScreen(
             text = {
                 Column(
                     modifier = Modifier.fillMaxWidth().height(260.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(Spacing.s)
                 ) {
                     Text("Revoking a session will immediately force that device to log out.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Spacing.xs))
                     if (loadingSessions) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator()
@@ -1627,7 +1627,7 @@ fun SettingsScreen(
                     } else {
                         Column(
                             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
                             sessionsList.forEach { session ->
                                 val deviceName = if (session.user_agent.contains("Mozilla")) "Web Browser" else "Mobile App"
@@ -1648,8 +1648,8 @@ fun SettingsScreen(
                                                     Spacer(modifier = Modifier.width(6.dp))
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(CorrectGreen, RoundedCornerShape(4.dp))
-                                                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                                                            .background(CorrectGreen, RoundedCornerShape(Spacing.xs))
+                                                            .padding(horizontal = Spacing.xs, vertical = 2.dp)
                                                     ) {
                                                         Text("CURRENT", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                                     }
@@ -1676,7 +1676,7 @@ fun SettingsScreen(
                                                     }
                                                 },
                                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                                                shape = RoundedCornerShape(8.dp),
+                                                shape = RoundedCornerShape(CornerRadius.s),
                                                 modifier = Modifier.height(28.dp).padding(horizontal = 2.dp)
                                             ) {
                                                 Text("Revoke", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
@@ -1724,10 +1724,10 @@ fun SettingsScreen(
             text = {
                 Column(
                     modifier = Modifier.fillMaxWidth().height(280.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(Spacing.s)
                 ) {
                     Text("A transparent record of security events related to your profile credentials.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Spacing.xs))
                     if (loadingLogs) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator()
@@ -1735,7 +1735,7 @@ fun SettingsScreen(
                     } else {
                         Column(
                             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
                             if (logsList.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -1759,7 +1759,7 @@ fun SettingsScreen(
                                                     .format(java.util.Date(log.timestamp * 1000))
                                                 Text(logDate, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                                             }
-                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Spacer(modifier = Modifier.height(Spacing.xs))
                                             Text(log.details, fontSize = 11.sp)
                                             Text("Origin IP: ${log.ip_address}", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                                         }
@@ -1812,7 +1812,7 @@ fun SettingsScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     enabled = !deleteIsLoading,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(CornerRadius.m)
                 ) {
                     if (deleteIsLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
@@ -1869,7 +1869,7 @@ fun SettingsScreen(
             onDismissRequest = { showContactDialog = false },
             title = { Text("Contact Support", fontWeight = FontWeight.Bold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                     if (!submitted) {
                         Text("Submit a ticket directly to our development team.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         OutlinedTextField(
@@ -1919,7 +1919,7 @@ fun SettingsScreen(
             onDismissRequest = { showBugDialog = false },
             title = { Text("Report a Bug", fontWeight = FontWeight.Bold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                     if (!submitted) {
                         Text("Let us know about errors in math generation, UI glitches, or freezes.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         OutlinedTextField(
@@ -1996,7 +1996,7 @@ fun SettingsScreen(
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(Spacing.s)
                 ) {
                     Text("1. Academic Honesty: Use scratchpads for solving, do not use external equation solvers during ranked Arena matches.", fontSize = 12.sp)
                     Text("2. Respectful Behavior: Maintain clean profiles. Verbal toxicity in lobbies will result in chat bans.", fontSize = 12.sp)

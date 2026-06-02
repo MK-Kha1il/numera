@@ -51,7 +51,7 @@ fun NotificationsDialog(
         modifier = Modifier
             .fillMaxWidth(0.92f)
             .wrapContentHeight()
-            .clip(RoundedCornerShape(24.dp)),
+            .clip(RoundedCornerShape(CornerRadius.xl)),
         confirmButton = {},
         title = {
             Row(
@@ -94,7 +94,7 @@ fun NotificationsDialog(
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
                         items(notifications) { item ->
                             val isUnread = item.read_state == 0
@@ -109,16 +109,16 @@ fun NotificationsDialog(
                                             onMarkSingleRead(item.id)
                                         }
                                     },
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(CornerRadius.l),
                                 colors = CardDefaults.cardColors(containerColor = cardBg),
                                 border = BorderStroke(1.dp, cardBorder)
                             ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(12.dp),
+                                        .padding(Spacing.m),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                                 ) {
                                     Box(
                                         modifier = Modifier

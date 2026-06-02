@@ -194,7 +194,7 @@ fun DashboardScreen(
                     accent = MaterialTheme.colorScheme.secondary
                 ) { onNavigateTab(1) }
             ),
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            modifier = Modifier.padding(horizontal = Spacing.l, vertical = Spacing.m)
         )
 
         AnimatedContent(
@@ -217,12 +217,12 @@ fun DashboardScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(Spacing.l),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.l)
                 ) {
                 item {
                     DuoCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(8.dp)) {
+                        Column(modifier = Modifier.padding(Spacing.s)) {
                             Text(
                                 text = "Daily Challenges",
                                 fontSize = 18.sp,
@@ -233,7 +233,7 @@ fun DashboardScreen(
                                 text = "Complete objectives every day to earn coins and experience points.",
                                 fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.padding(vertical = 4.dp)
+                                modifier = Modifier.padding(vertical = Spacing.xs)
                             )
                         }
                     }
@@ -241,7 +241,7 @@ fun DashboardScreen(
 
                 if (sortedQuests.isEmpty()) {
                     item {
-                        SkeletonList(count = 3, modifier = Modifier.padding(top = 8.dp)) {
+                        SkeletonList(count = 3, modifier = Modifier.padding(top = Spacing.s)) {
                             AchievementSkeleton()
                         }
                     }
@@ -252,9 +252,9 @@ fun DashboardScreen(
                             borderColor = if (quest.current >= quest.target && quest.claimed == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                         ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(4.dp),
+                                modifier = Modifier.fillMaxWidth().padding(Spacing.xs),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                             ) {
                                 val icon = when (quest.type) {
                                     "solve" -> "✏️"
@@ -296,7 +296,7 @@ fun DashboardScreen(
                                         isCompleted = quest.current >= quest.target
                                     )
 
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(Spacing.xs))
 
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -312,7 +312,7 @@ fun DashboardScreen(
 
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                                         ) {
                                             Text(
                                                 text = "🪙 ${quest.rewardCoins}  ⭐ ${quest.rewardXp} XP",
@@ -376,8 +376,8 @@ fun DashboardScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(Spacing.l),
+                verticalArrangement = Arrangement.spacedBy(Spacing.m)
             ) {
                 val leagueEmoji = when (currentDivision) {
                     "Bronze" -> "🪵"
@@ -391,9 +391,9 @@ fun DashboardScreen(
                 item {
                     DuoCard(modifier = Modifier.fillMaxWidth()) {
                         Column(
-                            modifier = Modifier.padding(4.dp),
+                            modifier = Modifier.padding(Spacing.xs),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
                             Text(
                                 text = "$leagueEmoji $currentDivision League",
@@ -424,7 +424,7 @@ fun DashboardScreen(
                 val standings = leagueLeaderboard?.standings ?: emptyList()
                 if (standings.isEmpty()) {
                     item {
-                        SkeletonList(count = 4, modifier = Modifier.padding(top = 8.dp)) {
+                        SkeletonList(count = 4, modifier = Modifier.padding(top = Spacing.s)) {
                             LeaderboardRowSkeleton()
                         }
                     }
@@ -457,13 +457,13 @@ fun DashboardScreen(
                             backgroundColor = itemBgColor
                         ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(4.dp),
+                                modifier = Modifier.fillMaxWidth().padding(Spacing.xs),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                                 ) {
                                     Text(
                                         text = "#${index + 1}",
@@ -480,7 +480,7 @@ fun DashboardScreen(
                                     MathAvatar(
                                         avatarKey = competitor.avatar,
                                         modifier = Modifier
-                                            .size(32.dp)
+                                            .size(IconSize.l)
                                             .clip(CircleShape)
                                             .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), CircleShape),
                                         fallbackEmoji = when (competitor.avatar) {
@@ -520,13 +520,13 @@ fun DashboardScreen(
 
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                                 ) {
                                     when {
                                         isPromo -> {
                                             Box(
                                                 modifier = Modifier
-                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .clip(RoundedCornerShape(CornerRadius.s))
                                                     .background(CorrectGreen.copy(alpha = 0.15f))
                                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                                             ) {
@@ -536,7 +536,7 @@ fun DashboardScreen(
                                         isDemo -> {
                                             Box(
                                                 modifier = Modifier
-                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .clip(RoundedCornerShape(CornerRadius.s))
                                                     .background(WrongRed.copy(alpha = 0.15f))
                                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                                             ) {
@@ -561,15 +561,15 @@ fun DashboardScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(Spacing.l),
+                verticalArrangement = Arrangement.spacedBy(Spacing.m)
             ) {
                 item {
                     DuoCard(modifier = Modifier.fillMaxWidth()) {
                         Column(
-                            modifier = Modifier.padding(12.dp),
+                            modifier = Modifier.padding(Spacing.m),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
                             Text(
                                 text = "🌍 Global Leaderboard",
@@ -590,7 +590,7 @@ fun DashboardScreen(
 
                 if (globalLoading) {
                     item {
-                        NumeraPremiumLoader(cardPadding = 16.dp)
+                        NumeraPremiumLoader(cardPadding = Spacing.l)
                     }
                 } else if (globalLeaderboard.isEmpty()) {
                     item {
@@ -614,13 +614,13 @@ fun DashboardScreen(
                             backgroundColor = itemBgColor
                         ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(4.dp),
+                                modifier = Modifier.fillMaxWidth().padding(Spacing.xs),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                                 ) {
                                     Text(
                                         text = "#${index + 1}",
@@ -637,7 +637,7 @@ fun DashboardScreen(
                                     MathAvatar(
                                         avatarKey = globalUser.avatar,
                                         modifier = Modifier
-                                            .size(32.dp)
+                                            .size(IconSize.l)
                                             .clip(CircleShape)
                                             .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), CircleShape)
                                     )

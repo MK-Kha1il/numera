@@ -104,15 +104,15 @@ fun CommitmentStatusDialog(
         DuoCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(Spacing.l),
             borderColor = MaterialTheme.colorScheme.primary
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(Spacing.l),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(Spacing.l)
             ) {
                 if (loading) {
                     CircularProgressIndicator(modifier = Modifier.size(40.dp))
@@ -120,7 +120,7 @@ fun CommitmentStatusDialog(
                 } else if (restorationMessage != null) {
                     Text("✨ Restore Success ✨", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Text(restorationMessage!!, textAlign = TextAlign.Center)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Spacing.s))
                     DuoButton(
                         text = "Continue",
                         onClick = {
@@ -167,7 +167,7 @@ fun CommitmentStatusDialog(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
                         TextButton(
                             onClick = {
@@ -227,7 +227,7 @@ fun CommitmentStatusDialog(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
                         Card(modifier = Modifier.weight(1f)) {
                             Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -245,7 +245,7 @@ fun CommitmentStatusDialog(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
                         Card(modifier = Modifier.weight(1f)) {
                             Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -271,7 +271,7 @@ fun CommitmentStatusDialog(
                     }
 
                     if (state == "fading") {
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(Spacing.xs))
                         Text(
                             text = "Choose your recovery route:",
                             fontSize = 12.sp,

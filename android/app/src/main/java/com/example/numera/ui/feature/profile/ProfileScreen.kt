@@ -170,7 +170,7 @@ fun ProfileScreen(
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(start = 24.dp)
+                    .padding(start = Spacing.xl)
                     .size(88.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surface)
@@ -190,60 +190,60 @@ fun ProfileScreen(
             text = user?.username ?: "Math Explorer",
             fontSize = 26.sp,
             fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = Spacing.xl, vertical = Spacing.xs)
         )
         Text(
             text = user?.active_badge ?: "Apprentice Solver",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.padding(horizontal = 24.dp)
+            modifier = Modifier.padding(horizontal = Spacing.xl)
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Spacing.m))
 
         TabRow(
             selectedTabIndex = selectedSubTab,
             containerColor = MaterialTheme.colorScheme.background,
             contentColor = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = Spacing.l, vertical = Spacing.s)
         ) {
             Tab(selected = selectedSubTab == 0, onClick = { selectedSubTab = 0 }) {
-                Text("Stats", modifier = Modifier.padding(vertical = 12.dp), fontWeight = FontWeight.Bold)
+                Text("Stats", modifier = Modifier.padding(vertical = Spacing.m), fontWeight = FontWeight.Bold)
             }
             Tab(selected = selectedSubTab == 1, onClick = { selectedSubTab = 1 }) {
-                Text("Achievements", modifier = Modifier.padding(vertical = 12.dp), fontWeight = FontWeight.Bold)
+                Text("Achievements", modifier = Modifier.padding(vertical = Spacing.m), fontWeight = FontWeight.Bold)
             }
             Tab(selected = selectedSubTab == 2, onClick = { selectedSubTab = 2 }) {
-                Text("Friends", modifier = Modifier.padding(vertical = 12.dp), fontWeight = FontWeight.Bold)
+                Text("Friends", modifier = Modifier.padding(vertical = Spacing.m), fontWeight = FontWeight.Bold)
             }
             Tab(selected = selectedSubTab == 3, onClick = { selectedSubTab = 3 }) {
-                Text("Saved", modifier = Modifier.padding(vertical = 12.dp), fontWeight = FontWeight.Bold)
+                Text("Saved", modifier = Modifier.padding(vertical = Spacing.m), fontWeight = FontWeight.Bold)
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Spacing.s))
 
         if (selectedSubTab == 0) {
             // Progress Stats Grid (2x2)
             Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.m)
         ) {
             Card(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(CornerRadius.l),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("⭐ XP Gained", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Spacing.xs))
                     Text("${user?.xp ?: 0}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Card(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(CornerRadius.l),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -255,7 +255,7 @@ fun ProfileScreen(
                     ) {
                         RankBadge(
                             rankName = user?.rank ?: "Bronze III",
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(IconSize.m)
                         )
                         Text(
                             text = user?.rank ?: "Bronze III",
@@ -267,29 +267,29 @@ fun ProfileScreen(
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.m)
         ) {
             Card(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(CornerRadius.l),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("✨ Climb Run", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Spacing.xs))
                     Text("${user?.streak ?: 0} Days", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     Text("Max climb: ${user?.max_streak ?: 0}d", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontWeight = FontWeight.Medium)
                 }
             }
             Card(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(CornerRadius.l),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("🪙 Coins & Habits", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Spacing.xs))
                     Text("${user?.coins ?: 0}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     Text("Consistency: ${((user?.consistency_index ?: 0f) * 100).toInt()}%", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontWeight = FontWeight.Medium)
                 }
@@ -298,21 +298,21 @@ fun ProfileScreen(
 
         // ── INVENTORY CUSTOMIZER ──
         Card(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+            shape = RoundedCornerShape(CornerRadius.l),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(Spacing.l)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("🎒", fontSize = 20.sp)
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(Spacing.s))
                     Text("Inventory & Customizer", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                 }
                 Text("Equip your owned avatars, banners, and badges.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Spacing.m))
 
                 if (inventoryLoading) {
-                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(Spacing.l), contentAlignment = Alignment.Center) {
                         com.example.numera.ui.components.MathIconSpinner(modifier = Modifier.size(40.dp))
                     }
                 } else {
@@ -330,7 +330,7 @@ fun ProfileScreen(
                             Spacer(modifier = Modifier.height(6.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                             ) {
                                 ownedAvatars.forEach { item ->
                                     val isEquipped = user?.avatar == item.value
@@ -338,11 +338,11 @@ fun ProfileScreen(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         modifier = Modifier
                                             .width(72.dp)
-                                            .clip(RoundedCornerShape(12.dp))
+                                            .clip(RoundedCornerShape(CornerRadius.m))
                                             .border(
                                                 2.dp,
                                                 if (isEquipped) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                                RoundedCornerShape(12.dp)
+                                                RoundedCornerShape(CornerRadius.m)
                                             )
                                             .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
                                             .clickable {
@@ -363,10 +363,10 @@ fun ProfileScreen(
                                                     }
                                                 }
                                             }
-                                            .padding(8.dp)
+                                            .padding(Spacing.s)
                                     ) {
                                         MathAvatar(avatarKey = item.value, modifier = Modifier.size(40.dp), fontSize = 24.sp)
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Spacer(modifier = Modifier.height(Spacing.xs))
                                         Text(
                                             text = item.name.replace(" Avatar", ""),
                                             fontSize = 9.sp,
@@ -381,7 +381,7 @@ fun ProfileScreen(
                                     }
                                 }
                             }
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(Spacing.m))
                         }
 
                         // ── Owned Banners ──
@@ -395,11 +395,11 @@ fun ProfileScreen(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .clip(RoundedCornerShape(12.dp))
+                                            .clip(RoundedCornerShape(CornerRadius.m))
                                             .border(
                                                 2.dp,
                                                 if (isEquipped) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                                                RoundedCornerShape(12.dp)
+                                                RoundedCornerShape(CornerRadius.m)
                                             )
                                             .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
                                             .clickable {
@@ -428,14 +428,14 @@ fun ProfileScreen(
                                             Text(item.name, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                         }
                                         if (isEquipped) {
-                                            Text("Active ✓", fontSize = 11.sp, color = CorrectGreen, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 12.dp))
+                                            Text("Active ✓", fontSize = 11.sp, color = CorrectGreen, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = Spacing.m))
                                         } else {
-                                            Text("Equip", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 12.dp))
+                                            Text("Equip", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = Spacing.m))
                                         }
                                     }
                                 }
                             }
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(Spacing.m))
                         }
 
                         // ── Owned Badges ──
@@ -445,17 +445,17 @@ fun ProfileScreen(
                             Spacer(modifier = Modifier.height(6.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                             ) {
                                 ownedBadges.forEach { item ->
                                     val isEquipped = user?.active_badge == item.value
                                     Box(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(12.dp))
+                                            .clip(RoundedCornerShape(CornerRadius.m))
                                             .border(
                                                 2.dp,
                                                 if (isEquipped) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                                RoundedCornerShape(12.dp)
+                                                RoundedCornerShape(CornerRadius.m)
                                             )
                                             .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
                                             .clickable {
@@ -497,7 +497,7 @@ fun ProfileScreen(
                         }
 
                         equipStatusMsg?.let { msg ->
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(Spacing.s))
                             Text(msg, color = CorrectGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
@@ -509,11 +509,11 @@ fun ProfileScreen(
 
         // Commitment Archive Card
         Card(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+            shape = RoundedCornerShape(CornerRadius.l),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(Spacing.l)) {
                 Text(
                     text = "Commitment Archive",
                     fontSize = 16.sp,
@@ -524,7 +524,7 @@ fun ProfileScreen(
                     text = "A collection of milestones proving consistency, discipline, and personal growth.",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
+                    modifier = Modifier.padding(top = 2.dp, bottom = Spacing.m)
                 )
 
                 val relicsList = listOf(
@@ -536,7 +536,7 @@ fun ProfileScreen(
                     Triple("relic_burnout_shield", "Calm Balance Emblem", "Unlocked by balancing your session intensity and preventing burnout.")
                 )
 
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
                     for (row in 0 until 2) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -556,14 +556,14 @@ fun ProfileScreen(
                                                 com.example.numera.haptic.HapticManager.playSoft()
                                                 selectedRelicDetail = Pair(relic.second, relic.third + (if (isUnlocked) "\n\nStatus: Unlocked!" else "\n\nStatus: Locked"))
                                             }
-                                            .padding(4.dp)
+                                            .padding(Spacing.xs)
                                     ) {
                                         CommitmentRelicIcon(
                                             relicId = relic.first,
                                             modifier = Modifier.size(44.dp),
                                             grayscale = !isUnlocked
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Spacer(modifier = Modifier.height(Spacing.xs))
                                         Text(
                                             text = relic.second,
                                             fontSize = 10.sp,
@@ -594,22 +594,22 @@ fun ProfileScreen(
         }
 
         if (activityLoading) {
-            NumeraPremiumLoader(cardPadding = 16.dp)
+            NumeraPremiumLoader(cardPadding = Spacing.l)
         } else {
             WeeklyActivityChart(activityDays)
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Spacing.s))
 
         // Ranks Milestone Tracker Card
         Card(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(16.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l),
+            shape = RoundedCornerShape(CornerRadius.l)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(Spacing.l)) {
                 Text("Milestone Rank Rewards", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 Text("Unlock premium mathematical avatars and custom banners by raising your skill rating.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Spacing.m))
                 
                 val milestones = listOf(
                     Triple("Bronze III", 1, "Default Gradient"),
@@ -630,7 +630,7 @@ fun ProfileScreen(
                         RankBadge(
                             rankName = rankName,
                             modifier = Modifier
-                                .padding(end = 12.dp)
+                                .padding(end = Spacing.m)
                                 .size(36.dp)
                         )
                         Column(modifier = Modifier.weight(1f)) {
@@ -661,10 +661,10 @@ fun ProfileScreen(
         if (selectedSubTab == 2) {
         // Friends List integration Card
         Card(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            shape = RoundedCornerShape(16.dp)
+            modifier = Modifier.fillMaxWidth().padding(Spacing.l),
+            shape = RoundedCornerShape(CornerRadius.l)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(Spacing.l)) {
                 Text("Social & Friends", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(10.dp))
                 
@@ -693,7 +693,7 @@ fun ProfileScreen(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                 ) {
                     OutlinedTextField(
                         value = searchUsername,
@@ -725,14 +725,14 @@ fun ProfileScreen(
                                 }
                             }
                         },
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(CornerRadius.m)
                     ) {
                         Text("Add", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
                 
                 statusMessage?.let { msg ->
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Spacing.xs))
                     Text(
                         text = msg,
                         color = if (statusIsError) WrongRed else CorrectGreen,
@@ -741,25 +741,25 @@ fun ProfileScreen(
                     )
                 }
                 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Spacing.m))
                 Text("Active Connections", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.height(6.dp))
                 
                 if (friendsList.isEmpty()) {
                     Text("No friends added yet.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
                 } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                         friendsList.forEach { friend ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(CornerRadius.m))
                                     .clickable { onShowUserProfile(friend.id) }
                                     .padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
                                     Box(
                                         modifier = Modifier
                                             .size(36.dp)
@@ -796,18 +796,18 @@ fun ProfileScreen(
                                                 }
                                             }
                                         },
-                                        shape = RoundedCornerShape(8.dp)
+                                        shape = RoundedCornerShape(CornerRadius.s)
                                     ) {
                                         Text("Accept", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                     }
                                 } else {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .size(8.dp)
+                                                .size(Spacing.s)
                                                 .clip(CircleShape)
                                                 .background(CorrectGreen)
                                         )
@@ -825,10 +825,10 @@ fun ProfileScreen(
         if (selectedSubTab == 1) {
             // Redesigned progression-based Achievements framework
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = Spacing.s),
+                shape = RoundedCornerShape(CornerRadius.l)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(Spacing.l)) {
                     Text(
                         text = "Achievements Progression",
                         fontSize = 18.sp,
@@ -840,13 +840,13 @@ fun ProfileScreen(
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Spacing.m))
                     
                     // Categorized horizontal chips tab
                     val categories = listOf("Persistence", "Learning", "Accuracy", "Mastery", "Social", "Competitive", "Exploration", "Collection", "Seasonal")
                     Row(
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = Spacing.xs),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
                         categories.forEach { cat ->
                             val isSelected = selectedCategoryTab.lowercase() == cat.lowercase()
@@ -876,10 +876,10 @@ fun ProfileScreen(
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Spacing.m))
                     
                     if (achievementsList.isEmpty()) {
-                        SkeletonList(count = 4, modifier = Modifier.padding(vertical = 8.dp)) {
+                        SkeletonList(count = 4, modifier = Modifier.padding(vertical = Spacing.s)) {
                             AchievementSkeleton()
                         }
                     } else {
@@ -892,23 +892,23 @@ fun ProfileScreen(
                                 text = "No milestones in this category.",
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                 fontSize = 13.sp,
-                                modifier = Modifier.padding(vertical = 12.dp)
+                                modifier = Modifier.padding(vertical = Spacing.m)
                             )
                         } else {
                             val groupedChains = categoryAchievements.groupBy { it.chain_id ?: "default" }
                             
-                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.l)) {
                                 groupedChains.forEach { (chainId, milestones) ->
                                     val sortedMilestones = milestones.sortedBy { it.chain_order ?: 0 }
                                     
                                     Card(
                                         modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(12.dp),
+                                        shape = RoundedCornerShape(CornerRadius.m),
                                         colors = CardDefaults.cardColors(
                                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                                         )
                                     ) {
-                                        Column(modifier = Modifier.padding(12.dp)) {
+                                        Column(modifier = Modifier.padding(Spacing.m)) {
                                             Text(
                                                 text = when (chainId) {
                                                     "streak" -> "Consistency Milestones"
@@ -934,7 +934,7 @@ fun ProfileScreen(
                                             // Milestone timeline row visualization
                                             Row(
                                                 modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(Spacing.s),
                                                 verticalAlignment = Alignment.Top
                                             ) {
                                                 sortedMilestones.forEachIndexed { index, milestone ->
@@ -967,7 +967,7 @@ fun ProfileScreen(
                                                                     "active", "unclaimed" -> MaterialTheme.colorScheme.primary
                                                                     else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                                                                 },
-                                                                RoundedCornerShape(12.dp)
+                                                                RoundedCornerShape(CornerRadius.m)
                                                             )
                                                             .background(
                                                                 when (state) {
@@ -975,16 +975,16 @@ fun ProfileScreen(
                                                                     "unclaimed" -> MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
                                                                     else -> Color.Transparent
                                                                 },
-                                                                RoundedCornerShape(12.dp)
+                                                                RoundedCornerShape(CornerRadius.m)
                                                             )
                                                             .padding(6.dp)
                                                     ) {
                                                         Column(
                                                             horizontalAlignment = Alignment.CenterHorizontally,
                                                             modifier = Modifier.fillMaxWidth(),
-                                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                                            verticalArrangement = Arrangement.spacedBy(Spacing.xs)
                                                         ) {
-                                                            Box(modifier = Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+                                                            Box(modifier = Modifier.size(IconSize.l), contentAlignment = Alignment.Center) {
                                                                 when (state) {
                                                                     "claimed" -> {
                                                                         Box(
@@ -1000,7 +1000,7 @@ fun ProfileScreen(
                                                                         }
                                                                     }
                                                                     "locked" -> {
-                                                                        NumeraIcon(type = NumeraIconType.Lock, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f), animate = false, modifier = Modifier.size(16.dp))
+                                                                        NumeraIcon(type = NumeraIconType.Lock, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f), animate = false, modifier = Modifier.size(IconSize.s))
                                                                     }
                                                                     else -> {
                                                                         AchievementBadge(achievementId = milestone.id, modifier = Modifier.fillMaxSize())
@@ -1089,11 +1089,11 @@ fun ProfileScreen(
         if (selectedSubTab == 3) {
             // Saved exercises and collections UI
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+                shape = RoundedCornerShape(CornerRadius.l),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(Spacing.l)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -1101,7 +1101,7 @@ fun ProfileScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("📁", fontSize = 20.sp)
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(Spacing.s))
                             Text("Collections", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                         }
                         TextButton(onClick = {
@@ -1113,12 +1113,12 @@ fun ProfileScreen(
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Spacing.s))
                     
                     // Collections chips list
                     Row(
                         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.s),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // "All" chip
@@ -1204,17 +1204,17 @@ fun ProfileScreen(
 
             // Exercises Section
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
+                shape = RoundedCornerShape(CornerRadius.l)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(Spacing.l)) {
                     Text(
                         text = "Saved Exercises",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Spacing.m))
                     
                     val filteredExercises = if (selectedCollectionFilterId == null) {
                         favoritesList
@@ -1223,7 +1223,7 @@ fun ProfileScreen(
                     }
                     
                     if (favoritesLoading) {
-                        Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.fillMaxWidth().padding(Spacing.xl), contentAlignment = Alignment.Center) {
                             com.example.numera.ui.components.MathIconSpinner(modifier = Modifier.size(40.dp))
                         }
                     } else if (filteredExercises.isEmpty()) {
@@ -1231,17 +1231,17 @@ fun ProfileScreen(
                             text = if (selectedCollectionFilterId == null) "No saved exercises yet." else "No exercises in this collection.",
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             fontSize = 13.sp,
-                            modifier = Modifier.padding(vertical = 12.dp)
+                            modifier = Modifier.padding(vertical = Spacing.m)
                         )
                     } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
                             filteredExercises.forEach { ex ->
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                                        .padding(12.dp)
+                                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(CornerRadius.m))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f), RoundedCornerShape(CornerRadius.m))
+                                        .padding(Spacing.m)
                                 ) {
                                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Row(
@@ -1324,7 +1324,7 @@ fun ProfileScreen(
                                             )
                                         }
                                         
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Spacer(modifier = Modifier.height(Spacing.xs))
                                         
                                         DuoButton(
                                             text = "View Explanation",
@@ -1343,7 +1343,7 @@ fun ProfileScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Spacing.l))
 
         // Dialogs
         if (showCreateCollectionDialog) {
@@ -1351,7 +1351,7 @@ fun ProfileScreen(
                 onDismissRequest = { showCreateCollectionDialog = false },
                 title = { Text("Create New Collection", fontWeight = FontWeight.Bold) },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
                         OutlinedTextField(
                             value = newCollectionName,
                             onValueChange = { newCollectionName = it },
@@ -1361,7 +1361,7 @@ fun ProfileScreen(
                         )
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
                             Switch(
                                 checked = isNewCollectionPublic,
@@ -1417,7 +1417,7 @@ fun ProfileScreen(
                 onDismissRequest = { collectionToRename = null },
                 title = { Text("Edit Collection", fontWeight = FontWeight.Bold) },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
                         OutlinedTextField(
                             value = renameCollectionName,
                             onValueChange = { renameCollectionName = it },
@@ -1427,7 +1427,7 @@ fun ProfileScreen(
                         )
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
                             Switch(
                                 checked = renameCollectionPublic,
@@ -1504,7 +1504,7 @@ fun ProfileScreen(
                 text = {
                     Column(
                         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
                         TextButton(
                             onClick = {
@@ -1569,7 +1569,7 @@ fun ProfileScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.m)
                     ) {
                         Text("Category: ${ex.category.replaceFirstChar { it.uppercase() }}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.secondary)
                         
@@ -1580,7 +1580,7 @@ fun ProfileScreen(
                             fontSizePx = 38
                         )
                         
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(Spacing.xs))
                         
                         Text("Correct Answer:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         MathText(
@@ -1589,7 +1589,7 @@ fun ProfileScreen(
                             fontSizePx = 38
                         )
                         
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(Spacing.xs))
                         
                         Text("Step-by-step Explanation:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         MathText(

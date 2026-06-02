@@ -35,16 +35,16 @@ fun ThemePreview(themeKey: String, modifier: Modifier = Modifier) {
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(CornerRadius.s))
             .background(Color.White)
-            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f).copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-            .padding(4.dp),
+            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f).copy(alpha = 0.5f), RoundedCornerShape(CornerRadius.s))
+            .padding(Spacing.xs),
         contentAlignment = Alignment.Center
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Box(modifier = Modifier.size(12.dp).clip(CircleShape).background(colors.first))
-            Box(modifier = Modifier.size(12.dp).clip(CircleShape).background(colors.second))
-            Box(modifier = Modifier.size(12.dp).clip(CircleShape).background(colors.third))
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            Box(modifier = Modifier.size(Spacing.m).clip(CircleShape).background(colors.first))
+            Box(modifier = Modifier.size(Spacing.m).clip(CircleShape).background(colors.second))
+            Box(modifier = Modifier.size(Spacing.m).clip(CircleShape).background(colors.third))
         }
     }
 }

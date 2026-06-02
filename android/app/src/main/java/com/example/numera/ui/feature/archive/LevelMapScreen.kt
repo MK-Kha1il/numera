@@ -363,16 +363,16 @@ fun LevelMapScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = Spacing.l, vertical = Spacing.s)
                     .clickable { onShowCommitment() },
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3CD)),
                 border = BorderStroke(1.dp, Color(0xFFFFEBAA)),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(CornerRadius.m)
             ) {
                 Row(
-                    modifier = Modifier.padding(12.dp),
+                    modifier = Modifier.padding(Spacing.m),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                 ) {
                     Text("⚠️", fontSize = 20.sp)
                     Column(modifier = Modifier.weight(1f)) {
@@ -391,9 +391,9 @@ fun LevelMapScreen(
                     Button(
                         onClick = { onShowCommitment() },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF856404)),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        modifier = Modifier.height(32.dp)
+                        shape = RoundedCornerShape(CornerRadius.s),
+                        contentPadding = PaddingValues(horizontal = Spacing.m, vertical = Spacing.xs),
+                        modifier = Modifier.height(Spacing.xxl)
                     ) {
                         Text("Restore", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                     }
@@ -406,20 +406,20 @@ fun LevelMapScreen(
             containerColor = MaterialTheme.colorScheme.surface
         ) {
             Tab(selected = selectedCategoryTab == 0, onClick = { selectedCategoryTab = 0 }) {
-                Text("Levels", modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold)
+                Text("Levels", modifier = Modifier.padding(Spacing.l), fontWeight = FontWeight.Bold)
             }
             Tab(selected = selectedCategoryTab == 1, onClick = { selectedCategoryTab = 1 }) {
                 Box {
-                    Text("Spaced Review", modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold)
+                    Text("Spaced Review", modifier = Modifier.padding(Spacing.l), fontWeight = FontWeight.Bold)
                     if (srsDueItems.isNotEmpty()) {
-                        Badge(modifier = Modifier.align(Alignment.TopEnd).offset(x = 10.dp, y = 8.dp)) {
+                        Badge(modifier = Modifier.align(Alignment.TopEnd).offset(x = 10.dp, y = Spacing.s)) {
                             Text(srsDueItems.size.toString())
                         }
                     }
                 }
             }
             Tab(selected = selectedCategoryTab == 2, onClick = { selectedCategoryTab = 2 }) {
-                Text("Archive Explorer", modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold)
+                Text("Archive Explorer", modifier = Modifier.padding(Spacing.l), fontWeight = FontWeight.Bold)
             }
         }
 
@@ -506,7 +506,7 @@ fun LevelMapScreen(
                         state = lazyListState,
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(16.dp),
+                            .padding(Spacing.l),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
@@ -523,7 +523,7 @@ fun LevelMapScreen(
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            modifier = Modifier.padding(vertical = Spacing.xs)
                         )
                     }
 
@@ -533,17 +533,17 @@ fun LevelMapScreen(
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(bottom = 8.dp),
-                                    shape = RoundedCornerShape(12.dp),
+                                        .padding(bottom = Spacing.s),
+                                    shape = RoundedCornerShape(CornerRadius.m),
                                     colors = CardDefaults.cardColors(
                                         containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
                                     ),
                                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f))
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(12.dp),
+                                        modifier = Modifier.padding(Spacing.m),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                                     ) {
                                         Text("💡", fontSize = 18.sp)
                                         Column(modifier = Modifier.weight(1f)) {
@@ -564,12 +564,12 @@ fun LevelMapScreen(
                                                 showPlacementTooltip = false
                                                 prefs.edit().putBoolean("dismissed_placement_tooltip", true).apply()
                                             },
-                                            modifier = Modifier.size(24.dp)
+                                            modifier = Modifier.size(IconSize.m)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Close,
                                                 contentDescription = "Dismiss",
-                                                modifier = Modifier.size(16.dp),
+                                                modifier = Modifier.size(IconSize.s),
                                                 tint = MaterialTheme.colorScheme.onSecondaryContainer
                                             )
                                         }
@@ -581,10 +581,10 @@ fun LevelMapScreen(
                             DuoCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(bottom = 8.dp),
+                                    .padding(bottom = Spacing.s),
                                 borderColor = MaterialTheme.colorScheme.secondary
                             ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
+                                Column(modifier = Modifier.padding(Spacing.l)) {
                                     Text(
                                         text = "🎯 Placement Assessment",
                                         fontWeight = FontWeight.ExtraBold,
@@ -599,20 +599,20 @@ fun LevelMapScreen(
                                     )
                                     Spacer(modifier = Modifier.height(14.dp))
                                     Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.s),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Button(
                                             onClick = onStartPlacement,
                                             modifier = Modifier.weight(1.5f),
-                                            shape = RoundedCornerShape(12.dp)
+                                            shape = RoundedCornerShape(CornerRadius.m)
                                         ) {
                                             Text("Take 10-Min Test", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                         }
                                         OutlinedButton(
                                             onClick = onSkipPlacement,
                                             modifier = Modifier.weight(1f),
-                                            shape = RoundedCornerShape(12.dp)
+                                            shape = RoundedCornerShape(CornerRadius.m)
                                         ) {
                                             Text("Skip", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                         }
@@ -632,14 +632,14 @@ fun LevelMapScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(12.dp),
+                                        .padding(Spacing.m),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                                         ) {
                                             Text(
                                                 text = "🧩 Daily Puzzle",
@@ -699,9 +699,9 @@ fun LevelMapScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(12.dp),
+                                        .padding(Spacing.m),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
@@ -808,7 +808,7 @@ fun LevelMapScreen(
                                                         )
                                                     ),
                                                     style = Stroke(
-                                                        width = with(density) { 8.dp.toPx() },
+                                                        width = with(density) { Spacing.s.toPx() },
                                                         cap = StrokeCap.Round
                                                     )
                                                 )
@@ -854,8 +854,8 @@ fun LevelMapScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                        .padding(Spacing.l),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.m)
                 ) {
                     item {
                         Text(
@@ -868,7 +868,7 @@ fun LevelMapScreen(
                             text = "Concepts you struggled with in the past are automatically scheduled for active recall based on the SuperMemo SM-2 algorithm.",
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            modifier = Modifier.padding(vertical = Spacing.xs)
                         )
                     }
 
@@ -902,7 +902,7 @@ fun LevelMapScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(8.dp),
+                                        .padding(Spacing.s),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -932,7 +932,7 @@ fun LevelMapScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp)
+                        .padding(Spacing.l)
                 ) {
                     Text(
                         text = "INFINITE ARCHIVE EXPLORER",
@@ -944,10 +944,10 @@ fun LevelMapScreen(
                         text = "Search through thousands of historical and procedurally generated challenges.",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        modifier = Modifier.padding(vertical = 4.dp)
+                        modifier = Modifier.padding(vertical = Spacing.xs)
                     )
                     
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Spacing.s))
 
                     // Breadcrumb: shows where the user is in the archive and lets them step back up
                     // through their active filters with a single tap.
@@ -978,7 +978,7 @@ fun LevelMapScreen(
                         placeholder = "Search the archive…"
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Spacing.s))
 
                     // Smart filter chips: instant, persistent, visually unmistakable. The full filter
                     // set (topic + difficulty) also lives in a bottom sheet for focused control.
@@ -997,7 +997,7 @@ fun LevelMapScreen(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
                         NumeraFilterChip(
                             label = "Filters",
@@ -1025,7 +1025,7 @@ fun LevelMapScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .horizontalScroll(rememberScrollState()),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                             ) {
                                 categoryOptions.forEach { (value, label) ->
                                     NumeraFilterChip(
@@ -1047,7 +1047,7 @@ fun LevelMapScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                                 ) {
                                     starOptions.forEach { (value, label) ->
                                         NumeraFilterChip(
@@ -1058,14 +1058,14 @@ fun LevelMapScreen(
                                     }
                                 }
                             }
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(Spacing.m))
                             DuoButton(
                                 text = "Show results",
                                 onClick = { showArchiveFilterSheet = false },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             if (selectedCategoryFilter != null || selectedStarsFilter != null) {
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(Spacing.s))
                                 Text(
                                     text = "Clear all filters",
                                     color = MaterialTheme.colorScheme.primary,
@@ -1073,7 +1073,7 @@ fun LevelMapScreen(
                                     fontSize = 14.sp,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clip(RoundedCornerShape(12.dp))
+                                        .clip(RoundedCornerShape(CornerRadius.m))
                                         .clickable {
                                             selectedCategoryFilter = null
                                             selectedStarsFilter = null
@@ -1085,12 +1085,12 @@ fun LevelMapScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Spacing.m))
                     
                     if (isArchiveLoading) {
                         SkeletonList(
                             count = 5,
-                            modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 16.dp)
+                            modifier = Modifier.fillMaxWidth().weight(1f).padding(top = Spacing.l)
                         ) {
                             ArchiveRowSkeleton()
                         }
@@ -1120,7 +1120,7 @@ fun LevelMapScreen(
                         LazyColumn(
                             state = archiveListState,
                             modifier = Modifier.fillMaxWidth().weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                            verticalArrangement = Arrangement.spacedBy(Spacing.l)
                         ) {
                             items(archiveResults) { item ->
                                 ContextMenuArea(
@@ -1134,8 +1134,8 @@ fun LevelMapScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(
-                                        modifier = Modifier.padding(12.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        modifier = Modifier.padding(Spacing.m),
+                                        verticalArrangement = Arrangement.spacedBy(Spacing.s)
                                     ) {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
@@ -1159,7 +1159,7 @@ fun LevelMapScreen(
                                         }
                                         
                                         Row(
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(Spacing.s),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Badge(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)) {
@@ -1168,7 +1168,7 @@ fun LevelMapScreen(
                                                     color = MaterialTheme.colorScheme.secondary,
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 10.sp,
-                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                                    modifier = Modifier.padding(horizontal = Spacing.xs, vertical = 2.dp)
                                                 )
                                             }
                                             Text(

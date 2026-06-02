@@ -16,6 +16,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.ui.components.MathText
+import com.example.numera.theme.Spacing
+import com.example.numera.theme.CornerRadius
+import com.example.numera.theme.IconSize
 
 // Renders lesson prose that may contain inline LaTeX ($...$) or plain text.
 @Composable
@@ -40,11 +43,11 @@ internal fun LessonSectionCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(CornerRadius.l))
             .background(bg)
-            .border(1.5.dp, border.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .border(1.5.dp, border.copy(alpha = 0.5f), RoundedCornerShape(CornerRadius.l))
+            .padding(Spacing.l),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s)
     ) {
         Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = accent, letterSpacing = 0.5.sp)
         LessonProse(body, onSurface.copy(alpha = 0.85f), 28)

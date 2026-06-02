@@ -123,16 +123,16 @@ fun SoloGameScreen(
 
     var shakeTrigger by remember { mutableIntStateOf(0) }
     val shakeOffset by animateDpAsState(
-        targetValue = if (shakeTrigger % 2 == 1) 10.dp else 0.dp,
+        targetValue = if (shakeTrigger % 2 == 1) 10.dp else Spacing.zero,
         animationSpec = keyframes {
             durationMillis = 300
-            0.dp at 0
+            Spacing.zero at 0
             (-10).dp at 50
             10.dp at 100
             (-8).dp at 150
-            8.dp at 200
+            Spacing.s at 200
             (-4).dp at 250
-            0.dp at 300
+            Spacing.zero at 300
         },
         label = "shake"
     )
@@ -480,7 +480,7 @@ fun SoloGameScreen(
 
     if (problemsList.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.l)) {
                 Text("Error loading mathematical exercise set.", color = MaterialTheme.colorScheme.onBackground)
                 DuoButton(onClick = onFinishGame, text = "Go Back")
             }
@@ -501,7 +501,7 @@ fun SoloGameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(bgColor)
-                .padding(16.dp)
+                .padding(Spacing.l)
         ) {
             Text(
                 text = if (isMilestone) "🌟 MILESTONE THEOREM" else "LESSON",
@@ -511,7 +511,7 @@ fun SoloGameScreen(
                 letterSpacing = 1.sp
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(Spacing.s))
             
             Text(
                 text = lessonTitle ?: "",
@@ -521,13 +521,13 @@ fun SoloGameScreen(
                 lineHeight = 32.sp
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Spacing.l))
             
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(Spacing.l)
             ) {
                 if (!lessonContent.isNullOrEmpty()) {
                     if (lessonContent!!.contains("$") || lessonContent!!.contains("\\")) {
@@ -582,7 +582,7 @@ fun SoloGameScreen(
                             .clip(RoundedCornerShape(16.dp))
                             .background(cardBgColor)
                             .border(1.5.dp, borderColor, RoundedCornerShape(16.dp))
-                            .padding(16.dp),
+                            .padding(Spacing.l),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -593,7 +593,7 @@ fun SoloGameScreen(
                                 color = primaryColor,
                                 letterSpacing = 0.5.sp
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(Spacing.s))
                             val formulaText = if (!lessonFormula!!.contains("$") && !lessonFormula!!.contains("\\(") && !lessonFormula!!.contains("\\[")) {
                                 "$$${lessonFormula!!}$$"
                             } else {
@@ -625,8 +625,8 @@ fun SoloGameScreen(
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(MaterialTheme.colorScheme.surface)
                                 .border(1.5.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                .padding(Spacing.l),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
                             Text(
                                 text = "Example ${index + 1}",
@@ -677,7 +677,7 @@ fun SoloGameScreen(
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.22f))
                                     .border(1.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
-                                    .padding(16.dp),
+                                    .padding(Spacing.l),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Text(text = m.label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = onSurfaceColor)
@@ -704,7 +704,7 @@ fun SoloGameScreen(
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(MaterialTheme.colorScheme.surface)
                                 .border(1.5.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-                                .padding(16.dp),
+                                .padding(Spacing.l),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             connections.forEach { c ->
@@ -715,7 +715,7 @@ fun SoloGameScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Spacing.l))
 
             DuoButton(
                 text = "Start Exercises",
@@ -876,7 +876,7 @@ fun SoloGameScreen(
             },
             text = {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.m),
                     modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
                     Text("Let's analyze the correct logic:", fontWeight = FontWeight.Bold)
@@ -886,7 +886,7 @@ fun SoloGameScreen(
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.05f))
                             .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                            .padding(12.dp)
+                            .padding(Spacing.m)
                     ) {
                         Column {
                             Text("Question:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
@@ -913,14 +913,14 @@ fun SoloGameScreen(
                         Text("Work step-by-step to isolate the variables and evaluate the expression.", fontSize = 14.sp)
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Spacing.s))
                     Text("💡 Tip: Retry the question to lock in the logic!", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                 }
             },
             confirmButton = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                 ) {
                     DuoButton(
                         text = "Retry Exercise",
@@ -988,7 +988,7 @@ fun SoloGameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(bgColor)
-                .padding(16.dp),
+                .padding(Spacing.l),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -996,7 +996,7 @@ fun SoloGameScreen(
                     .fillMaxWidth(0.95f)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(Spacing.l)
             ) {
                 Text(
                     text = if (isMilestone) "🏆 MILESTONE MASTERED" else "LEVEL RECAP",
@@ -1024,8 +1024,8 @@ fun SoloGameScreen(
                             .clip(RoundedCornerShape(24.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                             .border(1.5.dp, cardOutlineColor, RoundedCornerShape(24.dp))
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(Spacing.l),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.m)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -1069,7 +1069,7 @@ fun SoloGameScreen(
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
                             Text("✨ Consistency Climb:", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 13.sp)
                             Text("$currentStreakDays Days", fontWeight = FontWeight.Bold, color = DuoTertiary)
@@ -1101,7 +1101,7 @@ fun SoloGameScreen(
                             progress = progressFractionAnim,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(12.dp)
+                                .height(Spacing.m)
                                 .clip(RoundedCornerShape(6.dp)),
                             color = primaryColor,
                             trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
@@ -1121,9 +1121,9 @@ fun SoloGameScreen(
                             .clip(RoundedCornerShape(16.dp))
                             .background(primaryColor.copy(alpha = 0.05f))
                             .border(1.dp, primaryColor.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
-                            .padding(12.dp),
+                            .padding(Spacing.m),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.l)
                     ) {
                         RankBadge(rankName = userRank, modifier = Modifier.size(54.dp))
                         Column {
@@ -1141,12 +1141,12 @@ fun SoloGameScreen(
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(primaryColor.copy(alpha = 0.05f))
                             .border(1.dp, primaryColor.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                            .padding(8.dp)
+                            .padding(Spacing.s)
                     ) {
                         if (isMilestone) {
                             Text("🏅 Milestone Theorem 2.0x Multiplier Applied!", color = primaryColor, fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -1160,7 +1160,7 @@ fun SoloGameScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Spacing.l))
 
                 DuoButton(
                     text = "Continue",
@@ -1182,13 +1182,13 @@ fun SoloGameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp),
+                .padding(Spacing.l),
             verticalArrangement = Arrangement.Top
         ) {
         // Progress header
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(Spacing.s)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1202,7 +1202,7 @@ fun SoloGameScreen(
                     fontSize = 14.sp
                 )
 
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
                     Text(
                         text = "Exercise ${currentProblemIdx + 1} of ${problemsList.size}",
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
@@ -1221,11 +1221,11 @@ fun SoloGameScreen(
                                     com.example.numera.haptic.HapticManager.playSoft()
                                     showReference = true
                                 }
-                                .padding(horizontal = 8.dp, vertical = 5.dp),
+                                .padding(horizontal = Spacing.s, vertical = 5.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                NumeraIcon(type = NumeraIconType.Tip, tint = MaterialTheme.colorScheme.secondary, animate = false, modifier = Modifier.size(16.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                                NumeraIcon(type = NumeraIconType.Tip, tint = MaterialTheme.colorScheme.secondary, animate = false, modifier = Modifier.size(IconSize.s))
                                 Text("Reference", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                             }
                         }
@@ -1283,7 +1283,7 @@ fun SoloGameScreen(
 
                 if (gameMode == "level") {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         repeat(3) { i ->
@@ -1339,7 +1339,7 @@ fun SoloGameScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 80.dp, max = 180.dp)
-                .padding(vertical = 8.dp)
+                .padding(vertical = Spacing.s)
                 .offset(x = shakeOffset)
         ) {
             DuoCard(
@@ -1367,7 +1367,7 @@ fun SoloGameScreen(
                         .fillMaxWidth()
                         .heightIn(min = 60.dp, max = 180.dp)
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = Spacing.l, vertical = Spacing.m),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -1399,7 +1399,7 @@ fun SoloGameScreen(
                 },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(8.dp)
+                    .padding(Spacing.s)
             ) {
                 com.example.numera.ui.components.NumeraIcon(
                     type = com.example.numera.ui.components.NumeraIconType.Favorite,
@@ -1414,7 +1414,7 @@ fun SoloGameScreen(
                         shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
                             Text("Exercise Options", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
 
                             // Save this question
@@ -1514,16 +1514,16 @@ fun SoloGameScreen(
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = 48.dp, end = 12.dp)
+                        .padding(top = Spacing.xxxl, end = Spacing.m)
                         .width(200.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                         .border(1.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(8.dp))
-                        .padding(8.dp)
+                        .padding(Spacing.s)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                     ) {
                         Text(
                             text = "❤️ Save this equation for offline review in your notebook!",
@@ -1536,12 +1536,12 @@ fun SoloGameScreen(
                                 showFavoriteTooltip = false
                                 gamePrefs.edit().putBoolean("dismissed_favorite_tooltip", true).apply()
                             },
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(IconSize.s)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Clear,
                                 contentDescription = "Close",
-                                modifier = Modifier.size(12.dp),
+                                modifier = Modifier.size(Spacing.m),
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         }
@@ -1553,11 +1553,11 @@ fun SoloGameScreen(
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(12.dp)
+                        .padding(Spacing.m)
                 ) {
                     Column(
                         horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
                     ) {
                         AnimatedVisibility(
                             visible = showScratchpadPrompt,
@@ -1580,7 +1580,7 @@ fun SoloGameScreen(
                         }
 
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.s),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Tip Button
@@ -1601,17 +1601,17 @@ fun SoloGameScreen(
                                         showWhiteboard = false
                                         showTip = true
                                     }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    .padding(horizontal = Spacing.m, vertical = Spacing.s),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     com.example.numera.ui.components.NumeraIcon(
                                         type = com.example.numera.ui.components.NumeraIconType.Tip,
                                         tint = MaterialTheme.colorScheme.onTertiary,
-                                        modifier = Modifier.size(16.dp),
+                                        modifier = Modifier.size(IconSize.s),
                                         animate = false
                                     )
                                     Text(
@@ -1643,17 +1643,17 @@ fun SoloGameScreen(
                                         showCalculator = true
                                         logCalculatorTelemetry(null)
                                     }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    .padding(horizontal = Spacing.m, vertical = Spacing.s),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     com.example.numera.ui.components.NumeraIcon(
                                         type = com.example.numera.ui.components.NumeraIconType.Calculator,
                                         tint = MaterialTheme.colorScheme.onSecondary,
-                                        modifier = Modifier.size(16.dp),
+                                        modifier = Modifier.size(IconSize.s),
                                         animate = false
                                     )
                                     Text(
@@ -1686,7 +1686,7 @@ fun SoloGameScreen(
                                         showWhiteboard = true
                                         showScratchpadPrompt = false
                                     }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    .padding(horizontal = Spacing.m, vertical = Spacing.s),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(
@@ -1696,7 +1696,7 @@ fun SoloGameScreen(
                                     com.example.numera.ui.components.NumeraIcon(
                                         type = com.example.numera.ui.components.NumeraIconType.Scratchpad,
                                         tint = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.size(16.dp),
+                                        modifier = Modifier.size(IconSize.s),
                                         animate = false
                                     )
                                     Text(
@@ -1729,7 +1729,7 @@ fun SoloGameScreen(
                     .fillMaxWidth()
                     .fillMaxHeight()
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(Spacing.s)
             ) {
                 // Interactive Mathematical Discovery surface — shown only when the
                 // server's Adaptive Visual Intelligence attached a manipulative, and
@@ -1758,7 +1758,7 @@ fun SoloGameScreen(
                     // Typed answer layout
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
                         Text(
                             text = "Type the correct numerical value:",
@@ -1840,9 +1840,9 @@ fun SoloGameScreen(
                                 MaterialTheme.colorScheme.onBackground
                             }
 
-                            val bottomDepth = 4.dp
+                            val bottomDepth = Spacing.xs
                             val isPressed = remember { mutableStateOf(false) }
-                            val offset = if (isPressed.value && !hasAnswered) bottomDepth else 0.dp
+                            val offset = if (isPressed.value && !hasAnswered) bottomDepth else Spacing.zero
 
                             Box(
                                 modifier = Modifier
@@ -1868,11 +1868,11 @@ fun SoloGameScreen(
                                         if (!hasAnswered) {
                                             drawRoundRect(
                                                 color = depthColor,
-                                                cornerRadius = CornerRadius(16.dp.toPx(), 16.dp.toPx())
+                                                cornerRadius = CornerRadius(Spacing.l.toPx(), Spacing.l.toPx())
                                             )
                                         }
                                     }
-                                    .padding(bottom = if (isPressed.value && !hasAnswered) 0.dp else bottomDepth)
+                                    .padding(bottom = if (isPressed.value && !hasAnswered) Spacing.zero else bottomDepth)
                                     .offset(y = offset)
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(bgColor)
@@ -1880,7 +1880,7 @@ fun SoloGameScreen(
                                         BorderStroke(1.5.dp, outlineColor),
                                         shape = RoundedCornerShape(16.dp)
                                     )
-                                    .padding(16.dp),
+                                    .padding(Spacing.l),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(
@@ -1921,7 +1921,7 @@ fun SoloGameScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Spacing.s))
 
         // Mistake Banner sliding sheet
         AnimatedVisibility(
@@ -1941,7 +1941,7 @@ fun SoloGameScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = Spacing.xs),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = if (correct) CorrectGreen.copy(alpha = 0.08f) else WrongRed.copy(alpha = 0.08f)
@@ -2153,9 +2153,9 @@ fun SoloGameScreen(
                     .fillMaxWidth()
                     .fillMaxHeight(0.72f)
                     .clickable(enabled = false) {}
-                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
+                    .clip(RoundedCornerShape(topStart = Spacing.xl, topEnd = Spacing.xl)),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = Spacing.l)
             ) {
                 val onSurface = MaterialTheme.colorScheme.onSurface
                 val primary = MaterialTheme.colorScheme.primary
@@ -2163,16 +2163,16 @@ fun SoloGameScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 12.dp)
-                        .padding(bottom = 12.dp),
+                        .padding(horizontal = Spacing.m)
+                        .padding(bottom = Spacing.m),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     // Handle bar
                     Box(
                         modifier = Modifier
-                            .padding(top = 8.dp, bottom = 2.dp)
+                            .padding(top = Spacing.s, bottom = 2.dp)
                             .width(40.dp)
-                            .height(4.dp)
+                            .height(Spacing.xs)
                             .clip(RoundedCornerShape(2.dp))
                             .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                             .align(Alignment.CenterHorizontally)
@@ -2202,7 +2202,7 @@ fun SoloGameScreen(
                         }
                         IconButton(
                             onClick = { showCalculator = false },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(IconSize.l)
                         ) {
                             Icon(Icons.Default.Clear, contentDescription = "Close", modifier = Modifier.size(18.dp))
                         }
@@ -2215,7 +2215,7 @@ fun SoloGameScreen(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                                .padding(horizontal = 10.dp, vertical = Spacing.xs),
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             calculatorHistory.takeLast(2).forEach { entry ->
@@ -2276,12 +2276,12 @@ fun SoloGameScreen(
 
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
                     ) {
                         keyRows.forEach { row ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                             ) {
                                 var skipNext = false
                                 row.forEachIndexed { colIdx, key ->
@@ -2427,17 +2427,17 @@ fun SoloGameScreen(
                     .fillMaxWidth()
                     .fillMaxHeight(0.55f)
                     .clickable(enabled = false) {}
-                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                    .clip(RoundedCornerShape(topStart = Spacing.xl, topEnd = Spacing.xl))
                     .background(MaterialTheme.colorScheme.surface),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = Spacing.l)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp)
+                        .padding(Spacing.l)
                         .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(Spacing.m)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -2501,7 +2501,7 @@ fun SoloGameScreen(
                             )
 
                             metadata.learningObjective?.let { objective ->
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                                     Text(
                                         text = "LEARNING OBJECTIVE",
                                         fontSize = 10.sp,
@@ -2519,7 +2519,7 @@ fun SoloGameScreen(
                             }
 
                             metadata.commonMistakes?.let { pitfall ->
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                                     Text(
                                         text = "WATCH OUT FOR",
                                         fontSize = 10.sp,
@@ -2538,7 +2538,7 @@ fun SoloGameScreen(
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.l)
                             ) {
                                 metadata.subskill?.let { skill ->
                                     Column(modifier = Modifier.weight(1f)) {
@@ -2591,7 +2591,7 @@ fun SoloGameScreen(
             },
             text = {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(Spacing.m)
                 ) {
                     Text(
                         text = "You made 3 mistakes and failed the level.",

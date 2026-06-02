@@ -37,7 +37,7 @@ fun UserProfileDialog(
         DuoCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(Spacing.l),
             borderColor = MaterialTheme.colorScheme.primary
         ) {
             Column(
@@ -69,21 +69,21 @@ fun UserProfileDialog(
                             },
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(8.dp)
+                                .padding(Spacing.s)
                                 .size(28.dp)
                                 .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f), CircleShape)
                         ) {
                             com.example.numera.ui.components.NumeraIcon(
                                 type = com.example.numera.ui.components.NumeraIconType.Close,
                                 tint = Color.White,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(IconSize.s)
                             )
                         }
                         // Avatar overlapping banner
                         Box(
                             modifier = Modifier
                                 .align(Alignment.BottomStart)
-                                .padding(start = 16.dp)
+                                .padding(start = Spacing.l)
                                 .size(64.dp)
                                 .clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.surface)
@@ -101,7 +101,7 @@ fun UserProfileDialog(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(Spacing.l)
                     ) {
                         Text(
                             text = profile.username,
@@ -116,7 +116,7 @@ fun UserProfileDialog(
                             fontWeight = FontWeight.SemiBold
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(Spacing.l))
 
                         // Stats Card
                         DuoCard(
@@ -124,8 +124,8 @@ fun UserProfileDialog(
                             backgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         ) {
                             Column(
-                                modifier = Modifier.padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                modifier = Modifier.padding(Spacing.m),
+                                verticalArrangement = Arrangement.spacedBy(Spacing.s)
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -136,7 +136,7 @@ fun UserProfileDialog(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        RankBadge(rankName = profile.rank, modifier = Modifier.size(24.dp))
+                                        RankBadge(rankName = profile.rank, modifier = Modifier.size(IconSize.m))
                                         Text(
                                             text = profile.rank,
                                             fontWeight = FontWeight.Bold,
@@ -167,7 +167,7 @@ fun UserProfileDialog(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(Spacing.l))
 
                         // Mastery title
                         Text(
@@ -176,9 +176,9 @@ fun UserProfileDialog(
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(Spacing.s))
 
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                             MasteryBar(
                                 topicName = "Arithmetic",
                                 correctCount = profile.mastery.arithmetic_correct,

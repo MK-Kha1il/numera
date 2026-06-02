@@ -255,7 +255,7 @@ fun MainTabsScreen(
                     title = {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
                             // User Avatar
                             MathAvatar(
@@ -306,7 +306,7 @@ fun MainTabsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .padding(end = 6.dp)
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(CornerRadius.m))
                                 .background(
                                     when (climbState) {
                                         "fading" -> Color(0xFFFFEBEE).copy(alpha = fadeAlpha)
@@ -321,14 +321,14 @@ fun MainTabsScreen(
                                         "protected" -> Color(0xFF42A5F5)
                                         else -> Color(0xFFFFD700)
                                     },
-                                    RoundedCornerShape(12.dp)
+                                    RoundedCornerShape(CornerRadius.m)
                                 )
                                 .clickable {
                                     com.example.numera.sound.SoundManager.playClick()
                                     com.example.numera.haptic.HapticManager.playSoft()
                                     showCommitmentDialog = true
                                 }
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .padding(horizontal = Spacing.s, vertical = Spacing.xs)
                         ) {
                             Text(
                                 text = when (climbState) {
@@ -351,10 +351,10 @@ fun MainTabsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .padding(end = 6.dp)
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(CornerRadius.m))
                                 .background(Color(0xFFFFFDF0))
-                                .border(1.dp, Color(0xFFFFD700), RoundedCornerShape(12.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .border(1.dp, Color(0xFFFFD700), RoundedCornerShape(CornerRadius.m))
+                                .padding(horizontal = Spacing.s, vertical = Spacing.xs)
                         ) {
                             Text(
                                 text = "🪙 ${currentUser?.coins ?: 0}",
@@ -369,10 +369,10 @@ fun MainTabsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .padding(end = 6.dp)
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(CornerRadius.m))
                                 .background(Color(0xFFF3FAF7))
-                                .border(1.dp, Color(0xFF00C9A7), RoundedCornerShape(12.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .border(1.dp, Color(0xFF00C9A7), RoundedCornerShape(CornerRadius.m))
+                                .padding(horizontal = Spacing.s, vertical = Spacing.xs)
                         ) {
                             Text(
                                 text = "⭐ Lvl ${currentUser?.level ?: 1}",
@@ -395,7 +395,7 @@ fun MainTabsScreen(
                             com.example.numera.haptic.HapticManager.playSoft()
                             showNotificationsDialog = true
                         }) {
-                            Box(modifier = Modifier.padding(4.dp)) {
+                            Box(modifier = Modifier.padding(Spacing.xs)) {
                                 com.example.numera.ui.components.NumeraIcon(
                                     type = com.example.numera.ui.components.NumeraIconType.Notification,
                                     tint = MaterialTheme.colorScheme.primary
@@ -403,7 +403,7 @@ fun MainTabsScreen(
                                 if (unreadNotificationsCount > 0) {
                                     Box(
                                         modifier = Modifier
-                                            .size(8.dp)
+                                            .size(Spacing.s)
                                             .clip(CircleShape)
                                             .background(WrongRed)
                                             .align(Alignment.TopEnd)

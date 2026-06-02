@@ -54,8 +54,8 @@ fun SocialScreen() {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(Spacing.l),
+        verticalArrangement = Arrangement.spacedBy(Spacing.m)
     ) {
         // Add Friend Widget
         item {
@@ -63,9 +63,9 @@ fun SocialScreen() {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(4.dp),
+                        .padding(Spacing.xs),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                 ) {
                     OutlinedTextField(
                         value = searchUsername,
@@ -111,7 +111,7 @@ fun SocialScreen() {
                     color = if (statusIsError) WrongRed else CorrectGreen,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.s)
                 )
             }
         }
@@ -122,7 +122,7 @@ fun SocialScreen() {
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = Spacing.s)
             )
         }
 
@@ -140,7 +140,7 @@ fun SocialScreen() {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(4.dp),
+                            .padding(Spacing.xs),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -208,11 +208,11 @@ fun SocialScreen() {
                         } else {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(8.dp)
+                                        .size(Spacing.s)
                                         .clip(CircleShape)
                                         .background(CorrectGreen)
                                 )

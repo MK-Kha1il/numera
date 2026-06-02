@@ -60,7 +60,7 @@ fun MasteryBar(
         Spacer(modifier = Modifier.height(6.dp))
         
         val height = 14.dp
-        val shape = RoundedCornerShape(8.dp)
+        val shape = RoundedCornerShape(CornerRadius.s)
         
         val shadowColor = Color(
             red = (WrongRed.red * 0.7f).coerceIn(0f, 1f),
@@ -72,7 +72,7 @@ fun MasteryBar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(height + 4.dp)
+                .height(height + Spacing.xs)
         ) {
             Box(
                 modifier = Modifier
