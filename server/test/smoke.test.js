@@ -94,6 +94,13 @@ test('daily puzzle endpoint responds with a puzzle', async () => {
   assert.ok(res.body && res.body.question, 'puzzle has a question');
 });
 
+test('commitment status responds for an authed user', async () => {
+  const { token } = await registerUser(ctx.base);
+  const res = await api(ctx.base, 'GET', '/api/commitment/status', { token });
+  assert.strictEqual(res.status, 200);
+  assert.ok(res.body && typeof res.body.commitmentState === 'string', 'has commitmentState');
+});
+
 test('idempotency: same Idempotency-Key replays the identical response', async () => {
   const { token } = await registerUser(ctx.base);
   const key = require('crypto').randomUUID();
