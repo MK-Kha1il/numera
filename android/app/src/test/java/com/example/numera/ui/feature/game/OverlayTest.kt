@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.example.numera.data.network.MathProblem
 import org.junit.Rule
 import org.junit.Test
@@ -63,5 +64,33 @@ class OverlayTest {
     compose.onNodeWithText("HINT").assertIsDisplayed()
     compose.onNodeWithText("Study Tip").assertIsDisplayed() // default concept when no metadata
     compose.onNodeWithText("Square each term before adding.").assertIsDisplayed()
+  }
+
+  /**
+   * Interaction test: drive the calculator through the UI and verify it actually computes
+   * (key input -> CalcEngine eval -> result line). Chosen so no intermediate display value
+   * collides with a key label: 5 × 9 = 45 ("45" is not a key, "= 45" is the result row).
+   */
+  @Test
+  fun calculatorOverlay_computesResultFromKeyPresses() {
+    compose.setContent {
+      Box {
+        CalculatorOverlay(
+          visible = true,
+          onClose = {},
+          inputState = remember { mutableStateOf("") },
+          resultState = remember { mutableStateOf("") },
+          memoryState = remember { mutableStateOf(0.0) },
+          historyState = remember { mutableStateOf<List<String>>(emptyList()) },
+          errorState = remember { mutableStateOf(false) },
+          logTelemetry = {},
+        )
+      }
+    }
+    compose.onNodeWithText("5").performClick()
+    compose.onNodeWithText("×").performClick()
+    compose.onNodeWithText("9").performClick()
+    compose.onNodeWithText("=").performClick()
+    compose.onNodeWithText("= 45").assertIsDisplayed()
   }
 }
