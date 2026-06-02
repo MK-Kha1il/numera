@@ -42,10 +42,15 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
 
 ## 5. Design system
 - ✅ Removed duplicate unused `AppTypography`; typography now single-sourced in `Type.kt`.
-- ⬜ Migrate raw `16.dp`/`Color(0x…)`/`RoundedCornerShape(…)` literals in the now-split feature
-  screens to the `theme/` tokens. **Intentionally kept separate from the file split** (the
-  moves were strictly verbatim so any regression is easy to bisect); this is the natural next
-  pass now that each screen is an isolated, readable file.
+- ✅ **Migrated raw `dp`/shape literals → `theme/` tokens** across the 19 split feature/dialog/
+  shell screens via a context-aware, **value-exact** codemod (~555 swaps): `padding/size/
+  height/spacedBy(N.dp)` → `Spacing.*`, `RoundedCornerShape(N.dp)` → `CornerRadius.*`,
+  `.size(N.dp)` → `IconSize.*`, only where the value exactly equals a token, so rendering is
+  unchanged (guarded by `assembleDebug`). Non-token values (1.dp borders, 6/10/14.dp) and
+  `Color(0x…)` literals (mostly medal/brand colors w/o a token; the rest already use
+  `MaterialTheme.colorScheme`/named theme colors) were left as-is. One exception: `SoloGameScreen`
+  keeps literal corners (its `androidx.compose.ui.geometry.CornerRadius` drawing import shadows
+  the token). ⬜ Remaining: optional `Color`-token pass + recomposition hygiene.
 
 ## 6. State management (Android)
 - 🟡 The God-file split (prerequisite) is **done** — each screen's `remember`/`mutableStateOf`
@@ -123,6 +128,6 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
    `SoloGameScreen` composable into `LessonScreen`/`GameplayScreen`/`RecapScreen` + overlay
    composables and de-dup the 3× `handleAnswer` — deferred until tests exist (state-hoisting
    refactor the compiler can't fully guard).
-4. Design-token migration pass over the split feature screens (raw `dp`/`Color`/shape literals
-   → `theme/` tokens); recomposition-hygiene pass.
+4. ✅ Design-token migration (raw `dp`/shape → `theme/` tokens) DONE across the split screens.
+   ⬜ Remaining: optional `Color`-literal → token pass + recomposition-hygiene pass.
 5. Structured logger; client fetch parallelization; ownership-check pass; achievement chains.
