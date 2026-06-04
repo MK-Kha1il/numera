@@ -1,14 +1,23 @@
 // Authentication: register, login (with streak/commitment + quest/league reset on entry),
 // logout (session revocation), and the authenticated /me snapshot.
 const express = require('express');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { db } = require('../db');
 const { JWT_SECRET } = require('../config');
 const { authenticateToken } = require('../middleware/auth');
-const { checkFailedLogins, rateLimiter, recordFailedLogin, clearFailedLogins } = require('../middleware/rateLimit');
+const {
+  checkFailedLogins,
+  rateLimiter,
+  recordFailedLogin,
+  clearFailedLogins,
+  checkAccountLockout,
+  recordAccountFailure,
+  clearAccountFailures,
+} = require('../middleware/rateLimit');
 const { securityLog } = require('../middleware/security');
+const { hashPassword, verifyPassword, needsRehash, validatePasswordStrength } = require('../lib/passwords');
+const totp = require('../lib/totp');
 const { getUserWithMastery, checkAndResetQuestsAndLeagues } = require('../services/userService');
 const logger = require('../logger');
 
@@ -23,8 +32,8 @@ function sendLoginResponse(userId, username, req, res) {
   const expiresAt = createdAt + 7 * 24 * 60 * 60; // 7 days session lifetime
 
   db.run(
-    'INSERT INTO user_sessions (id, user_id, user_agent, ip_address, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)',
-    [sessionId, userId, userAgent, ipAddress, createdAt, expiresAt],
+    'INSERT INTO user_sessions (id, user_id, user_agent, ip_address, created_at, expires_at, last_used_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [sessionId, userId, userAgent, ipAddress, createdAt, expiresAt, createdAt],
     (errSession) => {
       if (errSession) {
         logger.error('[SECURITY] Failed to write session to DB:', errSession.message);
@@ -42,7 +51,7 @@ function sendLoginResponse(userId, username, req, res) {
   );
 }
 
-router.post('/api/auth/register', checkFailedLogins, rateLimiter(5, 60000), (req, res) => {
+router.post('/api/auth/register', checkFailedLogins, rateLimiter(5, 60000), async (req, res) => {
   const { username, password, avatar } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password required' });
@@ -55,12 +64,17 @@ router.post('/api/auth/register', checkFailedLogins, rateLimiter(5, 60000), (req
       error: 'Username must be 3-20 characters long and contain only letters, numbers, and underscores.',
     });
   }
-  if (typeof password !== 'string' || password.length < 8 || password.length > 100) {
-    return res.status(400).json({ error: 'Password must be between 8 and 100 characters' });
+  const strength = validatePasswordStrength(password, username);
+  if (!strength.ok) {
+    return res.status(400).json({ error: strength.error });
   }
 
-  const salt = bcrypt.genSaltSync(10);
-  const hash = bcrypt.hashSync(password, salt);
+  let hash;
+  try {
+    hash = await hashPassword(password);
+  } catch {
+    return res.status(500).json({ error: 'Failed to secure password.' });
+  }
   const chosenAvatar = avatar || 'avatar_pythagoras';
   const now = Math.floor(Date.now() / 1000);
 
@@ -93,7 +107,7 @@ router.post('/api/auth/register', checkFailedLogins, rateLimiter(5, 60000), (req
   );
 });
 
-router.post('/api/auth/login', checkFailedLogins, rateLimiter(10, 60000), (req, res) => {
+router.post('/api/auth/login', checkFailedLogins, checkAccountLockout, rateLimiter(10, 60000), (req, res) => {
   const { username, password } = req.body;
   const ipAddress = req.ip;
   if (!username || !password) {
@@ -101,15 +115,53 @@ router.post('/api/auth/login', checkFailedLogins, rateLimiter(10, 60000), (req, 
     return res.status(400).json({ error: 'Username and password required' });
   }
 
-  db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, user) => {
+  db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+
+    const passwordOk = user ? await verifyPassword(user.password_hash, password) : false;
+    if (!passwordOk) {
       recordFailedLogin(ipAddress);
-      securityLog(user ? user.id : null, 'auth_failure', ipAddress, `Failed login attempt for user: ${username}`);
+      // Per-account adaptive lockout: key on the attempted username so credential-stuffing a
+      // single account is throttled even across rotating IPs (returns lockout state for logging).
+      const lock = recordAccountFailure(username);
+      securityLog(
+        user ? user.id : null,
+        lock.locked ? 'account_locked' : 'auth_failure',
+        ipAddress,
+        lock.locked
+          ? `Account temporarily locked after ${lock.count} failed attempts for user: ${username}`
+          : `Failed login attempt for user: ${username}`
+      );
       return res.status(400).json({ error: 'Invalid username or password' });
     }
 
-    checkAndResetQuestsAndLeagues(user.id, () => {
+    clearAccountFailures(username);
+
+    // Transparent hash upgrade: legacy bcrypt -> argon2id on the way in. Best-effort; a failed
+    // rehash never blocks the login.
+    if (needsRehash(user.password_hash)) {
+      hashPassword(password)
+        .then((fresh) => db.run('UPDATE users SET password_hash = ? WHERE id = ?', [fresh, user.id]))
+        .catch(() => {});
+    }
+
+    // MFA gate: a confirmed TOTP enrollment means the password alone does NOT mint a session.
+    // Issue a short-lived challenge the client exchanges (with a TOTP or recovery code) at
+    // /api/auth/mfa/login. No streak/session side effects happen until the second factor passes.
+    if (user.mfa_enabled) {
+      const challenge = jwt.sign({ id: user.id, username, purpose: 'mfa' }, JWT_SECRET, { expiresIn: '5m' });
+      securityLog(user.id, 'mfa_challenge_issued', ipAddress, 'Password verified; awaiting MFA second factor.');
+      return res.json({ mfaRequired: true, challenge });
+    }
+
+    finalizeLogin(user, username, req, res);
+  });
+});
+
+// Post-password login finalize: streak/commitment update + session issuance. Shared by the
+// normal login path and the MFA second-factor exchange so both apply identical side effects.
+function finalizeLogin(user, username, req, res) {
+  checkAndResetQuestsAndLeagues(user.id, () => {
       const now = Math.floor(Date.now() / 1000);
       const dayInSecs = 86400;
 
@@ -179,8 +231,7 @@ router.post('/api/auth/login', checkFailedLogins, rateLimiter(10, 60000), (req, 
         );
       }
     });
-  });
-});
+}
 
 router.post('/api/auth/logout', authenticateToken, (req, res) => {
   db.run('DELETE FROM user_sessions WHERE id = ?', [req.user.sessionId], (err) => {
@@ -195,6 +246,164 @@ router.get('/api/auth/me', authenticateToken, (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(fullUser);
     });
+  });
+});
+
+// ============================================================================
+// Multi-Factor Authentication (TOTP authenticator app + one-time recovery codes)
+// ============================================================================
+const RECOVERY_CODE_COUNT = 10;
+
+// Returns N formatted one-time recovery codes (xxxxx-xxxxx). Plaintext is shown to the user
+// exactly once here; only argon2 hashes are persisted.
+function generateRecoveryCodes() {
+  const codes = [];
+  for (let i = 0; i < RECOVERY_CODE_COUNT; i++) {
+    const raw = crypto.randomBytes(5).toString('hex'); // 10 hex chars
+    codes.push(`${raw.slice(0, 5)}-${raw.slice(5)}`);
+  }
+  return codes;
+}
+
+function normalizeRecoveryCode(code) {
+  return String(code || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+// GET enrollment status — lets the client show the right MFA toggle state.
+router.get('/api/auth/mfa/status', authenticateToken, (req, res) => {
+  db.get('SELECT mfa_enabled FROM users WHERE id = ?', [req.user.id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ enabled: !!(row && row.mfa_enabled) });
+  });
+});
+
+// Step 1 of enrollment: mint a pending secret and return the otpauth URI for the QR code.
+// mfa_enabled stays 0 until a code is confirmed, so an abandoned setup never half-locks login.
+router.post('/api/auth/mfa/setup', authenticateToken, (req, res) => {
+  db.get('SELECT mfa_enabled FROM users WHERE id = ?', [req.user.id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (row && row.mfa_enabled) return res.status(400).json({ error: 'MFA is already enabled.' });
+
+    const secret = totp.generateSecret();
+    db.run('UPDATE users SET mfa_secret = ?, mfa_enabled = 0 WHERE id = ?', [secret, req.user.id], (errU) => {
+      if (errU) return res.status(500).json({ error: errU.message });
+      res.json({ secret, otpauthUri: totp.buildOtpAuthUri(secret, req.user.username) });
+    });
+  });
+});
+
+// Step 2 of enrollment: confirm a TOTP code against the pending secret, flip mfa_enabled,
+// and issue the one-time recovery codes (shown once).
+router.post('/api/auth/mfa/enable', authenticateToken, (req, res) => {
+  const { token } = req.body;
+  db.get('SELECT mfa_secret, mfa_enabled FROM users WHERE id = ?', [req.user.id], async (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row || !row.mfa_secret) return res.status(400).json({ error: 'Start MFA setup first.' });
+    if (row.mfa_enabled) return res.status(400).json({ error: 'MFA is already enabled.' });
+    if (!totp.verifyToken(token, row.mfa_secret)) {
+      securityLog(req.user.id, 'mfa_failure', req.ip, 'Invalid code during MFA enrollment.');
+      return res.status(400).json({ error: 'Invalid verification code. Check your authenticator app.' });
+    }
+
+    const codes = generateRecoveryCodes();
+    let hashes;
+    try {
+      hashes = await Promise.all(codes.map((c) => hashPassword(normalizeRecoveryCode(c))));
+    } catch {
+      return res.status(500).json({ error: 'Failed to generate recovery codes.' });
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    db.serialize(() => {
+      db.run('UPDATE users SET mfa_enabled = 1 WHERE id = ?', [req.user.id]);
+      db.run('DELETE FROM user_mfa_recovery_codes WHERE user_id = ?', [req.user.id]);
+      const stmt = db.prepare('INSERT INTO user_mfa_recovery_codes (user_id, code_hash, created_at) VALUES (?, ?, ?)');
+      hashes.forEach((h) => stmt.run(req.user.id, h, now));
+      stmt.finalize((errF) => {
+        if (errF) return res.status(500).json({ error: errF.message });
+        securityLog(req.user.id, 'mfa_enrolled', req.ip, 'TOTP MFA enabled; recovery codes issued.');
+        res.json({ success: true, recoveryCodes: codes });
+      });
+    });
+  });
+});
+
+// Disable MFA — requires the account password (re-auth) to prevent a hijacked session from
+// silently stripping the second factor.
+router.post('/api/auth/mfa/disable', authenticateToken, (req, res) => {
+  const { password } = req.body;
+  if (!password) return res.status(400).json({ error: 'Password is required to disable MFA.' });
+  db.get('SELECT password_hash, mfa_enabled FROM users WHERE id = ?', [req.user.id], async (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row || !row.mfa_enabled) return res.status(400).json({ error: 'MFA is not enabled.' });
+    if (!(await verifyPassword(row.password_hash, password))) {
+      securityLog(req.user.id, 'mfa_failure', req.ip, 'Invalid password during MFA disable attempt.');
+      return res.status(401).json({ error: 'Invalid password.' });
+    }
+    db.serialize(() => {
+      db.run('UPDATE users SET mfa_enabled = 0, mfa_secret = NULL WHERE id = ?', [req.user.id]);
+      db.run('DELETE FROM user_mfa_recovery_codes WHERE user_id = ?', [req.user.id], (errD) => {
+        if (errD) return res.status(500).json({ error: errD.message });
+        securityLog(req.user.id, 'mfa_removed', req.ip, 'TOTP MFA disabled by user.');
+        res.json({ success: true, message: 'MFA has been disabled.' });
+      });
+    });
+  });
+});
+
+// Second factor at login: exchange the short-lived challenge (+ a TOTP or recovery code) for a
+// real session. Rate-limited and brute-force tracked like the password step.
+router.post('/api/auth/mfa/login', checkFailedLogins, rateLimiter(10, 60000), (req, res) => {
+  const { challenge, token, recoveryCode } = req.body;
+  const ipAddress = req.ip;
+  if (!challenge) return res.status(400).json({ error: 'Missing MFA challenge.' });
+
+  let payload;
+  try {
+    payload = jwt.verify(challenge, JWT_SECRET);
+  } catch {
+    return res.status(401).json({ error: 'MFA challenge expired or invalid. Log in again.' });
+  }
+  if (payload.purpose !== 'mfa' || !payload.id) {
+    return res.status(401).json({ error: 'Invalid MFA challenge.' });
+  }
+
+  db.get('SELECT * FROM users WHERE id = ?', [payload.id], (err, user) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!user || !user.mfa_enabled) return res.status(400).json({ error: 'MFA is not active for this account.' });
+
+    // Path A: TOTP code.
+    if (token) {
+      if (totp.verifyToken(token, user.mfa_secret)) {
+        securityLog(user.id, 'mfa_success', ipAddress, 'TOTP second factor accepted.');
+        return finalizeLogin(user, user.username, req, res);
+      }
+      recordFailedLogin(ipAddress);
+      securityLog(user.id, 'mfa_failure', ipAddress, 'Invalid TOTP at login.');
+      return res.status(400).json({ error: 'Invalid authentication code.' });
+    }
+
+    // Path B: one-time recovery code. Verify against each unused hash; consume on match.
+    if (recoveryCode) {
+      const norm = normalizeRecoveryCode(recoveryCode);
+      db.all('SELECT id, code_hash FROM user_mfa_recovery_codes WHERE user_id = ? AND used_at = 0', [user.id], async (errC, rows) => {
+        if (errC) return res.status(500).json({ error: errC.message });
+        for (const r of rows || []) {
+          if (await verifyPassword(r.code_hash, norm)) {
+            const now = Math.floor(Date.now() / 1000);
+            db.run('UPDATE user_mfa_recovery_codes SET used_at = ? WHERE id = ?', [now, r.id]);
+            securityLog(user.id, 'mfa_recovery_used', ipAddress, 'Recovery code consumed at login.');
+            return finalizeLogin(user, user.username, req, res);
+          }
+        }
+        recordFailedLogin(ipAddress);
+        securityLog(user.id, 'mfa_failure', ipAddress, 'Invalid recovery code at login.');
+        return res.status(400).json({ error: 'Invalid recovery code.' });
+      });
+      return;
+    }
+
+    return res.status(400).json({ error: 'Provide an authentication code or a recovery code.' });
   });
 });
 

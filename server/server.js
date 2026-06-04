@@ -13,7 +13,7 @@ const { generateProblem } = require('./mathGenerator'); // used by the duel/bot 
 // NOTE: server.js is now just bootstrap (app/middleware wiring + router mounts) and the
 // Socket.IO duel/matchmaking logic; ALL REST domains live under routes/*, their helpers
 // under services/* and lib/*.
-const { JWT_SECRET, PORT, EXTRA_CORS_ORIGINS } = require('./config');
+const { JWT_SECRET, PORT, EXTRA_CORS_ORIGINS, TRUST_PROXY } = require('./config');
 const { securityHeaders, securityLog } = require('./middleware/security');
 const { globalRateLimiter } = require('./middleware/rateLimit');
 const { calculateRankFromElo } = require('./lib/progression');
@@ -21,6 +21,13 @@ const { updateAchievements } = require('./services/achievementService');
 const { grantRankRewards } = require('./services/rankRewardService');
 
 const app = express();
+
+// Behind a reverse proxy, trust the configured number of forwarding hops so `req.ip` (and thus
+// every per-IP rate limiter) sees the real client address rather than the proxy's. Off by
+// default (see config.js / TRUST_PROXY) so dev keeps the raw socket IP.
+if (TRUST_PROXY !== false) {
+  app.set('trust proxy', TRUST_PROXY);
+}
 
 // CORS: same-origin + an env-configured allow-list. Requests with no Origin header
 // (native mobile clients, server-to-server) are permitted; browser origins must match.

@@ -6,6 +6,10 @@ const { db } = require('../db');
 const { JWT_SECRET } = require('../config');
 const { securityLog } = require('./security');
 
+// Idle-session ceiling: a token unused this long is invalidated regardless of its absolute
+// expiry. Shorter than the 7-day session lifetime, so an abandoned device logs itself out.
+const INACTIVITY_WINDOW_SECS = 3 * 24 * 60 * 60; // 3 days
+
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -20,7 +24,7 @@ function authenticateToken(req, res, next) {
     }
 
     db.get(
-      'SELECT id, expires_at FROM user_sessions WHERE id = ? AND user_id = ?',
+      'SELECT id, expires_at, last_used_at FROM user_sessions WHERE id = ? AND user_id = ?',
       [decoded.sessionId, decoded.id],
       (errSession, session) => {
         if (errSession || !session) {
@@ -33,6 +37,22 @@ function authenticateToken(req, res, next) {
           db.run('DELETE FROM user_sessions WHERE id = ?', [decoded.sessionId]);
           securityLog(decoded.id, 'session_hijack_attempt', req.ip, 'Attempted to use an expired session.');
           return res.status(401).json({ error: 'Session has expired. Please log in again.' });
+        }
+
+        // Inactivity timeout: a session unused for longer than INACTIVITY_WINDOW is killed even
+        // if its absolute 7-day expiry hasn't elapsed. last_used_at == 0 means a pre-migration
+        // session not yet tracked — adopt `now` instead of treating it as ancient.
+        const lastUsed = session.last_used_at || now;
+        if (now - lastUsed > INACTIVITY_WINDOW_SECS) {
+          db.run('DELETE FROM user_sessions WHERE id = ?', [decoded.sessionId]);
+          securityLog(decoded.id, 'session_expired_inactive', req.ip, 'Session invalidated after inactivity timeout.');
+          return res.status(401).json({ error: 'Session timed out due to inactivity. Please log in again.' });
+        }
+
+        // Sliding activity: refresh last_used_at (throttled to once/minute to avoid a write per
+        // request). Keeps an active user logged in; lets an idle session age out.
+        if (now - lastUsed > 60) {
+          db.run('UPDATE user_sessions SET last_used_at = ? WHERE id = ?', [now, decoded.sessionId]);
         }
 
         req.user = decoded;

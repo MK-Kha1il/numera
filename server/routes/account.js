@@ -5,37 +5,44 @@
 // /api/user/:userId public-profile route so they are not shadowed by the param route
 // (which rejects non-numeric ids with 400). Keep this router mounted ahead of that route.
 const express = require('express');
-const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { securityLog } = require('../middleware/security');
+const { rateLimiter } = require('../middleware/rateLimit');
+const { hashPassword, verifyPassword, validatePasswordStrength } = require('../lib/passwords');
 const logger = require('../logger');
 
 const router = express.Router();
 
-router.post('/api/user/settings', authenticateToken, (req, res) => {
+router.post('/api/user/settings', authenticateToken, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
   if (!oldPassword || !newPassword) {
     return res.status(400).json({ error: 'Old password and new password are required' });
   }
 
-  if (newPassword.length < 8 || newPassword.length > 100) {
-    return res.status(400).json({ error: 'New password must be between 8 and 100 characters' });
+  const strength = validatePasswordStrength(newPassword, req.user.username);
+  if (!strength.ok) {
+    return res.status(400).json({ error: strength.error });
   }
 
-  db.get('SELECT password_hash FROM users WHERE id = ?', [req.user.id], (err, user) => {
+  db.get('SELECT password_hash FROM users WHERE id = ?', [req.user.id], async (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const isMatch = bcrypt.compareSync(oldPassword, user.password_hash);
+    const isMatch = await verifyPassword(user.password_hash, oldPassword);
     if (!isMatch) {
       securityLog(req.user.id, 'auth_failure', req.ip, 'Invalid old password during password change attempt.');
       return res.status(401).json({ error: 'Invalid old password' });
     }
 
-    const salt = bcrypt.genSaltSync(10);
-    const newHash = bcrypt.hashSync(newPassword, salt);
+    let newHash;
+    try {
+      newHash = await hashPassword(newPassword);
+    } catch {
+      return res.status(500).json({ error: 'Failed to secure password.' });
+    }
 
     db.run('UPDATE users SET password_hash = ? WHERE id = ?', [newHash, req.user.id], (errUpdate) => {
       if (errUpdate) return res.status(500).json({ error: errUpdate.message });
@@ -52,8 +59,13 @@ router.post('/api/user/settings', authenticateToken, (req, res) => {
 
 router.post('/api/user/change-username', authenticateToken, (req, res) => {
   const { username } = req.body;
-  if (!username || username.trim().length < 3 || username.trim().length > 25) {
-    return res.status(400).json({ error: 'Username must be between 3 and 25 characters.' });
+  // Same strict charset rule as registration — previously this accepted any characters and a
+  // looser length, an inconsistency that let a username bypass the signup validation.
+  const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+  if (!username || !usernameRegex.test(username.trim())) {
+    return res.status(400).json({
+      error: 'Username must be 3-20 characters long and contain only letters, numbers, and underscores.',
+    });
   }
   const cleanUsername = username.trim();
   db.get('SELECT id FROM users WHERE username = ? AND id != ?', [cleanUsername, req.user.id], (err, row) => {
@@ -68,7 +80,12 @@ router.post('/api/user/change-username', authenticateToken, (req, res) => {
   });
 });
 
-router.post('/api/user/change-email/request', authenticateToken, (req, res) => {
+// Verification window + brute-force ceiling for the 6-digit code. 10 min expiry + a hard
+// 5-attempt cap makes the 10^6 space infeasible to grind before the code rotates/locks.
+const EMAIL_CODE_TTL_SECS = 10 * 60;
+const EMAIL_CODE_MAX_ATTEMPTS = 5;
+
+router.post('/api/user/change-email/request', authenticateToken, rateLimiter(5, 15 * 60 * 1000), (req, res) => {
   const { email } = req.body;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email || !emailRegex.test(email.trim())) {
@@ -76,18 +93,23 @@ router.post('/api/user/change-email/request', authenticateToken, (req, res) => {
   }
   const cleanEmail = email.trim().toLowerCase();
 
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  // Cryptographically-random 6-digit code (crypto.randomInt, not Math.random which is not
+  // unpredictable). attempts reset to 0 on each new request.
+  const code = crypto.randomInt(0, 1000000).toString().padStart(6, '0');
   const now = Math.floor(Date.now() / 1000);
 
   db.run(
-    `INSERT OR REPLACE INTO user_email_verifications (user_id, new_email, code, created_at)
-     VALUES (?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO user_email_verifications (user_id, new_email, code, created_at, attempts)
+     VALUES (?, ?, ?, ?, 0)`,
     [req.user.id, cleanEmail, code, now],
     (err) => {
       if (err) return res.status(500).json({ error: err.message });
 
-      logger.info(`[EMAIL VERIFICATION] Sent to user ${req.user.id} (${cleanEmail}): ${code}`);
-      res.json({ success: true, message: 'Verification code sent!', code: code });
+      // Delivered out-of-band (server log until an email provider is wired) — NEVER returned in
+      // the response. Returning it previously made the whole verification step a no-op.
+      logger.info(`[EMAIL VERIFICATION] code for user ${req.user.id} (${cleanEmail}) issued (not logged in full).`);
+      securityLog(req.user.id, 'email_verification_requested', req.ip, `Verification requested for ${cleanEmail}.`);
+      res.json({ success: true, message: 'A verification code has been sent to your email address.' });
     }
   );
 });
@@ -100,7 +122,23 @@ router.post('/api/user/change-email/verify', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!record) return res.status(400).json({ error: 'No verification request pending.' });
 
-    if (record.code !== code.trim()) {
+    const now = Math.floor(Date.now() / 1000);
+    if (now - record.created_at > EMAIL_CODE_TTL_SECS) {
+      db.run('DELETE FROM user_email_verifications WHERE user_id = ?', [req.user.id]);
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new one.' });
+    }
+    if ((record.attempts || 0) >= EMAIL_CODE_MAX_ATTEMPTS) {
+      db.run('DELETE FROM user_email_verifications WHERE user_id = ?', [req.user.id]);
+      securityLog(req.user.id, 'verification_failure', req.ip, 'Email verification locked: too many invalid attempts.');
+      return res.status(429).json({ error: 'Too many invalid attempts. Please request a new code.' });
+    }
+
+    // Constant-time compare to avoid leaking how many leading digits matched.
+    const provided = Buffer.from(code.trim().padStart(6, '0'));
+    const expected = Buffer.from(String(record.code).padStart(6, '0'));
+    const matches = provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
+    if (!matches) {
+      db.run('UPDATE user_email_verifications SET attempts = attempts + 1 WHERE user_id = ?', [req.user.id]);
       securityLog(req.user.id, 'verification_failure', req.ip, 'Invalid email verification code entered.');
       return res.status(400).json({ error: 'Invalid verification code.' });
     }

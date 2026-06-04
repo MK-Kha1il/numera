@@ -50,12 +50,12 @@ async function api(base, method, route, { token, body, headers } = {}) {
 async function registerUser(base) {
   const username = 'smoke_' + crypto.randomBytes(4).toString('hex'); // <= 20 chars
   const { status, body } = await api(base, 'POST', '/api/auth/register', {
-    body: { username, password: 'password123' },
+    body: { username, password: 'Tr4ilblaze-Mathy' },
   });
   if (status !== 200 || !body || !body.token) {
     throw new Error(`register failed: ${status} ${JSON.stringify(body)}`);
   }
-  return { ...body, username, password: 'password123' };
+  return { ...body, username, password: 'Tr4ilblaze-Mathy' };
 }
 
 module.exports = { bootServer, shutdown, api, registerUser };

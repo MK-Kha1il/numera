@@ -31,10 +31,25 @@ const EXTRA_CORS_ORIGINS = (process.env.CORS_ORIGINS || '')
   .map((s) => s.trim())
   .filter(Boolean);
 
+// Reverse-proxy trust. When the app runs behind a proxy/load balancer (nginx, Cloudflare,
+// Heroku, etc.), Express must be told to trust X-Forwarded-For or `req.ip` becomes the proxy's
+// IP — which silently collapses ALL per-IP rate limiting into one shared bucket. Set
+// TRUST_PROXY to the number of trusted proxy hops (e.g. "1") or a value Express accepts
+// ("loopback", a subnet, "true"). Left unset in dev so `req.ip` is the real socket address.
+// Do NOT blanket-enable "true" in production — that lets clients spoof X-Forwarded-For.
+const rawTrustProxy = process.env.TRUST_PROXY;
+let TRUST_PROXY = false;
+if (rawTrustProxy !== undefined && rawTrustProxy !== '') {
+  if (/^\d+$/.test(rawTrustProxy)) TRUST_PROXY = parseInt(rawTrustProxy, 10);
+  else if (rawTrustProxy === 'true') TRUST_PROXY = true;
+  else TRUST_PROXY = rawTrustProxy; // 'loopback', a subnet, etc.
+}
+
 module.exports = {
   NODE_ENV,
   isProduction,
   JWT_SECRET,
   PORT: process.env.PORT || 3000,
   EXTRA_CORS_ORIGINS,
+  TRUST_PROXY,
 };

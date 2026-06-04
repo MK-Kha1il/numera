@@ -104,6 +104,46 @@ const migrations = [
       await addColumn('ALTER TABLE learner_profiles ADD COLUMN transfer_success INTEGER DEFAULT 0');
     },
   },
+  {
+    version: 5,
+    name: 'auth_hardening_mfa_and_session_columns',
+    // Authentication overhaul: brute-force ceiling on email codes, TOTP MFA enrollment, and
+    // session inactivity tracking. All additive/idempotent.
+    up: async (run) => {
+      const addColumn = async (sql) => {
+        try {
+          await run(sql);
+        } catch (e) {
+          if (!/duplicate column name/i.test(e.message)) throw e;
+        }
+      };
+
+      // Email verification: cap invalid guesses (see routes/account.js).
+      await addColumn('ALTER TABLE user_email_verifications ADD COLUMN attempts INTEGER DEFAULT 0');
+
+      // TOTP MFA: secret is held until the first valid code confirms enrollment (mfa_enabled=1).
+      // A pending secret with mfa_enabled=0 is an un-confirmed setup.
+      await addColumn('ALTER TABLE users ADD COLUMN mfa_secret TEXT');
+      await addColumn('ALTER TABLE users ADD COLUMN mfa_enabled INTEGER DEFAULT 0');
+
+      // Session inactivity timeout: last time a token tied to this session was used.
+      await addColumn('ALTER TABLE user_sessions ADD COLUMN last_used_at INTEGER DEFAULT 0');
+
+      // One-time MFA recovery codes (hashed at rest — never stored in plaintext). `used_at`
+      // makes each strictly single-use.
+      await run(`
+        CREATE TABLE IF NOT EXISTS user_mfa_recovery_codes (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id    INTEGER NOT NULL,
+          code_hash  TEXT    NOT NULL,
+          used_at    INTEGER DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_mfa_recovery_user ON user_mfa_recovery_codes(user_id)');
+    },
+  },
 ];
 
 /**

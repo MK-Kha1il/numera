@@ -50,6 +50,53 @@ function clearFailedLogins(ip) {
   delete failedLoginAttempts[ip];
 }
 
+// ---- Per-ACCOUNT adaptive lockout ------------------------------------------------
+// Complements the per-IP tracker above: keys on the attempted username so credential
+// stuffing a single account is throttled even across rotating IPs (the per-IP limiter
+// can't see that). Temporary by design — entries age out of the window, never permanent.
+const ACCOUNT_MAX_FAILURES = 5;
+const ACCOUNT_WINDOW_MS = 15 * 60 * 1000;
+const accountFailures = {}; // normalizedUsername -> timestamps[]
+
+function normAccount(username) {
+  return typeof username === 'string' ? username.trim().toLowerCase() : '';
+}
+
+function activeFailures(key, now) {
+  if (!accountFailures[key]) return [];
+  accountFailures[key] = accountFailures[key].filter((t) => now - t < ACCOUNT_WINDOW_MS);
+  if (accountFailures[key].length === 0) delete accountFailures[key];
+  return accountFailures[key] || [];
+}
+
+// Middleware: blocks login for a locked account before the password is ever checked, so a
+// locked account can't be probed. Returns a Retry-After-style minute estimate.
+function checkAccountLockout(req, res, next) {
+  const key = normAccount(req.body && req.body.username);
+  if (!key) return next();
+  const now = Date.now();
+  const fails = activeFailures(key, now);
+  if (fails.length >= ACCOUNT_MAX_FAILURES) {
+    const waitTime = Math.ceil((ACCOUNT_WINDOW_MS - (now - fails[0])) / 60000);
+    securityLog(null, 'account_locked', req.ip, `Login blocked: account '${key}' is temporarily locked. Wait ${waitTime}m.`);
+    return res.status(429).json({ error: `Too many failed attempts for this account. Please wait ${waitTime} minutes.` });
+  }
+  next();
+}
+
+function recordAccountFailure(username) {
+  const key = normAccount(username);
+  if (!key) return { locked: false, count: 0 };
+  if (!accountFailures[key]) accountFailures[key] = [];
+  accountFailures[key].push(Date.now());
+  const count = accountFailures[key].length;
+  return { locked: count >= ACCOUNT_MAX_FAILURES, count };
+}
+
+function clearAccountFailures(username) {
+  delete accountFailures[normAccount(username)];
+}
+
 // ---- Route-specific rate limiter --------------------------------------------------
 const rateLimits = {}; // ip -> timestamps[]
 function rateLimiter(limit, windowMs) {
@@ -74,4 +121,7 @@ module.exports = {
   recordFailedLogin,
   clearFailedLogins,
   rateLimiter,
+  checkAccountLockout,
+  recordAccountFailure,
+  clearAccountFailures,
 };
