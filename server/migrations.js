@@ -144,6 +144,27 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_mfa_recovery_user ON user_mfa_recovery_codes(user_id)');
     },
   },
+  {
+    version: 6,
+    name: 'password_reset_tokens',
+    // Password reset: a high-entropy code is emailed; only its SHA-256 hash is stored, with a
+    // short expiry, an attempt cap, and single-use enforcement (used_at). Never store the raw code.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id    INTEGER NOT NULL,
+          token_hash TEXT    NOT NULL,
+          attempts   INTEGER DEFAULT 0,
+          expires_at INTEGER NOT NULL,
+          used_at    INTEGER DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens(user_id)');
+    },
+  },
 ];
 
 /**

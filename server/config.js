@@ -45,6 +45,20 @@ if (rawTrustProxy !== undefined && rawTrustProxy !== '') {
   else TRUST_PROXY = rawTrustProxy; // 'loopback', a subnet, etc.
 }
 
+// Outbound email (password reset, verification codes). When SMTP_HOST is unset the mailer
+// degrades to structured logging (dev/CI), so the app runs without an email provider; in
+// production, set the SMTP_* vars to deliver real mail. MAIL_FROM is the envelope sender;
+// APP_BASE_URL is used to build reset links for a future web client.
+const SMTP = {
+  host: process.env.SMTP_HOST || '',
+  port: parseInt(process.env.SMTP_PORT || '587', 10),
+  secure: process.env.SMTP_SECURE === 'true',
+  user: process.env.SMTP_USER || '',
+  pass: process.env.SMTP_PASS || '',
+};
+const MAIL_FROM = process.env.MAIL_FROM || 'Numera <no-reply@numera.app>';
+const APP_BASE_URL = process.env.APP_BASE_URL || '';
+
 module.exports = {
   NODE_ENV,
   isProduction,
@@ -52,4 +66,7 @@ module.exports = {
   PORT: process.env.PORT || 3000,
   EXTRA_CORS_ORIGINS,
   TRUST_PROXY,
+  SMTP,
+  MAIL_FROM,
+  APP_BASE_URL,
 };

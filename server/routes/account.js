@@ -11,6 +11,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { securityLog } = require('../middleware/security');
 const { rateLimiter } = require('../middleware/rateLimit');
 const { hashPassword, verifyPassword, validatePasswordStrength } = require('../lib/passwords');
+const { sendMail } = require('../services/mailer');
 const logger = require('../logger');
 
 const router = express.Router();
@@ -102,12 +103,16 @@ router.post('/api/user/change-email/request', authenticateToken, rateLimiter(5, 
     `INSERT OR REPLACE INTO user_email_verifications (user_id, new_email, code, created_at, attempts)
      VALUES (?, ?, ?, ?, 0)`,
     [req.user.id, cleanEmail, code, now],
-    (err) => {
+    async (err) => {
       if (err) return res.status(500).json({ error: err.message });
 
-      // Delivered out-of-band (server log until an email provider is wired) — NEVER returned in
-      // the response. Returning it previously made the whole verification step a no-op.
-      logger.info(`[EMAIL VERIFICATION] code for user ${req.user.id} (${cleanEmail}) issued (not logged in full).`);
+      // Delivered via the mailer (real SMTP in prod, logged in dev) — NEVER returned in the
+      // response. Returning it previously made the whole verification step a no-op.
+      await sendMail({
+        to: cleanEmail,
+        subject: 'Verify your Numera email address',
+        text: `Your Numera email verification code is:\n\n    ${code}\n\nIt expires in 10 minutes.`,
+      });
       securityLog(req.user.id, 'email_verification_requested', req.ip, `Verification requested for ${cleanEmail}.`);
       res.json({ success: true, message: 'A verification code has been sent to your email address.' });
     }

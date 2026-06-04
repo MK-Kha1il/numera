@@ -178,9 +178,15 @@ dependency.
   refresh tokens. _Deferred:_ the stateful, instantly-revocable session model already provides
   the core protection (replay/revocation); this is a meaningful Android networking rework better
   done as its own project.
-- **R2 — Email provider (enables several mission flows).** Wire SMTP/SES so email verification,
-  **password reset** (signed, single-use, expiring tokens; generic "if an account exists…"
-  responses), and account recovery become real. Today verification codes are server-logged only.
+- **R2 — Password reset + email delivery.** ✅ **Done.** A pluggable mailer (`services/mailer.js`)
+  uses SMTP (nodemailer) when `SMTP_HOST` is configured, else logs (dev/CI). Password reset:
+  `POST /api/auth/forgot-password` (generic, non-enumerating response) emails a single-use,
+  30-min, attempt-capped code stored only as a SHA-256 hash; `POST /api/auth/reset-password`
+  validates strength, re-hashes with Argon2id, and invalidates all sessions. The email-change
+  verification code now ships via the same mailer. Android: a "Forgot password?" dialog on the
+  login screen (request → reset). _Remaining:_ set the `SMTP_*` env vars in production to deliver
+  real mail (until then, codes are logged). Email-at-registration is still optional, so reset
+  only works for accounts that have set an email.
 - **R3 — Android MFA UI.** ✅ **Done.** Settings has a Two-Factor section (enable → manual-entry
   key + confirm code → one-time recovery codes; disable with password re-auth), and login shows a
   second-factor dialog (TOTP or recovery code) on an `mfaRequired` challenge. _Follow-up:_ render

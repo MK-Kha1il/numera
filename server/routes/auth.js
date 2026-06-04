@@ -19,6 +19,7 @@ const { securityLog } = require('../middleware/security');
 const { hashPassword, verifyPassword, needsRehash, validatePasswordStrength } = require('../lib/passwords');
 const totp = require('../lib/totp');
 const { getUserWithMastery, checkAndResetQuestsAndLeagues } = require('../services/userService');
+const { sendMail } = require('../services/mailer');
 const logger = require('../logger');
 
 const router = express.Router();
@@ -246,6 +247,114 @@ router.get('/api/auth/me', authenticateToken, (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(fullUser);
     });
+  });
+});
+
+// ============================================================================
+// Password reset (email-delivered single-use code)
+// ============================================================================
+const RESET_CODE_TTL_SECS = 30 * 60; // 30 minutes
+const RESET_MAX_ATTEMPTS = 5;
+// Unambiguous alphabet (no 0/O/1/I) — 8 chars ≈ 40 bits, easy to type from an email.
+const RESET_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function generateResetCode() {
+  let code = '';
+  for (let i = 0; i < 8; i++) code += RESET_ALPHABET[crypto.randomInt(0, RESET_ALPHABET.length)];
+  return code;
+}
+
+const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
+
+// Request a reset. ALWAYS responds with the same generic message — it never reveals whether the
+// username exists or has an email on file (no account enumeration). A code is only actually sent
+// when the account exists AND has a registered email.
+router.post('/api/auth/forgot-password', rateLimiter(5, 15 * 60 * 1000), (req, res) => {
+  const username = (req.body.username || '').trim();
+  const generic = { success: true, message: 'If an account with a registered email exists, a reset code has been sent.' };
+  if (!username) return res.status(400).json({ error: 'Username is required.' });
+
+  db.get('SELECT id, email FROM users WHERE username = ?', [username], (err, user) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!user || !user.email) return res.json(generic); // generic — no enumeration
+
+    const code = generateResetCode();
+    const now = Math.floor(Date.now() / 1000);
+    db.serialize(() => {
+      db.run('DELETE FROM password_reset_tokens WHERE user_id = ?', [user.id]);
+      db.run(
+        'INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)',
+        [user.id, sha256(code), now + RESET_CODE_TTL_SECS, now],
+        async (insErr) => {
+          if (insErr) return res.status(500).json({ error: insErr.message });
+          securityLog(user.id, 'password_reset_requested', req.ip, `Reset code issued for ${username}.`);
+          await sendMail({
+            to: user.email,
+            subject: 'Your Numera password reset code',
+            text:
+              `Use this code to reset your Numera password:\n\n    ${code}\n\n` +
+              `It expires in 30 minutes and can be used once. If you didn't request this, you can ignore this email.`,
+          });
+          res.json(generic);
+        }
+      );
+    });
+  });
+});
+
+// Complete a reset with the emailed code. Generic failures (never says which part was wrong).
+router.post('/api/auth/reset-password', rateLimiter(10, 15 * 60 * 1000), (req, res) => {
+  const username = (req.body.username || '').trim();
+  const code = (req.body.code || '').trim().toUpperCase();
+  const { newPassword } = req.body;
+  if (!username || !code || !newPassword) {
+    return res.status(400).json({ error: 'Username, code, and new password are required.' });
+  }
+  const strength = validatePasswordStrength(newPassword, username);
+  if (!strength.ok) return res.status(400).json({ error: strength.error });
+
+  db.get('SELECT id FROM users WHERE username = ?', [username], (err, user) => {
+    if (err) return res.status(500).json({ error: err.message });
+    const invalid = () => res.status(400).json({ error: 'Invalid or expired reset code.' });
+    if (!user) return invalid();
+
+    db.get(
+      'SELECT * FROM password_reset_tokens WHERE user_id = ? AND used_at = 0 ORDER BY created_at DESC LIMIT 1',
+      [user.id],
+      (tErr, token) => {
+        if (tErr) return res.status(500).json({ error: tErr.message });
+        const now = Math.floor(Date.now() / 1000);
+        if (!token || token.expires_at < now) return invalid();
+        if ((token.attempts || 0) >= RESET_MAX_ATTEMPTS) {
+          db.run('DELETE FROM password_reset_tokens WHERE id = ?', [token.id]);
+          securityLog(user.id, 'password_reset_failure', req.ip, 'Reset locked: too many invalid attempts.');
+          return res.status(429).json({ error: 'Too many attempts. Request a new reset code.' });
+        }
+
+        const a = Buffer.from(sha256(code));
+        const b = Buffer.from(token.token_hash);
+        const matches = a.length === b.length && crypto.timingSafeEqual(a, b);
+        if (!matches) {
+          db.run('UPDATE password_reset_tokens SET attempts = attempts + 1 WHERE id = ?', [token.id]);
+          securityLog(user.id, 'password_reset_failure', req.ip, 'Invalid reset code entered.');
+          return invalid();
+        }
+
+        hashPassword(newPassword)
+          .then((hash) => {
+            db.serialize(() => {
+              db.run('UPDATE users SET password_hash = ? WHERE id = ?', [hash, user.id]);
+              db.run('UPDATE password_reset_tokens SET used_at = ? WHERE id = ?', [now, token.id]);
+              // Invalidate all sessions: a reset must log out any attacker holding a live session.
+              db.run('DELETE FROM user_sessions WHERE user_id = ?', [user.id], () => {
+                securityLog(user.id, 'password_reset_completed', req.ip, 'Password reset; all sessions invalidated.');
+                res.json({ success: true, message: 'Your password has been reset. Please log in.' });
+              });
+            });
+          })
+          .catch(() => res.status(500).json({ error: 'Failed to secure password.' }));
+      }
+    );
   });
 });
 
