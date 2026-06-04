@@ -65,7 +65,7 @@ val AVATAR_MAP = mapOf(
  * user into changing inputs that were fine. When the server DID respond with an error, surface its
  * own message (e.g. "Username already exists", "Invalid username or password"); otherwise fall back.
  */
-private fun authErrorMessage(e: Throwable, fallback: String): String = when (e) {
+internal fun authErrorMessage(e: Throwable, fallback: String): String = when (e) {
     is java.io.IOException ->
         "Can't reach the server. Check your connection and try again."
     is retrofit2.HttpException -> {
@@ -214,6 +214,9 @@ fun LoginScreen(
     val scope = rememberCoroutineScope()
 
     var showGoogleDialog by remember { mutableStateOf(false) }
+    // Non-null while a password was accepted for an MFA-enabled account and we're awaiting the
+    // second factor.
+    var mfaChallenge by remember { mutableStateOf<String?>(null) }
 
     Box(
         modifier = Modifier
@@ -332,11 +335,15 @@ fun LoginScreen(
                                     val response = RetrofitClient.apiService.login(
                                         LoginRequest(username, password)
                                     )
-                                    RetrofitClient.saveToken(context, response.token)
-                                    ThemeManager.currentTheme = response.user.theme ?: "duolingo"
-                                    withContext(Dispatchers.Main) {
-                                        isLoading = false
-                                        onLoginSuccess()
+                                    when (val result = applyAuthResponse(context, response)) {
+                                        is LoginResult.NeedsMfa -> withContext(Dispatchers.Main) {
+                                            isLoading = false
+                                            mfaChallenge = result.challenge
+                                        }
+                                        is LoginResult.Success -> withContext(Dispatchers.Main) {
+                                            isLoading = false
+                                            onLoginSuccess()
+                                        }
                                     }
                                 } catch (e: Exception) {
                                     withContext(Dispatchers.Main) {
@@ -383,8 +390,7 @@ fun LoginScreen(
                         val response = RetrofitClient.apiService.register(
                             RegisterRequest(gUsername, "GoogleUser123!", gAvatar)
                         )
-                        RetrofitClient.saveToken(context, response.token)
-                        ThemeManager.currentTheme = response.user.theme ?: "duolingo"
+                        applyAuthResponse(context, response)
                         withContext(Dispatchers.Main) {
                             isLoading = false
                             onLoginSuccess()
@@ -395,8 +401,7 @@ fun LoginScreen(
                             val response = RetrofitClient.apiService.login(
                                 LoginRequest(gUsername, "GoogleUser123!")
                             )
-                            RetrofitClient.saveToken(context, response.token)
-                            ThemeManager.currentTheme = response.user.theme ?: "duolingo"
+                            applyAuthResponse(context, response)
                             withContext(Dispatchers.Main) {
                                 isLoading = false
                                 onLoginSuccess()
@@ -413,7 +418,16 @@ fun LoginScreen(
         )
     }
 
-
+    mfaChallenge?.let { challenge ->
+        MfaChallengeDialog(
+            challenge = challenge,
+            onAuthenticated = {
+                mfaChallenge = null
+                onLoginSuccess()
+            },
+            onCancel = { mfaChallenge = null },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -608,8 +622,7 @@ fun RegisterScreen(
                                     val response = RetrofitClient.apiService.register(
                                         RegisterRequest(username, password, selectedAvatar)
                                     )
-                                    RetrofitClient.saveToken(context, response.token)
-                                    ThemeManager.currentTheme = response.user.theme ?: "duolingo"
+                                    applyAuthResponse(context, response)
                                     withContext(Dispatchers.Main) {
                                         isLoading = false
                                         onRegisterSuccess()
@@ -657,8 +670,7 @@ fun RegisterScreen(
                         val response = RetrofitClient.apiService.register(
                             RegisterRequest(gUsername, "GoogleUser123!", gAvatar)
                         )
-                        RetrofitClient.saveToken(context, response.token)
-                        ThemeManager.currentTheme = response.user.theme ?: "duolingo"
+                        applyAuthResponse(context, response)
                         withContext(Dispatchers.Main) {
                             isLoading = false
                             onRegisterSuccess()
@@ -668,8 +680,7 @@ fun RegisterScreen(
                             val response = RetrofitClient.apiService.login(
                                 LoginRequest(gUsername, "GoogleUser123!")
                             )
-                            RetrofitClient.saveToken(context, response.token)
-                            ThemeManager.currentTheme = response.user.theme ?: "duolingo"
+                            applyAuthResponse(context, response)
                             withContext(Dispatchers.Main) {
                                 isLoading = false
                                 onRegisterSuccess()

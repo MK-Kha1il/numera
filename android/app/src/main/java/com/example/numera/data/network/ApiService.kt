@@ -12,6 +12,28 @@ interface ApiService {
     @GET("api/auth/me")
     suspend fun getProfile(@Header("Authorization") token: String): User
 
+    // ---- MFA ----
+    @POST("api/auth/mfa/login")
+    suspend fun mfaLogin(@Body request: MfaLoginRequest): AuthResponse
+
+    @GET("api/auth/mfa/status")
+    suspend fun mfaStatus(@Header("Authorization") token: String): MfaStatusResponse
+
+    @POST("api/auth/mfa/setup")
+    suspend fun mfaSetup(@Header("Authorization") token: String): MfaSetupResponse
+
+    @POST("api/auth/mfa/enable")
+    suspend fun mfaEnable(
+        @Header("Authorization") token: String,
+        @Body request: MfaEnableRequest
+    ): MfaEnableResponse
+
+    @POST("api/auth/mfa/disable")
+    suspend fun mfaDisable(
+        @Header("Authorization") token: String,
+        @Body request: MfaDisableRequest
+    ): GenericMessageResponse
+
     @GET("api/math/problems")
     suspend fun getProblems(
         @Header("Authorization") token: String,

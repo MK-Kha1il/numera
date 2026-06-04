@@ -441,10 +441,50 @@ data class LoginRequest(
     val password: String
 )
 
+// token/user are absent when the server demands a second factor — then mfaRequired=true and a
+// short-lived `challenge` is returned, which the client exchanges at /api/auth/mfa/login.
 @Serializable
 data class AuthResponse(
-    val token: String,
-    val user: User
+    val token: String? = null,
+    val user: User? = null,
+    val mfaRequired: Boolean? = null,
+    val challenge: String? = null
+)
+
+// ---- MFA (TOTP authenticator + one-time recovery codes) ----
+@Serializable
+data class MfaLoginRequest(
+    val challenge: String,
+    val token: String? = null,        // 6-digit TOTP code
+    val recoveryCode: String? = null  // or a one-time recovery code
+)
+
+@Serializable
+data class MfaStatusResponse(val enabled: Boolean)
+
+@Serializable
+data class MfaSetupResponse(
+    val secret: String,
+    val otpauthUri: String
+)
+
+@Serializable
+data class MfaEnableRequest(val token: String)
+
+@Serializable
+data class MfaEnableResponse(
+    val success: Boolean,
+    val recoveryCodes: List<String>
+)
+
+@Serializable
+data class MfaDisableRequest(val password: String)
+
+@Serializable
+data class GenericMessageResponse(
+    val success: Boolean? = null,
+    val message: String? = null,
+    val error: String? = null
 )
 
 @Serializable

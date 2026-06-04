@@ -181,8 +181,10 @@ dependency.
 - **R2 — Email provider (enables several mission flows).** Wire SMTP/SES so email verification,
   **password reset** (signed, single-use, expiring tokens; generic "if an account exists…"
   responses), and account recovery become real. Today verification codes are server-logged only.
-- **R3 — Android MFA UI.** Server endpoints are ready; build enrollment (QR from the otpauth
-  URI), the login second-factor screen, and recovery-code management.
+- **R3 — Android MFA UI.** ✅ **Done.** Settings has a Two-Factor section (enable → manual-entry
+  key + confirm code → one-time recovery codes; disable with password re-auth), and login shows a
+  second-factor dialog (TOTP or recovery code) on an `mfaRequired` challenge. _Follow-up:_ render
+  the `otpauthUri` as a scannable QR (currently manual-entry key) — needs a QR-encoder dep.
 - **R4 — HIBP breached-password check.** Optionally layer the HaveIBeenPwned k-anonymity range
   API onto the offline blocklist (decide fail-open vs fail-closed; adds a network dependency).
 - **R5 — `sqlite3@6` upgrade.** Clears all current `npm audit` advisories (breaking; test the DB

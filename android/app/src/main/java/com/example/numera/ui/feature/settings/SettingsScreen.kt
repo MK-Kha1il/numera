@@ -870,8 +870,8 @@ fun SettingsScreen(
                                         pwIsError = true
                                         return@Button
                                     }
-                                    if (newPassword.length < 8) {
-                                        pwStatusMsg = "Password must be at least 8 characters"
+                                    if (newPassword.length < 10) {
+                                        pwStatusMsg = "Password must be at least 10 characters"
                                         pwIsError = true
                                         return@Button
                                     }
@@ -917,6 +917,10 @@ fun SettingsScreen(
                             }
                         }
                     }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+
+                    // Two-Factor Authentication (TOTP) enrollment / management
+                    TwoFactorSettingsSection()
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
                     // Connected active sessions device lists
