@@ -207,3 +207,13 @@ dependency.
   set `TRUST_PROXY` to the real hop count there.
 - **R8 — Expand the common-password blocklist.** The curated core covers the passwords attackers
   try first; load a larger corpus (e.g. SecLists top-100k) if desired.
+- **R9 — Account-recovery coverage via an opt-in email nudge (NOT mandatory email).** Password
+  reset only works for accounts that have set an email. Considered making email **required at
+  signup** and decided against it: this is a low-friction gamified app ("jump straight into Level
+  1"), required-but-unverified email is security theater (typos/fakes send reset codes nowhere or
+  to a stranger), and required-and-verified adds a pre-play step that kills the signup funnel —
+  plus a math app likely has minors (COPPA considerations). **Recommended instead:** keep email
+  optional, but add a stronger post-signup nudge ("secure your account so you never lose your
+  progress," ideally with a small reward) that prompts users to add **and verify** an email after
+  a few sessions. Captures most of the recovery benefit without taxing signup. The verify
+  machinery already exists (`/api/user/change-email/*`).
