@@ -217,6 +217,7 @@ fun LoginScreen(
     // Non-null while a password was accepted for an MFA-enabled account and we're awaiting the
     // second factor.
     var mfaChallenge by remember { mutableStateOf<String?>(null) }
+    var showForgotPassword by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -372,6 +373,14 @@ fun LoginScreen(
                             fontWeight = FontWeight.Bold
                         )
                     }
+
+                    TextButton(onClick = { showForgotPassword = true }) {
+                        Text(
+                            text = "Forgot password?",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }
@@ -426,6 +435,16 @@ fun LoginScreen(
                 onLoginSuccess()
             },
             onCancel = { mfaChallenge = null },
+        )
+    }
+
+    if (showForgotPassword) {
+        ForgotPasswordDialog(
+            onDismiss = { showForgotPassword = false },
+            onResetComplete = {
+                showForgotPassword = false
+                errorMessage = "✅ Password reset. Log in with your new password."
+            },
         )
     }
 }

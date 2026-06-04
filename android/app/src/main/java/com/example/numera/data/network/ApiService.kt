@@ -12,6 +12,13 @@ interface ApiService {
     @GET("api/auth/me")
     suspend fun getProfile(@Header("Authorization") token: String): User
 
+    // ---- Password reset ----
+    @POST("api/auth/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): GenericMessageResponse
+
+    @POST("api/auth/reset-password")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): GenericMessageResponse
+
     // ---- MFA ----
     @POST("api/auth/mfa/login")
     suspend fun mfaLogin(@Body request: MfaLoginRequest): AuthResponse

@@ -487,6 +487,17 @@ data class GenericMessageResponse(
     val error: String? = null
 )
 
+// ---- Password reset (email-delivered code) ----
+@Serializable
+data class ForgotPasswordRequest(val username: String)
+
+@Serializable
+data class ResetPasswordRequest(
+    val username: String,
+    val code: String,
+    val newPassword: String
+)
+
 @Serializable
 data class CompleteSessionRequest(
     val xpGained: Int,
