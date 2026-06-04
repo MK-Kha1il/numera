@@ -64,6 +64,7 @@ app.use(require('./routes/shop'));
 // /api/user/* paths win over the param route — fixes prior shadowing of sessions/security-logs.
 app.use(require('./routes/account'));
 app.use(require('./routes/friends'));
+app.use(require('./routes/moderation'));
 app.use(require('./routes/achievements'));
 const logger = require('./logger');
 app.use(require('./routes/engine'));
@@ -414,8 +415,14 @@ app.get('/download-apk', (req, res) => {
 // Initialize Database, then apply any pending versioned migrations.
 // `ready` resolves once the schema is initialized + migrated; tests await it before
 // issuing requests. In standalone mode a failure is fatal.
+const { startRetentionSweeper } = require('./services/retention');
 const ready = initDb()
   .then(() => runMigrations(db))
+  .then(() => {
+    // Begin enforcing data-retention windows (purges old IP-bearing logs/sessions). Only when
+    // run as a real server — tests use throwaway DBs and don't need the background timer.
+    if (require.main === module) startRetentionSweeper(db);
+  })
   .catch(err => {
     logger.error("Database initialization failed:", err);
     if (require.main === module) process.exit(1);

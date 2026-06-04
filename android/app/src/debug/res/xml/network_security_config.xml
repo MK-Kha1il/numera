@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DEBUG-ONLY transport security. Gradle substitutes this for the release config
+  (src/main/res/xml/network_security_config.xml) in debuggable builds only, so it can never
+  weaken a shipped release.
+
+  Debug builds talk to a plain-HTTP dev server on localhost / the emulator host / a LAN box whose
+  address varies per developer. Rather than hardcode anyone's IP, debug builds simply permit
+  cleartext. Release builds remain TLS-only.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -20,11 +20,28 @@ const { hashPassword, verifyPassword, needsRehash, validatePasswordStrength } = 
 const totp = require('../lib/totp');
 const { getUserWithMastery, checkAndResetQuestsAndLeagues } = require('../services/userService');
 const { sendMail } = require('../services/mailer');
+const { checkText } = require('../lib/contentFilter');
 const logger = require('../logger');
 
 const router = express.Router();
 
 const ACCESS_TOKEN_TTL = '15m'; // short-lived; clients refresh with the rotating refresh token
+const MIN_AGE_YEARS = 13; // neutral age gate floor (see docs/ComplianceAudit.md C2)
+
+// Compute age in whole years from an ISO 'YYYY-MM-DD' birth date, or null if unparseable.
+function ageFromBirthDate(birthDate) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(birthDate || '').trim());
+  if (!m) return null;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const dob = new Date(Date.UTC(y, mo - 1, d));
+  if (dob.getUTCFullYear() !== y || dob.getUTCMonth() !== mo - 1 || dob.getUTCDate() !== d) return null;
+  const now = new Date();
+  let age = now.getUTCFullYear() - y;
+  const beforeBirthday =
+    now.getUTCMonth() < mo - 1 || (now.getUTCMonth() === mo - 1 && now.getUTCDate() < d);
+  if (beforeBirthday) age -= 1;
+  return age;
+}
 const SESSION_TTL_SECS = 7 * 24 * 60 * 60; // absolute session + refresh-token lifetime
 const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
 
@@ -81,10 +98,25 @@ function sendLoginResponse(userId, username, req, res) {
 }
 
 router.post('/api/auth/register', checkFailedLogins, rateLimiter(5, 60000), async (req, res) => {
-  const { username, password, avatar } = req.body;
+  const { username, password, avatar, birthDate } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password required' });
   }
+
+  // Neutral age gate (COPPA / Children's Code — see docs/ComplianceAudit.md C2). A date of birth
+  // is required; accounts under MIN_AGE_YEARS are refused. We persist only the birth year.
+  const age = ageFromBirthDate(birthDate);
+  if (age === null) {
+    return res.status(400).json({ error: 'A valid date of birth (YYYY-MM-DD) is required.' });
+  }
+  if (age < MIN_AGE_YEARS) {
+    securityLog(null, 'registration_blocked_age', req.ip, `Signup refused: under ${MIN_AGE_YEARS}.`);
+    return res.status(403).json({
+      error: `You must be at least ${MIN_AGE_YEARS} years old to create an account.`,
+      ageRestricted: true,
+    });
+  }
+  const birthYear = Number(birthDate.slice(0, 4));
 
   // Strict alphanumeric/underscore regex validation & length check
   const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
@@ -92,6 +124,11 @@ router.post('/api/auth/register', checkFailedLogins, rateLimiter(5, 60000), asyn
     return res.status(400).json({
       error: 'Username must be 3-20 characters long and contain only letters, numbers, and underscores.',
     });
+  }
+  // Block offensive/impersonating usernames (UGC moderation — first line; reports back it up).
+  const nameCheck = checkText(username, 'Username');
+  if (!nameCheck.ok) {
+    return res.status(400).json({ error: nameCheck.error });
   }
   const strength = validatePasswordStrength(password, username);
   if (!strength.ok) {
@@ -107,9 +144,12 @@ router.post('/api/auth/register', checkFailedLogins, rateLimiter(5, 60000), asyn
   const chosenAvatar = avatar || 'avatar_pythagoras';
   const now = Math.floor(Date.now() / 1000);
 
+  // telemetry_enabled = 0: behavioral analytics are OFF by default (opt-in), per GDPR Art 25
+  // privacy-by-default and the Children's Code. The user can enable it later in privacy settings.
   db.run(
-    `INSERT INTO users (username, password_hash, last_active, avatar, last_league_reset) VALUES (?, ?, ?, ?, ?)`,
-    [username, hash, now, chosenAvatar, now],
+    `INSERT INTO users (username, password_hash, last_active, avatar, last_league_reset, birth_year, telemetry_enabled)
+     VALUES (?, ?, ?, ?, ?, ?, 0)`,
+    [username, hash, now, chosenAvatar, now, birthYear],
     function (err) {
       if (err) {
         if (err.message.includes('UNIQUE')) {

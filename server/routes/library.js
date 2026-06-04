@@ -3,6 +3,7 @@
 const express = require('express');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { checkText } = require('../lib/contentFilter');
 
 const router = express.Router();
 
@@ -96,6 +97,9 @@ router.post('/api/collections', authenticateToken, (req, res) => {
   if (!name || name.trim() === '') {
     return res.status(400).json({ error: 'Collection name is required.' });
   }
+  // Collection names can be made public (publicProfile route), so they are UGC — filter them.
+  const nameCheck = checkText(name, 'Collection name');
+  if (!nameCheck.ok) return res.status(400).json({ error: nameCheck.error });
   const now = Math.floor(Date.now() / 1000);
   const isPub = is_public ? 1 : 0;
 
@@ -122,6 +126,8 @@ router.put('/api/collections/:id', authenticateToken, (req, res) => {
   if (!name || name.trim() === '') {
     return res.status(400).json({ error: 'Collection name is required.' });
   }
+  const nameCheck = checkText(name, 'Collection name');
+  if (!nameCheck.ok) return res.status(400).json({ error: nameCheck.error });
   const isPub = is_public ? 1 : 0;
 
   db.run(

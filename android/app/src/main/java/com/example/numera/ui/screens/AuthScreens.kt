@@ -1,5 +1,6 @@
 package com.example.numera.ui.screens
 
+import java.util.Calendar
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -389,7 +390,7 @@ fun LoginScreen(
     if (showGoogleDialog) {
         GoogleAuthMockDialog(
             onDismiss = { showGoogleDialog = false },
-            onSuccess = { gUsername, gAvatar ->
+            onSuccess = { gUsername, gAvatar, gBirthDate ->
                 showGoogleDialog = false
                 isLoading = true
                 errorMessage = null
@@ -397,7 +398,7 @@ fun LoginScreen(
                     try {
                         // Attempt to register google user with a default strong password
                         val response = RetrofitClient.apiService.register(
-                            RegisterRequest(gUsername, "GoogleUser123!", gAvatar)
+                            RegisterRequest(gUsername, "GoogleUser123!", gAvatar, gBirthDate)
                         )
                         applyAuthResponse(context, response)
                         withContext(Dispatchers.Main) {
@@ -449,6 +450,22 @@ fun LoginScreen(
     }
 }
 
+// Parse an ISO 'YYYY-MM-DD' string and return whole-year age, or null if malformed/invalid.
+// Mirrors the server-side gate so the user gets instant feedback before the network round-trip.
+private fun ageFromBirthDate(birthDate: String): Int? {
+    val m = Regex("""^(\d{4})-(\d{2})-(\d{2})$""").matchEntire(birthDate.trim()) ?: return null
+    val (y, mo, d) = m.destructured
+    val year = y.toInt(); val month = mo.toInt(); val day = d.toInt()
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null
+    val now = Calendar.getInstance()
+    var age = now.get(Calendar.YEAR) - year
+    val curMonth = now.get(Calendar.MONTH) + 1
+    val curDay = now.get(Calendar.DAY_OF_MONTH)
+    if (curMonth < month || (curMonth == month && curDay < day)) age -= 1
+    if (age < 0 || age > 130) return null
+    return age
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
@@ -459,6 +476,7 @@ fun RegisterScreen(
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var birthDate by remember { mutableStateOf("") } // YYYY-MM-DD; age gate (13+)
     var selectedAvatar by remember { mutableStateOf("avatar_owl") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
@@ -556,6 +574,18 @@ fun RegisterScreen(
                 )
 
                 OutlinedTextField(
+                    value = birthDate,
+                    onValueChange = { birthDate = it },
+                    label = { Text("Date of birth (YYYY-MM-DD)") },
+                    placeholder = { Text("2008-04-15") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    supportingText = { Text("You must be at least 13 to use Numera.") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Password") },
@@ -634,12 +664,21 @@ fun RegisterScreen(
                                 errorMessage = "Passwords do not match"
                                 return@DuoButton
                             }
+                            val age = ageFromBirthDate(birthDate)
+                            if (age == null) {
+                                errorMessage = "Please enter your date of birth as YYYY-MM-DD"
+                                return@DuoButton
+                            }
+                            if (age < 13) {
+                                errorMessage = "You must be at least 13 years old to use Numera."
+                                return@DuoButton
+                            }
                             isLoading = true
                             errorMessage = null
                             scope.launch(Dispatchers.IO) {
                                 try {
                                     val response = RetrofitClient.apiService.register(
-                                        RegisterRequest(username, password, selectedAvatar)
+                                        RegisterRequest(username, password, selectedAvatar, birthDate.trim())
                                     )
                                     applyAuthResponse(context, response)
                                     withContext(Dispatchers.Main) {
@@ -680,14 +719,14 @@ fun RegisterScreen(
     if (showGoogleDialog) {
         GoogleAuthMockDialog(
             onDismiss = { showGoogleDialog = false },
-            onSuccess = { gUsername, gAvatar ->
+            onSuccess = { gUsername, gAvatar, gBirthDate ->
                 showGoogleDialog = false
                 isLoading = true
                 errorMessage = null
                 scope.launch(Dispatchers.IO) {
                     try {
                         val response = RetrofitClient.apiService.register(
-                            RegisterRequest(gUsername, "GoogleUser123!", gAvatar)
+                            RegisterRequest(gUsername, "GoogleUser123!", gAvatar, gBirthDate)
                         )
                         applyAuthResponse(context, response)
                         withContext(Dispatchers.Main) {
@@ -721,9 +760,11 @@ fun RegisterScreen(
 @Composable
 fun GoogleAuthMockDialog(
     onDismiss: () -> Unit,
-    onSuccess: (String, String) -> Unit
+    onSuccess: (String, String, String) -> Unit // username, avatar, birthDate (YYYY-MM-DD)
 ) {
     var emailOrName by remember { mutableStateOf("") }
+    var birthDate by remember { mutableStateOf("") }
+    var dialogError by remember { mutableStateOf<String?>(null) }
     var selectedAvatar by remember { mutableStateOf("avatar_owl") }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -763,6 +804,21 @@ fun GoogleAuthMockDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                OutlinedTextField(
+                    value = birthDate,
+                    onValueChange = { birthDate = it },
+                    label = { Text("Date of birth (YYYY-MM-DD)") },
+                    placeholder = { Text("2008-04-15") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    supportingText = { Text("You must be at least 13.") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (dialogError != null) {
+                    Text(text = dialogError!!, color = WrongRed, fontSize = 12.sp, textAlign = TextAlign.Center)
+                }
 
                 Text(
                     text = "Select Avatar",
@@ -808,10 +864,19 @@ fun GoogleAuthMockDialog(
                         text = "Continue",
                         onClick = {
                             if (emailOrName.isNotBlank()) {
+                                val age = ageFromBirthDate(birthDate)
+                                if (age == null) {
+                                    dialogError = "Enter your date of birth as YYYY-MM-DD"
+                                    return@DuoButton
+                                }
+                                if (age < 13) {
+                                    dialogError = "You must be at least 13 years old to use Numera."
+                                    return@DuoButton
+                                }
                                 // Extract alphanumeric username from email or name
                                 val cleanedName = emailOrName.split("@")[0].filter { it.isLetterOrDigit() }
                                 val googleUser = if (cleanedName.length < 3) "GoogleUser_${System.currentTimeMillis() % 1000}" else cleanedName
-                                onSuccess(googleUser, selectedAvatar)
+                                onSuccess(googleUser, selectedAvatar, birthDate.trim())
                             }
                         },
                         modifier = Modifier.width(120.dp),

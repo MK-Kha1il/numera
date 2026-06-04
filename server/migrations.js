@@ -202,6 +202,55 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_refresh_session ON refresh_tokens(session_id)');
     },
   },
+  {
+    version: 9,
+    name: 'compliance_age_gate_and_moderation',
+    // Compliance remediation (see docs/ComplianceAudit.md):
+    //  - birth_year: minimal age signal for the 13+ neutral age gate. We store the YEAR ONLY
+    //    (data minimization) — enough to enforce the floor, not a full DOB.
+    //  - user_blocks: a user can block another; blocks suppress friend requests + social visibility.
+    //  - content_reports: user-submitted reports of inappropriate usernames/collections for
+    //    human review (the moderation queue admins read).
+    up: async (run) => {
+      const addColumn = async (sql) => {
+        try {
+          await run(sql);
+        } catch (e) {
+          if (!/duplicate column name/i.test(e.message)) throw e;
+        }
+      };
+
+      await addColumn('ALTER TABLE users ADD COLUMN birth_year INTEGER');
+
+      await run(`
+        CREATE TABLE IF NOT EXISTS user_blocks (
+          blocker_id  INTEGER NOT NULL,
+          blocked_id  INTEGER NOT NULL,
+          created_at  INTEGER NOT NULL,
+          PRIMARY KEY (blocker_id, blocked_id),
+          FOREIGN KEY (blocker_id) REFERENCES users(id),
+          FOREIGN KEY (blocked_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_user_blocks_blocker ON user_blocks(blocker_id)');
+      await run('CREATE INDEX IF NOT EXISTS idx_user_blocks_blocked ON user_blocks(blocked_id)');
+
+      await run(`
+        CREATE TABLE IF NOT EXISTS content_reports (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          reporter_id   INTEGER NOT NULL,
+          target_type   TEXT    NOT NULL,   -- 'user' | 'collection'
+          target_id     INTEGER NOT NULL,
+          reason        TEXT,
+          status        TEXT    DEFAULT 'open' CHECK(status IN ('open','reviewed','actioned','dismissed')),
+          created_at    INTEGER NOT NULL,
+          reviewed_at   INTEGER DEFAULT 0,
+          FOREIGN KEY (reporter_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_content_reports_status ON content_reports(status)');
+    },
+  },
 ];
 
 /**
