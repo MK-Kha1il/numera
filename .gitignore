@@ -37,3 +37,6 @@ android/processes.txt
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ── Scratch / refactoring dumps (don't commit) ───────────────────────────────
+*_lines.txt
