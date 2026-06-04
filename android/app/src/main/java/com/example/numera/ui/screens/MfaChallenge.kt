@@ -41,8 +41,8 @@ fun applyAuthResponse(context: Context, response: AuthResponse): LoginResult {
     if (response.mfaRequired == true && response.challenge != null) {
         return LoginResult.NeedsMfa(response.challenge)
     }
-    val token = response.token ?: error("Malformed auth response: missing token")
-    RetrofitClient.saveToken(context, token)
+    val accessToken = response.accessToken ?: response.token ?: error("Malformed auth response: missing token")
+    RetrofitClient.saveTokens(context, accessToken, response.refreshToken)
     ThemeManager.currentTheme = response.user?.theme ?: "duolingo"
     return LoginResult.Success(response.user ?: error("Malformed auth response: missing user"))
 }

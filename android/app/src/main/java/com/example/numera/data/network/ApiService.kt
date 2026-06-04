@@ -2,6 +2,14 @@ package com.example.numera.data.network
 
 import retrofit2.http.*
 
+// Separate, dependency-free interface for the token refresh call. Synchronous (Call, not suspend)
+// so the OkHttp Authenticator can invoke it on its background thread without the main auth client's
+// interceptors/authenticator (which would recurse).
+interface TokenRefreshApi {
+    @POST("api/auth/refresh")
+    fun refresh(@Body request: RefreshRequest): retrofit2.Call<AuthResponse>
+}
+
 interface ApiService {
     @POST("api/auth/register")
     suspend fun register(@Body request: RegisterRequest): AuthResponse

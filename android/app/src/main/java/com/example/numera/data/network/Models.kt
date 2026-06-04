@@ -443,13 +443,19 @@ data class LoginRequest(
 
 // token/user are absent when the server demands a second factor — then mfaRequired=true and a
 // short-lived `challenge` is returned, which the client exchanges at /api/auth/mfa/login.
+// `token` aliases `accessToken`; `refreshToken` rotates and is exchanged at /api/auth/refresh.
 @Serializable
 data class AuthResponse(
     val token: String? = null,
+    val accessToken: String? = null,
+    val refreshToken: String? = null,
     val user: User? = null,
     val mfaRequired: Boolean? = null,
     val challenge: String? = null
 )
+
+@Serializable
+data class RefreshRequest(val refreshToken: String)
 
 // ---- MFA (TOTP authenticator + one-time recovery codes) ----
 @Serializable

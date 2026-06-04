@@ -50,6 +50,16 @@ object RetrofitClient {
     // Keystore-backed store can't be created (rare OEM/keystore failures), so login never breaks.
     private const val SECURE_PREFS = "numera_secure_prefs"
     private const val TOKEN_KEY = "auth_token"
+    private const val REFRESH_KEY = "refresh_token"
+
+    // The rotating refresh token (raw, no "Bearer "). Volatile + guarded by refreshLock because the
+    // OkHttp Authenticator may read/rotate it from a background thread.
+    @Volatile private var refreshTokenValue: String? = null
+    private val refreshLock = Any()
+    // Application context captured at init() so the Authenticator can persist rotated tokens
+    // without a passed-in Context.
+    private var appContext: Context? = null
+    private lateinit var tokenRefreshApi: TokenRefreshApi
 
     private fun securePrefs(context: Context): SharedPreferences {
         return try {
@@ -70,6 +80,7 @@ object RetrofitClient {
     }
 
     fun init(context: Context) {
+        appContext = context.applicationContext
         val prefs = context.getSharedPreferences("numera_prefs", Context.MODE_PRIVATE)
         val secure = securePrefs(context)
 
@@ -82,6 +93,7 @@ object RetrofitClient {
         }
 
         authToken = secure.getString(TOKEN_KEY, null)
+        refreshTokenValue = secure.getString(REFRESH_KEY, null)
         var savedUrl = prefs.getString("server_base_url", "http://10.100.94.164:3000/")
             ?: "http://10.100.94.164:3000/"
         // Localhost/127.0.0.1 never works from a device/emulator; keep the LAN IP
@@ -107,20 +119,58 @@ object RetrofitClient {
             .build()
             .create(ApiService::class.java)
 
+        // Bare client (no auth interceptor/authenticator) for the refresh call, to avoid recursion.
+        tokenRefreshApi = Retrofit.Builder()
+            .baseUrl(currentBaseUrl)
+            .client(
+                OkHttpClient.Builder()
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .build()
+            )
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(TokenRefreshApi::class.java)
+
         SocketClient.updateUrl(currentBaseUrl.removeSuffix("/"))
     }
 
     fun getBaseUrl(): String = currentBaseUrl
 
-    fun saveToken(context: Context, token: String) {
-        authToken = token
-        securePrefs(context).edit().putString(TOKEN_KEY, authToken).apply()
+    fun saveToken(context: Context, token: String) = saveTokens(context, token, null)
+
+    // Persists the access token and (when present) the rotating refresh token.
+    fun saveTokens(context: Context, accessToken: String, refreshToken: String?) {
+        authToken = accessToken
+        val editor = securePrefs(context).edit().putString(TOKEN_KEY, authToken)
+        if (refreshToken != null) {
+            refreshTokenValue = refreshToken
+            editor.putString(REFRESH_KEY, refreshToken)
+        }
+        editor.apply()
     }
 
     fun clearToken(context: Context) {
         android.util.Log.d("RetrofitClient", "clearToken called")
         authToken = null
-        securePrefs(context).edit().remove(TOKEN_KEY).apply()
+        refreshTokenValue = null
+        securePrefs(context).edit().remove(TOKEN_KEY).remove(REFRESH_KEY).apply()
+    }
+
+    // Drops all credentials and signals a logout. Called when refresh fails (session truly gone).
+    private fun forceLogout(): okhttp3.Request? {
+        authToken = null
+        refreshTokenValue = null
+        appContext?.let { securePrefs(it).edit().remove(TOKEN_KEY).remove(REFRESH_KEY).apply() }
+        triggerLogout()
+        return null
+    }
+
+    private fun priorResponseCount(response: okhttp3.Response): Int {
+        var prior = response.priorResponse
+        var count = 1
+        while (prior != null) { count++; prior = prior.priorResponse }
+        return count
     }
 
     private fun buildOkHttpClient(): OkHttpClient {
@@ -161,14 +211,46 @@ object RetrofitClient {
                 }
                 chain.proceed(req)
             }
-            // Handle 401 → global logout signal
-            .addInterceptor { chain ->
-                val response = chain.proceed(chain.request())
-                if (response.code == 401) {
-                    android.util.Log.w("RetrofitClient", "401 Unauthorized — triggering logout")
-                    triggerLogout()
+            // On 401, transparently refresh the access token (rotating the refresh token) and
+            // retry once. Concurrent 401s are serialized so only ONE refresh happens — a second
+            // request whose token was already refreshed simply retries with the new token, which
+            // avoids tripping the server's refresh-reuse detection. If refresh fails, log out.
+            .authenticator { _, response ->
+                val path = response.request.url.encodedPath
+                if (path.endsWith("/api/auth/refresh")) return@authenticator null // don't loop on refresh
+                if (priorResponseCount(response) >= 2) return@authenticator null   // already retried once
+
+                synchronized(refreshLock) {
+                    val failedAuth = response.request.header("Authorization")
+                    val current = authToken
+                    // Another thread already refreshed — just retry with the current token.
+                    if (current != null && current != failedAuth) {
+                        return@authenticator response.request.newBuilder()
+                            .header("Authorization", current)
+                            .build()
+                    }
+                    val refresh = refreshTokenValue ?: return@authenticator forceLogout()
+                    val resp = try {
+                        tokenRefreshApi.refresh(RefreshRequest(refresh)).execute()
+                    } catch (e: Exception) {
+                        android.util.Log.w("RetrofitClient", "token refresh failed: ${e.message}")
+                        null
+                    }
+                    val body = resp?.body()
+                    val newAccess = body?.accessToken ?: body?.token
+                    if (resp == null || !resp.isSuccessful || newAccess == null) {
+                        return@authenticator forceLogout()
+                    }
+                    authToken = newAccess
+                    body?.refreshToken?.let { refreshTokenValue = it }
+                    appContext?.let { ctx ->
+                        securePrefs(ctx).edit()
+                            .putString(TOKEN_KEY, authToken)
+                            .putString(REFRESH_KEY, refreshTokenValue)
+                            .apply()
+                    }
+                    response.request.newBuilder().header("Authorization", authToken!!).build()
                 }
-                response
             }
             .connectTimeout(10, TimeUnit.SECONDS)   // fail fast on unreachable host
             .readTimeout(30, TimeUnit.SECONDS)       // longer for heavy math payloads
