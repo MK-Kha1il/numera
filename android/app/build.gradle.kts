@@ -126,4 +126,7 @@ dependencies {
 
   // Kotlinx Serialization
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
+  // Encrypted storage for the auth token at rest (AES-256-GCM via the Android Keystore)
+  implementation("androidx.security:security-crypto:1.1.0-alpha06")
 }

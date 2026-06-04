@@ -1,6 +1,9 @@
 package com.example.numera.data.network
 
 import android.content.Context
+import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import okhttp3.OkHttpClient
@@ -41,9 +44,44 @@ object RetrofitClient {
         apiService = service
     }
 
+    // The bearer token is sensitive, so it lives in EncryptedSharedPreferences (AES-256-GCM,
+    // key held in the Android Keystore) rather than the world-readable-on-root plaintext prefs
+    // it used to share with non-sensitive settings. Falls back to plaintext only if the
+    // Keystore-backed store can't be created (rare OEM/keystore failures), so login never breaks.
+    private const val SECURE_PREFS = "numera_secure_prefs"
+    private const val TOKEN_KEY = "auth_token"
+
+    private fun securePrefs(context: Context): SharedPreferences {
+        return try {
+            val masterKey = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+            EncryptedSharedPreferences.create(
+                context,
+                SECURE_PREFS,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("RetrofitClient", "EncryptedSharedPreferences unavailable; using fallback: ${e.message}")
+            context.getSharedPreferences(SECURE_PREFS, Context.MODE_PRIVATE)
+        }
+    }
+
     fun init(context: Context) {
         val prefs = context.getSharedPreferences("numera_prefs", Context.MODE_PRIVATE)
-        authToken = prefs.getString("auth_token", null)
+        val secure = securePrefs(context)
+
+        // One-time migration: an existing plaintext token is moved into encrypted storage and
+        // scrubbed from the old prefs.
+        val legacyToken = prefs.getString("auth_token", null)
+        if (legacyToken != null && secure.getString(TOKEN_KEY, null) == null) {
+            secure.edit().putString(TOKEN_KEY, legacyToken).apply()
+            prefs.edit().remove("auth_token").apply()
+        }
+
+        authToken = secure.getString(TOKEN_KEY, null)
         var savedUrl = prefs.getString("server_base_url", "http://10.100.94.164:3000/")
             ?: "http://10.100.94.164:3000/"
         // Localhost/127.0.0.1 never works from a device/emulator; keep the LAN IP
@@ -76,15 +114,13 @@ object RetrofitClient {
 
     fun saveToken(context: Context, token: String) {
         authToken = token
-        val prefs = context.getSharedPreferences("numera_prefs", Context.MODE_PRIVATE)
-        prefs.edit().putString("auth_token", authToken).apply()
+        securePrefs(context).edit().putString(TOKEN_KEY, authToken).apply()
     }
 
     fun clearToken(context: Context) {
         android.util.Log.d("RetrofitClient", "clearToken called")
         authToken = null
-        val prefs = context.getSharedPreferences("numera_prefs", Context.MODE_PRIVATE)
-        prefs.edit().remove("auth_token").apply()
+        securePrefs(context).edit().remove(TOKEN_KEY).apply()
     }
 
     private fun buildOkHttpClient(): OkHttpClient {
