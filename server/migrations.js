@@ -251,6 +251,33 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_content_reports_status ON content_reports(status)');
     },
   },
+  {
+    version: 10,
+    name: 'exercise_exposure_memory',
+    // Anti-repetition keystone (see docs/MathEngineRepetitionAudit.md). Per-user memory of
+    // which problems a learner has recently experienced, fingerprinted along orthogonal
+    // dimensions so the diversity engine can detect not just exact duplicates but template,
+    // structural, and context near-duplicates. One row per (user, signature); seen_count
+    // and last_seen drive recency-weighted novelty scoring. Bounded by periodic pruning.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS exercise_exposure (
+          user_id       INTEGER NOT NULL,
+          signature     TEXT    NOT NULL,   -- concept + structure (primary near-dup key)
+          concept_sig   TEXT,               -- concept / template family
+          structure_sig TEXT,               -- question skeleton (numbers blanked)
+          context_sig   TEXT,               -- non-numeric story/framing words
+          answer_sig    TEXT,               -- normalized answer (catches fixed-answer reuse)
+          surface       TEXT DEFAULT 'problem', -- problem | archive | daily
+          seen_count    INTEGER DEFAULT 1,
+          first_seen    INTEGER NOT NULL,
+          last_seen     INTEGER NOT NULL,
+          PRIMARY KEY (user_id, signature)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_exposure_user_seen ON exercise_exposure(user_id, last_seen)');
+    },
+  },
 ];
 
 /**
