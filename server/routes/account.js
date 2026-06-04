@@ -11,8 +11,48 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { securityLog } = require('../middleware/security');
 const { rateLimiter } = require('../middleware/rateLimit');
 const { hashPassword, verifyPassword, validatePasswordStrength } = require('../lib/passwords');
+const { checkText } = require('../lib/contentFilter');
 const { sendMail } = require('../services/mailer');
 const logger = require('../logger');
+
+// Every table that holds rows keyed to a user. The single source of truth for "delete-account"
+// and for the deletion-completeness test (test/account_deletion.test.js asserts no residual rows
+// across all of these). Append here whenever a new user-scoped table is added. The `users` row
+// itself is deleted last (after these) so FK references are cleared first.
+const USER_SCOPED_TABLES = [
+  'user_email_verifications',
+  'password_reset_tokens',
+  'user_mfa_recovery_codes',
+  'refresh_tokens',
+  'user_sessions',
+  'user_utilities',
+  'user_inventory',
+  'srs_reviews',
+  'user_mistakes',
+  'user_quests',
+  'user_mastery',
+  'user_achievements',
+  'user_calculator_analytics',
+  'user_concept_analytics',
+  'user_commitment_history',
+  'user_commitment_relics',
+  'saved_exercises',
+  'saved_collections',
+  'user_notifications',
+  'security_audit_logs',
+  'idempotency_keys',
+  'user_ratings',
+  'rating_history',
+  'smurf_signals',
+  'learning_velocity',
+  'tilt_tracking',
+  'season_ratings',
+  'learner_profiles',
+  'user_misconceptions',
+  'retention_schedule',
+  'learning_style_signals',
+  'competitive_profiles',
+];
 
 const router = express.Router();
 
@@ -70,6 +110,10 @@ router.post('/api/user/change-username', authenticateToken, (req, res) => {
     });
   }
   const cleanUsername = username.trim();
+  const nameCheck = checkText(cleanUsername, 'Username');
+  if (!nameCheck.ok) {
+    return res.status(400).json({ error: nameCheck.error });
+  }
   db.get('SELECT id FROM users WHERE username = ? AND id != ?', [cleanUsername, req.user.id], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (row) return res.status(400).json({ error: 'Username is already taken.' });
@@ -260,11 +304,41 @@ router.get('/api/user/export-data', authenticateToken, (req, res) => {
             db.all('SELECT timestamp, event_type, details FROM security_audit_logs WHERE user_id = ?', [userId], (errLogs, logs) => {
               exportedData.security_logs = logs || [];
 
-              securityLog(userId, 'data_exported', req.ip, 'User requested GDPR-compliant account data export.');
+              // Behavioral / psychometric data held about the user — included so the export is a
+              // COMPLETE Art 15/20 copy, not just the obvious account fields (see ComplianceAudit M1).
+              const behavioralQueries = [
+                ['learner_profiles', 'SELECT * FROM learner_profiles WHERE user_id = ?'],
+                ['misconceptions', 'SELECT concept_id, misconception_type, misconception_label, frequency, severity FROM user_misconceptions WHERE user_id = ?'],
+                ['retention_schedule', 'SELECT concept_id, stability_days, next_review_ts, review_count, lapse_count FROM retention_schedule WHERE user_id = ?'],
+                ['learning_style_signals', 'SELECT style_type, signal_weight, sample_count FROM learning_style_signals WHERE user_id = ?'],
+                ['concept_analytics', 'SELECT concept, success_rate, average_speed, hesitation_index, streak FROM user_concept_analytics WHERE user_id = ?'],
+                ['calculator_analytics', 'SELECT category, level, question, template_type, game_mode, used_at FROM user_calculator_analytics WHERE user_id = ?'],
+                ['ratings', 'SELECT domain, mu, sigma, display_rating, sessions_count FROM user_ratings WHERE user_id = ?'],
+                ['rating_history', 'SELECT domain, display_before, display_after, delta, session_category, session_level, game_mode, created_at FROM rating_history WHERE user_id = ?'],
+                ['competitive_profiles', 'SELECT concept_id, skill_rating, consistency_rating, learning_velocity_rating, match_count FROM competitive_profiles WHERE user_id = ?'],
+                ['mastery', 'SELECT * FROM user_mastery WHERE user_id = ?'],
+                ['achievements', 'SELECT achievement_id, progress, claimed, completed_at FROM user_achievements WHERE user_id = ?'],
+                ['quests', 'SELECT * FROM user_quests WHERE user_id = ?'],
+                ['commitment_history', 'SELECT date, solved_count FROM user_commitment_history WHERE user_id = ?'],
+                ['notifications', 'SELECT title, message, type, read_state, created_at FROM user_notifications WHERE user_id = ?'],
+                ['sessions', 'SELECT user_agent, ip_address, created_at, expires_at FROM user_sessions WHERE user_id = ?'],
+              ];
 
-              res.setHeader('Content-Type', 'application/json');
-              res.setHeader('Content-Disposition', 'attachment; filename=numera_user_data.json');
-              res.json(exportedData);
+              let qi = 0;
+              const runNext = () => {
+                if (qi >= behavioralQueries.length) {
+                  securityLog(userId, 'data_exported', req.ip, 'User requested GDPR-compliant account data export.');
+                  res.setHeader('Content-Type', 'application/json');
+                  res.setHeader('Content-Disposition', 'attachment; filename=numera_user_data.json');
+                  return res.json(exportedData);
+                }
+                const [key, sql] = behavioralQueries[qi++];
+                db.all(sql, [userId], (qErr, rows) => {
+                  exportedData[key] = qErr ? [] : rows || [];
+                  runNext();
+                });
+              };
+              runNext();
             });
           });
         });
@@ -276,26 +350,20 @@ router.get('/api/user/export-data', authenticateToken, (req, res) => {
 router.post('/api/user/delete-account', authenticateToken, (req, res) => {
   const userId = req.user.id;
   db.serialize(() => {
-    db.run('DELETE FROM user_email_verifications WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM refresh_tokens WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM user_sessions WHERE user_id = ?', [userId]);
+    // Relationship tables keyed by two user columns (delete rows on either side).
     db.run('DELETE FROM friends WHERE user_id = ? OR friend_id = ?', [userId, userId]);
-    db.run('DELETE FROM user_utilities WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM user_inventory WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM srs_reviews WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM user_mistakes WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM user_quests WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM user_mastery WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM user_achievements WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM user_concept_analytics WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM user_commitment_history WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM user_commitment_relics WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM saved_exercises WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM user_notifications WHERE user_id = ?', [userId]);
-    db.run('DELETE FROM security_audit_logs WHERE user_id = ?', [userId]);
+    db.run('DELETE FROM user_blocks WHERE blocker_id = ? OR blocked_id = ?', [userId, userId]);
+    db.run('DELETE FROM content_reports WHERE reporter_id = ?', [userId]);
+
+    // Every single-user-column table (the canonical list). Driven off USER_SCOPED_TABLES so this
+    // can never silently drift out of sync with the schema again.
+    for (const table of USER_SCOPED_TABLES) {
+      db.run(`DELETE FROM ${table} WHERE user_id = ?`, [userId]);
+    }
+
     db.run('DELETE FROM users WHERE id = ?', [userId], (err) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true, message: 'Account deleted successfully. All data wiped.' });
+      res.json({ success: true, message: 'Account deleted successfully. All personal data has been erased.' });
     });
   });
 });

@@ -124,6 +124,30 @@ interface ApiService {
         @Body request: FriendAcceptPayload
     ): SimpleResponse
 
+    // ---- UGC moderation: block & report -----------------------------------
+    @POST("api/blocks")
+    suspend fun blockUser(
+        @Header("Authorization") token: String,
+        @Body request: BlockRequest
+    ): SimpleResponse
+
+    @DELETE("api/blocks/{userId}")
+    suspend fun unblockUser(
+        @Header("Authorization") token: String,
+        @Path("userId") userId: Int
+    ): SimpleResponse
+
+    @GET("api/blocks")
+    suspend fun getBlocks(
+        @Header("Authorization") token: String
+    ): List<BlockedUser>
+
+    @POST("api/reports")
+    suspend fun reportContent(
+        @Header("Authorization") token: String,
+        @Body request: ReportRequest
+    ): SimpleResponse
+
     @GET("api/leaderboard")
     suspend fun getLeaderboard(
         @Header("Authorization") token: String

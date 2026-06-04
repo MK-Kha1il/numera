@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.*
+import kotlinx.coroutines.launch
 import com.example.numera.theme.*
 import com.example.numera.ui.components.ProfileBanner
 import com.example.numera.ui.components.MathAvatar
@@ -214,6 +215,87 @@ fun UserProfileDialog(
                                 correctCount = profile.mastery.number_theory_correct,
                                 maxCount = 100,
                                 color = Color(0xFFFF9F29)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(Spacing.l))
+
+                        // Safety controls (UGC moderation): block or report this user.
+                        val scope = rememberCoroutineScope()
+                        var actionMsg by remember(profile.id) { mutableStateOf<String?>(null) }
+                        var showReport by remember(profile.id) { mutableStateOf(false) }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    val token = RetrofitClient.authToken ?: ""
+                                    scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                        actionMsg = try {
+                                            RetrofitClient.apiService.blockUser(token, BlockRequest(profile.id))
+                                            "User blocked."
+                                        } catch (e: Exception) {
+                                            "Couldn't block this user."
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Block", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+                            }
+                            OutlinedButton(
+                                onClick = { showReport = true },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Report", fontSize = 12.sp)
+                            }
+                        }
+                        if (actionMsg != null) {
+                            Text(
+                                text = actionMsg!!,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                modifier = Modifier.padding(top = Spacing.xs)
+                            )
+                        }
+                        if (showReport) {
+                            var reason by remember { mutableStateOf("") }
+                            AlertDialog(
+                                onDismissRequest = { showReport = false },
+                                title = { Text("Report ${profile.username}") },
+                                text = {
+                                    Column {
+                                        Text("Tell us what's wrong. Our team will review this account.", fontSize = 13.sp)
+                                        Spacer(modifier = Modifier.height(Spacing.s))
+                                        OutlinedTextField(
+                                            value = reason,
+                                            onValueChange = { reason = it },
+                                            label = { Text("Reason (optional)") },
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        val token = RetrofitClient.authToken ?: ""
+                                        val r = reason
+                                        showReport = false
+                                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                            actionMsg = try {
+                                                RetrofitClient.apiService.reportContent(
+                                                    token, ReportRequest("user", profile.id, r)
+                                                )
+                                                "Report submitted. Thank you."
+                                            } catch (e: Exception) {
+                                                "Couldn't submit the report."
+                                            }
+                                        }
+                                    }) { Text("Submit report") }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showReport = false }) { Text("Cancel") }
+                                }
                             )
                         }
                     }

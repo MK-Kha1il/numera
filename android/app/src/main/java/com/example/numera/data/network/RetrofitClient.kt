@@ -13,7 +13,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    private var currentBaseUrl = "http://10.100.94.164:3000/"
+    private var currentBaseUrl = "http://10.0.2.2:3000/"
 
     var authToken: String? = null
         set(value) {
@@ -94,11 +94,11 @@ object RetrofitClient {
 
         authToken = secure.getString(TOKEN_KEY, null)
         refreshTokenValue = secure.getString(REFRESH_KEY, null)
-        var savedUrl = prefs.getString("server_base_url", "http://10.100.94.164:3000/")
-            ?: "http://10.100.94.164:3000/"
+        var savedUrl = prefs.getString("server_base_url", "http://10.0.2.2:3000/")
+            ?: "http://10.0.2.2:3000/"
         // Localhost/127.0.0.1 never works from a device/emulator; keep the LAN IP
         if (savedUrl.contains("127.0.0.1") || savedUrl.contains("localhost")) {
-            savedUrl = "http://10.100.94.164:3000/"
+            savedUrl = "http://10.0.2.2:3000/"
         }
         setBaseUrl(context, savedUrl)
     }

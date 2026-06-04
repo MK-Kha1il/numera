@@ -404,7 +404,8 @@ data class DailyPuzzleSubmitResponse(
 data class RegisterRequest(
     val username: String,
     val password: String,
-    val avatar: String? = null
+    val avatar: String? = null,
+    val birthDate: String? = null // ISO YYYY-MM-DD; required by the server age gate (13+)
 )
 
 @Serializable
@@ -619,6 +620,26 @@ data class FriendAcceptPayload(
 data class SimpleResponse(
     val success: Boolean,
     val message: String
+)
+
+// ---- UGC moderation -------------------------------------------------------
+@Serializable
+data class BlockRequest(
+    val userId: Int
+)
+
+@Serializable
+data class ReportRequest(
+    val targetType: String, // "user" | "collection"
+    val targetId: Int,
+    val reason: String? = null
+)
+
+@Serializable
+data class BlockedUser(
+    val userId: Int,
+    val username: String,
+    val created_at: Long = 0
 )
 
 @Serializable

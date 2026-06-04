@@ -57,7 +57,7 @@ after(async () => { await shutdown(ctx); });
 
 test('registration rejects a weak/common password', async () => {
   const res = await api(ctx.base, 'POST', '/api/auth/register', {
-    body: { username: 'weakpw_' + Date.now().toString(36).slice(-5), password: 'password123' },
+    body: { username: 'weakpw_' + Date.now().toString(36).slice(-5), password: 'password123', birthDate: '2000-01-01' },
   });
   assert.equal(res.status, 400);
   assert.match(JSON.stringify(res.body), /common|breach|predictable/i);

@@ -11,8 +11,10 @@ router.get('/api/friends', authenticateToken, (req, res) => {
     `SELECT u.id, u.username, u.xp, u.level, u.rank, u.active_badge, u.avatar, u.active_banner, f.status
      FROM friends f
      JOIN users u ON (f.friend_id = u.id OR f.user_id = u.id)
-     WHERE (f.user_id = ? OR f.friend_id = ?) AND u.id != ?`,
-    [req.user.id, req.user.id, req.user.id],
+     WHERE (f.user_id = ? OR f.friend_id = ?) AND u.id != ?
+       AND u.id NOT IN (SELECT blocked_id FROM user_blocks WHERE blocker_id = ?)
+       AND u.id NOT IN (SELECT blocker_id FROM user_blocks WHERE blocked_id = ?)`,
+    [req.user.id, req.user.id, req.user.id, req.user.id, req.user.id],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(rows);
@@ -28,6 +30,18 @@ router.post('/api/friends/request', authenticateToken, (req, res) => {
     if (err || !target) return res.status(404).json({ error: 'User not found' });
     if (target.id === req.user.id) return res.status(400).json({ error: 'Cannot add yourself' });
 
+    // A block in either direction prevents a friend request (don't reveal which direction).
+    db.get(
+      'SELECT 1 FROM user_blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)',
+      [req.user.id, target.id, target.id, req.user.id],
+      (blockErr, blocked) => {
+        if (blockErr) return res.status(500).json({ error: blockErr.message });
+        if (blocked) return res.status(403).json({ error: 'Unable to send a friend request to this user.' });
+        proceedWithRequest(target);
+      }
+    );
+
+    function proceedWithRequest(target) {
     db.get(
       `SELECT * FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)`,
       [req.user.id, target.id, target.id, req.user.id],
@@ -69,6 +83,7 @@ router.post('/api/friends/request', authenticateToken, (req, res) => {
         });
       }
     );
+    }
   });
 });
 

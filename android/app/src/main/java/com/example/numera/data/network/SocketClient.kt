@@ -8,7 +8,7 @@ import java.net.URISyntaxException
 
 object SocketClient {
     private const val TAG = "SocketClient"
-    private var currentSocketUrl = "http://10.100.94.164:3000"
+    private var currentSocketUrl = "http://10.0.2.2:3000"
 
     private var mSocket: Socket? = null
 
