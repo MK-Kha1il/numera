@@ -166,7 +166,7 @@ Every authed request ─> verify JWT signature ─> session row exists & unexpir
 | `argon2` (added) | Native KDF, prebuilt binary loads cleanly here. Verified hash/verify. |
 | `bcryptjs` | Retained for legacy-hash verification + fallback. |
 | `jsonwebtoken`, `express`, `cors` | Current, no advisories. |
-| `sqlite3@5` | **7 advisories, all transitive build-time deps** (node-gyp → tar/cacache/make-fetch-happen). **Not reachable at runtime.** Fix is the breaking `sqlite3@6` bump — recommended as its own change (R5), not bundled into this auth pass. |
+| `sqlite3@6` | ✅ Upgraded from 5.1.7 (R5). Cleared all 7 transitive build-time advisories; `npm audit` now clean. JS API unchanged; suite green. |
 
 No unnecessary auth packages found. TOTP was implemented on built-in `crypto` to avoid adding a
 dependency.
@@ -197,8 +197,9 @@ dependency.
   renders the `otpauthUri` as a scannable QR (ZXing) alongside the manual-entry key.
 - **R4 — HIBP breached-password check.** Optionally layer the HaveIBeenPwned k-anonymity range
   API onto the offline blocklist (decide fail-open vs fail-closed; adds a network dependency).
-- **R5 — `sqlite3@6` upgrade.** Clears all current `npm audit` advisories (breaking; test the DB
-  layer).
+- **R5 — `sqlite3@6` upgrade.** ✅ **Done.** Bumped 5.1.7 → 6.0.1; `npm audit` now reports **0
+  vulnerabilities** (was 7, all in the old build-time `node-gyp`/`tar` chain). The JS API is
+  unchanged; full suite (57/57) + lint stayed green.
 - **R6 — Real roles.** ✅ **Done.** Added a `users.role` column (migration v7) and a
   `requireAdmin` middleware that checks the authoritative DB role; replaced all three
   `username === 'admin'` string checks (security-logs + the two rating admin routes).
