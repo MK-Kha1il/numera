@@ -261,9 +261,9 @@ fun CommitmentStatusDialog(
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = when (burnout) {
-                                        "high" -> Color(0xFFEF5350)
-                                        "medium" -> Color(0xFFFFB74D)
-                                        else -> Color(0xFF66BB6A)
+                                        "high" -> StatusDanger
+                                        "medium" -> StatusWarning
+                                        else -> StatusSuccess
                                     }
                                 )
                             }
@@ -296,7 +296,7 @@ fun CommitmentStatusDialog(
                                 com.example.numera.sound.SoundManager.playClick()
                                 handleRecommit("shield")
                             },
-                            color = if (shields > 0) Color(0xFF42A5F5) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            color = if (shields > 0) StatusInfo else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             modifier = Modifier.fillMaxWidth(),
                             enabled = shields > 0
                         )

@@ -17,6 +17,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.compose.ui.platform.LocalContext
 import com.example.numera.data.network.RetrofitClient
+import com.example.numera.theme.AnimDuration
 import com.example.numera.ui.screens.*
 import com.example.numera.ui.feature.game.SoloGameScreen
 import kotlinx.coroutines.Dispatchers
@@ -71,40 +72,40 @@ fun MainNavigation() {
       val targetKey = targetState.key
       val initialKey = initialState.key
       if (targetKey is MainTabs && (initialKey is Login || initialKey is Register)) {
-        val exit = fadeOut(animationSpec = tween(durationMillis = 600, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))) +
-                   scaleOut(targetScale = 0.92f, animationSpec = tween(durationMillis = 600, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
-        val enter = fadeIn(animationSpec = tween(durationMillis = 800, delayMillis = 150, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))) +
-                    scaleIn(initialScale = 1.08f, animationSpec = tween(durationMillis = 800, delayMillis = 150, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
+        val exit = fadeOut(animationSpec = tween(durationMillis = AnimDuration.xslow, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))) +
+                   scaleOut(targetScale = 0.92f, animationSpec = tween(durationMillis = AnimDuration.xslow, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
+        val enter = fadeIn(animationSpec = tween(durationMillis = AnimDuration.entrance, delayMillis = 150, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))) +
+                    scaleIn(initialScale = 1.08f, animationSpec = tween(durationMillis = AnimDuration.entrance, delayMillis = 150, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
         enter togetherWith exit
       } else {
         slideInHorizontally(
           initialOffsetX = { it },
-          animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing)
-        ) + fadeIn(animationSpec = tween(450)) togetherWith
+          animationSpec = tween(durationMillis = AnimDuration.slow, easing = FastOutSlowInEasing)
+        ) + fadeIn(animationSpec = tween(AnimDuration.slow)) togetherWith
         slideOutHorizontally(
           targetOffsetX = { -it },
-          animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing)
-        ) + fadeOut(animationSpec = tween(450))
+          animationSpec = tween(durationMillis = AnimDuration.slow, easing = FastOutSlowInEasing)
+        ) + fadeOut(animationSpec = tween(AnimDuration.slow))
       }
     },
     popTransitionSpec = {
       val targetKey = targetState.key
       val initialKey = initialState.key
       if ((targetKey is Login || targetKey is Register) && initialKey is MainTabs) {
-        val exit = fadeOut(animationSpec = tween(durationMillis = 600, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))) +
-                   scaleOut(targetScale = 1.08f, animationSpec = tween(durationMillis = 600, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
-        val enter = fadeIn(animationSpec = tween(durationMillis = 800, delayMillis = 150, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))) +
-                    scaleIn(initialScale = 0.92f, animationSpec = tween(durationMillis = 800, delayMillis = 150, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
+        val exit = fadeOut(animationSpec = tween(durationMillis = AnimDuration.xslow, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))) +
+                   scaleOut(targetScale = 1.08f, animationSpec = tween(durationMillis = AnimDuration.xslow, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
+        val enter = fadeIn(animationSpec = tween(durationMillis = AnimDuration.entrance, delayMillis = 150, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))) +
+                    scaleIn(initialScale = 0.92f, animationSpec = tween(durationMillis = AnimDuration.entrance, delayMillis = 150, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
         enter togetherWith exit
       } else {
         slideInHorizontally(
           initialOffsetX = { -it },
-          animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing)
-        ) + fadeIn(animationSpec = tween(450)) togetherWith
+          animationSpec = tween(durationMillis = AnimDuration.slow, easing = FastOutSlowInEasing)
+        ) + fadeIn(animationSpec = tween(AnimDuration.slow)) togetherWith
         slideOutHorizontally(
           targetOffsetX = { it },
-          animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing)
-        ) + fadeOut(animationSpec = tween(450))
+          animationSpec = tween(durationMillis = AnimDuration.slow, easing = FastOutSlowInEasing)
+        ) + fadeOut(animationSpec = tween(AnimDuration.slow))
       }
     },
     entryProvider =

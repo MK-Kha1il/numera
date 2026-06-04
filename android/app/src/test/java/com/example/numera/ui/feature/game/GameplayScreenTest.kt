@@ -1,7 +1,9 @@
 package com.example.numera.ui.feature.game
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -62,6 +64,11 @@ class GameplayScreenTest {
           correctAnswer = "bravo",
           options = listOf("alpha", "bravo", "charlie"),
           explanation = "bravo is correct.",
+          // Socratic feedback (server JSON-string contract): a targeted probe for the "alpha"
+          // slip plus a generic fallback. Used by the wrong-answer + hint tests below.
+          socraticJson = """{"byOption":{"alpha":{"misconception":"test_slip",""" +
+            """"probe":"What made alpha look right to you?","hint":"Re-check the first step."}},""" +
+            """"generic":{"probe":"Walk back through your steps.","hint":"Redo it slowly."}}""",
         ),
         MathProblem(
           question = q1,
@@ -118,15 +125,69 @@ class GameplayScreenTest {
     compose.onNodeWithText("✨ EXCELLENT JOB!").assertIsDisplayed()
   }
 
+  /**
+   * Sprint 2: a wrong answer no longer reveals "Correct: bravo" up front. Instead it shows the
+   * Socratic "🤔 LET'S THINK" banner with the misconception-targeted probe, and the answer must
+   * NOT be on screen yet (it stays behind Review Solution — see the next test).
+   */
   @Test
-  fun wrongMcqAnswer_showsMistakeBannerAndCorrectAnswer() {
+  fun wrongMcqAnswer_showsSocraticProbe_notTheAnswer() {
     launchAndAwaitGameplay()
     compose.onNodeWithText("alpha").performClick()
     compose.waitUntil(timeoutMillis = 5_000) {
-      compose.onAllNodesWithText("💡 NOT QUITE RIGHT").fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithText("🤔 LET'S THINK").fetchSemanticsNodes().isNotEmpty()
     }
-    compose.onNodeWithText("💡 NOT QUITE RIGHT").assertIsDisplayed()
-    compose.onNodeWithText("Correct: bravo").assertIsDisplayed()
+    compose.onNodeWithText("🤔 LET'S THINK").assertIsDisplayed()
+    // The probe targeted at the "alpha" slip renders.
+    compose.onNodeWithText("What made alpha look right to you?").assertIsDisplayed()
+    // The banner no longer reveals the answer up front (it stays behind Review Solution),
+    // and in MCQ the correct option is NOT marked correct yet — its ✓ checkmark is withheld
+    // until the learner reveals the solution (productive struggle).
+    compose.onAllNodesWithText("Correct: bravo").assertCountEquals(0)
+    compose.onAllNodesWithContentDescription("Correct").assertCountEquals(0)
+  }
+
+  /**
+   * After a wrong MCQ answer the correct option stays unmarked until "Review Solution" is tapped,
+   * at which point its ✓ checkmark appears (the answer is revealed, just not instantly).
+   */
+  @Test
+  fun reviewSolution_revealsCorrectOptionCheckmark() {
+    launchAndAwaitGameplay()
+    compose.onNodeWithText("alpha").performClick()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose.onAllNodesWithText("REVIEW SOLUTION").fetchSemanticsNodes().isNotEmpty()
+    }
+    // Hidden before reveal.
+    compose.onAllNodesWithContentDescription("Correct").assertCountEquals(0)
+    compose.waitForIdle()
+    compose.onNodeWithText("REVIEW SOLUTION").performClick()
+    // Revealed after — the correct option now carries the ✓ checkmark.
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose.onAllNodesWithContentDescription("Correct").fetchSemanticsNodes().isNotEmpty()
+    }
+    compose.onAllNodesWithContentDescription("Correct").assertCountEquals(1)
+  }
+
+  /**
+   * Fading guidance: the targeted hint is one tap behind a "Show a hint" affordance, so the
+   * learner gets a chance to self-correct from the probe before the nudge appears.
+   */
+  @Test
+  fun wrongMcqAnswer_showHint_revealsTargetedHint() {
+    launchAndAwaitGameplay()
+    compose.onNodeWithText("alpha").performClick()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose.onAllNodesWithText("Show a hint").fetchSemanticsNodes().isNotEmpty()
+    }
+    // Hint text is hidden until requested.
+    compose.onAllNodesWithText("Re-check the first step.").assertCountEquals(0)
+    compose.waitForIdle()
+    compose.onNodeWithText("Show a hint").performClick()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose.onAllNodesWithText("Re-check the first step.").fetchSemanticsNodes().isNotEmpty()
+    }
+    compose.onNodeWithText("Re-check the first step.").assertIsDisplayed()
   }
 
   @Test
@@ -143,6 +204,8 @@ class GameplayScreenTest {
       compose.onAllNodesWithText("💡 SOLUTION BREAKDOWN").fetchSemanticsNodes().isNotEmpty()
     }
     compose.onNodeWithText("💡 SOLUTION BREAKDOWN").assertIsDisplayed()
+    // The worked solution still reveals the correct answer — just one tap away, not up front.
+    compose.onNodeWithText("Correct Answer:").assertIsDisplayed()
   }
 
   @Test

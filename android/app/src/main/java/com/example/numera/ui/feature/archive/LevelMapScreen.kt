@@ -42,6 +42,7 @@ import com.example.numera.ui.components.NumeraIcon
 import com.example.numera.ui.components.NumeraIconType
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.DuoCard
+import com.example.numera.ui.components.MathText
 import androidx.compose.foundation.BorderStroke
 import com.example.numera.ui.components.NumeraEmptyState
 import com.example.numera.ui.components.EmptyIllustration
@@ -74,9 +75,19 @@ fun LevelMapScreen(
     onStartLegacyGame: (Int) -> Unit,
     onStartPlacement: () -> Unit,
     onSkipPlacement: () -> Unit,
-    onShowCommitment: () -> Unit
+    onShowCommitment: () -> Unit,
+    requestedSubTab: Int? = null,
+    onSubTabConsumed: () -> Unit = {}
 ) {
     var selectedCategoryTab by remember { mutableStateOf(0) }
+    // Allow another screen (e.g. the Quests "Review Now" nudge) to request a specific sub-tab
+    // (0 Levels / 1 Spaced Review / 2 Archive). Consumed once so manual tab taps still work.
+    LaunchedEffect(requestedSubTab) {
+        if (requestedSubTab != null) {
+            selectedCategoryTab = requestedSubTab
+            onSubTabConsumed()
+        }
+    }
     var srsDueItems by remember { mutableStateOf<List<SrsDueItem>>(emptyList()) }
     var legacyPuzzles by remember { mutableStateOf<List<LegacyExercise>>(emptyList()) }
     var dailyPuzzle by remember { mutableStateOf<DailyPuzzle?>(null) }
@@ -201,25 +212,23 @@ fun LevelMapScreen(
     }
 
     var hasAutoScrolled by remember { mutableStateOf(false) }
-    LaunchedEffect(user, mapItems, dailyPuzzle, mistakesList, hasAutoScrolled) {
+    LaunchedEffect(user, mapItems, dailyPuzzle, mistakesList) {
         if (user != null && mapItems.isNotEmpty() && !hasAutoScrolled) {
-            val savedIdx = prefs.getInt("scroll_index", -1)
-            if (savedIdx != -1) {
-                hasAutoScrolled = true
-            } else {
-                val activeIdx = mapItems.indexOfFirst { it is LearnMapItem.LevelNodeItem && it.isActive }
-                if (activeIdx != -1) {
-                    var headerCount = 1
-                    if (user.assessment_taken == 0) headerCount++
-                    if (dailyPuzzle != null) headerCount++
-                    if (mistakesList.isNotEmpty()) headerCount++
-                    
-                    val targetIndex = headerCount + activeIdx
-                    val scrollTarget = (targetIndex - 1).coerceAtLeast(0)
-                    lazyListState.scrollToItem(scrollTarget)
-                    hasAutoScrolled = true
-                }
+            // Always open the map on the learner's CURRENT level so they never have to scroll to
+            // find where they are. (Previously a saved scroll position short-circuited this, so after
+            // any scroll the map stopped returning to the active level on load.)
+            val activeIdx = mapItems.indexOfFirst { it is LearnMapItem.LevelNodeItem && it.isActive }
+            if (activeIdx != -1) {
+                var headerCount = 1
+                if (user.assessment_taken == 0) headerCount++
+                if (dailyPuzzle != null) headerCount++
+                if (mistakesList.isNotEmpty()) headerCount++
+
+                val targetIndex = headerCount + activeIdx
+                val scrollTarget = (targetIndex - 1).coerceAtLeast(0)
+                lazyListState.scrollToItem(scrollTarget)
             }
+            hasAutoScrolled = true
         }
     }
     
@@ -379,18 +388,18 @@ fun LevelMapScreen(
                         Text(
                             text = "Your climb is fading",
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF856404),
+                            color = MilestoneGoldText,
                             fontSize = 13.sp
                         )
                         Text(
                             text = "A small step keeps the climb alive. Restore your consistency run now.",
-                            color = Color(0xFF856404).copy(alpha = 0.8f),
+                            color = MilestoneGoldText.copy(alpha = 0.8f),
                             fontSize = 11.sp
                         )
                     }
                     Button(
                         onClick = { onShowCommitment() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF856404)),
+                        colors = ButtonDefaults.buttonColors(containerColor = MilestoneGoldText),
                         shape = RoundedCornerShape(CornerRadius.s),
                         contentPadding = PaddingValues(horizontal = Spacing.m, vertical = Spacing.xs),
                         modifier = Modifier.height(Spacing.xxl)
@@ -724,20 +733,50 @@ fun LevelMapScreen(
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                         )
                                     }
-                                    DuoButton(
-                                        text = "Train",
-                                        onClick = {
-                                            onStartSoloGame(
-                                                SoloGame(
-                                                    category = "General",
-                                                    level = 0,
-                                                    gameMode = "mistakes_practice"
+                                    // Give the learner a choice: review the mistakes, or ignore
+                                    // (dismiss) them so the bank isn't a permanent nag.
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                                    ) {
+                                        DuoButton(
+                                            text = "Review",
+                                            onClick = {
+                                                onStartSoloGame(
+                                                    SoloGame(
+                                                        category = "General",
+                                                        level = 0,
+                                                        gameMode = "mistakes_practice"
+                                                    )
                                                 )
+                                            },
+                                            modifier = Modifier.width(110.dp),
+                                            color = Color(0xFF6366F1)
+                                        )
+                                        TextButton(
+                                            onClick = {
+                                                val toClear = mistakesList
+                                                mistakesList = emptyList()   // optimistic clear
+                                                scope.launch(Dispatchers.IO) {
+                                                    val token = RetrofitClient.authToken ?: ""
+                                                    toClear.forEach { m ->
+                                                        try {
+                                                            RetrofitClient.apiService.resolveMistake(token, ResolveMistakeRequest(m.id))
+                                                        } catch (e: Exception) {
+                                                            Log.e("LevelMap", "Ignore mistake failed", e)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        ) {
+                                            Text(
+                                                "Ignore",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                             )
-                                        },
-                                        modifier = Modifier.width(90.dp),
-                                        color = Color(0xFF6366F1)
-                                    )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1187,13 +1226,13 @@ fun LevelMapScreen(
                                             )
                                         }
                                         
-                                        Text(
+                                        // Render LaTeX so archive questions show real math, not raw
+                                        // "$...$ / \times" source (this card previously used a plain Text).
+                                        MathText(
                                             text = item.question,
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.SemiBold,
+                                            fontSizePx = 26,
                                             color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 3,
-                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                            modifier = Modifier.fillMaxWidth()
                                         )
                                         
                                         Box(modifier = Modifier.align(Alignment.End)) {
@@ -1225,11 +1264,11 @@ fun LevelMapScreen(
             primaryLabel = "Solve Problem",
             onPrimary = { launchArchiveItem(item) }
         ) {
-            Text(
+            MathText(
                 text = item.question,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                fontSizePx = 28,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.fillMaxWidth()
             )
             if (item.lessonTitle != null) {
                 Text(

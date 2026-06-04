@@ -12,6 +12,78 @@ data class CategoryMastery(
     val number_theory_correct: Int
 )
 
+// Multi-dimensional mastery (server mathEngine/masteryEngine.js). Each dimension is 0..1.
+@Serializable
+data class MasteryDimensions(
+    val accuracy: Float = 0f,
+    val fluency: Float = 0f,
+    val retention: Float = 0f,
+    val independence: Float = 0f,
+    val transfer: Float = 0f
+)
+
+@Serializable
+data class MasteryProfile(
+    val dimensions: MasteryDimensions = MasteryDimensions(),
+    val overall: Float = 0f,
+    val stage: String = "",
+    val weakest: String? = null,
+    val conceptCount: Int = 0
+)
+
+// Subset of GET /api/engine/learner we render (Gson ignores the rest).
+@Serializable
+data class LearnerModelResponse(
+    val masteryProfile: MasteryProfile? = null
+)
+
+// Transfer challenge (Sprint 4): a novel-context framing of a concept (GET /api/math/transfer/challenge).
+@Serializable
+data class TransferProblem(
+    val question: String,
+    val correctAnswer: String,
+    val options: List<String>,
+    val explanation: String,
+    val isTransfer: Boolean = true
+)
+
+@Serializable
+data class TransferChallengeResponse(
+    val conceptId: String,
+    val conceptName: String = "",
+    val transferContext: String? = null,
+    val problem: TransferProblem
+)
+
+@Serializable
+data class TransferResultRequest(
+    val conceptId: String,
+    val correct: Boolean
+)
+
+// Orchestrator's "best next step" (GET /api/engine/next). `reason` drives a home-screen nudge;
+// `meta.focus` carries the server-authored focus copy for dimension_building.
+@Serializable
+data class MasteryFocus(
+    val dimension: String? = null,
+    val action: String? = null,
+    val message: String? = null
+)
+
+@Serializable
+data class RecommendationMeta(
+    val dimension: String? = null,
+    val focus: MasteryFocus? = null
+)
+
+@Serializable
+data class NextRecommendationResponse(
+    val conceptId: String? = null,
+    val reason: String? = null,
+    val learningStyle: String? = null,
+    val meta: RecommendationMeta? = null
+)
+
 @Serializable
 data class User(
     val id: Int,
@@ -111,7 +183,11 @@ data class MathProblem(
     val tipMetadata: TipMetadata? = null,
     // Declarative interactive-visual spec (JSON string) chosen by the server's
     // Adaptive Visual Intelligence. Forwarded verbatim to the canvas renderer.
-    val interactiveVisualJson: String? = null
+    val interactiveVisualJson: String? = null,
+    // Socratic wrong-answer feedback (JSON string) from the server's socraticEngine:
+    // { byOption: { "<wrongOption>": {misconception, probe, hint} }, generic: {probe, hint} }.
+    // Carried as a string for the same reason as interactiveVisualJson (Gson/kotlinx mix).
+    val socraticJson: String? = null
 )
 
 @Serializable

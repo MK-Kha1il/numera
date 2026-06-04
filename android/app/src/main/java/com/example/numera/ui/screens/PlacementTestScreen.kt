@@ -28,6 +28,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.ApiService
+import com.example.numera.theme.CorrectGreen
+import com.example.numera.theme.WrongRed
 import com.example.numera.data.network.AssessmentSubmitRequest
 import com.example.numera.data.network.MathProblem
 import com.example.numera.sound.SoundManager
@@ -359,7 +361,7 @@ fun PlacementTestScreen(
                     .border(
                         width = 1.dp,
                         color = if (isCheckingAnswer) {
-                            if (isAnswerCorrect) Color(0xFF58CC02).copy(alpha = 0.5f) else Color(0xFFEA2B2B).copy(alpha = 0.5f)
+                            if (isAnswerCorrect) CorrectGreen.copy(alpha = 0.5f) else WrongRed.copy(alpha = 0.5f)
                         } else {
                             MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                         },
@@ -398,7 +400,7 @@ fun PlacementTestScreen(
                             Icon(
                                 imageVector = if (isAnswerCorrect) Icons.Default.Check else Icons.Default.Close,
                                 contentDescription = if (isAnswerCorrect) "Correct" else "Wrong",
-                                tint = if (isAnswerCorrect) Color(0xFF58CC02) else Color(0xFFEA2B2B),
+                                tint = if (isAnswerCorrect) CorrectGreen else WrongRed,
                                 modifier = Modifier.size(28.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -406,7 +408,7 @@ fun PlacementTestScreen(
                                 text = if (isAnswerCorrect) "You got it right!" else "Incorrect answer",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = if (isAnswerCorrect) Color(0xFF388E3C) else Color(0xFFD32F2F)
+                                color = if (isAnswerCorrect) CorrectGreen else WrongRed
                             )
                         }
                         
@@ -436,7 +438,7 @@ fun PlacementTestScreen(
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isAnswerCorrect) Color(0xFF58CC02) else Color(0xFFEA2B2B)
+                                containerColor = if (isAnswerCorrect) CorrectGreen else WrongRed
                             )
                         ) {
                             if (submitting) {

@@ -129,6 +129,30 @@ interface ApiService {
         @Query("offset") offset: Int = 0
     ): List<ArchiveExercise>
 
+    @GET("api/engine/learner")
+    suspend fun getLearnerModel(
+        @Header("Authorization") token: String
+    ): LearnerModelResponse
+
+    @GET("api/engine/next")
+    suspend fun getNextRecommendation(
+        @Header("Authorization") token: String,
+        @Query("level") level: Int? = null,
+        @Query("category") category: String? = null
+    ): NextRecommendationResponse
+
+    @GET("api/math/transfer/challenge")
+    suspend fun getTransferChallenge(
+        @Header("Authorization") token: String,
+        @Query("concept") concept: String? = null
+    ): TransferChallengeResponse
+
+    @POST("api/math/transfer/result")
+    suspend fun submitTransferResult(
+        @Header("Authorization") token: String,
+        @Body request: TransferResultRequest
+    ): SimpleResponse
+
     @GET("api/mistakes")
     suspend fun getMistakes(
         @Header("Authorization") token: String

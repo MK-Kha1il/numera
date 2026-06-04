@@ -80,6 +80,8 @@ fun SoloGameScreen(
 
     var problemsList by remember { mutableStateOf<List<MathProblem>>(emptyList()) }
     var mistakeIdsList by remember { mutableStateOf<List<Int>>(emptyList()) }
+    // Concept being assessed in a transfer challenge — used to record the out-of-context outcome.
+    var transferConceptId by remember { mutableStateOf<String?>(null) }
     var currentProblemIdx by remember { mutableIntStateOf(0) }
     var score by remember { mutableIntStateOf(0) }
     
@@ -95,6 +97,8 @@ fun SoloGameScreen(
     var showParticles by remember { mutableStateOf(false) }
     var isGameOver by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
+    // Bumped by the error-state "Try Again" button to re-run the load effect (retry on failure).
+    var loadAttempt by remember { mutableIntStateOf(0) }
     
     var xpReward by remember { mutableIntStateOf(0) }
     var coinReward by remember { mutableIntStateOf(0) }
@@ -219,7 +223,8 @@ fun SoloGameScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(loadAttempt) {
+        isLoading = true
         scope.launch(Dispatchers.IO) {
             try {
                 val token = RetrofitClient.authToken ?: ""
@@ -411,6 +416,22 @@ fun SoloGameScreen(
                             }
                         }
                     }
+                    "transfer_challenge" -> {
+                        // A single novel-context problem (Sprint 4). Deliberately no lesson — the
+                        // point is to recognise the concept in an unfamiliar framing on your own.
+                        val challenge = RetrofitClient.apiService.getTransferChallenge(token)
+                        withContext(Dispatchers.Main) {
+                            transferConceptId = challenge.conceptId
+                            problemsList = listOf(
+                                MathProblem(
+                                    question = challenge.problem.question,
+                                    correctAnswer = challenge.problem.correctAnswer,
+                                    options = challenge.problem.options,
+                                    explanation = challenge.problem.explanation
+                                )
+                            )
+                        }
+                    }
                     else -> { // "level"
                         val response = RetrofitClient.apiService.getProblems(token, category, level, count = 3)
                         problemsList = response.problems.take(3)
@@ -493,10 +514,32 @@ fun SoloGameScreen(
     }
 
     if (problemsList.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.l)) {
-                Text("Error loading mathematical exercise set.", color = MaterialTheme.colorScheme.onBackground)
-                DuoButton(onClick = onFinishGame, text = "Go Back")
+        Box(
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(Spacing.xl),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Spacing.m),
+            ) {
+                Text("😕", fontSize = 48.sp)
+                Text(
+                    "We couldn't load this round",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    "Check your connection and try again — your progress is safe.",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                    textAlign = TextAlign.Center,
+                )
+                DuoButton(onClick = { loadAttempt++ }, text = "Try Again")
+                TextButton(onClick = onFinishGame) {
+                    Text("Go Back", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
+                }
             }
         }
         return
@@ -521,6 +564,23 @@ fun SoloGameScreen(
     val currentProblem = problemsList[currentProblemIdx]
 
     fun handleAnswer(isCorrect: Boolean) {
+        // Transfer challenge: record the out-of-context outcome (feeds the `transfer` mastery
+        // dimension). Fire-and-forget so it never blocks the feedback UI.
+        if (gameMode == "transfer_challenge") {
+            val cid = transferConceptId
+            if (cid != null) {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        RetrofitClient.apiService.submitTransferResult(
+                            RetrofitClient.authToken ?: "",
+                            com.example.numera.data.network.TransferResultRequest(conceptId = cid, correct = isCorrect)
+                        )
+                    } catch (e: Exception) {
+                        Log.e("SoloGame", "Failed to record transfer result: ${e.message}")
+                    }
+                }
+            }
+        }
         if (isCorrect) {
             SoundManager.playCorrect()
             com.example.numera.haptic.HapticManager.playSuccess()
@@ -627,6 +687,9 @@ fun SoloGameScreen(
             if (gameMode == "daily_puzzle") {
                 xpReward = 50
                 coinReward = 30
+            } else if (gameMode == "transfer_challenge") {
+                xpReward = 30
+                coinReward = 15
             } else if (gameMode == "mistakes_practice") {
                 xpReward = solvedCount * 15
                 coinReward = solvedCount * 10
@@ -664,7 +727,7 @@ fun SoloGameScreen(
                         }
                     }
 
-                    if (gameMode == "level" || gameMode == "archive_puzzle" || gameMode == "legacy_puzzle" || gameMode == "daily_puzzle") {
+                    if (gameMode == "level" || gameMode == "archive_puzzle" || gameMode == "legacy_puzzle" || gameMode == "daily_puzzle" || gameMode == "transfer_challenge") {
                         val saveRes = RetrofitClient.apiService.completeSession(
                             token, CompleteSessionRequest(
                                 xpGained = xpReward,

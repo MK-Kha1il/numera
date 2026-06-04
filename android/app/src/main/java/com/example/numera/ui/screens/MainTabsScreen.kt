@@ -64,6 +64,8 @@ fun MainTabsScreen(
     var currentUser by remember { mutableStateOf<User?>(null) }
     val scope = rememberCoroutineScope()
     var isTakingPlacementTest by remember { mutableStateOf(false) }
+    // Lets the Quests "Review Now" nudge open the Learn screen on a specific sub-tab (1 = Spaced Review).
+    var pendingLearnSubTab by remember { mutableStateOf<Int?>(null) }
     var activeProfileDialogUserId by remember { mutableStateOf<Int?>(null) }
     var activeProfileData by remember { mutableStateOf<PublicProfile?>(null) }
     var profileLoading by remember { mutableStateOf(false) }
@@ -184,6 +186,9 @@ fun MainTabsScreen(
             CommandItem("Ranked Match", CommandCategory.QuickAction, NumeraIconType.Arena, "Find a live opponent", "duel versus pvp compete") { goTab(1) },
             CommandItem("Practice Mistakes", CommandCategory.QuickAction, NumeraIconType.Warning, "Review what you got wrong", "errors review redo srs") {
                 onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "mistakes_practice"))
+            },
+            CommandItem("Transfer Challenge", CommandCategory.QuickAction, NumeraIconType.Learn, "Apply a concept in a new context", "transfer apply depth understanding novel") {
+                onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "transfer_challenge"))
             },
             CommandItem("Notifications", CommandCategory.QuickAction, NumeraIconType.Notification, "See your latest activity", "alerts inbox bell") { showNotificationsDialog = true },
             CommandItem("Consistency Climb", CommandCategory.QuickAction, NumeraIconType.Streak, "Check your streak status", "streak commitment fire") { showCommitmentDialog = true },
@@ -309,16 +314,16 @@ fun MainTabsScreen(
                                 .clip(RoundedCornerShape(CornerRadius.m))
                                 .background(
                                     when (climbState) {
-                                        "fading" -> Color(0xFFFFEBEE).copy(alpha = fadeAlpha)
-                                        "protected" -> Color(0xFFE3F2FD)
-                                        else -> Color(0xFFFFFDF0)
+                                        "fading" -> StatusDangerContainer.copy(alpha = fadeAlpha)
+                                        "protected" -> StatusInfoContainer
+                                        else -> MilestoneBg
                                     }
                                 )
                                 .border(
                                     1.dp,
                                     when (climbState) {
-                                        "fading" -> Color(0xFFEF5350)
-                                        "protected" -> Color(0xFF42A5F5)
+                                        "fading" -> StatusDanger
+                                        "protected" -> StatusInfo
                                         else -> MedalGold
                                     },
                                     RoundedCornerShape(CornerRadius.m)
@@ -339,9 +344,9 @@ fun MainTabsScreen(
                                 fontWeight = FontWeight.Black,
                                 fontSize = 12.sp,
                                 color = when (climbState) {
-                                    "fading" -> Color(0xFFC62828)
-                                    "protected" -> Color(0xFF1565C0)
-                                    else -> Color(0xFF856404)
+                                    "fading" -> StatusDangerText
+                                    "protected" -> StatusInfoText
+                                    else -> MilestoneGoldText
                                 }
                             )
                         }
@@ -352,7 +357,7 @@ fun MainTabsScreen(
                             modifier = Modifier
                                 .padding(end = 6.dp)
                                 .clip(RoundedCornerShape(CornerRadius.m))
-                                .background(Color(0xFFFFFDF0))
+                                .background(MilestoneBg)
                                 .border(1.dp, MedalGold, RoundedCornerShape(CornerRadius.m))
                                 .padding(horizontal = Spacing.s, vertical = Spacing.xs)
                         ) {
@@ -507,7 +512,9 @@ fun MainTabsScreen(
                                 }
                             }
                         },
-                        onShowCommitment = { showCommitmentDialog = true }
+                        onShowCommitment = { showCommitmentDialog = true },
+                        requestedSubTab = pendingLearnSubTab,
+                        onSubTabConsumed = { pendingLearnSubTab = null }
                     )
                     1 -> ArenaScreen(currentUser, onStartDuelGame)
                     2 -> DashboardScreen(
@@ -515,7 +522,8 @@ fun MainTabsScreen(
                         onRefreshProfile = { refreshProfile() },
                         onShowUserProfile = { activeProfileDialogUserId = it },
                         onNavigateTab = { goTab(it) },
-                        onStartQuickGame = { onStartSoloGame(it) }
+                        onStartQuickGame = { onStartSoloGame(it) },
+                        onReviewNow = { pendingLearnSubTab = 1; goTab(0) }
                     )
                     3 -> ShopScreen(currentUser, { refreshProfile() })
                     4 -> ProfileScreen(currentUser, onLogout, onRefreshProfile = { refreshProfile() }, onShowUserProfile = { activeProfileDialogUserId = it }, unlockedRelicIds = unlockedRelicIds)

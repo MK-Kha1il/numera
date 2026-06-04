@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -27,7 +26,6 @@ import com.example.numera.SoloGame
 import com.example.numera.sound.SoundManager
 import com.example.numera.theme.*
 import com.example.numera.ui.components.MathAvatar
-import com.example.numera.ui.components.NumeraIconType
 import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.ClaimButton
 import com.example.numera.ui.components.GlossyProgressBar
@@ -38,8 +36,6 @@ import com.example.numera.ui.components.SkeletonList
 import com.example.numera.ui.components.AchievementSkeleton
 import com.example.numera.ui.components.LeaderboardRowSkeleton
 import com.example.numera.ui.components.LocalToast
-import com.example.numera.ui.components.QuickActionsBar
-import com.example.numera.ui.components.QuickAction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,7 +46,8 @@ fun DashboardScreen(
     onRefreshProfile: () -> Unit,
     onShowUserProfile: (Int) -> Unit,
     onNavigateTab: (Int) -> Unit = {},
-    onStartQuickGame: (SoloGame) -> Unit = {}
+    onStartQuickGame: (SoloGame) -> Unit = {},
+    onReviewNow: () -> Unit = {}
 ) {
     val toast = LocalToast.current
     var homeSubTab by remember { mutableStateOf(0) }
@@ -62,6 +59,18 @@ fun DashboardScreen(
     var globalLoading by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
+
+    // Orchestrator's "best next step" → drives the home-screen recommendation nudge.
+    var recommendation by remember { mutableStateOf<NextRecommendationResponse?>(null) }
+    LaunchedEffect(Unit) {
+        try {
+            recommendation = RetrofitClient.apiService.getNextRecommendation(
+                RetrofitClient.authToken ?: "", level = user?.level
+            )
+        } catch (e: Exception) {
+            Log.e("Dashboard", "Failed to fetch recommendation: ${e.message}")
+        }
+    }
 
     // Sort quests: completed-unclaimed first, then active by progress, claimed last.
     fun sortQuests(list: List<Quest>): List<Quest> {
@@ -175,27 +184,25 @@ fun DashboardScreen(
             }
         }
 
-        // Quick actions: the highest-intent moves on the home screen, one tap away.
-        QuickActionsBar(
-            hero = QuickAction(
-                label = "Continue Learning",
-                sublabel = "Pick up your climb on the level map",
-                icon = NumeraIconType.Learn
-            ) { onNavigateTab(0) },
-            tiles = listOf(
-                QuickAction(
-                    label = "Daily Puzzle",
-                    icon = NumeraIconType.Calculator,
-                    accent = MaterialTheme.colorScheme.tertiary
-                ) { onStartQuickGame(SoloGame(category = "General", level = 0, gameMode = "daily_puzzle")) },
-                QuickAction(
-                    label = "Ranked Match",
-                    icon = NumeraIconType.Arena,
-                    accent = MaterialTheme.colorScheme.secondary
-                ) { onNavigateTab(1) }
-            ),
-            modifier = Modifier.padding(horizontal = Spacing.l, vertical = Spacing.m)
-        )
+        // NOTE: the "Continue Learning / Daily Puzzle / Ranked Match" QuickActionsBar was removed
+        // from this (Quests) tab — it duplicated the bottom-nav destinations (Learn, Arena) and the
+        // Daily Puzzle daily quest, and the stacked hero+tiles dominated the tab before any quest
+        // content. The engine-driven nudge below stays: it's contextual guidance, not redundant nav.
+
+        // Engine-driven nudge: surfaces dimension_building / transfer_practice / review / etc.
+        // Only shown on the Daily Quests sub-tab — it's quest/learning guidance, not relevant on the
+        // Weekly Leagues / Global Standings leaderboards.
+        if (homeSubTab == 0) {
+            RecommendationNudge(
+                recommendation = recommendation,
+                onTakeTransferChallenge = {
+                    onStartQuickGame(SoloGame(category = "General", level = 0, gameMode = "transfer_challenge"))
+                },
+                onContinueLearning = { onNavigateTab(0) },
+                onReview = onReviewNow,
+                modifier = Modifier.padding(horizontal = Spacing.l).padding(bottom = Spacing.s)
+            )
+        }
 
         AnimatedContent(
             targetState = homeSubTab,
@@ -217,25 +224,25 @@ fun DashboardScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(Spacing.l),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.l)
+                        .padding(horizontal = Spacing.l, vertical = Spacing.m),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.m)
                 ) {
                 item {
-                    DuoCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(Spacing.s)) {
-                            Text(
-                                text = "Daily Challenges",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = "Complete objectives every day to earn coins and experience points.",
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.padding(vertical = Spacing.xs)
-                            )
-                        }
+                    // Lightweight section header (was a full DuoCard wrapping just a title +
+                    // subtitle — heavy card chrome that bloated the top of the Quests tab).
+                    Column(modifier = Modifier.padding(horizontal = Spacing.xs)) {
+                        Text(
+                            text = "Daily Challenges",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Complete objectives every day to earn coins and experience points.",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            modifier = Modifier.padding(top = Spacing.xs)
+                        )
                     }
                 }
 
@@ -471,8 +478,8 @@ fun DashboardScreen(
                                         fontSize = 16.sp,
                                         color = when (index) {
                                             0 -> MedalGold
-                                            1 -> Color(0xFFC0C0C0)
-                                            2 -> Color(0xFFCD7F32)
+                                            1 -> MedalSilver
+                                            2 -> MedalBronze
                                             else -> MaterialTheme.colorScheme.onBackground
                                         }
                                     )
@@ -628,8 +635,8 @@ fun DashboardScreen(
                                         fontSize = 16.sp,
                                         color = when (index) {
                                             0 -> MedalGold
-                                            1 -> Color(0xFFC0C0C0)
-                                            2 -> Color(0xFFCD7F32)
+                                            1 -> MedalSilver
+                                            2 -> MedalBronze
                                             else -> MaterialTheme.colorScheme.onBackground
                                         }
                                     )

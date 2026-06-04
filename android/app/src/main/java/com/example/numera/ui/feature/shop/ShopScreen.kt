@@ -9,6 +9,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -58,6 +59,15 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
     var isShopLoading by remember { mutableStateOf(true) }
 
     val scope = rememberCoroutineScope()
+    val shopListState = rememberLazyListState()
+
+    // Tapping an item updates the showcase panel near the top of the list. Previously that panel
+    // (which holds the only Purchase button) was off-screen when you tapped an item lower down, so
+    // it felt like nothing happened / "can't buy anything". Bring it into view on every selection.
+    val showItemDetail: (ShopItem) -> Unit = { picked ->
+        selectedItemForDetail = picked
+        scope.launch { shopListState.animateScrollToItem(3) }
+    }
 
     val fetchShop = {
         scope.launch(Dispatchers.IO) {
@@ -94,6 +104,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
         ShopBackground(modifier = Modifier.fillMaxSize())
         
         LazyColumn(
+            state = shopListState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(Spacing.l),
@@ -281,7 +292,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                         item = heroItem,
                         inventoryIds = inventoryIds,
                         user = user,
-                        onClick = { selectedItemForDetail = heroItem }
+                        onClick = { showItemDetail(heroItem) }
                     )
                 }
             }
@@ -315,7 +326,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                         item = item,
                         inventoryIds = inventoryIds,
                         user = user,
-                        onClick = { selectedItemForDetail = item }
+                        onClick = { showItemDetail(item) }
                     )
                 }
             }
@@ -338,7 +349,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                         item = item,
                         ownedQuantity = qty,
                         user = user,
-                        onClick = { selectedItemForDetail = item }
+                        onClick = { showItemDetail(item) }
                     )
                 }
             }
@@ -416,7 +427,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                             item = item,
                             inventoryIds = inventoryIds,
                             user = user,
-                            onClick = { selectedItemForDetail = item }
+                            onClick = { showItemDetail(item) }
                         )
                     }
                 }

@@ -59,6 +59,25 @@ val AVATAR_MAP = mapOf(
     "avatar_panda" to "🐼 Panda"
 )
 
+/**
+ * Maps an auth network/HTTP exception to an accurate, human message. A network failure must NOT
+ * be reported as "wrong credentials" / "username taken" (it previously was) — that misleads the
+ * user into changing inputs that were fine. When the server DID respond with an error, surface its
+ * own message (e.g. "Username already exists", "Invalid username or password"); otherwise fall back.
+ */
+private fun authErrorMessage(e: Throwable, fallback: String): String = when (e) {
+    is java.io.IOException ->
+        "Can't reach the server. Check your connection and try again."
+    is retrofit2.HttpException -> {
+        val body = try { e.response()?.errorBody()?.string() } catch (_: Exception) { null }
+        val serverMsg = body?.let {
+            Regex("\"error\"\\s*:\\s*\"([^\"]+)\"").find(it)?.groupValues?.getOrNull(1)
+        }
+        serverMsg?.takeIf { it.isNotBlank() } ?: fallback
+    }
+    else -> fallback
+}
+
 @Composable
 fun CinematicMathBackground() {
     val infiniteTransition = rememberInfiniteTransition(label = "mathBg")
@@ -322,7 +341,7 @@ fun LoginScreen(
                                 } catch (e: Exception) {
                                     withContext(Dispatchers.Main) {
                                         isLoading = false
-                                        errorMessage = "Login failed: Incorrect credentials"
+                                        errorMessage = authErrorMessage(e, "Incorrect username or password.")
                                     }
                                 }
                             }
@@ -598,7 +617,7 @@ fun RegisterScreen(
                                 } catch (e: Exception) {
                                     withContext(Dispatchers.Main) {
                                         isLoading = false
-                                        errorMessage = "Registration failed: Username already exists"
+                                        errorMessage = authErrorMessage(e, "Couldn't create your account. Please try again.")
                                     }
                                 }
                             }

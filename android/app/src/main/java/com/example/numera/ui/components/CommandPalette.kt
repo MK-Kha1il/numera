@@ -14,7 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -135,7 +135,10 @@ fun CommandPaletteHost(
         }
 
         val local = staticCommands.filter { it.matches(query) }
-        val combined = (local + remote)
+        // Server search supplements results with procedurally-generated exercises that can share the
+        // same title+category (the generator picks one category/stars per request). Collapse exact
+        // duplicates so the list isn't full of identical rows AND so list keys stay unique.
+        val combined = (local + remote).distinctBy { "${it.category.name}|${it.title}|${it.subtitle}" }
         val grouped = combined.groupBy { it.category }
         val orderedCategories = CommandCategory.entries.filter { grouped.containsKey(it) }
 
@@ -195,7 +198,9 @@ fun CommandPaletteHost(
                                 item(key = "h_${category.name}") {
                                     CategoryHeader(category.label, rows.size)
                                 }
-                                items(rows, key = { "${category.name}_${it.title}_${it.subtitle}" }) { cmd ->
+                                // Index-based keys: collision-proof even if two rows somehow share a
+                                // title/subtitle (a duplicate key crashes the whole LazyColumn).
+                                itemsIndexed(rows, key = { index, _ -> "${category.name}_$index" }) { _, cmd ->
                                     CommandRow(cmd) {
                                         controller.close()
                                         cmd.action()

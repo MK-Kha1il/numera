@@ -116,10 +116,36 @@ val SunsetBorder = Color(0xFFFDD5C0)
 // Bright "trophy" gold (cross-theme) — medals, stars, coin/level accents. The brighter sibling
 // of MilestoneGold; previously inlined as Color(0xFFFFD700) in a dozen places.
 val MedalGold          = Color(0xFFFFD700)
+// Podium siblings of MedalGold — 2nd/3rd place. Complete the medal set so leaderboard ranks
+// pull from one place instead of inlining silver/bronze hexes.
+val MedalSilver        = Color(0xFFC0C0C0)
+val MedalBronze        = Color(0xFFCD7F32)
+
+// Transfer / "depth" accent (Sprint 4) — the violet of the transfer mastery dimension, distinct
+// from the green/blue/orange/gold used by the other four dimensions.
+val TransferViolet     = Color(0xFF8B5CF6)
+
+// Semantic status accents (cross-theme) — used for risk/urgency/state badges and icons (e.g.
+// commitment risk level, retention "fading"/"protected"). Danger + Info were each duplicated
+// across CommitmentStatusDialog and MainTabsScreen before being centralised here.
+val StatusDanger       = Color(0xFFEF5350)
+val StatusWarning      = Color(0xFFFFB74D)
+val StatusSuccess      = Color(0xFF66BB6A)
+val StatusInfo         = Color(0xFF42A5F5)
+// Light tinted containers + their legible on-container text, completing the Status* set. Used by
+// status cards/badges (retention "fading"/"protected", notification kinds) so a status renders as
+// one cohesive container/text/accent triple instead of three inlined hexes.
+val StatusDangerContainer = Color(0xFFFFEBEE)
+val StatusDangerText      = Color(0xFFC62828)
+val StatusInfoContainer   = Color(0xFFE3F2FD)
+val StatusInfoText        = Color(0xFF1565C0)
 
 // Milestone Achievement (cross-theme — used for levels 10, 20, 30, 40, 50, 60)
 val MilestoneGold      = Color(0xFFD4AF37)
 val MilestoneGoldDark  = Color(0xFF9E7C00)
+// Deep readable gold for text/buttons on gold-tinted surfaces (streak/level/milestone callouts);
+// previously inlined as 0xFF856404 across MainTabsScreen and LevelMapScreen.
+val MilestoneGoldText  = Color(0xFF856404)
 val MilestoneBg        = Color(0xFFFFFDF0)
 val MilestoneSurface   = Color(0xFFFFF9DF)
 val MilestoneBorder    = Color(0xFFE6CA65)

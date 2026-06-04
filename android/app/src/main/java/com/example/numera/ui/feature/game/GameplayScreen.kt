@@ -56,6 +56,23 @@ import com.example.numera.ui.components.NumeraIcon
 import com.example.numera.ui.components.NumeraIconType
 
 /**
+ * Parsed shape of [com.example.numera.data.network.MathProblem.socraticJson], produced by the
+ * server's `mathEngine/socraticEngine.js`. [byOption] keys are wrong-option strings; [generic] is
+ * the fallback for typed answers and unmatched options. probe = a guiding question; hint = a
+ * targeted nudge revealed on demand. Neither ever contains the final answer.
+ */
+data class SocraticEntry(
+    val misconception: String? = null,
+    val probe: String? = null,
+    val hint: String? = null,
+)
+
+data class SocraticFeedback(
+    val byOption: Map<String, SocraticEntry>? = null,
+    val generic: SocraticEntry? = null,
+)
+
+/**
  * The per-problem gameplay UI carved out of SoloGameScreen (the old "Main Gameplay Screen" Box:
  * progress header + reference slide-over, the equation card with the favorite/save dialog and
  * tooltip, the Tip/Calc/Try-Paper tool buttons, the MCQ/typed/timed answer interface, the feedback
@@ -127,6 +144,30 @@ fun GameplayScreen(
     var showTip by showTipState
     var showReviewDialog by showReviewDialogState
     var favoritedQuestions by favoritedQuestionsState
+
+    // Socratic wrong-answer feedback parsed from the server JSON string (see Models.kt).
+    val socratic = remember(currentProblem.socraticJson) {
+        currentProblem.socraticJson?.takeIf { it.isNotBlank() }?.let { json ->
+            try {
+                com.google.gson.Gson().fromJson(json, SocraticFeedback::class.java)
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+    // Progressive-disclosure flag for the targeted hint: stays one tap behind the probe so the
+    // learner gets a chance to self-correct first. Resets when the problem changes or the banner
+    // is dismissed (e.g. Retry Exercise flips hasAnswered back to false).
+    var showHint by remember(currentProblemIdx) { mutableStateOf(false) }
+    // Productive struggle: in MCQ we withhold *which* option is correct until the learner either
+    // answered correctly or chose to see the worked solution. Flipped by "Review Solution".
+    var answerRevealed by remember(currentProblemIdx) { mutableStateOf(false) }
+    LaunchedEffect(hasAnswered) {
+        if (!hasAnswered) {
+            showHint = false
+            answerRevealed = false
+        }
+    }
 
     // Main Gameplay Screen
     Box(modifier = Modifier.fillMaxSize()) {
@@ -721,8 +762,12 @@ fun GameplayScreen(
                     ) {
                         currentProblem.options.forEach { option ->
                             val isSelected = selectedAnswer == option
-                            val isCorrect = currentProblem.correctAnswer == option
-                            
+                            // The correct option is only styled as correct once revealed (got it
+                            // right, or tapped Review Solution). Until then a wrong pick shows red
+                            // but the right answer stays hidden — the probe gets the first word.
+                            val revealCorrect = isCurrentAnswerCorrect() || answerRevealed
+                            val isCorrect = currentProblem.correctAnswer == option && revealCorrect
+
                             val outlineColor = if (hasAnswered) {
                                 if (isCorrect) CorrectGreen else if (isSelected) WrongRed else MaterialTheme.colorScheme.outline
                             } else {
@@ -857,42 +902,72 @@ fun GameplayScreen(
                     modifier = Modifier.padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = if (correct) "✨ EXCELLENT JOB!" else "💡 NOT QUITE RIGHT",
-                            fontWeight = FontWeight.Black,
-                            fontSize = 14.sp,
-                            color = if (correct) CorrectGreen else WrongRed,
-                            letterSpacing = 1.sp
-                        )
+                    Text(
+                        text = if (correct) "✨ EXCELLENT JOB!" else "🤔 LET'S THINK",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 14.sp,
+                        color = if (correct) CorrectGreen else MaterialTheme.colorScheme.primary,
+                        letterSpacing = 1.sp
+                    )
 
-                        if (!correct) {
-                            Text(
-                                text = "Correct: ${currentProblem.correctAnswer}",
-                                fontWeight = FontWeight.Bold,
-                                color = CorrectGreen,
-                                fontSize = 13.sp
-                            )
-                        }
-                    }
-
-                    // Encouraging microcopy when wrong
+                    // Socratic guidance instead of an instant answer reveal: lead with a question
+                    // targeted at the learner's chosen wrong option (productive struggle), keep the
+                    // worked answer one tap away behind "Review Solution".
                     if (!correct) {
-                        val encouragement = when (currentProblemIdx) {
-                            0 -> "Mistakes are proof that you're trying!"
-                            1 -> "Let's analyze and perfect the steps."
-                            else -> "You're getting closer every time!"
-                        }
+                        val chosenWrong = if (currentExerciseType == ExerciseType.TYPED)
+                            typedInput.trim() else selectedAnswer
+                        val entry = socratic?.byOption?.get(chosenWrong) ?: socratic?.generic
+                        val probe = entry?.probe
+                        val hint = entry?.hint
+
                         Text(
-                            text = encouragement,
-                            fontSize = 13.sp,
+                            text = probe ?: "Take another look — which single step might have slipped?",
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
+                            lineHeight = 20.sp
                         )
+
+                        // Fading guidance: the targeted nudge is revealed only on request.
+                        if (!hint.isNullOrBlank()) {
+                            if (!showHint) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                                        .clickable {
+                                            com.example.numera.haptic.HapticManager.playSoft()
+                                            showHint = true
+                                        }
+                                        .padding(horizontal = Spacing.m, vertical = Spacing.s)
+                                ) {
+                                    Text(
+                                        text = "Show a hint",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                                        .padding(Spacing.m),
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+                                ) {
+                                    Text(text = "💡", fontSize = 14.sp)
+                                    Text(
+                                        text = hint,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
+                                        lineHeight = 19.sp
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     Row(
@@ -903,7 +978,10 @@ fun GameplayScreen(
                             // "Review Solution" option
                             DuoButton(
                                 text = "Review Solution",
-                                onClick = { showReviewDialog = true },
+                                onClick = {
+                                    answerRevealed = true
+                                    showReviewDialog = true
+                                },
                                 modifier = Modifier.weight(1f),
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
