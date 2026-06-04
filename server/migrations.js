@@ -179,6 +179,29 @@ const migrations = [
       await run("UPDATE users SET role = 'admin' WHERE username = 'admin'");
     },
   },
+  {
+    version: 8,
+    name: 'refresh_tokens',
+    // Short-lived access tokens + rotating refresh tokens. Each refresh token is single-use and
+    // tied to a session; only its SHA-256 hash is stored. `used_at` enables reuse detection
+    // (a consumed token presented again => theft => revoke the whole session).
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS refresh_tokens (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          session_id  TEXT    NOT NULL,
+          user_id     INTEGER NOT NULL,
+          token_hash  TEXT    NOT NULL,
+          expires_at  INTEGER NOT NULL,
+          used_at     INTEGER DEFAULT 0,
+          created_at  INTEGER NOT NULL,
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_refresh_hash ON refresh_tokens(token_hash)');
+      await run('CREATE INDEX IF NOT EXISTS idx_refresh_session ON refresh_tokens(session_id)');
+    },
+  },
 ];
 
 /**

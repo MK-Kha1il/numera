@@ -134,8 +134,9 @@ Every authed request ─> verify JWT signature ─> session row exists & unexpir
                         ─> slide last_used_at ─> req.user
 ```
 
-- **Token:** JWT `{ id, username, sessionId }`, 7-day expiry, signed with `JWT_SECRET`
-  (required in production; dev mints an ephemeral one with a warning).
+- **Token:** short-lived (15-min) access JWT `{ id, username, sessionId }` signed with
+  `JWT_SECRET` (required in production; dev mints an ephemeral one with a warning), plus a
+  rotating, single-use refresh token (hashed at rest, 7-day lifetime, reuse-detected).
 - **Session store:** `user_sessions` (revocable; absolute 7-day + 3-day idle). Users can list
   and revoke sessions; password change / logout revoke server-side.
 - **MFA:** opt-in TOTP; recovery codes hashed at rest, single-use.
@@ -174,10 +175,13 @@ dependency.
 
 ## 6. Security hardening recommendations (remaining / future)
 
-- **R1 — Refresh-token rotation (Medium).** Introduce short-lived access tokens + rotating
-  refresh tokens. _Deferred:_ the stateful, instantly-revocable session model already provides
-  the core protection (replay/revocation); this is a meaningful Android networking rework better
-  done as its own project.
+- **R1 — Refresh-token rotation.** ✅ **Done.** Login now issues a **15-minute access token** plus
+  a **rotating refresh token** (opaque, hashed at rest, single-use). `POST /api/auth/refresh`
+  rotates on each use and **detects reuse** of a consumed token as theft — revoking the entire
+  session (migration v8 `refresh_tokens`; cleaned up on logout/password-change/reset/revoke).
+  Android refreshes transparently via an OkHttp `Authenticator` on 401, with a lock so concurrent
+  401s trigger only one refresh (no false reuse trip); on refresh failure it logs out. `token`
+  still aliases the access token for back-compat.
 - **R2 — Password reset + email delivery.** ✅ **Done.** A pluggable mailer (`services/mailer.js`)
   uses SMTP (nodemailer) when `SMTP_HOST` is configured, else logs (dev/CI). Password reset:
   `POST /api/auth/forgot-password` (generic, non-enumerating response) emails a single-use,

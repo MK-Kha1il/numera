@@ -24,13 +24,35 @@ const logger = require('../logger');
 
 const router = express.Router();
 
-// Issues a session row + JWT and returns { token, user }. Shared by register and login.
+const ACCESS_TOKEN_TTL = '15m'; // short-lived; clients refresh with the rotating refresh token
+const SESSION_TTL_SECS = 7 * 24 * 60 * 60; // absolute session + refresh-token lifetime
+const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
+
+// Signs a short-lived access token for an existing session.
+function signAccessToken(userId, username, sessionId) {
+  return jwt.sign({ id: userId, username, sessionId }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
+}
+
+// Mints a new opaque refresh token for a session, stores only its hash, returns the raw value.
+function issueRefreshToken(sessionId, userId, cb) {
+  const raw = crypto.randomBytes(32).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  db.run(
+    'INSERT INTO refresh_tokens (session_id, user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?)',
+    [sessionId, userId, sha256(raw), now + SESSION_TTL_SECS, now],
+    (err) => cb(err, raw)
+  );
+}
+
+// Issues a session + access token + refresh token and returns
+// { token, accessToken, refreshToken, user }. `token` aliases accessToken for back-compat with
+// older clients that only read `.token`. Shared by register, login, and the MFA second factor.
 function sendLoginResponse(userId, username, req, res) {
   const sessionId = crypto.randomUUID();
   const userAgent = req.headers['user-agent'] || 'unknown';
   const ipAddress = req.ip;
   const createdAt = Math.floor(Date.now() / 1000);
-  const expiresAt = createdAt + 7 * 24 * 60 * 60; // 7 days session lifetime
+  const expiresAt = createdAt + SESSION_TTL_SECS;
 
   db.run(
     'INSERT INTO user_sessions (id, user_id, user_agent, ip_address, created_at, expires_at, last_used_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -41,12 +63,18 @@ function sendLoginResponse(userId, username, req, res) {
         return res.status(500).json({ error: 'Session creation failed' });
       }
 
-      const token = jwt.sign({ id: userId, username, sessionId }, JWT_SECRET, { expiresIn: '7d' });
+      const accessToken = signAccessToken(userId, username, sessionId);
       clearFailedLogins(ipAddress);
 
-      getUserWithMastery(userId, (errU, fullUser) => {
-        if (errU) return res.status(500).json({ error: errU.message });
-        res.json({ token, user: fullUser });
+      issueRefreshToken(sessionId, userId, (errR, refreshToken) => {
+        if (errR) {
+          logger.error('[SECURITY] Failed to write refresh token:', errR.message);
+          return res.status(500).json({ error: 'Session creation failed' });
+        }
+        getUserWithMastery(userId, (errU, fullUser) => {
+          if (errU) return res.status(500).json({ error: errU.message });
+          res.json({ token: accessToken, accessToken, refreshToken, user: fullUser });
+        });
       });
     }
   );
@@ -235,9 +263,53 @@ function finalizeLogin(user, username, req, res) {
 }
 
 router.post('/api/auth/logout', authenticateToken, (req, res) => {
+  db.run('DELETE FROM refresh_tokens WHERE session_id = ?', [req.user.sessionId]);
   db.run('DELETE FROM user_sessions WHERE id = ?', [req.user.sessionId], (err) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true, message: 'Successfully logged out' });
+  });
+});
+
+// Exchange a valid refresh token for a fresh access token + a NEW refresh token (rotation).
+// The presented token is single-use; reusing a consumed one is treated as theft and revokes the
+// entire session. No auth header needed — the refresh token IS the credential.
+router.post('/api/auth/refresh', rateLimiter(30, 60000), (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) return res.status(400).json({ error: 'Refresh token required' });
+
+  const now = Math.floor(Date.now() / 1000);
+  db.get('SELECT * FROM refresh_tokens WHERE token_hash = ?', [sha256(refreshToken)], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(401).json({ error: 'Invalid refresh token.' });
+
+    // Reuse detection: a token that was already rotated is being presented again.
+    if (row.used_at && row.used_at > 0) {
+      db.run('DELETE FROM refresh_tokens WHERE session_id = ?', [row.session_id]);
+      db.run('DELETE FROM user_sessions WHERE id = ?', [row.session_id]);
+      securityLog(row.user_id, 'refresh_token_reuse', req.ip, 'Reused refresh token detected; session revoked.');
+      return res.status(401).json({ error: 'Refresh token reuse detected. Please log in again.' });
+    }
+    if (row.expires_at < now) return res.status(401).json({ error: 'Refresh token expired. Please log in again.' });
+
+    db.get('SELECT id, expires_at FROM user_sessions WHERE id = ?', [row.session_id], (sErr, session) => {
+      if (sErr) return res.status(500).json({ error: sErr.message });
+      if (!session || session.expires_at < now) {
+        return res.status(401).json({ error: 'Session expired. Please log in again.' });
+      }
+      db.get('SELECT username FROM users WHERE id = ?', [row.user_id], (uErr, user) => {
+        if (uErr || !user) return res.status(401).json({ error: 'Account not found.' });
+
+        // Rotate: consume the old token, mint a new access + refresh pair.
+        db.run('UPDATE refresh_tokens SET used_at = ? WHERE id = ?', [now, row.id], () => {
+          const accessToken = signAccessToken(row.user_id, user.username, row.session_id);
+          issueRefreshToken(row.session_id, row.user_id, (rErr, newRefresh) => {
+            if (rErr) return res.status(500).json({ error: 'Refresh failed.' });
+            db.run('UPDATE user_sessions SET last_used_at = ? WHERE id = ?', [now, row.session_id]);
+            res.json({ token: accessToken, accessToken, refreshToken: newRefresh });
+          });
+        });
+      });
+    });
   });
 });
 
@@ -264,7 +336,7 @@ function generateResetCode() {
   return code;
 }
 
-const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
+// (sha256 helper defined near sendLoginResponse — shared by reset + refresh.)
 
 // Request a reset. ALWAYS responds with the same generic message — it never reveals whether the
 // username exists or has an email on file (no account enumeration). A code is only actually sent
@@ -346,6 +418,7 @@ router.post('/api/auth/reset-password', rateLimiter(10, 15 * 60 * 1000), (req, r
               db.run('UPDATE users SET password_hash = ? WHERE id = ?', [hash, user.id]);
               db.run('UPDATE password_reset_tokens SET used_at = ? WHERE id = ?', [now, token.id]);
               // Invalidate all sessions: a reset must log out any attacker holding a live session.
+              db.run('DELETE FROM refresh_tokens WHERE user_id = ?', [user.id]);
               db.run('DELETE FROM user_sessions WHERE user_id = ?', [user.id], () => {
                 securityLog(user.id, 'password_reset_completed', req.ip, 'Password reset; all sessions invalidated.');
                 res.json({ success: true, message: 'Your password has been reset. Please log in.' });

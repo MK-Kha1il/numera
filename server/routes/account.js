@@ -49,6 +49,7 @@ router.post('/api/user/settings', authenticateToken, async (req, res) => {
       if (errUpdate) return res.status(500).json({ error: errUpdate.message });
 
       // Stateful session invalidation: delete all active sessions for the user to force relogin
+      db.run('DELETE FROM refresh_tokens WHERE user_id = ?', [req.user.id]);
       db.run('DELETE FROM user_sessions WHERE user_id = ?', [req.user.id], (errSessions) => {
         if (errSessions) logger.error('[SECURITY] Failed to invalidate sessions on password change:', errSessions.message);
         securityLog(req.user.id, 'password_changed', req.ip, 'Password changed successfully. All user sessions invalidated.');
@@ -201,6 +202,7 @@ router.post('/api/user/sessions/revoke', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     if (this.changes === 0) return res.status(404).json({ error: 'Session not found.' });
 
+    db.run('DELETE FROM refresh_tokens WHERE session_id = ?', [sessionId]);
     securityLog(req.user.id, 'session_revoked', req.ip, `Session ${sessionId} was revoked by the user.`);
     res.json({ success: true, message: 'Session revoked successfully.' });
   });
@@ -275,6 +277,7 @@ router.post('/api/user/delete-account', authenticateToken, (req, res) => {
   const userId = req.user.id;
   db.serialize(() => {
     db.run('DELETE FROM user_email_verifications WHERE user_id = ?', [userId]);
+    db.run('DELETE FROM refresh_tokens WHERE user_id = ?', [userId]);
     db.run('DELETE FROM user_sessions WHERE user_id = ?', [userId]);
     db.run('DELETE FROM friends WHERE user_id = ? OR friend_id = ?', [userId, userId]);
     db.run('DELETE FROM user_utilities WHERE user_id = ?', [userId]);
