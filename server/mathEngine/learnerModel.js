@@ -1,12 +1,7 @@
 // Learner Model — per-concept cognitive profile for each user
 // Tracks mastery, confidence, speed, retention, accuracy, hint/calc usage, retries
 
-const MASTERY_WEIGHTS = {
-  accuracy:   0.40,
-  speed:      0.20,
-  consistency: 0.20,
-  retention:  0.20
-};
+const { computeDimensions, computeOverall, hasTransferData } = require('./masteryEngine');
 
 // Returns or initialises a per-concept profile row
 function getProfile(db, userId, conceptId) {
@@ -34,7 +29,8 @@ function getProfile(db, userId, conceptId) {
               accuracy_rate: 0, hint_usage_rate: 0,
               calculator_usage_rate: 0, retry_rate: 0,
               exposure_count: 0, correct_first_try: 0,
-              learning_velocity: 0, last_seen: now
+              learning_velocity: 0, last_seen: now,
+              transfer_exposure: 0, transfer_success: 0
             });
           }
         );
@@ -43,22 +39,10 @@ function getProfile(db, userId, conceptId) {
   });
 }
 
-// Recompute mastery_score from component metrics
+// Recompute the scalar mastery_score from the named mastery dimensions (masteryEngine is the
+// single source of truth for both the dimensions and how they blend into the overall score).
 function computeMastery(profile) {
-  const speedScore = profile.avg_response_ms > 0
-    ? Math.max(0, 1 - profile.avg_response_ms / 30000)  // 30 s = slowest
-    : 0;
-
-  // Consistency: penalise when accuracy swings. Proxy: if accuracy is moderate it's inconsistent.
-  // We use a simple heuristic — high accuracy + low retry = consistent.
-  const consistencyScore = profile.accuracy_rate * (1 - Math.min(1, profile.retry_rate));
-
-  return Math.min(1,
-    profile.accuracy_rate   * MASTERY_WEIGHTS.accuracy   +
-    speedScore              * MASTERY_WEIGHTS.speed       +
-    consistencyScore        * MASTERY_WEIGHTS.consistency +
-    profile.retention_score * MASTERY_WEIGHTS.retention
-  );
+  return computeOverall(computeDimensions(profile), hasTransferData(profile));
 }
 
 // Called after every answer event
@@ -137,6 +121,31 @@ async function updateProfile(db, userId, conceptId, event) {
   });
 }
 
+// Record the outcome of an out-of-context (transfer) attempt for a concept. Kept separate from
+// updateProfile because transfer success is earned differently — it feeds the `transfer` mastery
+// dimension and must not be conflated with ordinary in-context drill accuracy. Also recomputes
+// mastery_score, since transfer now joins the blend once there is transfer data.
+async function recordTransferAttempt(db, userId, conceptId, correct) {
+  const profile = await getProfile(db, userId, conceptId);
+  const updated = {
+    ...profile,
+    transfer_exposure: (profile.transfer_exposure || 0) + 1,
+    transfer_success: (profile.transfer_success || 0) + (correct ? 1 : 0),
+    last_seen: Date.now(),
+  };
+  updated.mastery_score = computeMastery(updated);
+
+  return new Promise((resolve, reject) => {
+    db.run(
+      `UPDATE learner_profiles
+         SET transfer_exposure = ?, transfer_success = ?, mastery_score = ?, last_seen = ?
+       WHERE user_id = ? AND concept_id = ?`,
+      [updated.transfer_exposure, updated.transfer_success, updated.mastery_score, updated.last_seen, userId, conceptId],
+      (err) => (err ? reject(err) : resolve(updated))
+    );
+  });
+}
+
 // Full snapshot across all concepts for a user
 function getLearnerSnapshot(db, userId) {
   return new Promise((resolve, reject) => {
@@ -190,6 +199,7 @@ function getStagnantConcepts(db, userId) {
 module.exports = {
   getProfile,
   updateProfile,
+  recordTransferAttempt,
   getLearnerSnapshot,
   getWeakConcepts,
   getStrongConcepts,

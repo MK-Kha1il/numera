@@ -65,6 +65,7 @@ app.use(require('./routes/archive'));
 app.use(require('./routes/league'));
 app.use(require('./routes/commitment'));
 app.use(require('./routes/math'));
+app.use(require('./routes/transfer'));
 app.use(require('./routes/rating'));
 // publicProfile owns /api/user/:userId — mount LAST so it doesn't shadow account.js routes.
 app.use(require('./routes/publicProfile'));

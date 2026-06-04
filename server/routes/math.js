@@ -271,7 +271,8 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
   }
   completionCooldowns.set(userId, nowMs);
 
-  let { xpGained, coinsGained, solvedCount, category, level, errorsCount, speedBonus, comboBonus, gameMode, totalTime } = req.body;
+  const { xpGained, coinsGained, category, level, errorsCount, gameMode, totalTime } = req.body;
+  let { solvedCount, speedBonus, comboBonus } = req.body;
 
   // Clamp incoming metrics bounds to prevent client spoofing
   solvedCount = Math.min(Math.max(parseInt(solvedCount, 10) || 5, 0), 5);

@@ -87,6 +87,55 @@ test('account routes are reachable (not shadowed by /api/user/:userId)', async (
   }
 });
 
+test('archive search supplement returns a spread of distinct titles (no all-identical wall)', async () => {
+  const { token } = await registerUser(ctx.base);
+  // Unfiltered search (the command-palette path) appends procedurally-generated exercises.
+  // They must vary in title — historically all 10 shared one title, which crashed the client
+  // command palette via duplicate list keys.
+  const res = await api(ctx.base, 'GET', '/api/archive/search?q=zzzznomatch&limit=1', { token });
+  assert.strictEqual(res.status, 200);
+  assert.ok(Array.isArray(res.body), 'search returns an array');
+  const titles = res.body.map((r) => r.title).filter(Boolean);
+  const distinct = new Set(titles);
+  assert.ok(titles.length >= 5, 'generated supplement present');
+  assert.ok(distinct.size >= 5, `expected diverse titles, got ${distinct.size} distinct of ${titles.length}`);
+});
+
+test('engine event returns a multi-dimensional mastery breakdown', async () => {
+  const { token } = await registerUser(ctx.base);
+  const res = await api(ctx.base, 'POST', '/api/engine/event', {
+    token,
+    body: { conceptId: 'arithmetic_add', correct: true, responseMs: 3000 },
+  });
+  assert.strictEqual(res.status, 200);
+  assert.ok(res.body.masteryProfile, 'masteryProfile present in event response');
+  const dims = res.body.masteryProfile.dimensions;
+  for (const k of ['accuracy', 'fluency', 'retention', 'independence']) {
+    assert.strictEqual(typeof dims[k], 'number', `dimension ${k} present and numeric`);
+  }
+  assert.ok(typeof res.body.masteryProfile.stage === 'string', 'stage label present');
+});
+
+test('transfer challenge serves a novel-context problem and records the out-of-context outcome', async () => {
+  const { token } = await registerUser(ctx.base);
+
+  const challenge = await api(ctx.base, 'GET', '/api/math/transfer/challenge', { token });
+  assert.strictEqual(challenge.status, 200);
+  assert.ok(challenge.body.conceptId, 'challenge has a conceptId');
+  assert.ok(challenge.body.problem && challenge.body.problem.question, 'challenge has a problem');
+  assert.ok(Array.isArray(challenge.body.problem.options), 'problem has options');
+  assert.strictEqual(challenge.body.problem.isTransfer, true);
+
+  // Recording a transfer result activates the transfer dimension in the mastery breakdown.
+  const result = await api(ctx.base, 'POST', '/api/math/transfer/result', {
+    token,
+    body: { conceptId: challenge.body.conceptId, correct: true },
+  });
+  assert.strictEqual(result.status, 200);
+  assert.strictEqual(result.body.masteryProfile.transferActive, true);
+  assert.strictEqual(typeof result.body.masteryProfile.dimensions.transfer, 'number');
+});
+
 test('daily puzzle endpoint responds with a puzzle', async () => {
   const { token } = await registerUser(ctx.base);
   const res = await api(ctx.base, 'GET', '/api/math/daily-puzzle', { token });

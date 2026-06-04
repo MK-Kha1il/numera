@@ -65,9 +65,9 @@ function buildLinearScale(question) {
   const m = q.match(/(-?\d*)\s*x\s*([+-]\s*\d+)?\s*=\s*(-?\d+)/);
   if (!m) return null;
 
-  let a = m[1] === '' || m[1] === '+' ? 1 : (m[1] === '-' ? -1 : parseInt(m[1], 10));
-  let b = m[2] ? parseInt(m[2].replace(/\s+/g, ''), 10) : 0;
-  let c = parseInt(m[3], 10);
+  const a = m[1] === '' || m[1] === '+' ? 1 : (m[1] === '-' ? -1 : parseInt(m[1], 10));
+  const b = m[2] ? parseInt(m[2].replace(/\s+/g, ''), 10) : 0;
+  const c = parseInt(m[3], 10);
   if (!isInt(a) || a === 0) return null;
 
   if (a <= 0) return null;                       // balance metaphor needs a positive count of x-tiles
@@ -96,7 +96,7 @@ function buildParabola(question) {
   // a x^2
   const am = q.match(/(-?\d*)x\^?2/);
   if (!am) return null;
-  let a = am[1] === '' || am[1] === '+' ? 1 : (am[1] === '-' ? -1 : parseInt(am[1], 10));
+  const a = am[1] === '' || am[1] === '+' ? 1 : (am[1] === '-' ? -1 : parseInt(am[1], 10));
   // b x  (the x term that is NOT x^2)
   let b = 0;
   const bm = q.replace(/(-?\d*)x\^?2/, '').match(/([+-]?\d*)x(?!\^?2)/);

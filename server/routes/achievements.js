@@ -73,10 +73,18 @@ router.post('/api/achievements/claim', authenticateToken, idempotency, (req, res
 
     await tx.run(`UPDATE users SET coins = coins + ? WHERE id = ?`, [row.reward_coins, userId]);
 
+    // Grant the achievement's cosmetic badge — but ONLY if it's a real catalog item. Not every
+    // achievement badge is seeded into shop_items, and user_inventory.item_id has a FK to
+    // shop_items; inserting an unseeded badge raised SQLITE_CONSTRAINT (FK) which rolled back the
+    // ENTIRE claim — the root cause of "completed achievements won't claim". Coins are the
+    // guaranteed reward; the badge is best-effort so a missing catalog row never blocks a claim.
     const badgeId = 'badge_' + achievementId;
-    await tx.run(`INSERT OR IGNORE INTO user_inventory (user_id, item_id) VALUES (?, ?)`, [userId, badgeId]);
+    const badgeItem = await tx.get(`SELECT id FROM shop_items WHERE id = ?`, [badgeId]);
+    if (badgeItem) {
+      await tx.run(`INSERT OR IGNORE INTO user_inventory (user_id, item_id) VALUES (?, ?)`, [userId, badgeId]);
+    }
 
-    return { success: true, rewardCoins: row.reward_coins, unlockedBadge: badgeId };
+    return { success: true, rewardCoins: row.reward_coins, unlockedBadge: badgeItem ? badgeId : null };
   })
     .then((payload) => res.json(payload))
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));

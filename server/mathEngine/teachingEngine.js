@@ -55,7 +55,7 @@ function adaptExplanation(explanation, styleProfile) {
   const { dominant, confident } = styleProfile;
   if (!confident) return explanation; // not enough data yet — return as-is
 
-  let adapted = { ...explanation };
+  const adapted = { ...explanation };
 
   if (dominant === STYLES.rule_based) {
     // Lead with the rule, then show the solution

@@ -64,11 +64,16 @@ router.get('/api/archive/search', authenticateToken, (req, res) => {
     // Supplement with 10 procedurally generated problems to ensure it is always an infinite scrolling archive
     const countToGenerate = 10;
     const categoriesList = ['Number Theory', 'Combinatorics', 'Calculus', 'Algebra', 'Mental', 'Arithmetic'];
-    const selectedCategory = category || categoriesList[Math.floor(Math.random() * categoriesList.length)];
-    const selectedStars = stars || Math.floor(Math.random() * 5) + 1;
+    // Star tiers that map to the generator's distinct title variants (low ≤2, mid =3, high ≥4).
+    const starTiers = [2, 3, 5];
 
     for (let i = 0; i < countToGenerate; i++) {
-      const generated = generateArchiveProblem(selectedCategory, selectedStars);
+      // Vary the category each item (and bump the star tier each full pass) so the generated
+      // supplement is a spread of distinct titles instead of 10 copies of one — otherwise a
+      // search returns a wall of identical-looking rows. Honor explicit category/stars filters.
+      const genCategory = category || categoriesList[i % categoriesList.length];
+      const genStars = stars || starTiers[Math.floor(i / categoriesList.length) % starTiers.length];
+      const generated = generateArchiveProblem(genCategory, genStars);
       generated.id = 10000 + i + Math.floor(Math.random() * 90000);
       generated.options = typeof generated.options === 'string' ? JSON.parse(generated.options) : generated.options;
 

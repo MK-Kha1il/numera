@@ -210,7 +210,8 @@ function applyInactivityBoost(sigma, lastUpdatedTs, sessionsCount) {
  * Returns the updated pair plus metadata for the history record.
  */
 function applySessionToRating(ratingRow, sessionData) {
-  let { mu, sigma, sessions_count, last_updated } = ratingRow;
+  const { mu, sessions_count, last_updated } = ratingRow;
+  let { sigma } = ratingRow;
 
   // Step 1: Apply inactivity boost before update (skip for brand-new accounts)
   sigma = applyInactivityBoost(sigma, last_updated, sessions_count);

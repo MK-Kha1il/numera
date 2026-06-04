@@ -6,6 +6,7 @@ const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 
 const LearnerModel = require('../mathEngine/learnerModel');
+const MasteryEngine = require('../mathEngine/masteryEngine');
 const MisconceptionEngine = require('../mathEngine/misconceptionEngine');
 const RetentionEngine = require('../mathEngine/retentionEngine');
 const TeachingEngine = require('../mathEngine/teachingEngine');
@@ -70,9 +71,13 @@ router.post('/api/engine/event', authenticateToken, async (req, res) => {
       }
     }
 
+    // Multi-dimensional mastery breakdown for this concept (accuracy/fluency/retention/independence)
+    const masteryProfile = MasteryEngine.computeMasteryProfile(updatedProfile);
+
     res.json({
       success: true,
       mastery: updatedProfile.mastery_score,
+      masteryProfile,
       retention: retentionScore,
       nextReview: retResult.nextReview,
       misconception: misconception && misconception.id !== 'unclassified' ? misconception : null,
@@ -115,7 +120,10 @@ router.get('/api/engine/learner', authenticateToken, async (req, res) => {
     const style = await TeachingEngine.getLearningStyle(db, req.user.id);
     const spikes = await AnalyticsEngine.detectDifficultySpikes(db, req.user.id);
     const summary = await AnalyticsEngine.getUserSessionSummary(db, req.user.id);
-    res.json({ concepts: snapshot, learningStyle: style, difficultySpikes: spikes, summary });
+    // Attach the per-concept dimension breakdown + a learner-wide aggregate mastery vector.
+    const concepts = snapshot.map((c) => ({ ...c, dimensions: MasteryEngine.computeDimensions(c) }));
+    const masteryProfile = MasteryEngine.aggregateDimensions(snapshot);
+    res.json({ concepts, masteryProfile, learningStyle: style, difficultySpikes: spikes, summary });
   } catch (err) {
     logger.error('[Engine/learner]', err);
     res.status(500).json({ error: err.message });
@@ -127,10 +135,11 @@ router.get('/api/engine/learner', authenticateToken, async (req, res) => {
 router.get('/api/engine/learner/concept/:conceptId', authenticateToken, async (req, res) => {
   try {
     const profile = await LearnerModel.getProfile(db, req.user.id, req.params.conceptId);
+    const masteryProfile = MasteryEngine.computeMasteryProfile(profile);
     const misconceptions = await MisconceptionEngine.getConceptMisconceptions(db, req.user.id, req.params.conceptId);
     const retention = await RetentionEngine.getSchedule(db, req.user.id, req.params.conceptId);
     const liveRetention = await RetentionEngine.getLiveRetention(db, req.user.id, req.params.conceptId);
-    res.json({ profile, misconceptions, retention, liveRetention });
+    res.json({ profile, masteryProfile, misconceptions, retention, liveRetention });
   } catch (err) {
     logger.error('[Engine/learner/concept]', err);
     res.status(500).json({ error: err.message });

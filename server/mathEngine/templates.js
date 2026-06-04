@@ -270,8 +270,6 @@ templates.algebra = {
   15: (diffFactor, idx) => {
     // Quadratic equation
     const quad = generateQuadraticEquation(diffFactor);
-    const sum = quad.a + quad.x2; // dummy
-    const coeffB = quad.a + quad.x2; // let's stick to simple form
     const sumRoots = quad.x1 + quad.x2;
     const prodRoots = quad.x1 * quad.x2;
     // x^2 - (x1+x2)x + x1*x2 = 0
@@ -918,7 +916,7 @@ templates.mental = {
     const n2 = Math.round((idx % 5 + 5) * diffFactor);
     const n3 = Math.round((idx % 5 + 8) * diffFactor);
     let sum = n1 + n2 + n3;
-    let n4 = 4 - (sum % 4);
+    const n4 = 4 - (sum % 4);
     sum += n4;
     return {
       question: `Find the arithmetic mean (average) of the values: $$${n1}, \\, ${n2}, \\, ${n3}, \\, ${n4}$$`,

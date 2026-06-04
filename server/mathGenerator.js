@@ -19,6 +19,8 @@ const {
 } = require('./mathEngine/symbolic');
 const { constructPersonalizedExplanation } = require('./mathEngine/explanationEngine');
 const { solveSymbolically } = require('./mathEngine/validation');
+const { buildSocraticJson } = require('./mathEngine/socraticEngine');
+const { conceptFromType } = require('./mathEngine/problemOrchestrator');
 
 // Maps knowledge-graph conceptId → the canonical template category + level
 // that generates problems of that concept type.
@@ -113,7 +115,7 @@ function validateLaTeXString(str) {
 
   // 4. Validate matching braces (like \frac{...}{...})
   let braces = 0;
-  for (let char of str) {
+  for (const char of str) {
     if (char === '{') braces++;
     if (char === '}') braces--;
     if (braces < 0) return false;
@@ -273,12 +275,16 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
       : userAnalytics;
     const personalizedExplanation = constructPersonalizedExplanation(selectedTemplate.type, explanationPattern, conceptAnalytics);
 
+    // Socratic feedback: misconception-targeted probe/hint per wrong option (JSON string).
+    const socraticJson = buildSocraticJson(conceptFromType(selectedTemplate.type), correct, options, params);
+
     return {
       question,
       correctAnswer: correct,
       options,
       explanation: personalizedExplanation,
-      templateType: selectedTemplate.type
+      templateType: selectedTemplate.type,
+      socraticJson
     };
   }
 
@@ -341,12 +347,18 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     : userAnalytics;
   const personalizedExplanation = constructPersonalizedExplanation(rawProblem.type, rawProblem.explanation, conceptAnalytics);
 
+  // Socratic feedback: misconception-targeted probe/hint per wrong option (JSON string).
+  // The raw template object doubles as the params bag for the misconception classifier
+  // (it carries a/b/x1/x2/mod/etc. for the concept-specific rules).
+  const socraticJson = buildSocraticJson(conceptFromType(rawProblem.type), correct, options, rawProblem);
+
   return {
     question: rawProblem.question,
     correctAnswer: correct,
     options: options,
     explanation: personalizedExplanation,
-    templateType: rawProblem.type
+    templateType: rawProblem.type,
+    socraticJson
   };
 }
 

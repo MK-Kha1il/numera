@@ -13,10 +13,11 @@ const { concepts, getDependencies }  = require('./knowledgeGraph');
 const { getActiveMisconceptions,
         getConceptMisconceptions,
         buildMisconceptionWarning }   = require('./misconceptionEngine');
-const { getOverdueReviews,
-        getDecayingConcepts }         = require('./retentionEngine');
+const { getOverdueReviews }           = require('./retentionEngine');
 const { getProfile, getWeakConcepts,
         getStrongConcepts }           = require('./learnerModel');
+const { computeMasteryProfile }       = require('./masteryEngine');
+const { hasTransfer }                 = require('./transferEngine');
 const { getLearningStyle,
         adaptExplanation }            = require('./teachingEngine');
 const { constructPersonalizedExplanation } = require('./explanationEngine');
@@ -112,6 +113,42 @@ async function selectNextConcept(db, userId, currentCategory, currentLevel) {
       priority:  4,
       meta:      { masteryScore: relevantWeak[0].mastery_score }
     };
+  }
+
+  // 4b. Dimension building — a concept that is overall solid but has one specific weak dimension.
+  //     Retention weakness already routes through step 2 (retention review); here we deliberately
+  //     target FLUENCY (accurate but slow) or INDEPENDENCE (reliant on hints), which otherwise
+  //     never get singled out. This is the multi-dimensional-mastery payoff: not all "good enough"
+  //     concepts are equal, and we push the specific edge that is lagging.
+  for (const conceptId of categoryConceptIds) {
+    const profile = await getProfile(db, userId, conceptId);
+    if (profile.exposure_count < 3) continue;  // need enough signal to trust the dimensions
+    const mp = computeMasteryProfile(profile);
+    if (mp.overall >= 0.6 && (mp.weakest === 'fluency' || mp.weakest === 'independence')) {
+      return {
+        conceptId,
+        reason:    'dimension_building',
+        priority:  4,
+        meta:      { dimension: mp.weakest, focus: mp.focus, dimensions: mp.dimensions },
+      };
+    }
+  }
+
+  // 4c. Transfer practice — the concept is solid in-context (accurate + independent) but has never
+  //     been applied out-of-context. Recommend a transfer challenge to prove real understanding,
+  //     not just procedural recall (Sprint 4). Served via /api/math/transfer/challenge.
+  for (const conceptId of categoryConceptIds) {
+    if (!hasTransfer(conceptId)) continue;
+    const profile = await getProfile(db, userId, conceptId);
+    const mp = computeMasteryProfile(profile);
+    if (mp.transferReady) {
+      return {
+        conceptId,
+        reason:    'transfer_practice',
+        priority:  4,
+        meta:      { transfer: true, dimensions: mp.dimensions },
+      };
+    }
   }
 
   // 5. Exploration — find next concept whose prereqs are mastered
@@ -263,6 +300,12 @@ function buildEducationalNote(conceptId, reason) {
   }
   if (reason === 'prerequisite_gap') {
     return '🔑 Mastering this foundational concept will unlock more advanced topics.';
+  }
+  if (reason === 'dimension_building') {
+    return '🎯 You\'ve got the idea — this round sharpens a specific edge (solving faster, or unaided) to deepen your mastery.';
+  }
+  if (reason === 'transfer_practice') {
+    return '🧩 You\'ve mastered the standard form — now apply it in a new, unfamiliar context to prove you truly understand it.';
   }
   if (reason === 'exploration') {
     return '🌟 You\'ve mastered the prerequisites — this is a new concept for you!';

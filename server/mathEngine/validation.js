@@ -147,7 +147,7 @@ function getGcd(a, b) {
   a = Math.abs(a);
   b = Math.abs(b);
   while (b !== 0) {
-    let t = b;
+    const t = b;
     b = a % b;
     a = t;
   }

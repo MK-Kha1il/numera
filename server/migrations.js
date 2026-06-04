@@ -84,6 +84,26 @@ const migrations = [
       );
     },
   },
+  {
+    version: 4,
+    name: 'learner_profile_transfer_columns',
+    // Sprint 4 (transfer exercises): track out-of-context attempts separately from in-context
+    // practice. These feed the new `transfer` mastery dimension — true depth is only earned by
+    // applying a concept in a novel framing, so it must be counted apart from drill success.
+    up: async (run) => {
+      // SQLite can't "ADD COLUMN IF NOT EXISTS"; tolerate a duplicate-column error so this
+      // migration is safe on DBs that were hand-patched earlier.
+      const addColumn = async (sql) => {
+        try {
+          await run(sql);
+        } catch (e) {
+          if (!/duplicate column name/i.test(e.message)) throw e;
+        }
+      };
+      await addColumn('ALTER TABLE learner_profiles ADD COLUMN transfer_exposure INTEGER DEFAULT 0');
+      await addColumn('ALTER TABLE learner_profiles ADD COLUMN transfer_success INTEGER DEFAULT 0');
+    },
+  },
 ];
 
 /**

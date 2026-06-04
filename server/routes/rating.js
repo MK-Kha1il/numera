@@ -147,7 +147,8 @@ function nrsUpdateTilt(userId, performanceScore, sessionData) {
 // ── POST /api/rating/session ──────────────────────────────────────────────────
 router.post('/api/rating/session', authenticateToken, (req, res) => {
   const userId = req.user.id;
-  let { category, level, solvedCount, totalProblems, errorsCount, speedBonus, comboBonus, usedCalculator, gameMode } = req.body;
+  const { category, level, usedCalculator, gameMode } = req.body;
+  let { solvedCount, totalProblems, errorsCount, speedBonus, comboBonus } = req.body;
 
   solvedCount = Math.min(Math.max(parseInt(solvedCount, 10) || 0, 0), 20);
   totalProblems = Math.min(Math.max(parseInt(totalProblems, 10) || 3, 1), 20);
