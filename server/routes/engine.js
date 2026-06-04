@@ -3,7 +3,8 @@
 // skill-based competitive profile. Thin HTTP layer over the mathEngine/* modules.
 const express = require('express');
 const { db } = require('../db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { runSelfAudit } = require('../mathEngine/contentAudit');
 
 const LearnerModel = require('../mathEngine/learnerModel');
 const MasteryEngine = require('../mathEngine/masteryEngine');
@@ -16,6 +17,19 @@ const Orchestrator = require('../mathEngine/problemOrchestrator');
 const logger = require('../logger');
 
 const router = express.Router();
+
+// Phase 15 — self-auditing engine. Admin-only content health report that fuses pedagogical
+// feedback, lesson analytics, and the anti-repetition exposure memory to auto-flag weak and
+// repetitive content (the latter pinpoints which slots still need more representations).
+router.get('/api/engine/content-audit', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const report = await runSelfAudit(db);
+    res.json(report);
+  } catch (err) {
+    logger.error('[/api/engine/content-audit]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 router.post('/api/engine/event', authenticateToken, async (req, res) => {
   const userId = req.user.id;
