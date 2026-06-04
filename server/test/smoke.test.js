@@ -46,6 +46,37 @@ test('GET /api/math/problems returns problems for an authed user', async () => {
   assert.strictEqual(res.status, 200);
 });
 
+test('served problems carry the anti-repetition + hint-ladder pipeline end-to-end', async () => {
+  const { token } = await registerUser(ctx.base);
+  const res = await api(ctx.base, 'GET', '/api/math/problems?level=1&count=3', { token });
+  assert.strictEqual(res.status, 200);
+  assert.ok(Array.isArray(res.body.problems) && res.body.problems.length > 0, 'problems present');
+  for (const p of res.body.problems) {
+    // Diversity engine ran (Phase 3).
+    assert.strictEqual(typeof p.diversityScore, 'number', 'diversityScore attached');
+    // Hint ladder reached the API and escalates from a small nudge (Phase 11).
+    assert.ok(Array.isArray(p.hintLadder) && p.hintLadder.length >= 1, 'hintLadder present');
+    assert.strictEqual(p.hintLadder[0].stage, 1, 'ladder starts at stage 1');
+    // No rung leaks the correct answer.
+    const ans = String(p.correctAnswer).replace(/\$/g, '').trim();
+    if (ans.length > 1) {
+      for (const rung of p.hintLadder) {
+        assert.ok(!rung.text.includes(ans), `hint rung "${rung.level}" must not contain the answer`);
+      }
+    }
+  }
+});
+
+test('exposure memory is recorded so repeated play is de-duplicated', async () => {
+  const { token, user } = await registerUser(ctx.base);
+  await api(ctx.base, 'GET', '/api/math/problems?level=1&count=3', { token });
+  const rows = await new Promise((resolve) =>
+    ctx.mod.db.all('SELECT * FROM exercise_exposure WHERE user_id = ?', [user.id], (e, r) => resolve(r || []))
+  );
+  assert.ok(rows.length > 0, 'serving problems records exposure signatures for the learner');
+  assert.ok(rows.every((r) => r.signature && r.structure_sig), 'rows carry fingerprints');
+});
+
 test('GET /api/shop responds for an authed user', async () => {
   const { token } = await registerUser(ctx.base);
   const res = await api(ctx.base, 'GET', '/api/shop', { token });
@@ -141,6 +172,13 @@ test('daily puzzle endpoint responds with a puzzle', async () => {
   const res = await api(ctx.base, 'GET', '/api/math/daily-puzzle', { token });
   assert.strictEqual(res.status, 200);
   assert.ok(res.body && res.body.question, 'puzzle has a question');
+});
+
+test('content-audit endpoint is mounted and admin-gated', async () => {
+  const { token } = await registerUser(ctx.base);
+  // A normal (non-admin) user must be forbidden — verifies the route exists AND is gated.
+  const res = await api(ctx.base, 'GET', '/api/engine/content-audit', { token });
+  assert.strictEqual(res.status, 403, 'non-admin is denied the self-audit report');
 });
 
 test('commitment status responds for an authed user', async () => {

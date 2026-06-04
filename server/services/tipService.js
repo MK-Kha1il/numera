@@ -1,6 +1,7 @@
 // Attaches a pedagogically-safe hint to a problem: classify the problem into a template
 // type, look up its tip, and suppress the tip if it would leak the answer.
 const { tipsMap } = require('../mathEngine/tips');
+const { buildHintLadder } = require('../mathEngine/hintLadder');
 
 // Best-effort classification of an archive problem into a tip template key from its
 // title/category.
@@ -64,6 +65,11 @@ function attachTipToProblem(problem, isArchive) {
   if (!problem) return problem;
   const templateType = problem.templateType || getArchiveTemplateType(problem.title, problem.category);
   const tipData = tipsMap[templateType];
+  const correctAnswer = problem.correctAnswer || problem.correct_answer || '';
+
+  // Phase 11: every problem carries the escalating hint ladder (single `tip` kept for
+  // backward compatibility = the "method" rung). The full solution is never in the ladder.
+  problem.hintLadder = buildHintLadder(templateType, correctAnswer);
 
   if (!tipData) {
     problem.tip = 'Focus on the core concepts shown in the lesson.';
@@ -71,7 +77,6 @@ function attachTipToProblem(problem, isArchive) {
   }
 
   const rawTip = tipData.tip || '';
-  const correctAnswer = problem.correctAnswer || problem.correct_answer || '';
 
   const isSafe = checkTipSafety(rawTip, correctAnswer);
 

@@ -22,6 +22,8 @@ are small and mostly pure (deterministic where possible — see `test/symbolic.t
 | `ratingEngine.js` | **NRS** (Numera Rating System): rating updates, velocity, tilt, smurf signals, seasons. |
 | `adaptive.js` | Difficulty selection from mastery/Elo. |
 | `problemOrchestrator.js` | `enrichProblem()` — ties generation + tips + lessons + visuals together. |
+| `exerciseMemory.js` | **Anti-repetition keystone.** Fingerprints served problems (concept/structure/context/answer), scores candidate novelty against a per-user memory, and picks the freshest. See `docs/MathEngineRepetitionAudit.md`. |
+| `lessonSafety.js` | Strips answer-leaking worked examples from lessons + answer keys from visual specs (a lesson must teach, not solve, the exercise in front of the learner). |
 | `lessons.js` / `conceptLessons.js` | Lesson content (see "Lessons"). |
 | `tips.js` | Per-concept hints with safety checks (don't leak the answer). |
 | `visualEngine.js` | Builds declarative specs for interactive manipulatives (see below). |

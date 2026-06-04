@@ -7,62 +7,87 @@ const { idempotency } = require('../idempotency');
 const { generateArchiveProblem, getLessonForArchive } = require('../mathGenerator');
 const { attachTipToProblem } = require('../services/tipService');
 const { updateAchievements } = require('../services/achievementService');
+const ExerciseMemory = require('../mathEngine/exerciseMemory');
+const LessonSafety = require('../mathEngine/lessonSafety');
 
 const router = express.Router();
 
-// Get the active calendar-day puzzle
-router.get('/api/math/daily-puzzle', authenticateToken, (req, res) => {
-  db.all('SELECT * FROM archive_exercises WHERE stars >= 3', (err, exercises) => {
-    if (err) return res.status(500).json({ error: err.message });
+// The "theme of the day": a deterministic category + difficulty rotation so the puzzle
+// concept changes every day (and cycles difficulty across the week) instead of pulling
+// from a tiny fixed pool that repeats. The *concept* is the shared daily theme; the
+// concrete variant is then freshened per-learner via the diversity engine below.
+const DAILY_CATEGORIES = ['Number Theory', 'Combinatorics', 'Calculus', 'Algebra', 'Mental', 'Arithmetic'];
+const DAILY_STAR_TIERS = [3, 4, 5];
 
-    let puzzle;
-    if (exercises && exercises.length > 0) {
-      const dayIndex = Math.floor(Date.now() / 86400000) % exercises.length;
-      puzzle = exercises[dayIndex];
-    } else {
-      puzzle = generateArchiveProblem('Number Theory', 4);
+function themeForDay(dayNumber) {
+  const category = DAILY_CATEGORIES[dayNumber % DAILY_CATEGORIES.length];
+  const stars = DAILY_STAR_TIERS[Math.floor(dayNumber / DAILY_CATEGORIES.length) % DAILY_STAR_TIERS.length];
+  return { category, stars };
+}
+
+// Get the active calendar-day puzzle
+router.get('/api/math/daily-puzzle', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const dayNumber = Math.floor(Date.now() / 86400000);
+    const { category, stars } = themeForDay(dayNumber);
+
+    // Pick a variant of today's concept this learner has not recently seen.
+    const recent = await ExerciseMemory.getRecentExposures(db, userId);
+    const picked = await ExerciseMemory.pickFreshExercise(
+      db,
+      userId,
+      () => generateArchiveProblem(category, stars),
+      { recent, surface: 'daily', attempts: 8 }
+    );
+    const puzzle = picked.problem;
+
+    const baseLesson = getLessonForArchive(puzzle.title, puzzle.category, puzzle.stars);
+    // Phase 8: the lesson teaches the concept — it must not contain a worked example that
+    // solves (or merely restates) today's puzzle.
+    const { lesson } = LessonSafety.sanitizeLesson(baseLesson, puzzle);
+
+    const q = await new Promise((resolve) =>
+      db.get('SELECT daily_puzzle_today FROM user_quests WHERE user_id = ?', [userId], (e, r) => resolve(r))
+    );
+    const solved = q ? q.daily_puzzle_today >= 1 : false;
+    const parsedOptions = typeof puzzle.options === 'string' ? JSON.parse(puzzle.options) : puzzle.options;
+
+    // Normalize correct_answer to exactly match one of the options
+    // (some archive exercises store plain text answers while options have LaTeX formatting)
+    let normalizedAnswer = puzzle.correct_answer;
+    if (parsedOptions && parsedOptions.length > 0 && !parsedOptions.includes(normalizedAnswer)) {
+      const stripLatex = (s) => s.replace(/\$/g, '').replace(/\\dots/g, '...').replace(/\\\\dots/g, '...').trim();
+      const plainAnswer = stripLatex(normalizedAnswer);
+      const matchingOption = parsedOptions.find((opt) => stripLatex(opt) === plainAnswer);
+      if (matchingOption) {
+        normalizedAnswer = matchingOption;
+      }
     }
 
-    const lesson = getLessonForArchive(puzzle.title, puzzle.category, puzzle.stars);
+    const puzzleResponse = {
+      id: puzzle.id || 9999,
+      title: puzzle.title,
+      story: puzzle.story,
+      question: puzzle.question,
+      correct_answer: normalizedAnswer,
+      options: parsedOptions,
+      explanation: puzzle.explanation,
+      category: puzzle.category,
+      stars: puzzle.stars,
+      source: puzzle.source,
+      solved_today: solved,
+      lessonTitle: lesson.lessonTitle,
+      lessonContent: lesson.lessonContent,
+      lessonFormula: lesson.lessonFormula,
+      examples: lesson.examples,
+      lessonSections: lesson.sections || null,
+    };
 
-    db.get('SELECT daily_puzzle_today FROM user_quests WHERE user_id = ?', [req.user.id], (errQ, q) => {
-      const solved = q ? q.daily_puzzle_today >= 1 : false;
-      const parsedOptions = typeof puzzle.options === 'string' ? JSON.parse(puzzle.options) : puzzle.options;
-
-      // Normalize correct_answer to exactly match one of the options
-      // (some archive exercises store plain text answers while options have LaTeX formatting)
-      let normalizedAnswer = puzzle.correct_answer;
-      if (parsedOptions && parsedOptions.length > 0 && !parsedOptions.includes(normalizedAnswer)) {
-        const stripLatex = (s) => s.replace(/\$/g, '').replace(/\\dots/g, '...').replace(/\\\\dots/g, '...').trim();
-        const plainAnswer = stripLatex(normalizedAnswer);
-        const matchingOption = parsedOptions.find((opt) => stripLatex(opt) === plainAnswer);
-        if (matchingOption) {
-          normalizedAnswer = matchingOption;
-        }
-      }
-
-      const puzzleResponse = {
-        id: puzzle.id || 9999,
-        title: puzzle.title,
-        story: puzzle.story,
-        question: puzzle.question,
-        correct_answer: normalizedAnswer,
-        options: parsedOptions,
-        explanation: puzzle.explanation,
-        category: puzzle.category,
-        stars: puzzle.stars,
-        source: puzzle.source,
-        solved_today: solved,
-        lessonTitle: lesson.lessonTitle,
-        lessonContent: lesson.lessonContent,
-        lessonFormula: lesson.lessonFormula,
-        examples: lesson.examples,
-        lessonSections: lesson.sections || null,
-      };
-
-      res.json(attachTipToProblem(puzzleResponse, true));
-    });
-  });
+    res.json(attachTipToProblem(puzzleResponse, true));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Submit evaluation for the daily puzzle

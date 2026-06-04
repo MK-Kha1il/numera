@@ -492,12 +492,31 @@ function generateArchiveProblemInstance(category, stars) {
       rawOptions = [`$\\frac{${numer}}{6}$`, `$\\frac{${numer}}{3}$`, `$\\frac{${a}}{6}$`, `$\\frac{1}{6}$`];
       explanation = `The Maclaurin series for $e^u$ is $\\sum_{n=0}^{\\infty} \\frac{u^n}{n!}$. Letting $u = ${a}x$:\n$$e^{${a}x} = \\sum_{n=0}^{\\infty} \\frac{(${a}x)^n}{n!} = \\sum_{n=0}^{\\infty} \\frac{${a}^n}{n!} x^n$$\nFor $n = 3$, the coefficient of $x^3$ is:\n$$\\frac{${a}^3}{3!} = \\frac{${numer}}{6}$$`;
     } else {
-      title = "The Basel Problem Evaluation";
-      story = "The Basel Problem asks for the precise sum of the reciprocals of the squares of the natural numbers, first solved by Leonhard Euler in 1734.";
-      question = `Find the sum of the infinite series: $$\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = 1 + \\frac{1}{4} + \\frac{1}{9} + \\frac{1}{16} + \\dots$$`;
-      correctAnswer = `$\\frac{\\pi^2}{6}$`;
-      rawOptions = [`$\\frac{\\pi}{4}$`, `$\\frac{\\pi^2}{8}$`, `$\\frac{\\pi^2}{6}$`, `$\\frac{\\pi^2}{12}$`];
-      explanation = `Euler proved that the infinite sum converges to a value related to $\\pi$. Using the product expansion of the sine function:\n$$\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}$$`;
+      // Rotate among famous convergent series so this slot is not the identical Basel
+      // problem every single time (it previously always returned pi^2/6).
+      const roll = Math.floor(Math.random() * 3);
+      if (roll === 0) {
+        title = "The Basel Problem Evaluation";
+        story = "The Basel Problem asks for the precise sum of the reciprocals of the squares of the natural numbers, first solved by Leonhard Euler in 1734.";
+        question = `Find the sum of the infinite series: $$\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = 1 + \\frac{1}{4} + \\frac{1}{9} + \\frac{1}{16} + \\dots$$`;
+        correctAnswer = `$\\frac{\\pi^2}{6}$`;
+        rawOptions = [`$\\frac{\\pi}{4}$`, `$\\frac{\\pi^2}{8}$`, `$\\frac{\\pi^2}{6}$`, `$\\frac{\\pi^2}{12}$`];
+        explanation = `Euler proved that the infinite sum converges to a value related to $\\pi$. Using the product expansion of the sine function:\n$$\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}$$`;
+      } else if (roll === 1) {
+        title = "Telescoping Series Evaluation";
+        story = "Some infinite sums collapse: when each term splits into a difference, almost everything cancels, leaving only the first surviving piece.";
+        question = `Evaluate the telescoping series: $$\\sum_{n=1}^{\\infty} \\frac{1}{n(n+1)} = \\frac{1}{2} + \\frac{1}{6} + \\frac{1}{12} + \\dots$$`;
+        correctAnswer = "1";
+        rawOptions = ["1", "2", `$\\frac{1}{2}$`, `$\\frac{3}{2}$`];
+        explanation = `Use partial fractions $\\frac{1}{n(n+1)} = \\frac{1}{n} - \\frac{1}{n+1}$. The sum telescopes:\n$$\\left(1 - \\frac{1}{2}\\right) + \\left(\\frac{1}{2} - \\frac{1}{3}\\right) + \\dots = 1$$`;
+      } else {
+        title = "Convergent Geometric Series";
+        story = "A geometric series with ratio between -1 and 1 converges to a clean closed form, the cornerstone of many infinite-sum arguments.";
+        question = `Evaluate the geometric series: $$\\sum_{n=0}^{\\infty} \\frac{1}{2^n} = 1 + \\frac{1}{2} + \\frac{1}{4} + \\frac{1}{8} + \\dots$$`;
+        correctAnswer = "2";
+        rawOptions = ["2", "1", `$\\frac{3}{2}$`, `$\\infty$`];
+        explanation = `For a geometric series $\\sum_{n=0}^{\\infty} r^n = \\frac{1}{1-r}$ when $|r| < 1$. With $r = \\frac{1}{2}$:\n$$\\frac{1}{1 - \\frac{1}{2}} = 2$$`;
+      }
     }
   } else if (cat === "algebra") {
     if (stars <= 2) {
@@ -543,50 +562,130 @@ function generateArchiveProblemInstance(category, stars) {
     }
   } else if (cat === "mental") {
     if (stars <= 2) {
-      title = "Expected Value of a Fair Die";
-      story = "The expected value is the long-run average outcome of a random variable, computed as the probability-weighted sum of all possible outcomes.";
-      question = `Determine the expected value of a single roll of a fair six-sided die.`;
-      correctAnswer = "3.5";
-      rawOptions = ["3.0", "3.5", "4.0", "4.5"];
-      explanation = `Let $X$ be the outcome of the roll. The probability of each face is $1/6$:\n$$E[X] = \\frac{1 + 2 + 3 + 4 + 5 + 6}{6} = 3.5$$`;
+      // Parameterized expected value: vary the die (or ask the two-dice sum) so the answer
+      // isn't the constant 3.5 each time.
+      if (Math.random() < 0.5) {
+        const sides = [4, 6, 8, 10, 12, 20][Math.floor(Math.random() * 6)];
+        const ev = (sides + 1) / 2;
+        title = "Expected Value of a Fair Die";
+        story = "The expected value is the long-run average outcome of a random variable, computed as the probability-weighted sum of all possible outcomes.";
+        question = `Determine the expected value of a single roll of a fair ${sides}-sided die.`;
+        correctAnswer = ev.toString();
+        rawOptions = [ev.toString(), (ev - 0.5).toString(), (ev + 0.5).toString(), (sides / 2).toString()];
+        explanation = `Each of the $${sides}$ faces is equally likely, so the mean is the midpoint:\n$$E[X] = \\frac{1 + 2 + \\dots + ${sides}}{${sides}} = \\frac{${sides}+1}{2} = ${ev}$$`;
+      } else {
+        title = "Expected Value of Two Dice";
+        story = "The expected value of a sum of independent variables is the sum of their expected values — no need to enumerate all 36 outcomes.";
+        question = `Determine the expected value of the sum when rolling two fair six-sided dice.`;
+        correctAnswer = "7";
+        rawOptions = ["6", "7", "6.5", "8"];
+        explanation = `Expectation is additive: $E[X+Y] = E[X] + E[Y] = 3.5 + 3.5 = 7$.`;
+      }
     } else if (stars === 3) {
+      // Parameterized Bayes: vary the disease prevalence so the posterior changes.
+      const prev = [0.01, 0.02, 0.05][Math.floor(Math.random() * 3)];
+      const tpr = 0.9;
+      const fpr = 0.1;
+      const post = (tpr * prev) / (tpr * prev + fpr * (1 - prev));
+      const pct = (x) => `${(x * 100).toFixed(1)}%`;
       title = "Bayesian Diagnostics Probability";
       story = "Bayes' Theorem updates the conditional probability of an event given prior knowledge and new evidence: $P(A|B) = \\frac{P(B|A)P(A)}{P(B)}$.";
-      question = `A medical test for a disease (prevalence 1%) has a false positive rate of 10% and true positive rate of 90%. What is the probability that a patient who tests positive actually has the disease?`;
-      correctAnswer = "8.3%";
-      rawOptions = ["1.0%", "8.3%", "50.0%", "90.0%"];
-      explanation = `Let $D$ be the disease event, and $+$ be testing positive:\n$$P(D \\mid +) = \\frac{0.90 \\times 0.01}{(0.90 \\times 0.01) + (0.10 \\times 0.99)} = \\frac{0.009}{0.108} \\approx 8.33\\%$$`;
+      question = `A medical test for a disease (prevalence ${pct(prev)}) has a false positive rate of 10% and true positive rate of 90%. What is the probability that a patient who tests positive actually has the disease?`;
+      correctAnswer = pct(post);
+      rawOptions = [pct(post), pct(prev), "50.0%", "90.0%"];
+      explanation = `Let $D$ be the disease and $+$ a positive test:\n$$P(D \\mid +) = \\frac{0.90 \\times ${prev}}{(0.90 \\times ${prev}) + (0.10 \\times ${(1 - prev).toFixed(2)})} \\approx ${pct(post)}$$`;
     } else {
-      title = "The Monty Hall Paradox Switch Option";
-      story = "The Monty Hall problem is a famous probability puzzle where switching doors yields a counterintuitive doubling of win probability.";
-      question = `In the Monty Hall problem with three doors, what is the probability of winning the grand prize if you choose to SWITCH doors after one losing door is revealed?`;
-      correctAnswer = `$\\frac{2}{3}$`;
-      rawOptions = [`$\\frac{1}{3}$`, `$\\frac{1}{2}$`, `$\\frac{2}{3}$`, `$\\frac{3}{4}$`];
-      explanation = `Initially, the chosen door has a $1/3$ probability of containing the prize. When the host reveals a goat behind one of the unchosen doors, the entire $2/3$ probability shifts to the remaining unchosen door. Thus, switching doors wins with a probability of $2/3$.`;
+      // Rotate among classic probability paradoxes (was always Monty Hall = 2/3).
+      const roll = Math.floor(Math.random() * 3);
+      if (roll === 0) {
+        title = "The Monty Hall Paradox (Switch)";
+        story = "The Monty Hall problem is a famous probability puzzle where switching doors yields a counterintuitive doubling of win probability.";
+        question = `In the Monty Hall problem with three doors, what is the probability of winning if you SWITCH doors after one losing door is revealed?`;
+        correctAnswer = `$\\frac{2}{3}$`;
+        rawOptions = [`$\\frac{1}{3}$`, `$\\frac{1}{2}$`, `$\\frac{2}{3}$`, `$\\frac{3}{4}$`];
+        explanation = `Your first pick wins with probability $\\frac{1}{3}$. The host's reveal shifts the remaining $\\frac{2}{3}$ entirely onto the other door, so switching wins $\\frac{2}{3}$ of the time.`;
+      } else if (roll === 1) {
+        title = "The Monty Hall Paradox (Stay)";
+        story = "The flip side of Monty Hall: how often does stubbornly keeping your first choice pay off?";
+        question = `In the Monty Hall problem with three doors, what is the probability of winning if you STAY with your original door after a losing door is revealed?`;
+        correctAnswer = `$\\frac{1}{3}$`;
+        rawOptions = [`$\\frac{1}{3}$`, `$\\frac{1}{2}$`, `$\\frac{2}{3}$`, `$\\frac{1}{4}$`];
+        explanation = `Staying wins exactly when your original pick was already correct — probability $\\frac{1}{3}$, unaffected by the host's reveal.`;
+      } else {
+        title = "The Boy-or-Girl Paradox";
+        story = "Conditional probability defies intuition: knowing one fact about a family reshapes the odds of the rest.";
+        question = `A family has two children. Given that at least one is a boy, what is the probability that BOTH are boys?`;
+        correctAnswer = `$\\frac{1}{3}$`;
+        rawOptions = [`$\\frac{1}{2}$`, `$\\frac{1}{3}$`, `$\\frac{1}{4}$`, `$\\frac{2}{3}$`];
+        explanation = `The equally-likely cases are BB, BG, GB, GG. Conditioning on "at least one boy" removes GG, leaving $\\{BB, BG, GB\\}$. Only BB has two boys, so the probability is $\\frac{1}{3}$.`;
+      }
     }
   } else {
     // Arithmetic
     if (stars <= 2) {
-      title = "Gauss Summation Series";
-      story = "Carl Friedrich Gauss famously summed the integers from 1 to 100 in seconds as a child by pairing symmetric terms.";
-      question = `Evaluate the arithmetic series sum: $$\\sum_{i=1}^{100} i = 1 + 2 + 3 + \\dots + 100$$`;
-      correctAnswer = "5050";
-      rawOptions = ["4950", "5000", "5050", "5100"];
-      explanation = `The sum of the first $n$ natural numbers is given by $\\frac{n(n+1)}{2}$. For $n = 100$:\n$$\\text{Sum} = \\frac{100 \\times 101}{2} = 5050$$`;
+      // Parameterized Gauss summation: the upper bound N varies, so the answer is no longer
+      // a constant "5050" every time. Two structural framings (consecutive integers vs.
+      // first-N evens) give the diversity engine distinct shapes to choose between.
+      const N = [50, 60, 80, 100, 120, 150][Math.floor(Math.random() * 6)];
+      if (Math.random() < 0.5) {
+        const ans = (N * (N + 1)) / 2;
+        title = "Gauss Summation Series";
+        story = "Carl Friedrich Gauss famously summed the integers from 1 to 100 in seconds as a child by pairing symmetric terms.";
+        question = `Evaluate the arithmetic series sum: $$\\sum_{i=1}^{${N}} i = 1 + 2 + 3 + \\dots + ${N}$$`;
+        correctAnswer = ans.toString();
+        rawOptions = [ans.toString(), (ans - N).toString(), (ans + N).toString(), (N * N).toString()];
+        explanation = `The sum of the first $n$ natural numbers is $\\frac{n(n+1)}{2}$. For $n = ${N}$:\n$$\\text{Sum} = \\frac{${N} \\times ${N + 1}}{2} = ${ans}$$`;
+      } else {
+        const ans = N * (N + 1);
+        title = "Sum of the First Even Numbers";
+        story = "The sum of consecutive even numbers grows quadratically — a classic result Gauss-style pairing reveals instantly.";
+        question = `Evaluate the sum of the first $${N}$ even numbers: $$2 + 4 + 6 + \\dots + ${2 * N}$$`;
+        correctAnswer = ans.toString();
+        rawOptions = [ans.toString(), ((N * (N + 1)) / 2).toString(), (ans + 2 * N).toString(), (N * N).toString()];
+        explanation = `Factor out the $2$: $\\sum_{i=1}^{${N}} 2i = 2 \\cdot \\frac{${N}(${N}+1)}{2} = ${N}(${N}+1) = ${ans}$.`;
+      }
     } else if (stars === 3) {
-      title = "Diophantus Linear Life Epitaph";
-      story = "Diophantus of Alexandria, the father of algebra, had a riddle carved on his tomb detailing the proportions of his lifespan.";
-      question = `Solve the linear equation representing Diophantus' life: childhood was 1/6 of his life, youth 1/12, married 1/7, had a son after 5 years who lived half the father's age, and the father died 4 years after the son. How old was he?`;
-      correctAnswer = "84";
-      rawOptions = ["60", "72", "80", "84"];
-      explanation = `Let $x$ represent his total lifespan:\n$$\\frac{x}{6} + \\frac{x}{12} + \\frac{x}{7} + 5 + \\frac{x}{2} + 4 = x$$\n$$9 = \\left( 1 - \\frac{75}{84} \\right)x = \\frac{9}{84}x \\implies x = 84$$`;
+      // Alternate between the classic Diophantus epitaph and a parameterized
+      // consecutive-integers word problem so the slot isn't always "84".
+      if (Math.random() < 0.5) {
+        title = "Diophantus Linear Life Epitaph";
+        story = "Diophantus of Alexandria, the father of algebra, had a riddle carved on his tomb detailing the proportions of his lifespan.";
+        question = `Solve the linear equation representing Diophantus' life: childhood was 1/6 of his life, youth 1/12, married 1/7, had a son after 5 years who lived half the father's age, and the father died 4 years after the son. How old was he?`;
+        correctAnswer = "84";
+        rawOptions = ["60", "72", "80", "84"];
+        explanation = `Let $x$ represent his total lifespan:\n$$\\frac{x}{6} + \\frac{x}{12} + \\frac{x}{7} + 5 + \\frac{x}{2} + 4 = x$$\n$$9 = \\left( 1 - \\frac{75}{84} \\right)x = \\frac{9}{84}x \\implies x = 84$$`;
+      } else {
+        const middle = [12, 18, 24, 31, 47, 58][Math.floor(Math.random() * 6)];
+        const sum = 3 * middle;
+        const largest = middle + 1;
+        title = "Consecutive Integers Puzzle";
+        story = "Translating a word puzzle into a single linear equation is the heart of classical algebra.";
+        question = `Three consecutive integers add up to $${sum}$. What is the largest of the three?`;
+        correctAnswer = largest.toString();
+        rawOptions = [largest.toString(), middle.toString(), (middle - 1).toString(), (largest + 1).toString()];
+        explanation = `Let the middle integer be $x$. Then $(x-1) + x + (x+1) = 3x = ${sum}$, so $x = ${middle}$ and the largest is $${largest}$.`;
+      }
     } else {
-      title = "Wheat and Chessboard Geometric Progression";
-      story = "The creator of chess requested a reward of grain: 1 grain on the first square, 2 on the second, 4 on the third, doubling on each subsequent square.";
-      question = `Compute the total grains of wheat requested for the first 8 squares (the first row of the chessboard).`;
-      correctAnswer = "255";
-      rawOptions = ["64", "128", "255", "512"];
-      explanation = `The sum is a geometric progression with $a=1$, $r=2$, and $n=8$:\n$$\\sum_{i=0}^7 2^i = 2^8 - 1 = 255$$`;
+      // Parameterized geometric progression: vary how many squares (or ask for a single
+      // square's grains) so the answer is no longer the constant 255.
+      const k = [6, 7, 8, 10, 12][Math.floor(Math.random() * 5)];
+      if (Math.random() < 0.5) {
+        const total = Math.pow(2, k) - 1;
+        title = "Wheat and Chessboard Geometric Progression";
+        story = "The creator of chess requested a reward of grain: 1 grain on the first square, 2 on the second, 4 on the third, doubling on each subsequent square.";
+        question = `Compute the total grains of wheat on the first $${k}$ squares of the chessboard (doubling each square, starting from 1).`;
+        correctAnswer = total.toString();
+        rawOptions = [total.toString(), Math.pow(2, k).toString(), (total - 1).toString(), Math.pow(2, k - 1).toString()];
+        explanation = `The total is a geometric series with $a=1$, $r=2$, $n=${k}$:\n$$\\sum_{i=0}^{${k - 1}} 2^i = 2^{${k}} - 1 = ${total}$$`;
+      } else {
+        const grains = Math.pow(2, k - 1);
+        title = "Doubling on a Single Square";
+        story = "On the doubling chessboard, each square alone holds twice the previous one — exponential growth made tangible.";
+        question = `On the chessboard where grains double each square (1 on the first), how many grains sit on square number $${k}$ alone?`;
+        correctAnswer = grains.toString();
+        rawOptions = [grains.toString(), Math.pow(2, k).toString(), (grains - 1).toString(), (k * k).toString()];
+        explanation = `The $n$-th square holds $2^{n-1}$ grains. For $n = ${k}$:\n$$2^{${k} - 1} = ${grains}$$`;
+      }
     }
   }
   

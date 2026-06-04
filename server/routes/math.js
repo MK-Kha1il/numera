@@ -21,6 +21,9 @@ const TeachingEngine = require('../mathEngine/teachingEngine');
 const AnalyticsEngine = require('../mathEngine/analyticsEngine');
 const CompetitiveEngine = require('../mathEngine/competitiveEngine');
 const Orchestrator = require('../mathEngine/problemOrchestrator');
+const ExerciseMemory = require('../mathEngine/exerciseMemory');
+const LessonSafety = require('../mathEngine/lessonSafety');
+const { applyRemediation } = require('../mathEngine/remediationEngine');
 const logger = require('../logger');
 
 const router = express.Router();
@@ -63,15 +66,51 @@ router.get('/api/math/problems', authenticateToken, async (req, res) => {
     }
 
     const lessonData = getLessonAndExamples(category, normalizedLevel);
+
+    // Anti-repetition: pull this learner's recent exposure memory once, then have the
+    // diversity engine pick the freshest of several candidates per slot (and keep the page
+    // internally diverse via the shared batchSigs list).
+    const recent = await ExerciseMemory.getRecentExposures(db, userId);
+    const batchSigs = [];
+    const rawProblems = [];
     const problems = [];
     for (let i = 0; i < count; i++) {
-      const prob = generateProblem(category, normalizedLevel, i, userElo, analyticsMap, {
-        targetConceptId: orchestration.conceptId,
-        learnerProfile,
-      });
-      const enriched = await Orchestrator.enrichProblem(db, userId, prob, orchestration);
-      problems.push(attachTipToProblem(enriched, false));
+      const picked = await ExerciseMemory.pickFreshExercise(
+        db,
+        userId,
+        (attempt) =>
+          generateProblem(category, normalizedLevel, i * 10 + attempt, userElo, analyticsMap, {
+            targetConceptId: orchestration.conceptId,
+            learnerProfile,
+          }),
+        { recent, batchSigs, surface: 'problem' }
+      );
+      rawProblems.push(picked.problem);
+      const enriched = await Orchestrator.enrichProblem(db, userId, picked.problem, orchestration);
+      // Phase 10: never let an interactive visual carry the literal answer.
+      if (enriched.interactiveVisualJson) {
+        enriched.interactiveVisualJson = LessonSafety.sanitizeVisualJson(enriched.interactiveVisualJson);
+      }
+      enriched.diversityScore = Number((picked.diversity || 0).toFixed(3));
+      const withTip = attachTipToProblem(enriched, false);
+      // Phase 13: when this round is targeted remediation, confront the specific error —
+      // surface the learner's own mistaken answer as a distractor + lead the hint ladder
+      // with a focused coaching rung.
+      if (orchestration.reason === 'misconception_remediation' && orchestration.meta && orchestration.meta.misconception) {
+        applyRemediation(withTip, orchestration.meta.misconception);
+      }
+      problems.push(withTip);
     }
+
+    // Phase 12: strip any worked example from the lesson that would hand over an answer to
+    // (or merely restate) one of the problems being served this round.
+    const { lesson: safeLesson } = LessonSafety.sanitizeLesson(
+      { examples: lessonData.examples || [] },
+      rawProblems
+    );
+
+    // Keep the memory table bounded (best-effort, fire-and-forget).
+    ExerciseMemory.pruneExposures(db, userId).catch(() => {});
 
     res.json({
       category,
@@ -79,7 +118,7 @@ router.get('/api/math/problems', authenticateToken, async (req, res) => {
       lessonTitle: lessonData.lessonTitle,
       lessonContent: lessonData.lessonContent,
       lessonFormula: lessonData.lessonFormula,
-      examples: lessonData.examples,
+      examples: safeLesson.examples,
       lessonSections: lessonData.sections || null,
       orchestration: {
         targetConcept: orchestration.conceptId,

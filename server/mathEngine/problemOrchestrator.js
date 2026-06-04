@@ -22,6 +22,8 @@ const { getLearningStyle,
         adaptExplanation }            = require('./teachingEngine');
 const { constructPersonalizedExplanation } = require('./explanationEngine');
 const { buildVisualSpecJson }         = require('./visualEngine');
+const { getConceptRecency,
+        leastRecentlySeen }           = require('./exerciseMemory');
 
 // Map template category + type string → conceptId in knowledgeGraph
 const TYPE_TO_CONCEPT = {
@@ -62,6 +64,26 @@ function conceptFromType(type) {
 // Determine which concept a user should work on next (returns conceptId)
 // -----------------------------------------------------------------------
 async function selectNextConcept(db, userId, currentCategory, currentLevel) {
+  // Concept-level freshness: how recently has this learner seen each concept? Exposure rows
+  // are keyed by template type, so canonicalize them to knowledge-graph conceptIds (merging
+  // synonyms like "modulo" -> "modular_arithmetic"). Used only to break ties between concepts
+  // that are *equally valid* to teach next — it never overrides pedagogical priority.
+  let conceptRecency = {};
+  try {
+    const raw = await getConceptRecency(db, userId);
+    for (const [type, rec] of Object.entries(raw)) {
+      const canon = conceptFromType(type) || type;
+      const cur = conceptRecency[canon] || { lastSeen: 0, seenCount: 0 };
+      conceptRecency[canon] = {
+        lastSeen: Math.max(cur.lastSeen, rec.lastSeen || 0),
+        seenCount: cur.seenCount + (rec.seenCount || 0),
+      };
+    }
+  } catch (_) {
+    conceptRecency = {};
+  }
+  const stalest = (candidates) => leastRecentlySeen(candidates, conceptRecency) || candidates[0];
+
   // 1. Check for critical misconceptions
   const misconceptions = await getActiveMisconceptions(db, userId, 5);
   const critical = misconceptions.find(m => m.severity === 'high' || m.persistence > 0.6);
@@ -107,11 +129,18 @@ async function selectNextConcept(db, userId, currentCategory, currentLevel) {
   const weakConcepts = await getWeakConcepts(db, userId, 0.7);
   const relevantWeak = weakConcepts.filter(w => categoryConceptIds.includes(w.concept_id));
   if (relevantWeak.length > 0) {
+    // Keep the genuinely-weakest as the anchor, but among concepts within a small band of it
+    // (all about equally in need of work) prefer the one seen least recently — so a learner
+    // with several soft spots doesn't get hammered on the same one every round.
+    const floor = relevantWeak[0].mastery_score;
+    const tied = relevantWeak.filter(w => w.mastery_score <= floor + 0.08);
+    const chosen = stalest(tied.map(w => w.concept_id));
+    const picked = relevantWeak.find(w => w.concept_id === chosen) || relevantWeak[0];
     return {
-      conceptId: relevantWeak[0].concept_id,
+      conceptId: picked.concept_id,
       reason:    'mastery_building',
       priority:  4,
-      meta:      { masteryScore: relevantWeak[0].mastery_score }
+      meta:      { masteryScore: picked.mastery_score }
     };
   }
 
@@ -151,30 +180,34 @@ async function selectNextConcept(db, userId, currentCategory, currentLevel) {
     }
   }
 
-  // 5. Exploration — find next concept whose prereqs are mastered
+  // 5. Exploration — find concepts whose prereqs are all mastered. Among all that are ready,
+  //    introduce the one seen least recently (instead of always the first in graph order, which
+  //    made "what's next" feel fixed).
   const strongConcepts = await getStrongConcepts(db, userId, 0.75);
   const masteredIds = new Set(strongConcepts.map(s => s.concept_id));
   const allConceptIds = Object.keys(concepts);
-  for (const cId of allConceptIds) {
-    const c = concepts[cId];
-    const alreadyMastered = masteredIds.has(cId);
-    if (!alreadyMastered && c.prereqs.every(p => masteredIds.has(p))) {
-      return {
-        conceptId: cId,
-        reason:    'exploration',
-        priority:  5,
-        meta:      {}
-      };
-    }
+  const readyToExplore = allConceptIds.filter(
+    cId => !masteredIds.has(cId) && concepts[cId].prereqs.every(p => masteredIds.has(p))
+  );
+  if (readyToExplore.length > 0) {
+    return {
+      conceptId: stalest(readyToExplore),
+      reason:    'exploration',
+      priority:  5,
+      meta:      { candidates: readyToExplore.length }
+    };
   }
 
-  // 6. Challenge — best mastered concept, push difficulty up
+  // 6. Challenge — push a mastered concept further; rotate among strong concepts by freshness
+  //    so the "victory lap" isn't always the same one.
   if (strongConcepts.length > 0) {
+    const chosenId = stalest(strongConcepts.map(s => s.concept_id));
+    const picked = strongConcepts.find(s => s.concept_id === chosenId) || strongConcepts[0];
     return {
-      conceptId: strongConcepts[0].concept_id,
+      conceptId: picked.concept_id,
       reason:    'challenge',
       priority:  6,
-      meta:      { masteryScore: strongConcepts[0].mastery_score }
+      meta:      { masteryScore: picked.mastery_score }
     };
   }
 

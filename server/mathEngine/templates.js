@@ -149,21 +149,24 @@ templates.arithmetic = {
     };
   },
   8: (diffFactor, idx) => {
-    // Simple division
+    // Division — symbolic / equal-sharing / grouping / rate. dividend / a = b throughout.
     const baseA = (idx % 8) + 2;
     const baseB = (((idx + 5) % 8) + 2);
     const a = Math.round(baseA * diffFactor);
     const b = Math.round(baseB * diffFactor);
     const dividend = a * b;
-    return {
-      question: `Evaluate the exact division: $$\\frac{${dividend}}{${a}}$$`,
-      answer: b,
-      explanation: `Division is the inverse operation of multiplication. Since $${a} \\times ${b} = ${dividend}$, it follows that:\n$$\\frac{${dividend}}{${a}} = ${b}$$`,
-      type: "arithmetic_div"
-    };
+    const why = `Division undoes multiplication. Since $${a} \\times ${b} = ${dividend}$:\n$$\\frac{${dividend}}{${a}} = ${b}$$`;
+    const variants = [
+      { question: `Evaluate the exact division: $$\\frac{${dividend}}{${a}}$$`, explanation: why },
+      { question: `$${dividend}$ apples are shared equally among $${a}$ baskets. How many apples are in each basket?`, explanation: `Sharing equally means dividing:\n${why}` },
+      { question: `You have $${dividend}$ stickers and put exactly $${a}$ on each page. How many pages do you fill?`, explanation: `Grouping into equal piles is division:\n${why}` },
+      { question: `A car travels $${dividend}$ km in $${a}$ hours at a steady speed. What is its speed in km/h?`, explanation: `Speed is distance divided by time:\n${why}` },
+    ];
+    const v = variants[idx % variants.length];
+    return { question: v.question, answer: b, explanation: v.explanation, type: "arithmetic_div" };
   },
   9: (diffFactor, idx) => {
-    // Mixed operations (PEMDAS)
+    // Order of operations — symbolic / shopping total / error-detection. a*b + c throughout.
     const baseA = (idx % 6) + 3;
     const baseB = ((idx + 2) % 5) + 3;
     const baseC = ((idx + 4) % 15) + 5;
@@ -171,12 +174,15 @@ templates.arithmetic = {
     const b = Math.round(baseB * diffFactor);
     const c = Math.round(baseC * diffFactor);
     const answer = a * b + c;
-    return {
-      question: `Evaluate the arithmetic expression under standard precedence rules: $$${a} \\times ${b} + ${c}$$`,
-      answer,
-      explanation: `By the order of algebraic operations, perform multiplication before addition:\n$$${a} \\times ${b} = ${a * b}$$\nThen add the constant:\n$$${a * b} + ${c} = ${answer}$$`,
-      type: "arithmetic_mixed"
-    };
+    const why = `Multiplication binds tighter than addition:\n$$${a} \\times ${b} = ${a * b}, \\quad ${a * b} + ${c} = ${answer}$$`;
+    const variants = [
+      { question: `Evaluate under standard precedence: $$${a} \\times ${b} + ${c}$$`, explanation: why },
+      { question: `You buy $${b}$ notebooks at $${a}$ coins each, plus a $${c}$-coin pen. What is the total cost?`, explanation: `Cost is (price × quantity) + extra:\n${why}` },
+      { question: `A student evaluated $${a} \\times ${b} + ${c}$ left-to-right as $(${a}+${b}) \\times ...$ and got it wrong. What is the correct value?`, explanation: `Do multiplication first, not left-to-right.\n${why}` },
+      { question: `Evaluate, respecting order of operations: $$${c} + ${a} \\times ${b}$$`, explanation: `Multiply before adding, regardless of position:\n$$${a} \\times ${b} = ${a * b}, \\quad ${c} + ${a * b} = ${answer}$$` },
+    ];
+    const v = variants[idx % variants.length];
+    return { question: v.question, answer, explanation: v.explanation, type: "arithmetic_mixed" };
   },
   10: (diffFactor, idx) => {
     // Pythagorean Theorem Milestone
@@ -241,29 +247,79 @@ templates.algebra = {
     };
   },
   13: (diffFactor, idx) => {
-    // Two-step linear equation
+    // Two-step linear equation — taught through MULTIPLE representations so the same
+    // concept never arrives in the same shape twice (symbolic / word / reverse-reasoning /
+    // error-detection). The underlying relation ax + b = c is constant; only the framing
+    // and the reasoning path change. The diversity engine spreads these across a session.
     const xVal = Math.round((idx % 5 + 2) * diffFactor);
     const a = Math.round((idx % 4 + 2) * diffFactor);
     const b = Math.round((idx % 6 + 2) * diffFactor);
     const c = a * xVal + b;
+    const solveSteps = `1. Subtract $${b}$ from both sides:\n$$${a}x = ${c} - ${b} = ${c - b}$$\n2. Divide by the coefficient $${a}$:\n$$x = \\frac{${c - b}}{${a}} = ${xVal}$$`;
+
+    const variants = [
+      // 0. Symbolic
+      {
+        question: `Solve the two-step equation: $$${a}x + ${b} = ${c}$$`,
+        explanation: `Solve by isolating the variable term first:\n${solveSteps}`,
+      },
+      // 1. Real-world word problem (linear cost model)
+      {
+        question: `A workshop charges a flat booking fee of $${b}$ coins plus $${a}$ coins per hour. A session cost $${c}$ coins in total. For how many hours $x$ was it booked?`,
+        explanation: `Model the total cost as $${a}x + ${b} = ${c}$, then isolate $x$:\n${solveSteps}`,
+      },
+      // 2. Reverse / missing-value reasoning
+      {
+        question: `A number $x$ is multiplied by $${a}$, and then $${b}$ is added, giving $${c}$. What is $x$?`,
+        explanation: `Undo the operations in reverse order (add → multiply becomes subtract → divide):\n${solveSteps}`,
+      },
+      // 3. Error-detection (find the right answer by spotting the slip)
+      {
+        question: `A student solving $${a}x + ${b} = ${c}$ divided by $${a}$ *before* subtracting $${b}$, and got the wrong answer. Solve it correctly: what is $x$?`,
+        explanation: `The constant must be removed before dividing.\n${solveSteps}`,
+      },
+    ];
+    const v = variants[idx % variants.length];
     return {
-      question: `Solve the two-step equation: $$${a}x + ${b} = ${c}$$`,
+      question: v.question,
       answer: xVal,
-      explanation: `Solve by isolating the variable term first:\n1. Subtract $${b}$ from both sides:\n$$${a}x = ${c} - ${b} = ${c - b}$$\n2. Divide by the coefficient $${a}$:\n$$x = \\frac{${c - b}}{${a}} = ${xVal}$$`,
+      explanation: v.explanation,
       type: "linear_two_step"
     };
   },
   14: (diffFactor, idx) => {
-    // Variable on both sides
+    // Variable on both sides — taught as symbolic / two-plan comparison / balance reasoning
+    // / error-detection. The relation ax - b = cx + (d-b) and its solution xVal are constant.
     const xVal = Math.round((idx % 5 + 1) * diffFactor);
     const a = Math.round((idx % 3 + 4) * diffFactor);
     const c = Math.round((idx % 3 + 1) * diffFactor);
     const b = Math.round((idx % 5 + 2) * diffFactor);
     const d = (a - c) * xVal + b;
+    const rhsConst = d - b;
+    const solveSteps = `1. Subtract $${c}x$ from both sides:\n$$${a - c}x - ${b} = ${rhsConst}$$\n2. Add $${b}$:\n$$${a - c}x = ${d}$$\n3. Divide by the coefficient:\n$$x = \\frac{${d}}{${a - c}} = ${xVal}$$`;
+    const variants = [
+      {
+        question: `Determine $x$: $$${a}x - ${b} = ${c}x + ${rhsConst}$$`,
+        explanation: solveSteps,
+      },
+      {
+        question: `Plan A costs $${a}$ coins per item minus a $${b}$-coin credit; Plan B costs $${c}$ coins per item plus a $${rhsConst}$-coin fee. For how many items $x$ do the two plans cost the same?`,
+        explanation: `Set the plans equal: $${a}x - ${b} = ${c}x + ${rhsConst}$, then collect the variable:\n${solveSteps}`,
+      },
+      {
+        question: `A balance holds $${a}$ equal blocks on the left (after removing $${b}$ kg) and $${c}$ equal blocks on the right (plus $${rhsConst}$ kg). If it balances, what is the weight $x$ of one block?`,
+        explanation: `Balance means $${a}x - ${b} = ${c}x + ${rhsConst}$. Move the blocks to one side:\n${solveSteps}`,
+      },
+      {
+        question: `A student solving $${a}x - ${b} = ${c}x + ${rhsConst}$ moved $${c}x$ to the left but forgot to change its sign. Solve it correctly: what is $x$?`,
+        explanation: `Subtracting $${c}x$ flips its sign to negative on the left.\n${solveSteps}`,
+      },
+    ];
+    const v = variants[idx % variants.length];
     return {
-      question: `Determine $x$ for the algebraic expression: $$${a}x - ${b} = ${c}x + ${d - b}$$`,
+      question: v.question,
       answer: xVal,
-      explanation: `1. Group variables on the left side by subtracting $${c}x$:\n$$(${a} - ${c})x - ${b} = ${d - b} \\implies ${a - c}x - ${b} = ${d - b}$$\n2. Add $${b}$ to both sides to isolate the variable:\n$$${a - c}x = ${d}$$\n3. Divide by the coefficient:\n$$x = \\frac{${d}}{${a - c}} = ${xVal}$$`,
+      explanation: v.explanation,
       type: "linear_variable_both_sides"
     };
   },
@@ -286,15 +342,36 @@ templates.algebra = {
     };
   },
   16: (diffFactor, idx) => {
-    // System of two linear equations
+    // System of two linear equations — symbolic / sum-and-difference / ages / coins. The
+    // larger value xVal solves x+y=s, x-y=d in every framing.
     const xVal = Math.round((idx % 5 + 3) * diffFactor);
     const yVal = Math.round((idx % 5 + 1) * diffFactor);
     const s = xVal + yVal;
     const d = xVal - yVal;
+    const elim = `Add the equations to eliminate the smaller quantity:\n$$2x = ${s} + ${d} = ${s + d} \\implies x = \\frac{${s + d}}{2} = ${xVal}$$`;
+    const variants = [
+      {
+        question: `Solve the system for $x$:\n$$x + y = ${s}$$\n$$x - y = ${d}$$`,
+        explanation: elim,
+      },
+      {
+        question: `Two numbers have a sum of $${s}$ and a difference of $${d}$. What is the larger number?`,
+        explanation: `Let the numbers be $x \\ge y$, so $x + y = ${s}$ and $x - y = ${d}$.\n${elim}`,
+      },
+      {
+        question: `Two friends' ages add up to $${s}$ years, and one is $${d}$ years older than the other. How old is the older friend?`,
+        explanation: `With ages $x > y$: $x + y = ${s}$ and $x - y = ${d}$.\n${elim}`,
+      },
+      {
+        question: `A piggy bank has $${s}$ coins in two stacks; the taller stack has $${d}$ more coins than the shorter. How many coins are in the taller stack?`,
+        explanation: `Let the stacks be $x$ and $y$ with $x + y = ${s}$, $x - y = ${d}$.\n${elim}`,
+      },
+    ];
+    const v = variants[idx % variants.length];
     return {
-      question: `Solve the system of equations for the variable $x$:\n$$x + y = ${s}$$\n$$x - y = ${d}$$`,
+      question: v.question,
       answer: xVal,
-      explanation: `Add the two linear equations together to eliminate the variable $y$:\n$$(x + y) + (x - y) = ${s} + ${d} \\implies 2x = ${s + d}$$\nDivide by 2 to solve for $x$:\n$$x = \\frac{${s + d}}{2} = ${xVal}$$`,
+      explanation: v.explanation,
       type: "linear_system"
     };
   },
@@ -309,18 +386,23 @@ templates.algebra = {
     };
   },
   18: (diffFactor, idx) => {
-    // Determinant of 2x2 matrix (positive entries)
+    // 2x2 determinant — notation / transformation scaling / system-uniqueness test /
+    // cross-product framing. All equal the signed value ad - bc (sign-safe).
     const a = Math.round((idx % 4 + 1) * diffFactor);
     const b = Math.round(((idx + 2) % 3 + 1) * diffFactor);
     const c = Math.round(((idx + 1) % 3 + 1) * diffFactor);
     const d = Math.round(((idx + 3) % 4 + 1) * diffFactor);
     const answer = a * d - b * c;
-    return {
-      question: `Determine the determinant of the $2 \\times 2$ matrix $A$: $$A = \\begin{pmatrix} ${a} & ${b} \\\\ ${c} & ${d} \\end{pmatrix}$$`,
-      answer,
-      explanation: `The determinant of a $2 \\times 2$ matrix is defined by the formula $\\det(A) = ad - bc$:\n$$\\det(A) = (${a} \\cdot ${d}) - (${b} \\cdot ${c}) = ${a * d} - ${b * c} = ${answer}$$`,
-      type: "matrix_determinant"
-    };
+    const work = `Using $\\det(A) = ad - bc$:\n$$(${a} \\cdot ${d}) - (${b} \\cdot ${c}) = ${a * d} - ${b * c} = ${answer}$$`;
+    const matrix = `\\begin{pmatrix} ${a} & ${b} \\\\ ${c} & ${d} \\end{pmatrix}`;
+    const variants = [
+      { question: `Determine the determinant of the $2 \\times 2$ matrix $A$: $$A = ${matrix}$$`, explanation: work },
+      { question: `A linear transformation has matrix $${matrix}$. By what signed factor does it scale areas (i.e. its determinant)?`, explanation: `The signed area-scaling factor is the determinant.\n${work}` },
+      { question: `For the coefficient matrix $${matrix}$, compute the determinant (its value decides whether the linear system has a unique solution).`, explanation: `A nonzero determinant means a unique solution.\n${work}` },
+      { question: `Vectors $\\vec{u} = (${a}, ${c})$ and $\\vec{v} = (${b}, ${d})$ form the columns of a matrix. Compute $\\det = ad - bc$.`, explanation: `This is the 2D cross-product of the column vectors.\n${work}` },
+    ];
+    const v = variants[idx % variants.length];
+    return { question: v.question, answer, explanation: v.explanation, type: "matrix_determinant" };
   },
   19: (diffFactor, idx) => {
     // Determinant with negative entries
@@ -380,14 +462,17 @@ templates.combinatorics = {
     };
   },
   22: (diffFactor, idx) => {
-    // Advanced Pigeonhole Principle
-    const pigeonholes = Math.round(((idx % 5) + 6) * diffFactor);
-    return {
-      question: `A collection consists of cards belonging to $${pigeonholes}$ distinct categories. Determine the minimum number of card selections required to guarantee that at least 2 cards are from the same category:`,
-      answer: pigeonholes + 1,
-      explanation: `By the Pigeonhole Principle, to guarantee that at least one category contains $\\ge 2$ cards when there are $k = ${pigeonholes}$ categories, we must draw:\n$$\\text{Minimum selections} = k + 1 = ${pigeonholes} + 1 = ${pigeonholes + 1}$$`,
-      type: "pigeonhole"
-    };
+    // Pigeonhole — cards / gloves / coupons / keys. Answer k+1 in every framing.
+    const k = Math.round(((idx % 5) + 6) * diffFactor);
+    const why = `With $k = ${k}$ categories, drawing $k+1$ guarantees a repeat:\n$$${k} + 1 = ${k + 1}$$`;
+    const variants = [
+      { question: `Cards belong to $${k}$ distinct categories. What is the minimum number of cards you must draw to guarantee at least 2 from the same category?`, explanation: why },
+      { question: `A box holds gloves in $${k}$ different colours, mixed up. What is the fewest you must grab in the dark to be sure of $2$ matching the same colour?`, explanation: why },
+      { question: `A promotion gives one of $${k}$ different coupons at random per visit. How many visits guarantee you receive at least one duplicate coupon?`, explanation: why },
+      { question: `There are $${k}$ types of keys in a drawer. What is the minimum number to pull out to be certain two are of the same type?`, explanation: why },
+    ];
+    const v = variants[idx % variants.length];
+    return { question: v.question, answer: k + 1, explanation: v.explanation, type: "pigeonhole" };
   },
   23: (diffFactor, idx) => {
     // Basic Permutations (n!)
@@ -430,13 +515,34 @@ templates.combinatorics = {
     };
   },
   25: (diffFactor, idx) => {
-    // Combinations (n choose k)
+    // Combinations (n choose 2) — multiple representations of one concept: symbolic
+    // notation, a committee selection, a handshake count, and a pairing/route framing.
     const n = Math.round(((idx % 4) + 5) * diffFactor);
-    const k = 2;
+    const ans = (n * (n - 1)) / 2;
+    const formula = `By the combination formula (order doesn't matter):\n$$\\binom{${n}}{2} = \\frac{${n}!}{2!(${n}-2)!} = \\frac{${n}(${n}-1)}{2} = ${ans}$$`;
+    const variants = [
+      {
+        question: `Evaluate the binomial coefficient for selecting $2$ items from $${n}$ distinct items: $$\\binom{${n}}{2}$$`,
+        explanation: formula,
+      },
+      {
+        question: `A committee of $2$ people must be chosen from a team of $${n}$. How many different committees are possible?`,
+        explanation: `Choosing a committee is an unordered selection of $2$ from $${n}$:\n${formula}`,
+      },
+      {
+        question: `At a meeting of $${n}$ people, everyone shakes hands with everyone else exactly once. How many handshakes occur?`,
+        explanation: `Each handshake is an unordered pair of $2$ people from $${n}$:\n${formula}`,
+      },
+      {
+        question: `A network has $${n}$ computers, and a direct cable connects every pair. How many cables are needed?`,
+        explanation: `Each cable joins an unordered pair of $2$ nodes from $${n}$:\n${formula}`,
+      },
+    ];
+    const v = variants[idx % variants.length];
     return {
-      question: `Evaluate the binomial coefficient representation for selecting $${k}$ items from $${n}$ distinct items: $$\\binom{${n}}{${k}}$$`,
-      answer: (n * (n - 1)) / 2,
-      explanation: `By the combination formula:\n$$\\binom{${n}}{2} = \\frac{${n}!}{2!(${n}-2)!} = \\frac{${n}(${n}-1)}{2} = ${(n * (n - 1)) / 2}$$`,
+      question: v.question,
+      answer: ans,
+      explanation: v.explanation,
       type: "combinations"
     };
   },
@@ -455,22 +561,65 @@ templates.combinatorics = {
     };
   },
   27: (diffFactor, idx) => {
-    // Coin flips sample space
+    // The multiplication principle (2^k outcomes) shown through coins / binary strings /
+    // yes-no decisions / on-off switches — the same counting idea in four guises.
     const flips = Math.min(5, Math.max(3, Math.round(((idx % 3) + 3) * diffFactor)));
+    const total = Math.pow(2, flips);
+    const rule = `Each independent step has $2$ choices, so the multiplication principle gives:\n$$2^{${flips}} = ${total}$$`;
+    const variants = [
+      {
+        question: `How many unique outcomes are in the sample space when flipping $${flips}$ fair, independent coins?`,
+        explanation: `Each coin lands Heads or Tails (2 outcomes).\n${rule}`,
+      },
+      {
+        question: `How many distinct binary strings of length $${flips}$ (each character a 0 or 1) exist?`,
+        explanation: `Each of the $${flips}$ positions is independently 0 or 1.\n${rule}`,
+      },
+      {
+        question: `A survey has $${flips}$ yes/no questions. How many different complete answer sheets are possible?`,
+        explanation: `Each question is answered independently in 2 ways.\n${rule}`,
+      },
+      {
+        question: `A panel has $${flips}$ independent on/off switches. How many distinct configurations of the panel are there?`,
+        explanation: `Each switch is independently on or off.\n${rule}`,
+      },
+    ];
+    const v = variants[idx % variants.length];
     return {
-      question: `What is the total number of unique outcomes in the sample space when flipping $${flips}$ fair, independent coins?`,
-      answer: Math.pow(2, flips),
-      explanation: `Since each coin flip has 2 independent outcomes (Heads or Tails), the size of the combined sample space for $${flips}$ flips is:\n$$2^{${flips}} = ${Math.pow(2, flips)}$$`,
+      question: v.question,
+      answer: total,
+      explanation: v.explanation,
       type: "probability"
     };
   },
   28: (diffFactor, idx) => {
-    // Circular permutations
+    // Circular permutations (n-1)! — round table / keychain beads / circular schedule / ring.
     const n = Math.min(6, Math.max(4, Math.round(((idx % 3) + 4) * diffFactor)));
+    const ans = factorial(n - 1);
+    const rule = `Fixing one item to remove equivalent rotations leaves $(n-1)!$ orderings:\n$$(${n}-1)! = ${ans}$$`;
+    const variants = [
+      {
+        question: `How many distinct ways can $${n}$ people be seated around a circular table (rotations considered the same)?`,
+        explanation: rule,
+      },
+      {
+        question: `How many distinct ways can $${n}$ differently-coloured beads be arranged on a circular bracelet (ignoring rotation only)?`,
+        explanation: `Beads in a ring: fix one to anchor the rotations.\n${rule}`,
+      },
+      {
+        question: `$${n}$ teams take turns in a repeating cycle. How many genuinely different turn-orders are there (a cycle that only rotates counts once)?`,
+        explanation: `A repeating cycle is a circular arrangement of $${n}$ teams.\n${rule}`,
+      },
+      {
+        question: `How many distinct ways can $${n}$ charms be placed around a circular ring (rotations equivalent)?`,
+        explanation: `Placement around a ring is a circular permutation.\n${rule}`,
+      },
+    ];
+    const v = variants[idx % variants.length];
     return {
-      question: `Determine the number of distinct ways to arrange $${n}$ people around a circular dining table (where rotations are considered equivalent):`,
-      answer: factorial(n - 1),
-      explanation: `For circular permutations of $n$ objects, fixing one object's position yields $(n-1)!$ unique relative orderings:\n$$(${n}-1)! = ${factorial(n - 1)}$$`,
+      question: v.question,
+      answer: ans,
+      explanation: v.explanation,
       type: "permutations"
     };
   },
@@ -534,14 +683,35 @@ templates.calculus = {
     };
   },
   32: (diffFactor, idx) => {
-    // Derivative of polynomial
+    // Polynomial derivative at 1 — pure derivative / velocity / tangent slope / marginal rate.
+    // f'(x) = 3a x^2 + 2b x, evaluated at x=1 gives 3a + 2b in every framing.
     const a = Math.round(((idx % 3) + 2) * diffFactor);
     const b = Math.round(((idx % 3) + 1) * diffFactor);
     const answer = a * 3 + b * 2;
+    const work = `By the power rule, $f'(x) = ${a * 3}x^2 + ${b * 2}x$. At the point $1$:\n$$${a * 3}(1)^2 + ${b * 2}(1) = ${answer}$$`;
+    const variants = [
+      {
+        question: `Determine $f'(1)$ for the function: $$f(x) = ${a}x^3 + ${b}x^2$$`,
+        explanation: work,
+      },
+      {
+        question: `An object's position is $s(t) = ${a}t^3 + ${b}t^2$. What is its instantaneous velocity at $t = 1$?`,
+        explanation: `Velocity is the derivative of position.\n${work}`,
+      },
+      {
+        question: `What is the slope of the tangent line to $f(x) = ${a}x^3 + ${b}x^2$ at $x = 1$?`,
+        explanation: `The tangent slope is $f'(1)$.\n${work}`,
+      },
+      {
+        question: `A cost curve is $C(q) = ${a}q^3 + ${b}q^2$. What is the marginal cost (rate of change) at $q = 1$?`,
+        explanation: `Marginal cost is the derivative $C'(1)$.\n${work}`,
+      },
+    ];
+    const v = variants[idx % variants.length];
     return {
-      question: `Determine the derivative value $f'(1)$ for the function: $$f(x) = ${a}x^3 + ${b}x^2$$`,
+      question: v.question,
       answer,
-      explanation: `Differentiate each term of the polynomial using the power rule:\n$$f'(x) = 3 \\cdot ${a}x^2 + 2 \\cdot ${b}x = ${a * 3}x^2 + ${b * 2}x$$\nEvaluating at $x = 1$:\n$$f'(1) = ${a * 3}(1)^2 + ${b * 2}(1) = ${answer}$$`,
+      explanation: v.explanation,
       type: "derivative"
     };
   },
@@ -653,14 +823,35 @@ templates.calculus = {
 // -------------------------------------------------------------
 templates.number_theory = {
   41: (diffFactor, idx) => {
-    // GCD Euclidean smaller
+    // GCD — symbolic notation / largest-equal-groups / tiling / repeating-rhythm framings.
+    // a = 2*mult, b = 3*mult, gcd = mult in every case.
     const mult = Math.round(((idx % 4) + 2) * diffFactor);
     const a = 2 * mult;
     const b = 3 * mult;
+    const why = `Since $${a} = 2 \\cdot ${mult}$ and $${b} = 3 \\cdot ${mult}$, and $2,3$ are coprime, the greatest common divisor is $${mult}$.`;
+    const variants = [
+      {
+        question: `Compute the Greatest Common Divisor: $$\\gcd(${a}, ${b})$$`,
+        explanation: why,
+      },
+      {
+        question: `A baker has $${a}$ muffins and $${b}$ cookies, and wants to make identical gift boxes using every item with none left over. What is the largest number of boxes possible?`,
+        explanation: `The largest number of boxes dividing both counts evenly is $\\gcd(${a}, ${b})$.\n${why}`,
+      },
+      {
+        question: `A floor is $${a}$ by $${b}$ units. What is the side length of the largest identical square tile that fits exactly, leaving no gaps?`,
+        explanation: `The largest square tiling both dimensions has side $\\gcd(${a}, ${b})$.\n${why}`,
+      },
+      {
+        question: `Two lights blink every $${a}$ and $${b}$ seconds. The largest interval that divides both their periods evenly is $\\gcd(${a}, ${b})$. Find it.`,
+        explanation: `The largest common divisor of the two periods is the GCD.\n${why}`,
+      },
+    ];
+    const v = variants[idx % variants.length];
     return {
-      question: `Compute the Greatest Common Divisor: $$\\gcd(${a}, ${b})$$`,
+      question: v.question,
       answer: mult,
-      explanation: `Since $${a} = 2 \\cdot ${mult}$ and $${b} = 3 \\cdot ${mult}$, and $2$ and $3$ share no common factors (coprime), the Greatest Common Divisor is $${mult}$.`,
+      explanation: v.explanation,
       type: "gcd"
     };
   },
@@ -677,18 +868,21 @@ templates.number_theory = {
     };
   },
   43: (diffFactor, idx) => {
-    // Modular addition
+    // Modular addition — symbolic / clock / counter-wraparound / cyclic position. Same
+    // remainder (a+b) mod m in every framing (cyclic arithmetic is "clock" arithmetic).
     const a = Math.round(((idx % 20) + 15) * diffFactor);
     const b = Math.round(((idx % 20) + 10) * diffFactor);
     const mod = Math.round(((idx % 6) + 7) * diffFactor);
     const answer = (a + b) % mod;
-    return {
-      question: `Evaluate the modular addition: $$(${a} + ${b}) \\pmod{${mod}}$$`,
-      answer,
-      explanation: `First, sum the values: $${a} + ${b} = ${a + b}$. Dividing by the modulus $${mod}$ gives a remainder of $${answer}$:\n$$${a + b} \\equiv ${answer} \\pmod{${mod}}$$`,
-      type: "modulo",
-      mod
-    };
+    const why = `Sum then take the remainder mod $${mod}$: $${a} + ${b} = ${a + b}$, and $${a + b} \\equiv ${answer} \\pmod{${mod}}$.`;
+    const variants = [
+      { question: `Evaluate the modular addition: $$(${a} + ${b}) \\pmod{${mod}}$$`, explanation: why },
+      { question: `On a clock with $${mod}$ hours (labelled $0$ to $${mod - 1}$), it is hour $${a % mod}$. After $${b}$ more hours, which hour does it show?`, explanation: `Clock arithmetic wraps around mod $${mod}$:\n${why}` },
+      { question: `A counter that wraps at $${mod}$ (values $0..${mod - 1}$) starts at $${a}$ and is incremented $${b}$ times. What value does it display?`, explanation: `A wrapping counter is modular addition:\n${why}` },
+      { question: `Around a ring of $${mod}$ positions ($0..${mod - 1}$), a token at position $${a % mod}$ moves forward $${b}$ steps. Where does it land?`, explanation: `Cyclic movement is addition mod $${mod}$:\n${why}` },
+    ];
+    const v = variants[idx % variants.length];
+    return { question: v.question, answer, explanation: v.explanation, type: "modulo", mod };
   },
   44: (diffFactor, idx) => {
     // Modular multiplication
@@ -843,13 +1037,35 @@ templates.mental = {
     }
   },
   2: (diffFactor, idx) => {
-    // Simple percentages
+    // Simple percentages — one concept across symbolic, financial (discount/tip), grid, and
+    // probability framings so "X% of N" never feels like the same drill twice.
     const base = Math.round((idx % 5 + 1) * 20 * diffFactor / 10) * 10;
     const pct = [10, 25, 50, 75][idx % 4];
+    const ans = (pct / 100) * base;
+    const calc = `Convert the percentage to a fraction and multiply:\n$$\\frac{${pct}}{100} \\times ${base} = ${ans}$$`;
+    const variants = [
+      {
+        question: `Evaluate $${pct}\\%$ of $${base}$.`,
+        explanation: calc,
+      },
+      {
+        question: `An item priced at $${base}$ coins is discounted by $${pct}\\%$. How many coins is the discount worth?`,
+        explanation: `The discount is $${pct}\\%$ of the price:\n${calc}`,
+      },
+      {
+        question: `Out of $${base}$ students, $${pct}\\%$ joined the math club. How many students joined?`,
+        explanation: `Find $${pct}\\%$ of the group:\n${calc}`,
+      },
+      {
+        question: `A $10\\times10$ grid ($${base === 100 ? '100' : base}$ squares total, scaled) has $${pct}\\%$ of its area shaded. What value does the shaded part represent out of $${base}$?`,
+        explanation: `Shaded fraction times the whole:\n${calc}`,
+      },
+    ];
+    const v = variants[idx % variants.length];
     return {
-      question: `Evaluate the percentage of the base value: $${pct}\\%$ of $${base}$`,
-      answer: (pct / 100) * base,
-      explanation: `Convert the percentage into a fraction and multiply:\n$$\\text{Value} = \\frac{${pct}}{100} \\times ${base} = ${(pct / 100) * base}$$`,
+      question: v.question,
+      answer: ans,
+      explanation: v.explanation,
       type: "percentage",
       mod: base // metadata
     };
@@ -911,19 +1127,24 @@ templates.mental = {
     };
   },
   8: (diffFactor, idx) => {
-    // Average of 4 numbers
+    // Arithmetic mean of 4 values — abstract / test scores / temperatures / heights. Same
+    // four numbers and mean in every framing.
     const n1 = Math.round((idx % 5 + 2) * diffFactor);
     const n2 = Math.round((idx % 5 + 5) * diffFactor);
     const n3 = Math.round((idx % 5 + 8) * diffFactor);
     let sum = n1 + n2 + n3;
     const n4 = 4 - (sum % 4);
     sum += n4;
-    return {
-      question: `Find the arithmetic mean (average) of the values: $$${n1}, \\, ${n2}, \\, ${n3}, \\, ${n4}$$`,
-      answer: sum / 4,
-      explanation: `Sum the numbers and divide by the count ($4$):\n$$\\text{Mean} = \\frac{${n1} + ${n2} + ${n3} + ${n4}}{4} = \\frac{${sum}}{4} = ${sum / 4}$$`,
-      type: "average"
-    };
+    const mean = sum / 4;
+    const why = `Add them and divide by $4$:\n$$\\frac{${n1} + ${n2} + ${n3} + ${n4}}{4} = \\frac{${sum}}{4} = ${mean}$$`;
+    const variants = [
+      { question: `Find the arithmetic mean of: $$${n1}, \\, ${n2}, \\, ${n3}, \\, ${n4}$$`, explanation: why },
+      { question: `A student scored $${n1}$, $${n2}$, $${n3}$ and $${n4}$ on four quizzes. What is their average score?`, explanation: why },
+      { question: `Daily high temperatures over four days were $${n1}°$, $${n2}°$, $${n3}°$ and $${n4}°$. What was the average daily high?`, explanation: why },
+      { question: `Four plants measure $${n1}$, $${n2}$, $${n3}$ and $${n4}$ cm tall. What is their mean height?`, explanation: why },
+    ];
+    const v = variants[idx % variants.length];
+    return { question: v.question, answer: mean, explanation: v.explanation, type: "average" };
   },
   9: (diffFactor, idx) => {
     // Rolling two dice
