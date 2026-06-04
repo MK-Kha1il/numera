@@ -67,6 +67,16 @@ fun LevelNode(
 
     val contentColor = if (isUnlocked) Color.White else Color(0xFF9CA3AF)
 
+    // Hoisted out of the render path: active nodes recompose every animation frame
+    // (scale/glow infinite transition), so allocating these brushes inline would churn
+    // a new Brush per frame. Keyed on their inputs (constant for the START badge).
+    val nodeBrush = remember(startColor, endColor) {
+        Brush.verticalGradient(colors = listOf(startColor, endColor))
+    }
+    val startBadgeBrush = remember {
+        Brush.horizontalGradient(colors = listOf(Color(0xFFEC4899), Color(0xFFF43F5E)))
+    }
+
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -112,9 +122,7 @@ fun LevelNode(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(startColor, endColor)
-                        ),
+                        brush = nodeBrush,
                         shape = CircleShape
                     )
                     .border(
@@ -159,9 +167,7 @@ fun LevelNode(
                 modifier = Modifier
                     .offset(y = (-48).dp)
                     .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(Color(0xFFEC4899), Color(0xFFF43F5E))
-                        ),
+                        brush = startBadgeBrush,
                         shape = RoundedCornerShape(6.dp)
                     )
                     .border(1.dp, Color.White.copy(alpha = 0.6f), shape = RoundedCornerShape(6.dp))

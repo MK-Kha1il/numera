@@ -78,9 +78,14 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
   notifications, friends, shop daily/utility/catalog, level map, SRS-due, archive results) now has
   a verified-unique `key` (shop sections prefixed since they share one list; the sealed
   `LearnMapItem` keyed by type+number), so Compose matches items across data changes instead of by
-  index. ⬜ Deeper hoisting (brush/lambda allocation in hot paths) is left as a judgment follow-up:
-  marginal benefit, and the screens it would touch (Profile/Archive/Shop) have no test coverage, so
-  blanket micro-optimizing risks regressions for little gain.
+  index. ✅ **Deeper hoisting done on the genuinely-hot paths** — brushes that were reallocated
+  every animation frame are now `remember`ed (keyed on their stable inputs): `LevelNode`'s node-fill
+  + START-badge gradients (per-frame pulse animation, per list item), `RarityCardFrame`'s radial
+  glow (per-frame shimmer; the shimmer brush itself genuinely varies per frame and stays inline),
+  and `WeeklyActivityChart`'s per-bar fills (allocated *inside* the `Canvas` draw scope → two
+  brushes/bar/frame during the 900ms grow-in). Non-animated brushes (StageHeaderCard, chart
+  container) deliberately left inline — they recompose only on data change, so hoisting is churn for
+  no gain. Verified green: `assembleDebug` + `testDebugUnitTest`.
 
 ## 7. API layer
 - 🟢 Client API access already centralized (`ApiService`/`RetrofitClient`), with idempotency
@@ -128,8 +133,8 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
 - ✅ **Client game-load fetches parallelized**: SoloGameScreen already fanned out its 3 loads
   (favorites/profile/shop) via `coroutineScope { async }`; DuelGameScreen's independent
   profile+favorites loads were sequential and are now concurrent too (join waits on max, not
-  sum). ✅ Lazy-list `key`s added (see #6). ⬜ Deeper recomposition hoisting left as a judgment
-  follow-up (marginal gain vs. regression risk on untested screens).
+  sum). ✅ Lazy-list `key`s added (see #6). ✅ Per-frame brush hoisting done on the hot paths
+  (LevelNode / RarityCardFrame / WeeklyActivityChart — see #6).
 
 ## 14. Security
 - ✅ `JWT_SECRET` now **required in production** (was silently ephemeral). ✅ CORS locked to an

@@ -139,7 +139,16 @@ fun RarityCardFrame(
     )
     
     val borderBrush = getRarityBorderBrush(rarity)
-    
+
+    // Stable per-card glow — hoisted so the infinite shimmer animation above doesn't
+    // reallocate it every frame (the shimmer brush itself genuinely varies per frame).
+    val glowBrush = remember(rarityColor) {
+        Brush.radialGradient(
+            colors = listOf(rarityColor.copy(alpha = 0.08f), Color.Transparent),
+            radius = 300f
+        )
+    }
+
     val elevation = when (rarity.lowercase()) {
         "mythic" -> Spacing.m
         "legendary" -> Spacing.s
@@ -164,12 +173,7 @@ fun RarityCardFrame(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(rarityColor.copy(alpha = 0.08f), Color.Transparent),
-                            radius = 300f
-                        )
-                    )
+                    .background(glowBrush)
             )
             
             Box(modifier = Modifier.padding(Spacing.m)) {

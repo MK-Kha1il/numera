@@ -174,6 +174,16 @@ fun WeeklyActivityChart(activityDays: List<ActivityDay>) {
             val primaryArgb = primary
             val secondaryArgb = secondary
 
+            // Bar fills are drawn inside the Canvas, which redraws every frame of the
+            // `growth` animation — so building these gradients inline would allocate two
+            // brushes per bar per frame. Hoisted: their colors are stable theme tokens.
+            val highlightBarBrush = remember(secondaryArgb, primaryArgb) {
+                Brush.verticalGradient(listOf(secondaryArgb, primaryArgb))
+            }
+            val normalBarBrush = remember(primaryArgb) {
+                Brush.verticalGradient(listOf(primaryArgb, primaryArgb.copy(alpha = 0.55f)))
+            }
+
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -239,11 +249,7 @@ fun WeeklyActivityChart(activityDays: List<ActivityDay>) {
                             lineTo(right, bottom)
                             close()
                         }
-                        val barBrush = if (isToday || isBest) {
-                            Brush.verticalGradient(listOf(secondaryArgb, primaryArgb))
-                        } else {
-                            Brush.verticalGradient(listOf(primaryArgb, primaryArgb.copy(alpha = 0.55f)))
-                        }
+                        val barBrush = if (isToday || isBest) highlightBarBrush else normalBarBrush
                         drawPath(path = barPath, brush = barBrush)
 
                         // Glossy highlight on left edge
