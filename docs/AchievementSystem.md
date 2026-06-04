@@ -33,6 +33,15 @@ the reward is granted exactly once even on retry/replay.
 ## Extending
 - Add a row to the catalog seed in `db.js` (id, title, target, reward).
 - If it needs a new progress signal, update `updateAchievements` to increment it.
-- The mission's roadmap calls for **progression chains** (e.g. 3-day → 7-day → 30-day streak
-  tiers); today's catalog is mostly flat. Implementing chains is a catalog + `updateAchievements`
-  change plus a client display of the tier ladder — no new architecture required.
+## Progression chains
+Achievements form **tiered chains** (e.g. 1 → 3 → 7 → 30 → 100 → 365-day streak). Each catalog
+row carries `chain_id` (the ladder it belongs to) and `chain_order` (its rung); both are returned
+by `GET /api/achievements`. The Android Achievements tab (`ProfileScreen`) groups by `chain_id`,
+sorts by `chain_order`, and renders each chain as a horizontal milestone timeline with per-rung
+states: **claimed** (green check), **unclaimed** (completed, ready to claim), **active** (in
+progress, shows `progress/target`), and **locked** (a still-unclaimed earlier rung gates it). Chain
+header labels are mapped from `chain_id` in `ProfileScreen` — **keep that `when` in sync** when you
+add a chain, or it falls back to a title-cased id.
+
+To add/extend a chain: give the new catalog rows a shared `chain_id` and sequential `chain_order`,
+ensure `updateAchievements` knows the `target_type`, and add the header label mapping.

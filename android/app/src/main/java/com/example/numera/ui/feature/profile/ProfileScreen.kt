@@ -76,6 +76,16 @@ fun ProfileScreen(
     var achievementsList by remember { mutableStateOf<List<Achievement>>(emptyList()) }
     var activityDays by remember { mutableStateOf<List<ActivityDay>>(emptyList()) }
     var activityLoading by remember { mutableStateOf(false) }
+
+    // Multi-dimensional mastery (Sprint 3): learner-wide accuracy/fluency/retention/independence.
+    var masteryProfile by remember { mutableStateOf<MasteryProfile?>(null) }
+    LaunchedEffect(Unit) {
+        try {
+            masteryProfile = RetrofitClient.apiService.getLearnerModel(RetrofitClient.authToken ?: "").masteryProfile
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch mastery profile: ${e.message}")
+        }
+    }
     
     // Sub-tab selection state inside ProfileScreen
     var selectedSubTab by remember { mutableStateOf(0) } // 0: Stats & Customize, 1: Achievements, 2: Friends, 3: Saved
@@ -295,6 +305,12 @@ fun ProfileScreen(
                 }
             }
         }
+
+        // ── SKILL MASTERY (multi-dimensional) ──
+        MasteryProfileCard(
+            profile = masteryProfile,
+            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+        )
 
         // ── INVENTORY CUSTOMIZER ──
         Card(
@@ -604,7 +620,8 @@ fun ProfileScreen(
         // Ranks Milestone Tracker Card
         Card(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l),
-            shape = RoundedCornerShape(CornerRadius.l)
+            shape = RoundedCornerShape(CornerRadius.l),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Column(modifier = Modifier.padding(Spacing.l)) {
                 Text("Milestone Rank Rewards", fontSize = 16.sp, fontWeight = FontWeight.Bold)
@@ -638,19 +655,21 @@ fun ProfileScreen(
                                 text = rankName,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
-                                color = if (isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                // Locked uses the theme-tuned muted role, not a flat white@0.6 gray that
+                                // reads as "dead"/off-theme.
+                                color = if (isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = rewardsStr,
                                 fontSize = 11.sp,
-                                color = if (isUnlocked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f).copy(alpha = 0.7f)
+                                color = if (isUnlocked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
                         }
                         Text(
                             text = if (isUnlocked) "Unlocked ✓" else "Lvl $reqLevel Required",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isUnlocked) CorrectGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = if (isUnlocked) CorrectGreen else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -662,7 +681,8 @@ fun ProfileScreen(
         // Friends List integration Card
         Card(
             modifier = Modifier.fillMaxWidth().padding(Spacing.l),
-            shape = RoundedCornerShape(CornerRadius.l)
+            shape = RoundedCornerShape(CornerRadius.l),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Column(modifier = Modifier.padding(Spacing.l)) {
                 Text("Social & Friends", fontSize = 16.sp, fontWeight = FontWeight.Bold)
@@ -826,7 +846,8 @@ fun ProfileScreen(
             // Redesigned progression-based Achievements framework
             Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = Spacing.s),
-                shape = RoundedCornerShape(CornerRadius.l)
+                shape = RoundedCornerShape(CornerRadius.l),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(Spacing.l)) {
                     Text(
@@ -910,20 +931,29 @@ fun ProfileScreen(
                                     ) {
                                         Column(modifier = Modifier.padding(Spacing.m)) {
                                             Text(
+                                                // Keyed on the server's real chain_id values (db.js
+                                                // achievementsList). Keep this in sync when adding a chain;
+                                                // unmapped ids fall back to a title-cased id rather than a
+                                                // raw SHOUTING_SNAKE label.
                                                 text = when (chainId) {
-                                                    "streak" -> "Consistency Milestones"
-                                                    "exercises" -> "Solved Exercises Milestones"
-                                                    "perfect" -> "Perfect Session Milestones"
-                                                    "mastery" -> "Category Mastery Milestones"
-                                                    "friends" -> "Social Connections"
-                                                    "arena" -> "Arena Victor Milestones"
-                                                    "archive" -> "Archivist Explorations"
-                                                    "items" -> "Collector Milestones"
-                                                    "spring" -> "Spring Equinox Event"
-                                                    "summer" -> "Summer Solstice Event"
-                                                    "ultimate" -> "Ultimate Mystery Milestone"
-                                                    "speed" -> "Velocity Demon"
-                                                    else -> chainId.replace("_", " ").uppercase()
+                                                    "consistency_path" -> "Consistency Milestones"
+                                                    "learning_path" -> "Solved Exercises Milestones"
+                                                    "perfect_exercise_path" -> "Perfect Exercise Milestones"
+                                                    "perfect_level_path" -> "Perfect Level Milestones"
+                                                    "mastery_arithmetic" -> "Arithmetic Mastery"
+                                                    "mastery_algebra" -> "Algebra Mastery"
+                                                    "mastery_calculus" -> "Calculus Mastery"
+                                                    "mastery_combinatorics" -> "Combinatorics Mastery"
+                                                    "mastery_number_theory" -> "Number Theory Mastery"
+                                                    "mastery_mental" -> "Mental Math Mastery"
+                                                    "social_path" -> "Social Connections"
+                                                    "gladiator_path" -> "Arena Victor Milestones"
+                                                    "exploration_path" -> "Explorer Milestones"
+                                                    "collection_path" -> "Collector Milestones"
+                                                    "seasonal_path" -> "Seasonal Events"
+                                                    "hidden_path" -> "Mystery Milestones"
+                                                    else -> chainId.split("_")
+                                                        .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
                                                 },
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 14.sp,
@@ -938,9 +968,12 @@ fun ProfileScreen(
                                                 verticalAlignment = Alignment.Top
                                             ) {
                                                 sortedMilestones.forEachIndexed { index, milestone ->
-                                                    // Completion = server's source of truth (completed_at). progress can fall
-                                                    // back below target (e.g. a broken streak) while it stays claimable.
-                                                    val isCompleted = milestone.completed_at > 0 || milestone.progress >= milestone.target_value
+                                                    // Completion = server's source of truth (completed_at). The claim endpoint
+                                                    // rejects anything with completed_at == 0, so claimability MUST key off it
+                                                    // alone — keying off raw progress produced "Ready!/Claim" buttons the server
+                                                    // always refused (a silent dead button). progress can fall back below target
+                                                    // (e.g. a broken streak) while completed_at keeps it claimable.
+                                                    val isCompleted = milestone.completed_at > 0
                                                     val isClaimed = milestone.claimed == 1
                                                     
                                                     // Determine timeline states:
@@ -962,10 +995,15 @@ fun ProfileScreen(
                                                             .weight(1f)
                                                             .border(
                                                                 1.dp,
+                                                                // Every cell gets a visible border so the row reads as one uniform
+                                                                // set of cells; state is conveyed by ACCENT, not by the presence or
+                                                                // absence of a container (locked cells previously had a near-invisible
+                                                                // 0.3α border + transparent fill, so they looked unfinished next to the
+                                                                // bright active cell).
                                                                 when (state) {
                                                                     "claimed" -> CorrectGreen.copy(alpha = 0.45f)
                                                                     "active", "unclaimed" -> MaterialTheme.colorScheme.primary
-                                                                    else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                                                    else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                                                                 },
                                                                 RoundedCornerShape(CornerRadius.m)
                                                             )
@@ -973,6 +1011,9 @@ fun ProfileScreen(
                                                                 when (state) {
                                                                     "claimed" -> CorrectGreen.copy(alpha = 0.10f)
                                                                     "unclaimed" -> MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                                                                    "active" -> MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
+                                                                    // Locked: no fill (the visible border keeps the row uniform without the
+                                                                    // off-theme gray surfaceVariant block that clashed on dark themes).
                                                                     else -> Color.Transparent
                                                                 },
                                                                 RoundedCornerShape(CornerRadius.m)
@@ -1067,6 +1108,9 @@ fun ProfileScreen(
                                                                                 }
                                                                             } catch (e: Exception) {
                                                                                 Log.e("Profile", "Claim achievement error: ${e.message}")
+                                                                                withContext(Dispatchers.Main) {
+                                                                                    toast.error("Couldn't claim that reward — please try again.")
+                                                                                }
                                                                             }
                                                                         }
                                                                     }
@@ -1205,7 +1249,8 @@ fun ProfileScreen(
             // Exercises Section
             Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
-                shape = RoundedCornerShape(CornerRadius.l)
+                shape = RoundedCornerShape(CornerRadius.l),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(Spacing.l)) {
                     Text(

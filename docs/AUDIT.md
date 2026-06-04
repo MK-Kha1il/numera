@@ -203,5 +203,7 @@ Scope at audit time: Android client ~22.5k LOC, Node server ~13.4k LOC. No prior
 5. ✅ Structured logger DONE; ✅ ownership-check pass DONE (profile_private fix); ✅ client
    game-load fetch parallelization DONE (Solo already fanned out; Duel now concurrent).
    ✅ Dead-code sweep DONE (template scaffold removed); ✅ unsafe-cast audit DONE (socket payloads).
-   ⬜ Remaining (deliberately deferred): deeper recomposition hoisting (marginal gain vs. risk on
-   untested screens) and achievement chains (a feature, out of stabilization scope).
+   ✅ Deeper recomposition hoisting DONE on the per-frame hot paths (see #6/#13). ✅ Achievement
+   chains DONE — the catalog/route/model were already chain-aware; fixed the client chain-header
+   mapping (`ProfileScreen`) that keyed on stale ids and so showed every ladder as a raw
+   SHOUTING_SNAKE label. Tier ladder (claimed/unclaimed/active/locked) now titles correctly.
