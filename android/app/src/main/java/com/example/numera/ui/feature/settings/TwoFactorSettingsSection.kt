@@ -37,6 +37,7 @@ fun TwoFactorSettingsSection() {
 
     // Enrollment-in-progress state.
     var pendingSecret by remember { mutableStateOf<String?>(null) }
+    var pendingOtpauthUri by remember { mutableStateOf<String?>(null) }
     var totpCode by remember { mutableStateOf("") }
     var recoveryCodes by remember { mutableStateOf<List<String>?>(null) }
 
@@ -93,6 +94,7 @@ fun TwoFactorSettingsSection() {
                                 withContext(Dispatchers.Main) {
                                     isLoading = false
                                     pendingSecret = res.secret
+                                    pendingOtpauthUri = res.otpauthUri
                                 }
                             } catch (e: Exception) {
                                 withContext(Dispatchers.Main) {
@@ -109,10 +111,25 @@ fun TwoFactorSettingsSection() {
                     else Text("Enable Two-Factor Auth", fontWeight = FontWeight.Bold, color = Color.White)
                 }
             } else {
-                // Secret issued — show the manual-entry key + confirm a code.
+                // Secret issued — show the QR + manual-entry key, then confirm a code.
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "1. Add this key to your authenticator app (Google Authenticator, Authy, …):",
+                    "1. Scan this QR with your authenticator app (Google Authenticator, Authy, …):",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                )
+                pendingOtpauthUri?.let { uri ->
+                    Spacer(Modifier.height(8.dp))
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        com.example.numera.ui.components.QrCodeImage(
+                            content = uri,
+                            modifier = Modifier.size(180.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "…or enter this key manually:",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
                 )
@@ -153,6 +170,7 @@ fun TwoFactorSettingsSection() {
                                     isLoading = false
                                     recoveryCodes = res.recoveryCodes
                                     pendingSecret = null
+                                    pendingOtpauthUri = null
                                     totpCode = ""
                                     enabled = true
                                 }
@@ -171,7 +189,7 @@ fun TwoFactorSettingsSection() {
                     if (isLoading) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
                     else Text("Verify & Enable", fontWeight = FontWeight.Bold, color = Color.White)
                 }
-                TextButton(onClick = { pendingSecret = null; totpCode = ""; statusMsg = null }, enabled = !isLoading) {
+                TextButton(onClick = { pendingSecret = null; pendingOtpauthUri = null; totpCode = ""; statusMsg = null }, enabled = !isLoading) {
                     Text("Cancel", fontSize = 12.sp)
                 }
             }
