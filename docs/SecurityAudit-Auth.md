@@ -189,13 +189,15 @@ dependency.
   only works for accounts that have set an email.
 - **R3 — Android MFA UI.** ✅ **Done.** Settings has a Two-Factor section (enable → manual-entry
   key + confirm code → one-time recovery codes; disable with password re-auth), and login shows a
-  second-factor dialog (TOTP or recovery code) on an `mfaRequired` challenge. _Follow-up:_ render
-  the `otpauthUri` as a scannable QR (currently manual-entry key) — needs a QR-encoder dep.
+  second-factor dialog (TOTP or recovery code) on an `mfaRequired` challenge. ✅ Enrollment now
+  renders the `otpauthUri` as a scannable QR (ZXing) alongside the manual-entry key.
 - **R4 — HIBP breached-password check.** Optionally layer the HaveIBeenPwned k-anonymity range
   API onto the offline blocklist (decide fail-open vs fail-closed; adds a network dependency).
 - **R5 — `sqlite3@6` upgrade.** Clears all current `npm audit` advisories (breaking; test the DB
   layer).
-- **R6 — Real roles.** Replace `username === 'admin'` with a `role` column + middleware.
+- **R6 — Real roles.** ✅ **Done.** Added a `users.role` column (migration v7) and a
+  `requireAdmin` middleware that checks the authoritative DB role; replaced all three
+  `username === 'admin'` string checks (security-logs + the two rating admin routes).
 - **R7 — TLS/HSTS at the edge.** Enforce HTTPS + modern TLS at the reverse proxy in production;
   set `TRUST_PROXY` to the real hop count there.
 - **R8 — Expand the common-password blocklist.** The curated core covers the passwords attackers

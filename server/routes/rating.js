@@ -4,7 +4,7 @@
 // are NRS-specific and live here with the routes; the math lives in mathEngine/ratingEngine.
 const express = require('express');
 const { db } = require('../db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { securityLog } = require('../middleware/security');
 const NRS = require('../mathEngine/ratingEngine');
 
@@ -427,9 +427,7 @@ router.get('/api/rating/season', authenticateToken, (req, res) => {
 });
 
 // ── POST /api/rating/season/end — admin only ──────────────────────────────────
-router.post('/api/rating/season/end', authenticateToken, (req, res) => {
-  if (!['admin'].includes(req.user.username)) return res.status(403).json({ error: 'Admin only' });
-
+router.post('/api/rating/season/end', authenticateToken, requireAdmin, (req, res) => {
   const now = Math.floor(Date.now() / 1000);
   const newSeasonName = req.body.newSeasonName || `Season (${new Date().toLocaleDateString()})`;
   const newDurationDays = Math.min(Math.max(parseInt(req.body.durationDays, 10) || 90, 30), 365);
@@ -463,9 +461,7 @@ router.post('/api/rating/season/end', authenticateToken, (req, res) => {
 });
 
 // ── GET /api/rating/analytics — admin only ────────────────────────────────────
-router.get('/api/rating/analytics', authenticateToken, (req, res) => {
-  if (!['admin'].includes(req.user.username)) return res.status(403).json({ error: 'Admin only' });
-
+router.get('/api/rating/analytics', authenticateToken, requireAdmin, (req, res) => {
   const since = Math.floor(Date.now() / 1000) - 30 * 86400;
 
   db.all(

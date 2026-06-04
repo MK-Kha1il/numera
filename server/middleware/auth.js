@@ -62,4 +62,18 @@ function authenticateToken(req, res, next) {
   });
 }
 
-module.exports = { authenticateToken };
+// Role gate — must run AFTER authenticateToken. Looks up the authoritative role from the DB
+// (not the JWT, so a role change takes effect without re-login and a stale token can't claim
+// admin). Replaces the former `req.user.username === 'admin'` string check.
+function requireAdmin(req, res, next) {
+  db.get('SELECT role FROM users WHERE id = ?', [req.user.id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row || row.role !== 'admin') {
+      securityLog(req.user.id, 'unauthorized_admin_access', req.ip, 'Non-admin attempted an admin-only action.');
+      return res.status(403).json({ error: 'Access denied. Administrator privileges required.' });
+    }
+    next();
+  });
+}
+
+module.exports = { authenticateToken, requireAdmin };

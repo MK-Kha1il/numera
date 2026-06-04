@@ -63,6 +63,14 @@ test('registration rejects a weak/common password', async () => {
   assert.match(JSON.stringify(res.body), /common|breach|predictable/i);
 });
 
+test('admin-only routes reject a normal user with 403 (role gate)', async () => {
+  const { token } = await registerUser(ctx.base);
+  const res = await api(ctx.base, 'GET', '/api/admin/security-logs', { token });
+  assert.equal(res.status, 403);
+  const rating = await api(ctx.base, 'GET', '/api/rating/analytics', { token });
+  assert.equal(rating.status, 403);
+});
+
 test('email verification request does NOT leak the code in the response', async () => {
   const { token } = await registerUser(ctx.base);
   const res = await api(ctx.base, 'POST', '/api/user/change-email/request', {

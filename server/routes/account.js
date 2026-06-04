@@ -7,7 +7,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const { db } = require('../db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { securityLog } = require('../middleware/security');
 const { rateLimiter } = require('../middleware/rateLimit');
 const { hashPassword, verifyPassword, validatePasswordStrength } = require('../lib/passwords');
@@ -300,12 +300,7 @@ router.post('/api/user/delete-account', authenticateToken, (req, res) => {
 // -------------------------------------------------------------
 // ADMIN
 // -------------------------------------------------------------
-router.get('/api/admin/security-logs', authenticateToken, (req, res) => {
-  if (req.user.username !== 'admin') {
-    securityLog(req.user.id, 'unauthorized_admin_access', req.ip, `Non-admin user attempted to access security logs.`);
-    return res.status(403).json({ error: 'Access denied. Administrator privileges required.' });
-  }
-
+router.get('/api/admin/security-logs', authenticateToken, requireAdmin, (req, res) => {
   db.all(
     `SELECT sl.id, sl.timestamp, sl.user_id, u.username, sl.event_type, sl.ip_address, sl.details
      FROM security_audit_logs sl

@@ -165,6 +165,20 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens(user_id)');
     },
   },
+  {
+    version: 7,
+    name: 'user_roles',
+    // Replace the string-matched `username === 'admin'` authz with a real role column.
+    // Existing 'admin' username (seed/legacy) is promoted so behavior is unchanged.
+    up: async (run) => {
+      try {
+        await run("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'");
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+      await run("UPDATE users SET role = 'admin' WHERE username = 'admin'");
+    },
+  },
 ];
 
 /**
