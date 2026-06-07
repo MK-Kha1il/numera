@@ -32,6 +32,7 @@ fun ArenaScreen(
     var joinRoomCodeInput by remember { mutableStateOf("") }
     var friendRoomError by remember { mutableStateOf("") }
     var queueSecondsElapsed by remember { mutableIntStateOf(0) }
+    var showPuzzleRush by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     DisposableEffect(Unit) {
@@ -110,6 +111,12 @@ fun ArenaScreen(
                 queueSecondsElapsed++
             }
         }
+    }
+
+    // Puzzle Rush is a self-contained solo mode; render it over the arena while active.
+    if (showPuzzleRush) {
+        PuzzleRushScreen(user = user, onExit = { showPuzzleRush = false })
+        return
     }
 
     Box(
@@ -434,6 +441,39 @@ fun ArenaScreen(
                                 text = "Solve Casual Duel",
                                 onClick = { matchmakingMode = "casual" },
                                 color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
+                // Puzzle Rush (solo time-attack ladder)
+                item {
+                    DuoCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(Spacing.l),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
+                        ) {
+                            Column {
+                                Text(
+                                    text = "⚡ Puzzle Rush",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp,
+                                    color = MaterialTheme.colorScheme.tertiary
+                                )
+                                Text(
+                                    text = "Solo time-attack: how far can you climb before 3 strikes?",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                            DuoButton(
+                                text = "Start Puzzle Rush",
+                                onClick = { showPuzzleRush = true },
+                                color = MaterialTheme.colorScheme.tertiary,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

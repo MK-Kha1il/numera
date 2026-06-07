@@ -15,8 +15,10 @@
   integrity-clean run per user + caller's personal best). Basic integrity seam flags
   superhuman-speed correct answers (`PUZZLE_RUSH_SUPERHUMAN_MS`, default 350) and excludes them
   from the board — the full `integrityEngine` (§5) is still TODO.
-- ✅ **Client API surface** (no screen yet): ApiService `startPuzzleRush`/`submitPuzzleRush`/
-  `puzzleRushLeaderboard` + `PuzzleRush*` DTOs in Models.kt (`assembleDebug` green).
+- ✅ **Client** fully wired: ApiService `startPuzzleRush`/`submitPuzzleRush`/`puzzleRushLeaderboard`
+  + `PuzzleRush*` DTOs, and a playable **`PuzzleRushScreen`** (idle → leaderboard + personal best;
+  playing → escalating MCQ with lives/score, MathText-rendered; over → score + coin reward +
+  play-again) launched from a card in `ArenaScreen`. `assembleDebug` + `testDebugUnitTest` green.
 - ✅ **Fixed a latent bug along the way:** `dbx.js` (the transaction connection) hardcoded
   `numera.db` and ignored `NUMERA_DB_PATH`, so every transactional write (shop, economy, this
   feature) hit the **dev** DB even under tests. Now honors `NUMERA_DB_PATH` like `db.js` — tests
