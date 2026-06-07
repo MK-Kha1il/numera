@@ -897,6 +897,32 @@ data class AsyncPlayResponse(
     val result: AsyncResultDto? = null
 )
 
+// ---- Adaptive diagnostic (server-authoritative placement) ----
+@Serializable
+data class AdaptiveStartResponse(
+    val sessionId: Int = 0,
+    val questionNumber: Int = 1,
+    val totalQuestions: Int = 7,
+    val question: String = "",
+    val options: List<String> = emptyList()
+)
+
+@Serializable
+data class AdaptiveAnswerRequest(val sessionId: Int, val answer: String)
+
+@Serializable
+data class AdaptiveAnswerResponse(
+    val done: Boolean = false,
+    val lastCorrect: Boolean = false,
+    val questionNumber: Int = 0,
+    val totalQuestions: Int = 7,
+    val question: String? = null,
+    val options: List<String> = emptyList(),
+    val placedLevel: Int? = null,
+    val correct: Int = 0,
+    val total: Int = 0
+)
+
 @Serializable
 data class RevokeSessionRequest(
     val sessionId: String

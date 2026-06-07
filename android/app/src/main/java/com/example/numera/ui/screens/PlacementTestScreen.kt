@@ -1,8 +1,5 @@
 package com.example.numera.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,35 +9,29 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.numera.data.network.AdaptiveAnswerRequest
 import com.example.numera.data.network.ApiService
+import com.example.numera.sound.SoundManager
 import com.example.numera.theme.CorrectGreen
 import com.example.numera.theme.WrongRed
-import com.example.numera.data.network.AssessmentSubmitRequest
-import com.example.numera.data.network.MathProblem
-import com.example.numera.sound.SoundManager
-import com.example.numera.ui.components.MathAvatars
-import com.example.numera.ui.components.MathBanners
-import com.example.numera.ui.components.ProfileBanner
-import com.example.numera.ui.components.RankBadge
 import com.example.numera.ui.components.GlossyProgressBar
-import kotlinx.coroutines.delay
+import com.example.numera.ui.components.MathText
 import kotlinx.coroutines.launch
 
+// Adaptive diagnostic placement. Server-authoritative: questions arrive one at a time, the server
+// scores each answer (the client never sees the correct answer) and adapts the difficulty, then
+// places the learner at a starting level. Replaces the old static, client-scored quiz.
 @Composable
 fun PlacementTestScreen(
     apiService: ApiService,
@@ -48,82 +39,85 @@ fun PlacementTestScreen(
     onComplete: (level: Int, rank: String) -> Unit,
     onCancel: () -> Unit
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    var questions by remember { mutableStateOf<List<MathProblem>>(emptyList()) }
+    val scope = rememberCoroutineScope()
+
     var isLoading by remember { mutableStateOf(true) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
 
-    var currentIndex by remember { mutableStateOf(0) }
-    var score by remember { mutableStateOf(0) }
+    var sessionId by remember { mutableIntStateOf(0) }
+    var question by remember { mutableStateOf("") }
+    var options by remember { mutableStateOf(listOf<String>()) }
+    var questionNumber by remember { mutableIntStateOf(1) }
+    var totalQuestions by remember { mutableIntStateOf(7) }
+
     var selectedOption by remember { mutableStateOf<String?>(null) }
-
-    // Diagnostic UI states
     var isCheckingAnswer by remember { mutableStateOf(false) }
-    var isAnswerCorrect by remember { mutableStateOf(false) }
-    var testCompleted by remember { mutableStateOf(false) }
+    var lastCorrect by remember { mutableStateOf(false) }
 
-    // Final assigned values
-    var assignedLevel by remember { mutableStateOf(1) }
-    var assignedRank by remember { mutableStateOf("Bronze III") }
-    var rewardsUnlocked by remember { mutableStateOf<List<String>>(emptyList()) }
-    var submitting by remember { mutableStateOf(false) }
+    // The next question (delivered with the answer response) is held until "Continue".
+    var pendingQuestion by remember { mutableStateOf<String?>(null) }
+    var pendingOptions by remember { mutableStateOf(listOf<String>()) }
+    var pendingNumber by remember { mutableIntStateOf(0) }
+    var finishing by remember { mutableStateOf(false) }
 
-    // 10 minute countdown timer (600 seconds)
-    var timeRemaining by remember { mutableStateOf(600) }
+    var done by remember { mutableStateOf(false) }
+    var placedLevel by remember { mutableIntStateOf(1) }
+    var correctCount by remember { mutableIntStateOf(0) }
 
-    // Timer effect
-    LaunchedEffect(key1 = testCompleted, key2 = isLoading) {
-        if (!testCompleted && !isLoading) {
-            while (timeRemaining > 0) {
-                delay(1000)
-                timeRemaining--
-            }
-            // If timer runs out, auto-submit
-            if (timeRemaining == 0) {
-                testCompleted = true
-            }
-        }
-    }
-
-    // Load questions on start
     LaunchedEffect(Unit) {
         try {
-            questions = apiService.getAssessmentQuestions(token)
+            val r = apiService.startAdaptiveDiagnostic(token)
+            sessionId = r.sessionId
+            question = r.question
+            options = r.options
+            questionNumber = r.questionNumber
+            totalQuestions = r.totalQuestions
             isLoading = false
         } catch (e: Exception) {
-            errorMsg = e.message ?: "Failed to fetch diagnostic questions"
+            errorMsg = e.message ?: "Failed to start the diagnostic"
             isLoading = false
         }
     }
 
-    // Submit results helper
-    fun submitDiagnosticResults() {
-        submitting = true
-        coroutineScope.launch {
+    fun checkAnswer() {
+        val sel = selectedOption ?: return
+        if (busy) return
+        busy = true
+        scope.launch {
             try {
-                val res = apiService.submitAssessment(token, AssessmentSubmitRequest(score))
-                if (res.success) {
-                    assignedLevel = res.assignedLevel
-                    assignedRank = res.assignedRank
-                    rewardsUnlocked = res.rewardsUnlocked
-                    testCompleted = true
-                    SoundManager.playLevelUp()
+                val res = apiService.answerAdaptiveDiagnostic(token, AdaptiveAnswerRequest(sessionId, sel))
+                lastCorrect = res.lastCorrect
+                if (res.lastCorrect) SoundManager.playCorrect() else SoundManager.playWrong()
+                if (res.done) {
+                    finishing = true
+                    placedLevel = res.placedLevel ?: 1
+                    correctCount = res.correct
                 } else {
-                    errorMsg = "Submission error"
+                    pendingQuestion = res.question
+                    pendingOptions = res.options
+                    pendingNumber = res.questionNumber
                 }
+                isCheckingAnswer = true
             } catch (e: Exception) {
-                errorMsg = e.message ?: "Failed to submit assessment results"
+                errorMsg = e.message ?: "Failed to submit your answer"
             } finally {
-                submitting = false
+                busy = false
             }
         }
     }
 
-    // Format timer to MM:SS
-    fun formatTime(seconds: Int): String {
-        val minutes = seconds / 60
-        val secs = seconds % 60
-        return String.format("%02d:%02d", minutes, secs)
+    fun continueNext() {
+        isCheckingAnswer = false
+        selectedOption = null
+        if (finishing) {
+            done = true
+        } else {
+            question = pendingQuestion ?: question
+            options = pendingOptions
+            questionNumber = pendingNumber
+            pendingQuestion = null
+        }
     }
 
     if (isLoading) {
@@ -131,161 +125,54 @@ fun PlacementTestScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Analyzing mathematics diagnostic syllabus...", style = MaterialTheme.typography.bodyLarge)
+                Text("Calibrating your placement…", style = MaterialTheme.typography.bodyLarge)
             }
         }
         return
     }
 
-    if (errorMsg != null && !testCompleted) {
+    if (errorMsg != null && !done) {
         Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Diagnostic Error ⚠️", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(errorMsg!!, textAlign = TextAlign.Center)
                 Spacer(modifier = Modifier.height(24.dp))
-                Button(onClick = onCancel) {
-                    Text("Go Back")
-                }
+                Button(onClick = onCancel) { Text("Go Back") }
             }
         }
         return
     }
 
-    if (testCompleted) {
-        // Diagnostic Celebration view
+    if (done) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(24.dp).verticalScroll(rememberScrollState()),
             contentAlignment = Alignment.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Placement Evaluated! 🧠✨",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center
-                )
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Text("Placement Calibrated! 🧠✨", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Diagnostic Complete! Out of 10 analytical assessments, you correctly resolved:",
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Big score badge
+                Text("You answered $correctCount of $totalQuestions correctly.", fontSize = 15.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f), textAlign = TextAlign.Center)
+                Spacer(modifier = Modifier.height(20.dp))
                 Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    modifier = Modifier.size(120.dp).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("LEVEL", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
+                        Text("$placedLevel", fontSize = 40.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                if (placedLevel > 1) {
                     Text(
-                        text = "$score / 10",
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        "🚀 We started you at your actual proficiency — no need to grind through the basics.",
+                        fontSize = 13.sp, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
                     )
                 }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Assessed level card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Assessed Placement", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.secondary)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            RankBadge(
-                                rankName = assignedRank,
-                                modifier = Modifier.size(44.dp)
-                            )
-                            Text(assignedRank, fontSize = 28.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text("Unlocked Level $assignedLevel", fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                        
-                        if (assignedLevel > 1) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                "🚀 You successfully skipped the basic content and started at your actual proficiency level!",
-                                fontSize = 12.sp,
-                                textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
-                }
-
-                if (rewardsUnlocked.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text("Rank Milestone Rewards Unlocked! 🎁", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        rewardsUnlocked.forEach { itemId ->
-                            if (itemId.startsWith("avatar_")) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
-                                        .padding(10.dp)
-                                ) {
-                                    Text(MathAvatars.getEmoji(itemId), fontSize = 28.sp)
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column {
-                                        Text("Avatar Unlocked", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
-                                        Text(MathAvatars.getLabel(itemId), fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            } else if (itemId.startsWith("banner_")) {
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                                ) {
-                                    Column {
-                                        ProfileBanner(bannerKey = itemId, modifier = Modifier.fillMaxWidth().height(60.dp))
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth().padding(8.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Column {
-                                                Text("Profile Banner Unlocked", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
-                                                Text(MathBanners.getLabel(itemId), fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
                 Spacer(modifier = Modifier.height(32.dp))
-
                 Button(
-                    onClick = { onComplete(assignedLevel, assignedRank) },
+                    onClick = { onComplete(placedLevel, "") },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -297,160 +184,71 @@ fun PlacementTestScreen(
         return
     }
 
-    val currentProblem = questions.getOrNull(currentIndex)
-    if (currentProblem == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        return
-    }
-
     Scaffold(
         topBar = {
             Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Placement Test",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Timer, contentDescription = "Timer", tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = formatTime(timeRemaining),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (timeRemaining < 60) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onBackground
-                        )
-                    }
+                    Text("Adaptive Placement", fontSize = 18.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                    TextButton(onClick = onCancel) { Text("Skip") }
                 }
-
-                // Cinematic Progress Bar
-                val progressVal = (currentIndex + 1).toFloat() / questions.size
                 GlossyProgressBar(
-                    progress = progressVal,
-                    isCompleted = progressVal >= 1f,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
+                    progress = questionNumber.toFloat() / totalQuestions,
+                    isCompleted = false,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
         },
         bottomBar = {
-            // Elegant slide-up answer feedback bottom sheet
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        if (isCheckingAnswer) {
-                            if (isAnswerCorrect) Color(0xFFD7FFB7) else Color(0xFFFFDFDF)
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        }
-                    )
-                    .border(
-                        width = 1.dp,
-                        color = if (isCheckingAnswer) {
-                            if (isAnswerCorrect) CorrectGreen.copy(alpha = 0.5f) else WrongRed.copy(alpha = 0.5f)
-                        } else {
-                            MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                        },
-                        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                    )
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(width = 1.dp, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                     .padding(16.dp)
                     .navigationBarsPadding()
             ) {
                 if (!isCheckingAnswer) {
                     Button(
-                        onClick = {
-                            if (selectedOption != null) {
-                                isCheckingAnswer = true
-                                isAnswerCorrect = selectedOption == currentProblem.correctAnswer
-                                if (isAnswerCorrect) {
-                                    score++
-                                    SoundManager.playCorrect()
-                                } else {
-                                    SoundManager.playWrong()
-                                }
-                            }
-                        },
-                        enabled = selectedOption != null,
+                        onClick = { checkAnswer() },
+                        enabled = selectedOption != null && !busy,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            disabledContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                        )
+                        shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Check Answer", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onPrimary)
+                        if (busy) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(22.dp))
+                        else Text("Check Answer", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onPrimary)
                     }
                 } else {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                imageVector = if (isAnswerCorrect) Icons.Default.Check else Icons.Default.Close,
-                                contentDescription = if (isAnswerCorrect) "Correct" else "Wrong",
-                                tint = if (isAnswerCorrect) CorrectGreen else WrongRed,
+                                imageVector = if (lastCorrect) Icons.Default.Check else Icons.Default.Close,
+                                contentDescription = if (lastCorrect) "Correct" else "Wrong",
+                                tint = if (lastCorrect) CorrectGreen else WrongRed,
                                 modifier = Modifier.size(28.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (isAnswerCorrect) "You got it right!" else "Incorrect answer",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = if (isAnswerCorrect) CorrectGreen else WrongRed
+                                text = if (lastCorrect) "Correct!" else "Not quite",
+                                fontSize = 18.sp, fontWeight = FontWeight.ExtraBold,
+                                color = if (lastCorrect) CorrectGreen else WrongRed
                             )
                         }
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Text(
-                            text = currentProblem.explanation,
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                            lineHeight = 18.sp
-                        )
-                        
                         Spacer(modifier = Modifier.height(16.dp))
-
                         Button(
-                            onClick = {
-                                // Transition or submit
-                                isCheckingAnswer = false
-                                selectedOption = null
-                                if (currentIndex + 1 < questions.size) {
-                                    currentIndex++
-                                    SoundManager.playClick()
-                                } else {
-                                    submitDiagnosticResults()
-                                }
-                            },
+                            onClick = { continueNext() },
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isAnswerCorrect) CorrectGreen else WrongRed
-                            )
+                            colors = ButtonDefaults.buttonColors(containerColor = if (lastCorrect) CorrectGreen else WrongRed)
                         ) {
-                            if (submitting) {
-                                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
-                            } else {
-                                Text(
-                                    text = if (currentIndex + 1 < questions.size) "Continue" else "Finalize Test",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
-                            }
+                            Text(
+                                text = if (finishing) "See My Placement" else "Continue",
+                                fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onPrimary
+                            )
                         }
                     }
                 }
@@ -458,121 +256,41 @@ fun PlacementTestScreen(
         }
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(paddingValues).padding(16.dp).verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(12.dp))
-
-            // Diagnostic question text card
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 20.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Question ${currentIndex + 1} of ${questions.size}",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
+                Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Question $questionNumber of $totalQuestions", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = currentProblem.question,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 28.sp
-                    )
+                    MathText(text = question, fontSizePx = 46)
                 }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Options list
-            currentProblem.options.forEach { option ->
+            options.forEach { option ->
                 val isSelected = selectedOption == option
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp)
-                        .clickable(enabled = !isCheckingAnswer) {
-                            SoundManager.playClick()
-                            selectedOption = option
-                        },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable(enabled = !isCheckingAnswer) {
+                        SoundManager.playClick()
+                        selectedOption = option
+                    },
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isSelected) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        }
-                    ),
+                    colors = CardDefaults.cardColors(containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface),
                     border = BorderStroke(
                         width = if (isSelected) 2.dp else 1.dp,
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-                        }
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
                     )
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(18.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Radio button indicator
-                        Box(
-                            modifier = Modifier
-                                .size(22.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(
-                                    if (isSelected) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        Color.Transparent
-                                    }
-                                )
-                                .border(
-                                    width = 1.5.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isSelected) {
-                                Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(14.dp))
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Text(
-                            text = option,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isSelected) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            }
-                        )
+                    Box(modifier = Modifier.fillMaxWidth().padding(18.dp), contentAlignment = Alignment.CenterStart) {
+                        MathText(text = option, fontSizePx = 38)
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(24.dp))
         }
     }

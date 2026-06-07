@@ -56,6 +56,7 @@ const USER_SCOPED_TABLES = [
   'notification_log',
   'push_tokens',
   'puzzle_rush_runs',
+  'diagnostic_sessions',
 ];
 
 const router = express.Router();

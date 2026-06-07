@@ -385,6 +385,32 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_async_opponent ON async_matches(opponent_id, status)');
     },
   },
+  {
+    version: 14,
+    name: 'adaptive_diagnostic',
+    // Server-authoritative adaptive placement (replaces the static, client-scored quiz). One row
+    // per in-progress diagnostic: the server holds the outstanding question's answer and the
+    // binary-search bounds, so difficulty adapts per response and scoring can't be spoofed.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS diagnostic_sessions (
+          id               INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id          INTEGER NOT NULL,
+          level            INTEGER NOT NULL,   -- current ability estimate / next question level
+          low              INTEGER NOT NULL,   -- binary-search lower bound
+          high             INTEGER NOT NULL,   -- binary-search upper bound
+          asked            INTEGER DEFAULT 0,
+          correct          INTEGER DEFAULT 0,
+          current_answer   TEXT,               -- answer to the outstanding question (never sent to client)
+          current_category TEXT,
+          current_level    INTEGER,
+          status           TEXT DEFAULT 'active',  -- active | done
+          created_at       INTEGER NOT NULL
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_diag_user ON diagnostic_sessions(user_id, status)');
+    },
+  },
 ];
 
 /**

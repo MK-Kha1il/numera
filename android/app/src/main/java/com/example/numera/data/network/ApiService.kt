@@ -181,6 +181,17 @@ interface ApiService {
         @Body request: AssessmentSubmitRequest
     ): AssessmentSubmitResponse
 
+    @POST("api/assessment/adaptive/start")
+    suspend fun startAdaptiveDiagnostic(
+        @Header("Authorization") token: String
+    ): AdaptiveStartResponse
+
+    @POST("api/assessment/adaptive/answer")
+    suspend fun answerAdaptiveDiagnostic(
+        @Header("Authorization") token: String,
+        @Body request: AdaptiveAnswerRequest
+    ): AdaptiveAnswerResponse
+
     @POST("api/assessment/skip")
     suspend fun skipAssessment(
         @Header("Authorization") token: String
