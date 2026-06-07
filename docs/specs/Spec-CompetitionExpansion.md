@@ -29,9 +29,17 @@
   any flag excludes the run from the board, a **cheat verdict (≥3 flags) withholds the coin
   reward**. The client transparently tells the player when a run wasn't counted (spec ethics:
   no silent shadow-bans). Unit + integration tested. `npm test` 115 pass / 0 lint errors.
-- ⬜ **Next:** wire `integrityEngine` into ranked **duels** (currently Puzzle Rush only); async
-  duels; then the `server.js` arena extraction → tournaments. `integrityEngine` is the shared
-  scorer those modes should call before committing rating/rewards.
+- ✅ **Async duels server** (§4.2, migration **v13** `async_matches`): `routes/asyncDuel.js` —
+  friend-gated `POST /challenge` (generates one shared problem set, stored with answers, notifies
+  the opponent), `GET /active`, `GET /:id` (answers stripped, once per player), `POST /:id/play`
+  (server-scored; resolves the moment both have played; **transactional coin reward to the
+  winner**; "your turn"/result nudges via the lifecycle notifier). Two-party deletion wired into
+  account deletion (C4). Friend-gate / self / double-play / non-participant guards tested.
+  `npm test` 118 pass / 0 lint errors. **v1 is coins-only — NRS/ranked async is a later item.**
+- ⬜ **Next:** async-duel **client** (challenge-from-friends + matches list + play screen); wire
+  `integrityEngine` into ranked **socket duels**; then the `server.js` arena extraction →
+  tournaments. `integrityEngine` is the shared scorer those modes should call before committing
+  rating/rewards.
 
 ## 1. What exists today
 - **1v1 duels** over Socket.IO in `server.js` (lines ~539–1050): `rankedQueue`/`casualQueue`

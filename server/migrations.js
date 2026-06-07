@@ -355,6 +355,36 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_pr_board ON puzzle_rush_runs(status, integrity_flag, score)');
     },
   },
+  {
+    version: 13,
+    name: 'async_duels',
+    // Correspondence duels (see docs/specs/Spec-CompetitionExpansion.md §4.2): two friends solve
+    // the SAME server-generated problem set within 24h; resolved when both have played. The set
+    // (incl. answers) is stored once so both get identical problems and scoring is authoritative.
+    // Two user columns (challenger/opponent) -> custom cleanup in the account-deletion handler.
+    // v1 awards coins only; NRS/ranked async is a later item.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS async_matches (
+          id               INTEGER PRIMARY KEY AUTOINCREMENT,
+          challenger_id    INTEGER NOT NULL,
+          opponent_id      INTEGER NOT NULL,
+          problems_json    TEXT NOT NULL,
+          problem_count    INTEGER NOT NULL,
+          challenger_score INTEGER,           -- NULL until that player has played
+          opponent_score   INTEGER,
+          status           TEXT DEFAULT 'pending',  -- pending | finished | expired
+          winner_id        INTEGER,           -- NULL = draw / unresolved
+          reward           INTEGER DEFAULT 0,
+          created_at       INTEGER NOT NULL,
+          expires_at       INTEGER NOT NULL,
+          finished_at      INTEGER
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_async_challenger ON async_matches(challenger_id, status)');
+      await run('CREATE INDEX IF NOT EXISTS idx_async_opponent ON async_matches(opponent_id, status)');
+    },
+  },
 ];
 
 /**

@@ -76,6 +76,7 @@ app.use(require('./routes/math'));
 app.use(require('./routes/transfer'));
 app.use(require('./routes/rating'));
 app.use(require('./routes/puzzleRush'));
+app.use(require('./routes/asyncDuel'));
 // publicProfile owns /api/user/:userId — mount LAST so it doesn't shadow account.js routes.
 app.use(require('./routes/publicProfile'));
 
