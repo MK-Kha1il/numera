@@ -830,6 +830,7 @@ data class PuzzleRushSubmitResponse(
     val correctAnswer: String? = null,
     val finalScore: Int? = null,
     val reward: Int? = null,
+    val flagged: Boolean = false,
     val problem: PuzzleRushProblemDto? = null
 )
 

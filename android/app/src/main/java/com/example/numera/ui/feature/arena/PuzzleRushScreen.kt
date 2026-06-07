@@ -40,6 +40,7 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
     var feedback by remember { mutableStateOf<String?>(null) } // null | "correct" | "wrong"
     var finalScore by remember { mutableIntStateOf(0) }
     var reward by remember { mutableIntStateOf(0) }
+    var flagged by remember { mutableStateOf(false) }
     var personalBest by remember { mutableIntStateOf(0) }
     var leaderboard by remember { mutableStateOf(listOf<PuzzleRushLeaderboardEntry>()) }
     var busy by remember { mutableStateOf(false) }
@@ -81,6 +82,7 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
                 if (res.gameOver) {
                     finalScore = res.finalScore ?: score
                     reward = res.reward ?: 0
+                    flagged = res.flagged
                     refreshBoard()
                     phase = "over"
                 } else {
@@ -165,7 +167,14 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
                         Text("$finalScore", fontWeight = FontWeight.Black, fontSize = 56.sp, color = MaterialTheme.colorScheme.secondary)
                         Text("problems solved", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         if (reward > 0) Text("+$reward coins", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MilestoneGold)
-                        if (finalScore >= personalBest && finalScore > 0) {
+                        if (flagged) {
+                            Text(
+                                "⚠️ Some answers came in faster than humanly possible, so this run wasn't counted on the leaderboard.",
+                                fontSize = 12.sp,
+                                color = WrongRed,
+                                textAlign = TextAlign.Center
+                            )
+                        } else if (finalScore >= personalBest && finalScore > 0) {
                             Text("🏆 New personal best!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
                         }
                     }

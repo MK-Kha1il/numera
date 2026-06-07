@@ -23,8 +23,15 @@
   `numera.db` and ignored `NUMERA_DB_PATH`, so every transactional write (shop, economy, this
   feature) hit the **dev** DB even under tests. Now honors `NUMERA_DB_PATH` like `db.js` — tests
   are properly isolated. `npm test` 111 pass / 0 lint errors.
-- ⬜ **Next:** the Android Puzzle Rush **game screen** + an Arena mode tab; then the
-  `integrityEngine`, async duels, and (after the `server.js` arena extraction) tournaments.
+- ✅ **`integrityEngine` v1** (`services/integrityEngine.js`, §5): difficulty-scaled timing floor
+  (`humanFloorMs(level)`), per-answer `assessAnswer`, and a run `verdictForRun` (clean/review/
+  cheat). Wired into Puzzle Rush: `integrity_flag` now holds the running fast-flag **count**;
+  any flag excludes the run from the board, a **cheat verdict (≥3 flags) withholds the coin
+  reward**. The client transparently tells the player when a run wasn't counted (spec ethics:
+  no silent shadow-bans). Unit + integration tested. `npm test` 115 pass / 0 lint errors.
+- ⬜ **Next:** wire `integrityEngine` into ranked **duels** (currently Puzzle Rush only); async
+  duels; then the `server.js` arena extraction → tournaments. `integrityEngine` is the shared
+  scorer those modes should call before committing rating/rewards.
 
 ## 1. What exists today
 - **1v1 duels** over Socket.IO in `server.js` (lines ~539–1050): `rankedQueue`/`casualQueue`

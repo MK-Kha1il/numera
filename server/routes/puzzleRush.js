@@ -10,14 +10,12 @@ const { authenticateToken } = require('../middleware/auth');
 const { idempotency } = require('../idempotency');
 const { withTransaction, httpError } = require('../dbx');
 const { generateProblem } = require('../mathGenerator');
+const { assessAnswer, verdictForRun } = require('../services/integrityEngine');
 
 const router = express.Router();
 
 const STARTING_LIVES = 3;
 const FIXED_ELO = 1200;          // standardized so the ladder is fair (difficulty ∝ score, not the player's profile)
-// A correct answer faster than this (ms) is flagged for integrity review. Env-tunable so tests
-// can disable it (the test harness submits answers in microseconds).
-const SUPERHUMAN_MS = Number(process.env.PUZZLE_RUSH_SUPERHUMAN_MS || 350);
 const MAX_COIN_REWARD = 50;
 
 const normalize = (s) => String(s == null ? '' : s).trim().toLowerCase();
@@ -83,8 +81,10 @@ router.post('/api/puzzle-rush/submit', authenticateToken, idempotency, (req, res
     const now = Date.now();
     const elapsed = now - (run.last_action_at || now);
     const correct = normalize(answer) === normalize(run.current_answer);
-    // Integrity seam: a correct answer faster than humanly possible flags the run.
-    const integrity = correct && elapsed < SUPERHUMAN_MS ? 1 : run.integrity_flag;
+    // Integrity: the difficulty-scaled timing scorer flags superhuman-fast correct answers.
+    // integrity_flag holds the running COUNT of flagged answers (0 = clean → eligible for boards).
+    const assessment = assessAnswer({ elapsedMs: elapsed, correct, level: run.current_level });
+    const integrity = run.integrity_flag + (assessment.flagged ? 1 : 0);
 
     let score = run.score;
     let strikes = run.strikes;
@@ -92,7 +92,10 @@ router.post('/api/puzzle-rush/submit', authenticateToken, idempotency, (req, res
     else strikes += 1;
 
     if (strikes >= STARTING_LIVES) {
-      const reward = Math.min(score, MAX_COIN_REWARD);
+      // A 'cheat' verdict (enough flagged answers) withholds the reward; any flag excludes the
+      // run from the leaderboard (filtered on integrity_flag = 0).
+      const verdict = verdictForRun({ flaggedFastCount: integrity, totalAnswers: score + strikes });
+      const reward = verdict === 'cheat' ? 0 : Math.min(score, MAX_COIN_REWARD);
       await tx.run(
         `UPDATE puzzle_rush_runs SET score = ?, strikes = ?, status = 'finished', integrity_flag = ?, ended_at = ?, last_action_at = ? WHERE id = ?`,
         [score, strikes, integrity, now, now, runId]
@@ -100,7 +103,7 @@ router.post('/api/puzzle-rush/submit', authenticateToken, idempotency, (req, res
       if (reward > 0) {
         await tx.run('UPDATE users SET coins = coins + ? WHERE id = ?', [reward, userId]);
       }
-      return { correct, gameOver: true, finalScore: score, correctAnswer: run.current_answer, reward };
+      return { correct, gameOver: true, finalScore: score, correctAnswer: run.current_answer, reward, flagged: integrity > 0 };
     }
 
     const nextIndex = run.current_index + 1;
