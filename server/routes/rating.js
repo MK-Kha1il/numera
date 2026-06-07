@@ -7,6 +7,7 @@ const { db } = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { securityLog } = require('../middleware/security');
 const NRS = require('../mathEngine/ratingEngine');
+const { notify } = require('../services/notificationService');
 
 const router = express.Router();
 
@@ -135,11 +136,12 @@ function nrsUpdateTilt(userId, performanceScore, sessionData) {
       [userId, updated.loss_streak, updated.tilt_score, updated.tilted ? 1 : 0, now]
     );
     if (updated.tilted && (!row || !row.tilted)) {
-      db.run(
-        `INSERT INTO user_notifications (user_id, title, message, type, read_state, created_at)
-         VALUES (?, 'Take a Break 🧘', ?, 'system', 0, ?)`,
-        [userId, "You've had a tough session run. Taking a short break often improves performance. Your matchmaking will be adjusted to find you better-suited opponents.", now]
-      );
+      notify(userId, {
+        category: 'tilt',
+        title: 'Take a Break 🧘',
+        message: "You've had a tough session run. Taking a short break often improves performance. Your matchmaking will be adjusted to find you better-suited opponents.",
+        type: 'system',
+      });
     }
   });
 }

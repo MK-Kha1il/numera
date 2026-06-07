@@ -20,7 +20,10 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-const dbPath = path.join(__dirname, 'numera.db');
+// Honor NUMERA_DB_PATH exactly like db.js, so the transaction connection always points at the
+// SAME database file as the main connection. (Previously hardcoded to numera.db, which silently
+// sent transactional writes to the dev DB even under tests that set NUMERA_DB_PATH.)
+const dbPath = process.env.NUMERA_DB_PATH || path.join(__dirname, 'numera.db');
 const txDb = new sqlite3.Database(dbPath);
 txDb.run('PRAGMA busy_timeout = 5000;');
 txDb.run('PRAGMA foreign_keys = ON;');

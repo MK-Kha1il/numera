@@ -10,6 +10,7 @@ const { securityLog } = require('../middleware/security');
 const { generateProblem, getLessonAndExamples } = require('../mathGenerator');
 const { runIngestionPipeline } = require('../mathEngine/knowledgeIngestion');
 const { normalizeLevelForGenerator } = require('../lib/progression');
+const { notify } = require('../services/notificationService');
 const { attachTipToProblem } = require('../services/tipService');
 const { updateAchievements } = require('../services/achievementService');
 const { updateCommitmentAndBurnout } = require('../services/commitmentService');
@@ -457,11 +458,12 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
         if (updateErr) return res.status(500).json({ error: updateErr.message });
 
         if (newLevel > user.level) {
-          db.run(
-            `INSERT INTO user_notifications (user_id, title, message, type, read_state, created_at)
-             VALUES (?, 'Level Up! 🌟', ?, 'levelup', 0, ?)`,
-            [req.user.id, `Congratulations! You reached Level ${newLevel}. Keep climbing!`, now]
-          );
+          notify(req.user.id, {
+            category: 'levelup',
+            title: 'Level Up! 🌟',
+            message: `Congratulations! You reached Level ${newLevel}. Keep climbing!`,
+            type: 'levelup',
+          });
         }
 
         updateCommitmentAndBurnout(req.user.id, solvedCount, () => {

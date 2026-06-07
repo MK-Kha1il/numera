@@ -278,6 +278,83 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_exposure_user_seen ON exercise_exposure(user_id, last_seen)');
     },
   },
+  {
+    version: 11,
+    name: 'lifecycle_notifications',
+    // Multi-channel lifecycle/notification system (see docs/specs/Spec-LifecycleNotifications.md).
+    // - notification_preferences: per-user channel/category opt-in + quiet hours + timezone.
+    //   Rows are created lazily; absence means the privacy-respecting defaults in
+    //   notificationService.DEFAULT_PREFS apply.
+    // - notification_log: idempotent send ledger. UNIQUE(user_id, dedup_key) makes every
+    //   lifecycle trigger fire at most once per window even if the hourly sweep re-runs.
+    // - push_tokens: exists now (so account-deletion covers it) though push is a later phase.
+    // All three are added to USER_SCOPED_TABLES in routes/account.js (deletion completeness, C4).
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS notification_preferences (
+          user_id           INTEGER PRIMARY KEY,
+          email_enabled     INTEGER NOT NULL DEFAULT 1,  -- master email switch (transactional always allowed)
+          email_lifecycle   INTEGER NOT NULL DEFAULT 1,  -- streak/winback/recap nudges
+          push_enabled      INTEGER NOT NULL DEFAULT 0,  -- opt-in; reserved for the push phase
+          quiet_hours_start INTEGER DEFAULT 21,          -- local hour [0-23], no push during quiet window
+          quiet_hours_end   INTEGER DEFAULT 8,
+          tz_offset_minutes INTEGER DEFAULT 0,           -- client-reported offset for send timing
+          updated_at        INTEGER
+        )
+      `);
+      await run(`
+        CREATE TABLE IF NOT EXISTS notification_log (
+          id        INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id   INTEGER NOT NULL,
+          category  TEXT NOT NULL,    -- 'streak_risk' | 'winback_d1' | 'weekly_recap' | ...
+          channel   TEXT NOT NULL,    -- 'inapp' | 'email' | 'push'
+          dedup_key TEXT NOT NULL,    -- e.g. 'streak_risk:email:2026-06-07'
+          sent_at   INTEGER NOT NULL,
+          UNIQUE(user_id, dedup_key)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_notiflog_user_cat ON notification_log(user_id, category, sent_at)');
+      await run(`
+        CREATE TABLE IF NOT EXISTS push_tokens (
+          user_id    INTEGER NOT NULL,
+          token      TEXT NOT NULL,
+          platform   TEXT,            -- 'android' | 'web'
+          created_at INTEGER,
+          PRIMARY KEY(user_id, token)
+        )
+      `);
+    },
+  },
+  {
+    version: 12,
+    name: 'puzzle_rush',
+    // Solo time-attack ladder (see docs/specs/Spec-CompetitionExpansion.md §4.1). One row per
+    // run. The server holds the current problem's answer (current_answer) so the client never
+    // sees it before submitting — server-authoritative scoring. integrity_flag is the seam for
+    // the future integrityEngine (superhuman-speed answers are flagged + excluded from boards).
+    // Times are epoch MILLISECONDS here (run duration + per-answer timing both matter).
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS puzzle_rush_runs (
+          id               INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id          INTEGER NOT NULL,
+          score            INTEGER DEFAULT 0,
+          strikes          INTEGER DEFAULT 0,
+          current_index    INTEGER DEFAULT 0,
+          current_answer   TEXT,
+          current_category TEXT,
+          current_level    INTEGER,
+          status           TEXT DEFAULT 'active',   -- active | finished | abandoned
+          integrity_flag   INTEGER DEFAULT 0,
+          started_at       INTEGER,
+          ended_at         INTEGER,
+          last_action_at   INTEGER
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_pr_user_score ON puzzle_rush_runs(user_id, score)');
+      await run('CREATE INDEX IF NOT EXISTS idx_pr_board ON puzzle_rush_runs(status, integrity_flag, score)');
+    },
+  },
 ];
 
 /**

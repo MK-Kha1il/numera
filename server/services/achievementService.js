@@ -2,6 +2,7 @@
 // user_achievements (without ever un-completing or un-claiming a row), emitting a
 // notification the first time one is completed. Called from every reward path.
 const { db } = require('../db');
+const { notify } = require('./notificationService');
 
 function updateAchievements(userId, callback) {
   db.get('SELECT * FROM users WHERE id = ?', [userId], (errUser, user) => {
@@ -77,11 +78,12 @@ function updateAchievements(userId, callback) {
                       [userId, ach.id, finalProgress, completedAt],
                       () => {
                         if (isCompleted && !alreadyCompleted) {
-                          db.run(
-                            `INSERT INTO user_notifications (user_id, title, message, type, read_state, created_at)
-                       VALUES (?, 'Achievement Completed! 🏆', ?, 'achievement', 0, ?)`,
-                            [userId, `You completed the achievement: ${ach.name}! Claim it for rewards.`, Math.floor(Date.now() / 1000)]
-                          );
+                          notify(userId, {
+                            category: 'achievement',
+                            title: 'Achievement Completed! 🏆',
+                            message: `You completed the achievement: ${ach.name}! Claim it for rewards.`,
+                            type: 'achievement',
+                          });
                         }
 
                         processedCount++;

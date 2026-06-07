@@ -96,6 +96,9 @@ fun SettingsScreen(
     var notifEvents by remember { mutableStateOf(prefs.getBoolean("notif_events", true)) }
     var notifSeasonal by remember { mutableStateOf(prefs.getBoolean("notif_seasonal", true)) }
 
+    // Server-backed lifecycle email reminders (streak / win-back / weekly recap). Loaded below.
+    var emailReminders by remember { mutableStateOf(true) }
+
     // Privacy & Security backend state
     var profilePrivate by remember { mutableStateOf((user?.profile_private ?: 0) == 1) }
     var telemetryEnabled by remember { mutableStateOf((user?.telemetry_enabled ?: 1) == 1) }
@@ -104,6 +107,26 @@ fun SettingsScreen(
         if (user != null) {
             profilePrivate = (user.profile_private ?: 0) == 1
             telemetryEnabled = (user.telemetry_enabled ?: 1) == 1
+        }
+    }
+
+    // Load server notification prefs once, and report the device timezone offset so lifecycle
+    // reminders land at a sensible local time (the funnel uses tz_offset_minutes for quiet hours).
+    LaunchedEffect(Unit) {
+        try {
+            val token = RetrofitClient.authToken ?: ""
+            if (token.isNotEmpty()) {
+                val p = withContext(Dispatchers.IO) { RetrofitClient.apiService.getNotificationPreferences(token) }
+                emailReminders = p.email_lifecycle == 1
+                val tz = java.util.TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 60000
+                withContext(Dispatchers.IO) {
+                    RetrofitClient.apiService.updateNotificationPreferences(
+                        token, NotificationPreferencesUpdateRequest(tz_offset_minutes = tz)
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("Settings", "Failed loading notification prefs: ${e.message}")
         }
     }
 
@@ -701,18 +724,20 @@ fun SettingsScreen(
                         }
                     }
 
-                    // Haptics compact
+                    // Haptics compact — use isHapticEnabled (Compose state) for colors/tint so
+                    // the card recomposes immediately on click without needing another button press.
                     Card(
                         modifier = Modifier.weight(1f).height(65.dp),
                         shape = RoundedCornerShape(CornerRadius.m),
                         onClick = {
                             val nextVal = !com.example.numera.haptic.HapticManager.isEnabled
                             com.example.numera.haptic.HapticManager.isEnabled = nextVal
+                            isHapticEnabled = nextVal           // ← trigger recompose
                             com.example.numera.haptic.HapticManager.saveSettings(context)
                             if (nextVal) com.example.numera.haptic.HapticManager.playSoft()
                         },
                         colors = CardDefaults.cardColors(
-                            containerColor = if (com.example.numera.haptic.HapticManager.isEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
+                            containerColor = if (isHapticEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
                         )
                     ) {
                         Column(
@@ -723,7 +748,7 @@ fun SettingsScreen(
                             androidx.compose.material3.Icon(
                                 imageVector = androidx.compose.material.icons.Icons.Default.Vibration,
                                 contentDescription = "Haptics Icon",
-                                tint = if (com.example.numera.haptic.HapticManager.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = if (isHapticEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp)
                             )
                             Text("Haptic Feed", fontWeight = FontWeight.Bold, fontSize = 10.sp)
@@ -1085,6 +1110,37 @@ fun SettingsScreen(
                         )
                         Spacer(modifier = Modifier.width(Spacing.s))
                         Text("Granular notification control", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+
+                    // Server-backed email reminders (streak / win-back / weekly recap). Unlike the
+                    // local toggles below, this syncs to the account so reminders honor it everywhere.
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Email Reminders", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("Streak, win-back & weekly recap emails (synced to your account)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        }
+                        Switch(
+                            checked = emailReminders,
+                            onCheckedChange = { checked ->
+                                emailReminders = checked
+                                scope.launch(Dispatchers.IO) {
+                                    try {
+                                        val token = RetrofitClient.authToken ?: ""
+                                        RetrofitClient.apiService.updateNotificationPreferences(
+                                            token, NotificationPreferencesUpdateRequest(email_lifecycle = if (checked) 1 else 0)
+                                        )
+                                    } catch (e: Exception) {
+                                        Log.e("Settings", "Failed updating email reminders: ${e.message}")
+                                    }
+                                }
+                                com.example.numera.haptic.HapticManager.playSoft()
+                            }
+                        )
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 

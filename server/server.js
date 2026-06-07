@@ -75,6 +75,7 @@ app.use(require('./routes/commitment'));
 app.use(require('./routes/math'));
 app.use(require('./routes/transfer'));
 app.use(require('./routes/rating'));
+app.use(require('./routes/puzzleRush'));
 // publicProfile owns /api/user/:userId — mount LAST so it doesn't shadow account.js routes.
 app.use(require('./routes/publicProfile'));
 
@@ -416,12 +417,16 @@ app.get('/download-apk', (req, res) => {
 // `ready` resolves once the schema is initialized + migrated; tests await it before
 // issuing requests. In standalone mode a failure is fatal.
 const { startRetentionSweeper } = require('./services/retention');
+const { startLifecycleSweeper } = require('./services/lifecycleJobs');
 const ready = initDb()
   .then(() => runMigrations(db))
   .then(() => {
-    // Begin enforcing data-retention windows (purges old IP-bearing logs/sessions). Only when
-    // run as a real server — tests use throwaway DBs and don't need the background timer.
-    if (require.main === module) startRetentionSweeper(db);
+    // Background timers run only as a real server — tests use throwaway DBs and drive the
+    // sweeps directly. Retention purges old IP-bearing logs; lifecycle re-engages lapsed users.
+    if (require.main === module) {
+      startRetentionSweeper(db);
+      startLifecycleSweeper(db);
+    }
   })
   .catch(err => {
     logger.error("Database initialization failed:", err);

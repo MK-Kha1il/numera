@@ -3,6 +3,7 @@
 const express = require('express');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { notify } = require('../services/notificationService');
 
 const router = express.Router();
 
@@ -57,11 +58,12 @@ router.post('/api/friends/request', authenticateToken, (req, res) => {
           // Reverse pending request exists, so accept immediately
           db.run(`UPDATE friends SET status = 'accepted' WHERE id = ?`, [conn.id], (errUpdate) => {
             if (errUpdate) return res.status(500).json({ error: errUpdate.message });
-            db.run(
-              `INSERT INTO user_notifications (user_id, title, message, type, read_state, created_at)
-                 VALUES (?, 'Friend Request Accepted 🤝', ?, 'social', 0, ?)`,
-              [conn.user_id, `${req.user.username} accepted your friend request!`, Math.floor(Date.now() / 1000)]
-            );
+            notify(conn.user_id, {
+              category: 'friend_accept',
+              title: 'Friend Request Accepted 🤝',
+              message: `${req.user.username} accepted your friend request!`,
+              type: 'social',
+            });
             return res.json({ success: true, message: 'Friend request accepted immediately' });
           });
           return;
@@ -74,11 +76,12 @@ router.post('/api/friends/request', authenticateToken, (req, res) => {
             }
             return res.status(500).json({ error: err2.message });
           }
-          db.run(
-            `INSERT INTO user_notifications (user_id, title, message, type, read_state, created_at)
-               VALUES (?, 'New Friend Request 👤', ?, 'social', 0, ?)`,
-            [target.id, `${req.user.username} sent you a friend request.`, Math.floor(Date.now() / 1000)]
-          );
+          notify(target.id, {
+            category: 'friend_request',
+            title: 'New Friend Request 👤',
+            message: `${req.user.username} sent you a friend request.`,
+            type: 'social',
+          });
           res.json({ success: true, message: 'Friend request sent' });
         });
       }
@@ -97,11 +100,12 @@ router.post('/api/friends/accept', authenticateToken, (req, res) => {
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0) return res.status(404).json({ error: 'Pending friend request not found' });
-      db.run(
-        `INSERT INTO user_notifications (user_id, title, message, type, read_state, created_at)
-         VALUES (?, 'Friend Request Accepted 🤝', ?, 'social', 0, ?)`,
-        [friendId, `${req.user.username} accepted your friend request!`, Math.floor(Date.now() / 1000)]
-      );
+      notify(friendId, {
+        category: 'friend_accept',
+        title: 'Friend Request Accepted 🤝',
+        message: `${req.user.username} accepted your friend request!`,
+        type: 'social',
+      });
       res.json({ success: true, message: 'Friend request accepted' });
     }
   );

@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const { db } = require('../db');
 const { JWT_SECRET } = require('../config');
 const { authenticateToken } = require('../middleware/auth');
+const { notify } = require('../services/notificationService');
 const {
   checkFailedLogins,
   rateLimiter,
@@ -162,14 +163,12 @@ router.post('/api/auth/register', checkFailedLogins, rateLimiter(5, 60000), asyn
       // Initialize quests & mastery rows
       db.run('INSERT OR IGNORE INTO user_quests (user_id, last_quest_reset) VALUES (?, ?)', [newUserId, now], () => {
         db.run('INSERT OR IGNORE INTO user_mastery (user_id) VALUES (?)', [newUserId], () => {
-          db.run(
-            `INSERT INTO user_notifications (user_id, title, message, type, read_state, created_at)
-             VALUES (?, 'Welcome to Numera! 🚀', 'Start your math journey by taking the diagnostic placement test or jump straight into Level 1!', 'welcome', 0, ?)`,
-            [newUserId, now],
-            () => {
-              sendLoginResponse(newUserId, username, req, res);
-            }
-          );
+          notify(newUserId, {
+            category: 'welcome',
+            title: 'Welcome to Numera! 🚀',
+            message: 'Start your math journey by taking the diagnostic placement test or jump straight into Level 1!',
+            type: 'welcome',
+          }).then(() => sendLoginResponse(newUserId, username, req, res));
         });
       });
     }

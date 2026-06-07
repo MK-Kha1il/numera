@@ -52,6 +52,10 @@ const USER_SCOPED_TABLES = [
   'retention_schedule',
   'learning_style_signals',
   'competitive_profiles',
+  'notification_preferences',
+  'notification_log',
+  'push_tokens',
+  'puzzle_rush_runs',
 ];
 
 const router = express.Router();

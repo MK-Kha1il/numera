@@ -80,6 +80,12 @@ interface ApiService {
         @Body request: SrsReviewRequest
     ): SrsReviewResponse
 
+    @DELETE("api/math/srs/dismiss/{topic}")
+    suspend fun dismissSrsItem(
+        @Header("Authorization") token: String,
+        @Path("topic") topic: String
+    ): retrofit2.Response<Unit>
+
     @GET("api/legacy/puzzles")
     suspend fun getLegacyPuzzles(
         @Header("Authorization") token: String
@@ -302,6 +308,33 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body request: MarkReadRequest
     ): SimpleResponse
+
+    @GET("api/notifications/preferences")
+    suspend fun getNotificationPreferences(
+        @Header("Authorization") token: String
+    ): NotificationPreferencesDto
+
+    @POST("api/notifications/preferences")
+    suspend fun updateNotificationPreferences(
+        @Header("Authorization") token: String,
+        @Body request: NotificationPreferencesUpdateRequest
+    ): NotificationPreferencesResponse
+
+    @POST("api/puzzle-rush/start")
+    suspend fun startPuzzleRush(
+        @Header("Authorization") token: String
+    ): PuzzleRushStartResponse
+
+    @POST("api/puzzle-rush/submit")
+    suspend fun submitPuzzleRush(
+        @Header("Authorization") token: String,
+        @Body request: PuzzleRushSubmitRequest
+    ): PuzzleRushSubmitResponse
+
+    @GET("api/puzzle-rush/leaderboard")
+    suspend fun puzzleRushLeaderboard(
+        @Header("Authorization") token: String
+    ): PuzzleRushLeaderboardResponse
 
     @POST("api/user/change-username")
     suspend fun changeUsername(

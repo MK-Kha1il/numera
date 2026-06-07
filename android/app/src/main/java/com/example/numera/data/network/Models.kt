@@ -766,6 +766,85 @@ data class PrivacyUpdateRequest(
     val profilePrivate: Boolean
 )
 
+// Server-backed lifecycle/notification preferences (GET /api/notifications/preferences).
+// Field names are snake_case to match the server JSON keys exactly.
+@Serializable
+data class NotificationPreferencesDto(
+    val email_enabled: Int = 1,
+    val email_lifecycle: Int = 1,
+    val push_enabled: Int = 0,
+    val quiet_hours_start: Int = 21,
+    val quiet_hours_end: Int = 8,
+    val tz_offset_minutes: Int = 0
+)
+
+// Partial update: only non-null fields are serialized (encodeDefaults=false), so the server
+// merges just the changed field(s) onto the user's current prefs.
+@Serializable
+data class NotificationPreferencesUpdateRequest(
+    val email_enabled: Int? = null,
+    val email_lifecycle: Int? = null,
+    val push_enabled: Int? = null,
+    val quiet_hours_start: Int? = null,
+    val quiet_hours_end: Int? = null,
+    val tz_offset_minutes: Int? = null
+)
+
+@Serializable
+data class NotificationPreferencesResponse(
+    val success: Boolean = false,
+    val preferences: NotificationPreferencesDto? = null
+)
+
+// ---- Puzzle Rush (solo time-attack ladder) ----
+@Serializable
+data class PuzzleRushProblemDto(
+    val question: String = "",
+    val options: List<String> = emptyList(),
+    val correctAnswer: String? = null // never sent for an active problem; only as the missed reveal
+)
+
+@Serializable
+data class PuzzleRushStartResponse(
+    val runId: Int = 0,
+    val index: Int = 0,
+    val lives: Int = 0,
+    val score: Int = 0,
+    val problem: PuzzleRushProblemDto = PuzzleRushProblemDto()
+)
+
+@Serializable
+data class PuzzleRushSubmitRequest(
+    val runId: Int,
+    val index: Int,
+    val answer: String
+)
+
+@Serializable
+data class PuzzleRushSubmitResponse(
+    val correct: Boolean = false,
+    val gameOver: Boolean = false,
+    val score: Int = 0,
+    val lives: Int = 0,
+    val index: Int = 0,
+    val correctAnswer: String? = null,
+    val finalScore: Int? = null,
+    val reward: Int? = null,
+    val problem: PuzzleRushProblemDto? = null
+)
+
+@Serializable
+data class PuzzleRushLeaderboardEntry(
+    val username: String = "",
+    val best: Int = 0
+)
+
+@Serializable
+data class PuzzleRushLeaderboardResponse(
+    val leaderboard: List<PuzzleRushLeaderboardEntry> = emptyList(),
+    val personalBest: Int = 0
+)
+
 @Serializable
 data class RevokeSessionRequest(
     val sessionId: String
