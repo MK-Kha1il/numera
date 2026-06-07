@@ -846,6 +846,57 @@ data class PuzzleRushLeaderboardResponse(
     val personalBest: Int = 0
 )
 
+// ---- Async (correspondence) duels ----
+@Serializable
+data class AsyncChallengeRequest(val opponentId: Int)
+
+@Serializable
+data class AsyncChallengeResponse(val matchId: Int = 0, val problemCount: Int = 0)
+
+@Serializable
+data class AsyncMatchSummary(
+    val matchId: Int = 0,
+    val opponentName: String = "",
+    val status: String = "",        // pending | finished | expired
+    val yourTurn: Boolean = false,
+    val played: Boolean = false,
+    val myScore: Int? = null,
+    val theirScore: Int? = null,
+    val winnerId: Int? = null,
+    val won: Boolean = false,
+    val reward: Int = 0,
+    val problemCount: Int = 0
+)
+
+@Serializable
+data class AsyncProblemDto(val question: String = "", val options: List<String> = emptyList())
+
+@Serializable
+data class AsyncPlayFetchResponse(
+    val matchId: Int = 0,
+    val problems: List<AsyncProblemDto> = emptyList(),
+    val problemCount: Int = 0
+)
+
+@Serializable
+data class AsyncPlayRequest(val answers: List<String>)
+
+@Serializable
+data class AsyncResultDto(
+    val winnerId: Int? = null,
+    val challengerScore: Int = 0,
+    val opponentScore: Int = 0,
+    val reward: Int = 0
+)
+
+@Serializable
+data class AsyncPlayResponse(
+    val success: Boolean = false,
+    val score: Int = 0,
+    val resolved: Boolean = false,
+    val result: AsyncResultDto? = null
+)
+
 @Serializable
 data class RevokeSessionRequest(
     val sessionId: String

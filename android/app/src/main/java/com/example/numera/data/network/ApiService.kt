@@ -336,6 +336,30 @@ interface ApiService {
         @Header("Authorization") token: String
     ): PuzzleRushLeaderboardResponse
 
+    @POST("api/duel/async/challenge")
+    suspend fun asyncChallenge(
+        @Header("Authorization") token: String,
+        @Body request: AsyncChallengeRequest
+    ): AsyncChallengeResponse
+
+    @GET("api/duel/async/active")
+    suspend fun asyncActiveDuels(
+        @Header("Authorization") token: String
+    ): List<AsyncMatchSummary>
+
+    @GET("api/duel/async/{id}")
+    suspend fun asyncFetchDuel(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): AsyncPlayFetchResponse
+
+    @POST("api/duel/async/{id}/play")
+    suspend fun asyncPlayDuel(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body request: AsyncPlayRequest
+    ): AsyncPlayResponse
+
     @POST("api/user/change-username")
     suspend fun changeUsername(
         @Header("Authorization") token: String,

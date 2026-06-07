@@ -36,10 +36,13 @@
   winner**; "your turn"/result nudges via the lifecycle notifier). Two-party deletion wired into
   account deletion (C4). Friend-gate / self / double-play / non-participant guards tested.
   `npm test` 118 pass / 0 lint errors. **v1 is coins-only — NRS/ranked async is a later item.**
-- ⬜ **Next:** async-duel **client** (challenge-from-friends + matches list + play screen); wire
-  `integrityEngine` into ranked **socket duels**; then the `server.js` arena extraction →
-  tournaments. `integrityEngine` is the shared scorer those modes should call before committing
-  rating/rewards.
+- ✅ **Async-duel client** (`AsyncDuelScreen`, launched from an Arena card): challenge any
+  accepted friend, a "Your Duels" list (your-turn / waiting / won·lost·draw / expired), and a
+  one-at-a-time MCQ play flow → result. ApiService `asyncChallenge`/`asyncActiveDuels`/
+  `asyncFetchDuel`/`asyncPlayDuel` + `Async*` DTOs. `assembleDebug` + `testDebugUnitTest` green.
+- ⬜ **Next:** wire `integrityEngine` into ranked **socket duels** (untested `server.js` socket
+  code — guard with a duel smoke test first); then the `server.js` arena extraction → tournaments.
+  `integrityEngine` is the shared scorer those modes should call before committing rating/rewards.
 
 ## 1. What exists today
 - **1v1 duels** over Socket.IO in `server.js` (lines ~539–1050): `rankedQueue`/`casualQueue`
