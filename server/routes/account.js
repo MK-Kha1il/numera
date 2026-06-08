@@ -62,6 +62,7 @@ const USER_SCOPED_TABLES = [
   'concept_post_votes',
   'bot_matches',
   'club_members',
+  'challenge_attempts',
 ];
 
 const router = express.Router();
@@ -442,6 +443,9 @@ router.post('/api/user/delete-account', authenticateToken, (req, res) => {
     db.run('DELETE FROM user_blocks WHERE blocker_id = ? OR blocked_id = ?', [userId, userId]);
     db.run('DELETE FROM content_reports WHERE reporter_id = ?', [userId]);
     db.run('DELETE FROM async_matches WHERE challenger_id = ? OR opponent_id = ?', [userId, userId]);
+    // Challenges I authored (keyed by creator_id, not user_id). Others' attempts on them are left
+    // orphaned-but-unreachable (the challenge row is gone, so no board ever queries them).
+    db.run('DELETE FROM custom_challenges WHERE creator_id = ?', [userId]);
 
     // Every single-user-column table (the canonical list). Driven off USER_SCOPED_TABLES so this
     // can never silently drift out of sync with the schema again.

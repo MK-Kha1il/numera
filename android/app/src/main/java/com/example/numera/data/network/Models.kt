@@ -923,6 +923,71 @@ data class BotPlayResponse(
     val reward: Int = 0
 )
 
+// ---- Custom Challenges (user-created problem sets — audit #10) ----
+@Serializable
+data class ChallengeConcept(val conceptId: String = "", val name: String = "", val category: String = "", val level: Int = 0)
+
+@Serializable
+data class ChallengeConceptsResponse(val concepts: List<ChallengeConcept> = emptyList(), val countMin: Int = 5, val countMax: Int = 15)
+
+@Serializable
+data class CreateChallengeRequest(val title: String, val conceptId: String, val count: Int)
+
+@Serializable
+data class CreateChallengeResponse(val id: Int = 0, val code: String = "", val title: String = "", val conceptName: String = "", val problemCount: Int = 0)
+
+@Serializable
+data class ChallengeListItem(
+    val code: String = "",
+    val title: String = "",
+    val conceptName: String = "",
+    val problemCount: Int = 0,
+    val playCount: Int = 0,
+    val isMine: Boolean = false,
+    val yourScore: Int? = null
+)
+
+@Serializable
+data class ChallengeListResponse(val challenges: List<ChallengeListItem> = emptyList())
+
+@Serializable
+data class ChallengeAttemptDto(val score: Int = 0, val elapsedMs: Long = 0)
+
+@Serializable
+data class ChallengeLeaderboardEntry(
+    val position: Int = 0,
+    val username: String = "",
+    val userId: Int = 0,
+    val score: Int = 0,
+    val elapsedMs: Long = 0
+)
+
+@Serializable
+data class ChallengeDetailResponse(
+    val code: String = "",
+    val title: String = "",
+    val conceptName: String = "",
+    val creator: String = "",
+    val isMine: Boolean = false,
+    val problemCount: Int = 0,
+    val playCount: Int = 0,
+    val problems: List<AsyncProblemDto> = emptyList(),
+    val yourAttempt: ChallengeAttemptDto? = null,
+    val leaderboard: List<ChallengeLeaderboardEntry> = emptyList()
+)
+
+@Serializable
+data class PlayChallengeRequest(val answers: List<String>, val elapsedMs: Long = 0)
+
+@Serializable
+data class PlayChallengeResponse(
+    val alreadyPlayed: Boolean = false,
+    val score: Int = 0,
+    val elapsedMs: Long = 0,
+    val total: Int = 0,
+    val leaderboard: List<ChallengeLeaderboardEntry> = emptyList()
+)
+
 // ---- Adaptive diagnostic (server-authoritative placement) ----
 @Serializable
 data class AdaptiveStartResponse(

@@ -532,6 +532,47 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_club_members_user ON club_members(user_id)');
     },
   },
+  {
+    version: 21,
+    name: 'custom_challenges',
+    // User-created Custom Challenges (audit #10 / top-50 #23 — UGC community gravity + a content
+    // treadmill). A learner authors a NAMED challenge over one curriculum concept; the server
+    // generates a FIXED problem set once and stores it (everyone plays the SAME problems → a fair
+    // per-challenge leaderboard). One scored attempt per user; ranked score-then-speed. Only the
+    // title is user text (content-filtered) — problems are server-generated, so there's no
+    // wrong-math/moderation hole. custom_challenges (keyed by creator_id) gets an explicit
+    // deletion line in account.js; challenge_attempts (keyed by user_id) joins USER_SCOPED_TABLES.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS custom_challenges (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          code          TEXT NOT NULL UNIQUE,
+          creator_id    INTEGER NOT NULL,
+          title         TEXT NOT NULL,
+          concept_id    TEXT NOT NULL,
+          category      TEXT NOT NULL,
+          level         INTEGER NOT NULL,
+          problem_count INTEGER NOT NULL,
+          problems_json TEXT NOT NULL,
+          play_count    INTEGER NOT NULL DEFAULT 0,
+          created_at    INTEGER NOT NULL
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_custom_challenges_creator ON custom_challenges(creator_id)');
+      await run(`
+        CREATE TABLE IF NOT EXISTS challenge_attempts (
+          id           INTEGER PRIMARY KEY AUTOINCREMENT,
+          challenge_id INTEGER NOT NULL,
+          user_id      INTEGER NOT NULL,
+          score        INTEGER NOT NULL,
+          elapsed_ms   INTEGER NOT NULL DEFAULT 0,
+          created_at   INTEGER NOT NULL,
+          UNIQUE (challenge_id, user_id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_challenge_attempts_challenge ON challenge_attempts(challenge_id, score)');
+    },
+  },
 ];
 
 /**

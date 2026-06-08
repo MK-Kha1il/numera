@@ -485,6 +485,32 @@ interface ApiService {
         @Body request: BotPlayRequest
     ): BotPlayResponse
 
+    // ---- Custom Challenges (user-created problem sets) ----
+    @GET("api/challenges/concepts")
+    suspend fun getChallengeConcepts(@Header("Authorization") token: String): ChallengeConceptsResponse
+
+    @GET("api/challenges")
+    suspend fun getMyChallenges(@Header("Authorization") token: String): ChallengeListResponse
+
+    @POST("api/challenges")
+    suspend fun createChallenge(
+        @Header("Authorization") token: String,
+        @Body request: CreateChallengeRequest
+    ): CreateChallengeResponse
+
+    @GET("api/challenges/{code}")
+    suspend fun getChallenge(
+        @Header("Authorization") token: String,
+        @Path("code") code: String
+    ): ChallengeDetailResponse
+
+    @POST("api/challenges/{code}/play")
+    suspend fun playChallenge(
+        @Header("Authorization") token: String,
+        @Path("code") code: String,
+        @Body request: PlayChallengeRequest
+    ): PlayChallengeResponse
+
     @POST("api/user/change-username")
     suspend fun changeUsername(
         @Header("Authorization") token: String,

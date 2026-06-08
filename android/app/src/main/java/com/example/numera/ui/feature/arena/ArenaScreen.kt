@@ -37,6 +37,7 @@ fun ArenaScreen(
     var showPuzzleRush by remember { mutableStateOf(false) }
     var showAsyncDuel by remember { mutableStateOf(false) }
     var showBotDuel by remember { mutableStateOf(false) }
+    var showChallenges by remember { mutableStateOf(false) }
     // Ranked requires fair-play (telemetry) consent so the server's anti-cheat scorer may run.
     var showRankedConsent by remember { mutableStateOf(false) }
     var consentGrantedThisSession by remember { mutableStateOf(false) }
@@ -143,6 +144,10 @@ fun ArenaScreen(
     }
     if (showBotDuel) {
         BotDuelScreen(onExit = { showBotDuel = false })
+        return
+    }
+    if (showChallenges) {
+        ChallengesScreen(onBack = { showChallenges = false })
         return
     }
 
@@ -537,6 +542,39 @@ fun ArenaScreen(
                                 text = "Play a Bot",
                                 onClick = { showBotDuel = true },
                                 color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
+                // Custom Challenges (author a shared problem set; friends race its leaderboard)
+                item {
+                    DuoCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(Spacing.l),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
+                        ) {
+                            Column {
+                                Text(
+                                    text = "🎯 Challenges",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp,
+                                    color = MaterialTheme.colorScheme.tertiary
+                                )
+                                Text(
+                                    text = "Build a problem set, share the code, and top its leaderboard with friends.",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                            DuoButton(
+                                text = "Create or Play",
+                                onClick = { showChallenges = true },
+                                color = MaterialTheme.colorScheme.tertiary,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
