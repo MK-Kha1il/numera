@@ -14,6 +14,8 @@ const TeachingEngine = require('../mathEngine/teachingEngine');
 const AnalyticsEngine = require('../mathEngine/analyticsEngine');
 const CompetitiveEngine = require('../mathEngine/competitiveEngine');
 const Orchestrator = require('../mathEngine/problemOrchestrator');
+const KnowledgeGraph = require('../mathEngine/knowledgeGraph');
+const { CONCEPT_TO_LEVEL } = require('../mathGenerator');
 const logger = require('../logger');
 
 const router = express.Router();
@@ -156,6 +158,54 @@ router.get('/api/engine/learner/concept/:conceptId', authenticateToken, async (r
     res.json({ profile, masteryProfile, misconceptions, retention, liveRetention });
   } catch (err) {
     logger.error('[Engine/learner/concept]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/engine/skill-tree
+// The full curriculum as a mastery skill tree: every playable concept (from the knowledge graph,
+// ordered by its curriculum level) merged with the learner's per-concept mastery dimensions.
+// Unstarted concepts come back with started=false / null dimensions so the client can show the
+// whole map (locked vs. in-progress vs. mastered), not just what's been attempted.
+router.get('/api/engine/skill-tree', authenticateToken, async (req, res) => {
+  try {
+    const snapshot = await LearnerModel.getLearnerSnapshot(db, req.user.id);
+    const byConcept = {};
+    for (const c of snapshot) byConcept[c.concept_id] = c;
+
+    const nodes = Object.keys(KnowledgeGraph.concepts)
+      .filter((conceptId) => CONCEPT_TO_LEVEL[conceptId]) // only the playable curriculum
+      .map((conceptId) => {
+        const meta = CONCEPT_TO_LEVEL[conceptId];
+        const profile = byConcept[conceptId];
+        const started = !!profile && (profile.exposure_count || 0) > 0;
+        let dimensions = null;
+        let overall = 0;
+        let stage = 'Locked';
+        if (started) {
+          const mp = MasteryEngine.computeMasteryProfile(profile);
+          dimensions = mp.dimensions;
+          overall = mp.overall;
+          stage = mp.stage;
+        }
+        return {
+          conceptId,
+          name: KnowledgeGraph.concepts[conceptId].name,
+          category: meta.category,
+          level: meta.level,
+          prereqs: KnowledgeGraph.concepts[conceptId].prereqs || [],
+          started,
+          dimensions,
+          overall,
+          stage,
+        };
+      })
+      .sort((a, b) => a.level - b.level);
+
+    const masteryProfile = MasteryEngine.aggregateDimensions(snapshot);
+    res.json({ nodes, masteryProfile, dimensions: MasteryEngine.MASTERY_DIMENSIONS });
+  } catch (err) {
+    logger.error('[Engine/skill-tree]', err);
     res.status(500).json({ error: err.message });
   }
 });

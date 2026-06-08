@@ -907,6 +907,30 @@ data class AdaptiveStartResponse(
     val options: List<String> = emptyList()
 )
 
+// ---- Skill tree (mastery map across the curriculum) ----
+@Serializable
+data class SkillTreeNode(
+    val conceptId: String = "",
+    val name: String = "",
+    val category: String = "",
+    val level: Int = 0,
+    val prereqs: List<String> = emptyList(),
+    val started: Boolean = false,
+    val dimensions: MasteryDimensions? = null,
+    val overall: Float = 0f,
+    val stage: String = "Locked"
+)
+
+@Serializable
+data class MasteryDimensionMeta(val key: String = "", val label: String = "", val blurb: String = "")
+
+@Serializable
+data class SkillTreeResponse(
+    val nodes: List<SkillTreeNode> = emptyList(),
+    val masteryProfile: MasteryProfile? = null,
+    val dimensions: List<MasteryDimensionMeta> = emptyList()
+)
+
 @Serializable
 data class AdaptiveAnswerRequest(val sessionId: Int, val answer: String)
 

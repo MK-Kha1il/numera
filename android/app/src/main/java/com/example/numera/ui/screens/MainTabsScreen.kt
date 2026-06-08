@@ -75,6 +75,7 @@ fun MainTabsScreen(
     var unreadNotificationsCount by remember { mutableStateOf(0) }
     var notificationsList by remember { mutableStateOf<List<NotificationItemDto>>(emptyList()) }
     var showNotificationsDialog by remember { mutableStateOf(false) }
+    var showSkillTree by remember { mutableStateOf(false) }
     var showMapTooltip by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -154,6 +155,13 @@ fun MainTabsScreen(
         return
     }
 
+    if (showSkillTree) {
+        NumeraTheme {
+            com.example.numera.ui.feature.profile.SkillTreeScreen(onBack = { showSkillTree = false })
+        }
+        return
+    }
+
     LaunchedEffect(Unit) {
         refreshProfile()
         RetrofitClient.profileRefreshFlow.collect {
@@ -189,6 +197,9 @@ fun MainTabsScreen(
             },
             CommandItem("Transfer Challenge", CommandCategory.QuickAction, NumeraIconType.Learn, "Apply a concept in a new context", "transfer apply depth understanding novel") {
                 onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "transfer_challenge"))
+            },
+            CommandItem("Skill Tree", CommandCategory.QuickAction, NumeraIconType.Learn, "Your mastery map across every concept", "mastery skills tree progress map dimensions accuracy fluency") {
+                showSkillTree = true
             },
             CommandItem("Notifications", CommandCategory.QuickAction, NumeraIconType.Notification, "See your latest activity", "alerts inbox bell") { showNotificationsDialog = true },
             CommandItem("Consistency Climb", CommandCategory.QuickAction, NumeraIconType.Streak, "Check your streak status", "streak commitment fire") { showCommitmentDialog = true },

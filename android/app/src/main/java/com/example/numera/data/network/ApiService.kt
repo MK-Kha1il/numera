@@ -192,6 +192,11 @@ interface ApiService {
         @Body request: AdaptiveAnswerRequest
     ): AdaptiveAnswerResponse
 
+    @GET("api/engine/skill-tree")
+    suspend fun getSkillTree(
+        @Header("Authorization") token: String
+    ): SkillTreeResponse
+
     @POST("api/assessment/skip")
     suspend fun skipAssessment(
         @Header("Authorization") token: String
