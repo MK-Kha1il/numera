@@ -1034,6 +1034,226 @@ const CONCEPT_LESSONS = {
       { question: "Expand $4(x + 3)$.", answer: "4x + 12", explanation: "Multiply the $4$ by each term: $4\\cdot x + 4\\cdot 3 = 4x + 12$." },
       { question: "Expand $2(x + 5)$.", answer: "2x + 10", explanation: "$2\\cdot x + 2\\cdot 5 = 2x + 10$." }
     ]
+  },
+
+  // ===========================================================================
+  // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
+  // rich concept-first shape, for concepts whose canonical-level template matches).
+  // ===========================================================================
+  quadratic: {
+    title: "Solving Quadratic Equations",
+    formula: "x^2 - (r_1 + r_2)x + r_1 r_2 = 0 \\implies x = r_1, r_2",
+    oneLineSummary: "A quadratic equals zero when one of its factors is zero — find the two numbers that multiply to the constant and add to the middle coefficient.",
+    intuitionHook: "Think of $x^2 - 11x + 24 = 0$ as a product $(x - r_1)(x - r_2) = 0$. A product is zero only when a factor is zero, so the whole puzzle becomes: which two numbers MULTIPLY to $24$ and ADD to $11$? That's $3$ and $8$ — the roots.",
+    whatItIs: "A quadratic equation sets a degree-2 expression equal to zero. Its solutions (roots) are the values of $x$ that satisfy it — at most two, because a parabola crosses a horizontal line at most twice.",
+    whyItWorks: "Factoring rewrites $x^2 - 11x + 24$ as $(x-3)(x-8)$. Expanding back confirms it: the $x$ terms $-3x - 8x = -11x$ (the sum of roots, negated) and the constant $(-3)(-8) = 24$ (the product of roots). The Zero-Product Property finishes it: if $(x-3)(x-8) = 0$, then $x - 3 = 0$ or $x - 8 = 0$, giving $x = 3$ or $x = 8$. So the coefficients literally encode the sum and product of the answers — that's why hunting for 'two numbers that add and multiply' works.",
+    whenToUse: "Projectile heights and times, areas with an unknown side, optimization where a rate hits zero, and any model where a quantity depends on the square of a variable.",
+    representations: [
+      { kind: "symbolic", label: "Factor and zero-out", body: "$x^2 - 11x + 24 = (x-3)(x-8) = 0 \\implies x = 3 \\text{ or } 8$." },
+      { kind: "graphical", label: "Where the parabola crosses zero", body: "The roots are the $x$-intercepts of $y = x^2 - 11x + 24$; the curve dips below the axis between $3$ and $8$." },
+      { kind: "sum_product", label: "Read the coefficients", body: "Middle term $-11$ is the negated SUM of roots; constant $24$ is their PRODUCT." }
+    ],
+    commonMistakes: [
+      { label: "Sign error on the roots", why: "Reading $(x-3)(x-8)=0$ as $x = -3, -8$ — flipping the sign of each root.", fix: "Set each factor to zero: $x - 3 = 0$ gives $x = +3$, not $-3$. The root has the OPPOSITE sign of the number in the factor." },
+      { label: "Reporting the coefficient instead of a root", why: "Answering $11$ or $24$ because they're the visible numbers.", fix: "The solutions are the $x$-values that make it zero ($3$ and $8$), not the coefficients themselves." }
+    ],
+    connections: [
+      { concept: "linear_two_step", note: "Quadratics need a second solution path (factoring) because isolating $x$ once isn't enough when it's squared." },
+      { concept: "distribute", note: "Expanding $(x-3)(x-8)$ back to $x^2 - 11x + 24$ is repeated distribution — the check that your factoring is right." }
+    ],
+    examples: [
+      { question: "Find the larger root of $x^2 - 11x + 24 = 0$.", answer: "8", explanation: "Two numbers multiplying to $24$ and adding to $11$ are $3$ and $8$: $(x-3)(x-8)=0$. Roots $3, 8$; the larger is $8$." },
+      { question: "Find the larger root of $x^2 - 7x + 12 = 0$.", answer: "4", explanation: "$3$ and $4$ multiply to $12$ and add to $7$: $(x-3)(x-4)=0$. The larger root is $4$." }
+    ]
+  },
+
+  pigeonhole: {
+    title: "The Pigeonhole Principle",
+    formula: "\\text{draws to guarantee a pair} = (\\text{number of categories}) + 1",
+    oneLineSummary: "If you have more items than categories, two items must share a category — so one more than the number of categories guarantees a repeat.",
+    intuitionHook: "A drawer holds socks in $5$ colors and you grab them in the dark. You could be unlucky and pull $5$ different colors in a row — but the very next sock, the $6$th, has nowhere new to go: it MUST match one you already hold.",
+    whatItIs: "The Pigeonhole Principle says that distributing more items than there are containers forces at least one container to hold two or more. The 'guarantee a pair' version asks for the worst case plus one.",
+    whyItWorks: "Imagine the adversary trying their hardest to AVOID a pair. With $5$ colors, the most they can draw without repeating is exactly one of each — $5$ socks. Every category is now 'occupied' by a single sock. The next draw can't open a new category (there are only $5$), so it lands in an occupied one and creates the pair. That's why the answer is categories $+ 1$: you spend one draw per pigeonhole to fill them, then one more to force a collision.",
+    whenToUse: "Guarantee arguments ('must there be two people with…?'), worst-case planning, hashing collisions, and any 'how many to be sure' question where outcomes fall into a fixed number of buckets.",
+    representations: [
+      { kind: "worst_case", label: "Fill, then force", body: "$5$ colors: draw $5$ (one each) in the worst case, then $1$ more is forced to repeat $\\to 6$." },
+      { kind: "real_world", label: "Socks in the dark", body: "With $5$ colors, $6$ socks guarantee a matching pair; $5$ might still be all different." },
+      { kind: "general_rule", label: "Categories plus one", body: "$n$ categories $\\Rightarrow n + 1$ items guarantee at least one category has two." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting the +1", why: "Answering $5$ for $5$ colors — but $5$ draws could be one of each, no pair yet.", fix: "The worst case uses up one per category ($5$); you need ONE MORE to force a repeat: $6$." },
+      { label: "Counting items needed for a specific color", why: "Confusing 'guarantee ANY pair' with 'guarantee a pair of red'.", fix: "Any-pair only needs categories $+1$. Guaranteeing a SPECIFIC color is a different, larger worst case." }
+    ],
+    connections: [
+      { concept: "combinations", note: "Both are counting principles; pigeonhole reasons about the worst case rather than enumerating choices." },
+      { concept: "arithmetic_add", note: "The whole rule reduces to 'one per box, then add one more'." }
+    ],
+    examples: [
+      { question: "A drawer has socks of $5$ different colors. Minimum draws to guarantee a matching pair?", answer: "6", explanation: "Worst case draws one of each ($5$); the $6$th must repeat a color. Answer $6$." },
+      { question: "With $8$ different colors, how many draws guarantee a pair?", answer: "9", explanation: "Categories $+1$: $8 + 1 = 9$." }
+    ]
+  },
+
+  permutations: {
+    title: "Permutations (Ordered Arrangements)",
+    formula: "n! = n \\times (n-1) \\times \\cdots \\times 2 \\times 1",
+    oneLineSummary: "To arrange $n$ distinct items in a row, multiply the shrinking number of choices for each position: $n!$.",
+    intuitionHook: "Seat $6$ people in a row. The first chair has $6$ candidates; once they sit, the next chair has only $5$ left, then $4$, and so on. Multiply the choices: $6 \\times 5 \\times 4 \\times 3 \\times 2 \\times 1 = 720$ different line-ups.",
+    whatItIs: "A permutation is an ordering of items where position matters. The number of ways to arrange $n$ distinct objects is $n$ factorial, written $n!$.",
+    whyItWorks: "Build the arrangement one slot at a time and use the multiplication principle. The first position can be filled $n$ ways. Whatever you pick, the second position now has $n-1$ remaining choices, the third $n-2$, and so on down to the last slot with a single choice. Because each independent choice multiplies the running total, the count is $n \\times (n-1) \\times \\cdots \\times 1 = n!$. Order matters here, which is exactly why we don't divide out any rearrangements — every distinct sequence is counted once.",
+    whenToUse: "Line-ups and seatings, rankings and finishing orders, scheduling distinct tasks, password/PIN counts where order matters, and as the building block for combinations.",
+    representations: [
+      { kind: "slot_filling", label: "Shrinking choices", body: "$6$ seats: $6\\times5\\times4\\times3\\times2\\times1 = 720$ — one factor per seat." },
+      { kind: "real_world", label: "Race finish orders", body: "$4$ runners can finish $4! = 24$ different ways (gold/silver/bronze/4th all distinct)." },
+      { kind: "symbolic", label: "Factorial growth", body: "$3! = 6$, $4! = 24$, $5! = 120$ — each step multiplies by the next integer." }
+    ],
+    commonMistakes: [
+      { label: "Adding instead of multiplying the choices", why: "Computing $6+5+4+\\dots$ instead of the product.", fix: "Each position's choice is INDEPENDENT, so the counts MULTIPLY: $6\\times5\\times4\\cdots = 720$." },
+      { label: "Treating order as irrelevant", why: "Dividing by arrangements as if it were a combination.", fix: "If rearranging the SAME items counts as a new outcome (a line-up), it's a permutation — don't divide it out." }
+    ],
+    connections: [
+      { concept: "combinations", note: "Combinations are permutations with the orderings divided out, since order doesn't matter there." },
+      { concept: "arithmetic_mult", note: "Factorials are just repeated multiplication of the shrinking choice counts." }
+    ],
+    examples: [
+      { question: "How many ways can $6$ distinct paintings be displayed side-by-side?", answer: "720", explanation: "$6! = 6\\times5\\times4\\times3\\times2\\times1 = 720$." },
+      { question: "In how many orders can $4$ runners finish a race (no ties)?", answer: "24", explanation: "$4! = 4\\times3\\times2\\times1 = 24$." }
+    ]
+  },
+
+  derivative: {
+    title: "Derivatives (The Power Rule)",
+    formula: "\\frac{d}{dx}\\,x^n = n\\,x^{n-1}",
+    oneLineSummary: "The derivative measures instantaneous rate of change — for a power $x^n$, bring the exponent down as a multiplier and drop it by one.",
+    intuitionHook: "A car's position is $s(t) = 5t^2$. How fast is it going at one instant, not on average? The derivative answers that: $s'(t) = 10t$, so at $t = 1$ the speed is $10$. It's the slope of the curve at a single point — the speedometer reading.",
+    whatItIs: "A derivative gives the instantaneous rate at which a function changes — the slope of its graph at each point. The Power Rule is the shortcut for differentiating $x^n$.",
+    whyItWorks: "Slope is rise-over-run, but a curve's steepness changes everywhere, so we shrink the run toward zero and read the LIMITING slope at a point. Carrying that limit out on $x^n$ produces a clean pattern: the exponent drops in front as a coefficient and the power decreases by one, $n x^{n-1}$. A constant multiplier just rides along, $(a x^n)' = a n x^{n-1}$, because scaling a function scales its slope. So $5t^2$ differentiates to $5\\cdot 2 t^{1} = 10t$ — that's the velocity from the position.",
+    whenToUse: "Velocity from position, marginal cost/revenue in economics, the slope of a tangent line, rates of growth or decay, and finding maxima/minima where the slope is zero.",
+    representations: [
+      { kind: "symbolic", label: "Drop and decrement", body: "$\\frac{d}{dx}\\,5x^2 = 5\\cdot 2 x^{1} = 10x$ — exponent to the front, power minus one." },
+      { kind: "graphical", label: "Slope of the tangent", body: "$f'(a)$ is the steepness of the curve at $x=a$; flat spots have $f'=0$." },
+      { kind: "real_world", label: "Position to velocity", body: "If $s(t)=5t^2$ then $v(t)=s'(t)=10t$; at $t=1$, $v=10$." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting to multiply by the old exponent", why: "Writing $(x^3)' = x^2$ instead of $3x^2$.", fix: "The exponent comes DOWN as a coefficient first: $x^3 \\to 3x^2$." },
+      { label: "Mishandling the constant multiplier", why: "Differentiating $5x^2$ as $x$ or $2x$, dropping the $5$ or the exponent.", fix: "Keep the constant and apply the rule to the power: $5x^2 \\to 5\\cdot 2x = 10x$." }
+    ],
+    connections: [
+      { concept: "integral", note: "Integration is the reverse of differentiation — the antiderivative undoes the power rule." },
+      { concept: "exponent_power", note: "The power rule manipulates exponents directly, so fluency with powers comes first." }
+    ],
+    examples: [
+      { question: "An object's position is $s(t) = 5t^2$. Find its instantaneous velocity at $t = 1$.", answer: "10", explanation: "$s'(t) = 5\\cdot 2t = 10t$; at $t=1$, $v = 10$." },
+      { question: "Find $f'(x)$ for $f(x) = 3x^2$.", answer: "6x", explanation: "Power rule: $3\\cdot 2x^{2-1} = 6x$." }
+    ]
+  },
+
+  integral: {
+    title: "Definite Integrals",
+    formula: "\\int_a^b f(x)\\,dx = F(b) - F(a), \\quad F'(x) = f(x)",
+    oneLineSummary: "A definite integral is the signed area under a curve — find an antiderivative, then subtract its values at the two endpoints.",
+    intuitionHook: "Drive at a steady $5$ units/hour for $4$ hours: distance is $5 \\times 4 = 20$ — the area of a rectangle under the speed graph. The integral $\\int_0^4 5\\,dx = 20$ generalizes that 'area under the rate curve gives the total' to any shape.",
+    whatItIs: "A definite integral accumulates a quantity over an interval — geometrically, the signed area between a curve and the axis from $x=a$ to $x=b$.",
+    whyItWorks: "Slice the region under $f(x)$ into thin strips, approximate each as a rectangle, and add them; refining the slices gives the exact area. The Fundamental Theorem of Calculus turns that infinite sum into algebra: if $F$ is an antiderivative of $f$ (so $F' = f$), then the accumulated area from $a$ to $b$ is just $F(b) - F(a)$. Differentiation built up the rate; integration reverses it to recover the total, and the endpoints fix how much you've accumulated. For $\\int_0^4 5\\,dx$, an antiderivative of $5$ is $5x$, and $5(4) - 5(0) = 20$.",
+    whenToUse: "Total distance from a speed, accumulated growth from a rate, area and volume, average values, and work done by a varying force.",
+    representations: [
+      { kind: "area", label: "Signed area under the curve", body: "$\\int_0^4 5\\,dx$ is the area of a $4$-wide, $5$-tall rectangle $= 20$." },
+      { kind: "symbolic", label: "Antiderivative then subtract", body: "$\\int_1^3 2x\\,dx = [x^2]_1^3 = 9 - 1 = 8$." },
+      { kind: "real_world", label: "Rate to total", body: "Integrating a speed over time recovers the distance travelled." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting to subtract the lower endpoint", why: "Computing only $F(b)$ and ignoring $-F(a)$.", fix: "A definite integral is $F(b) - F(a)$ — always evaluate at BOTH bounds and subtract." },
+      { label: "Differentiating instead of antidifferentiating", why: "Applying the power rule forward, e.g. treating $\\int x^2\\,dx$ like $2x$.", fix: "Integration REVERSES the power rule: raise the power and divide, $\\int x^2\\,dx = x^3/3$." }
+    ],
+    connections: [
+      { concept: "derivative", note: "Integration is the inverse operation; the antiderivative is a function whose derivative is the integrand." },
+      { concept: "geo_area_rect", note: "A constant integrand is literally a rectangle's area — the simplest case of 'area under the curve'." }
+    ],
+    examples: [
+      { question: "Evaluate $\\int_0^4 5\\,dx$.", answer: "20", explanation: "Antiderivative of $5$ is $5x$: $5(4) - 5(0) = 20$ (a $4\\times5$ rectangle)." },
+      { question: "Evaluate $\\int_1^3 2x\\,dx$.", answer: "8", explanation: "Antiderivative is $x^2$: $3^2 - 1^2 = 9 - 1 = 8$." }
+    ]
+  },
+
+  gcd_lcm: {
+    title: "Greatest Common Divisor",
+    formula: "\\gcd(a, b) = \\gcd(b,\\, a \\bmod b)",
+    oneLineSummary: "The GCD is the largest number dividing both values — the biggest equal group you can split each into with nothing left over.",
+    intuitionHook: "You have $8$ muffins and $12$ cookies and want identical gift boxes using everything. The number of boxes must divide BOTH $8$ and $12$; the most boxes possible is the greatest such divisor — $\\gcd(8,12) = 4$.",
+    whatItIs: "The greatest common divisor of two integers is the largest positive integer that divides both exactly. It captures the largest shared 'group size'.",
+    whyItWorks: "Any common divisor must fit evenly into both numbers, so list the factors of each and the biggest one they share is the GCD: $8 = \\{1,2,4,8\\}$, $12 = \\{1,2,3,4,6,12\\}$, shared $\\{1,2,4\\}$, greatest $4$. The Euclidean Algorithm finds it fast without listing: replace the larger number by its remainder against the smaller, $\\gcd(a,b) = \\gcd(b, a \\bmod b)$, repeating until the remainder is $0$ — the last nonzero remainder is the GCD. It works because any divisor of $a$ and $b$ also divides their remainder, so the common divisors never change as you reduce.",
+    whenToUse: "Splitting two quantities into equal groups, simplifying fractions to lowest terms, tiling without offcuts, and synchronizing repeating cycles (paired with the LCM).",
+    representations: [
+      { kind: "shared_factors", label: "Largest common factor", body: "$8 = \\{1,2,4,8\\}$, $12 = \\{1,2,3,4,6,12\\}$: greatest shared factor is $4$." },
+      { kind: "euclid", label: "Euclidean reduction", body: "$\\gcd(12,8)\\to\\gcd(8,4)\\to\\gcd(4,0) = 4$ (last nonzero remainder)." },
+      { kind: "real_world", label: "Equal gift boxes", body: "$8$ muffins and $12$ cookies split into $4$ identical boxes, nothing left over." }
+    ],
+    commonMistakes: [
+      { label: "Confusing GCD with LCM", why: "Answering $24$ (a common MULTIPLE) when asked for the greatest common DIVISOR.", fix: "GCD divides INTO both (and is $\\le$ the smaller number); LCM is a multiple OF both (and is $\\ge$ the larger)." },
+      { label: "Stopping at a common factor that isn't the greatest", why: "Answering $2$ for $\\gcd(8,12)$ because $2$ divides both.", fix: "Keep going to the LARGEST shared factor: $4$ also divides both and is bigger." }
+    ],
+    connections: [
+      { concept: "arithmetic_div", note: "GCD is built on exact division — a divisor leaves remainder zero." },
+      { concept: "modular_arithmetic", note: "The Euclidean Algorithm uses the mod (remainder) operation repeatedly." }
+    ],
+    examples: [
+      { question: "A baker has $8$ muffins and $12$ cookies and wants identical boxes using every item. Largest number of boxes?", answer: "4", explanation: "Boxes must divide both; $\\gcd(8,12) = 4$." },
+      { question: "Find $\\gcd(15, 25)$.", answer: "5", explanation: "Shared factors of $15$ and $25$ are $\\{1,5\\}$; the greatest is $5$." }
+    ]
+  },
+
+  modular_arithmetic: {
+    title: "Modular Arithmetic",
+    formula: "a \\equiv r \\pmod{m} \\iff m \\mid (a - r),\\quad 0 \\le r < m",
+    oneLineSummary: "Modular arithmetic keeps only the remainder after dividing by the modulus — numbers 'wrap around' like a clock.",
+    intuitionHook: "On a $12$-hour clock, $4$ hours after $10$ o'clock isn't $14$ — it's $2$. The clock wraps at $12$. Modular arithmetic is exactly that wrap: $14 \\bmod 12 = 2$. The modulus is where the count resets to zero.",
+    whatItIs: "Modular arithmetic works with remainders against a fixed modulus $m$. Two numbers are congruent mod $m$ if they leave the same remainder — equivalently, if their difference is a multiple of $m$.",
+    whyItWorks: "Dividing $a$ by $m$ gives a quotient and a remainder $r$ with $0 \\le r < m$; modular arithmetic throws away the quotient and keeps $r$. Because adding or multiplying only cares about remainders (the multiples of $m$ contribute nothing extra mod $m$), you can reduce at every step to keep numbers small. For powers like $3^3 \\bmod 11$: $27 = 2\\cdot 11 + 5$, so the remainder is $5$. The 'wrap' is just repeatedly subtracting the modulus until you land in the range $0$ to $m-1$.",
+    whenToUse: "Clock and calendar arithmetic, cycling through a fixed set of states, checksums and hashing, cryptography, and any 'every $k$th' or 'wraps around' pattern.",
+    representations: [
+      { kind: "clock", label: "Wrap-around counting", body: "$14 \\bmod 12 = 2$: after passing $12$, the count restarts from $0$." },
+      { kind: "remainder", label: "Keep the remainder", body: "$3^3 = 27 = 2\\cdot 11 + 5$, so $3^3 \\equiv 5 \\pmod{11}$." },
+      { kind: "real_world", label: "Repeating cycles", body: "Day $100$ of a $7$-day week is day $100 \\bmod 7 = 2$ of the cycle." }
+    ],
+    commonMistakes: [
+      { label: "Reporting the full value, not the remainder", why: "Answering $27$ for $3^3 \\pmod{11}$ instead of reducing.", fix: "Divide by the modulus and keep only the remainder: $27 \\bmod 11 = 5$." },
+      { label: "Letting the remainder fall outside $0..m-1$", why: "Writing a remainder of $11$ or a negative value mod $11$.", fix: "The remainder must satisfy $0 \\le r < m$; add or subtract $m$ until it lands in range." }
+    ],
+    connections: [
+      { concept: "arithmetic_div", note: "The modulus is the remainder part of integer division." },
+      { concept: "totient", note: "Euler's totient theorem uses modular powers to simplify huge exponents." }
+    ],
+    examples: [
+      { question: "Evaluate $3^3 \\pmod{11}$.", answer: "5", explanation: "$3^3 = 27 = 2\\cdot 11 + 5$, so the remainder is $5$." },
+      { question: "Evaluate $(9 \\times 8) \\pmod{11}$.", answer: "6", explanation: "$72 = 6\\cdot 11 + 6$, so $72 \\equiv 6 \\pmod{11}$." }
+    ]
+  },
+
+  totient: {
+    title: "Euler's Totient Function",
+    formula: "\\phi(p\\,q) = (p-1)(q-1) \\quad (p, q \\text{ distinct primes})",
+    oneLineSummary: "$\\phi(n)$ counts how many numbers from $1$ to $n$ share no common factor with $n$ — the integers 'coprime' to it.",
+    intuitionHook: "How many numbers up to $10$ share no factor with $10$ (besides $1$)? Cross out the evens and the multiples of $5$; what's left is $\\{1, 3, 7, 9\\}$ — four of them. So $\\phi(10) = 4$. The totient measures how much of $n$'s range is 'relatively prime' to it.",
+    whatItIs: "Euler's totient $\\phi(n)$ is the count of integers in $1, 2, \\dots, n$ that are coprime to $n$ (greatest common divisor $1$).",
+    whyItWorks: "A number is coprime to $n$ when it shares none of $n$'s prime factors. For a prime $p$, EVERY smaller positive integer is coprime to it, so $\\phi(p) = p - 1$. The function is multiplicative on coprime parts: if $n = p\\,q$ with $p, q$ distinct primes, then $\\phi(pq) = \\phi(p)\\phi(q) = (p-1)(q-1)$, because the only forbidden numbers are the multiples of $p$ or of $q$. So $\\phi(119) = \\phi(7\\cdot 17) = 6 \\times 16 = 96$ — you never have to list and test all $119$ numbers.",
+    whenToUse: "Counting coprime residues, simplifying large modular exponents via Euler's theorem ($a^{\\phi(n)} \\equiv 1 \\pmod n$ when $\\gcd(a,n)=1$), and the key-generation step in RSA cryptography.",
+    representations: [
+      { kind: "enumeration", label: "Count the coprimes", body: "$\\phi(10)$: coprime to $10$ are $\\{1,3,7,9\\}$, so $\\phi(10) = 4$." },
+      { kind: "prime_formula", label: "Product of (prime − 1)", body: "$\\phi(7\\cdot 17) = (7-1)(17-1) = 6\\times 16 = 96$." },
+      { kind: "prime_case", label: "Prime modulus", body: "For a prime $p$, all $p-1$ smaller numbers are coprime: $\\phi(13) = 12$." }
+    ],
+    commonMistakes: [
+      { label: "Using $pq$ instead of $(p-1)(q-1)$", why: "Computing $\\phi(15)$ as $15$ or $3\\times 5$ rather than $2\\times 4$.", fix: "Subtract one from EACH prime factor first: $\\phi(15) = (3-1)(5-1) = 8$." },
+      { label: "Counting $n$ itself or including non-coprimes", why: "Including numbers that share a factor with $n$ in the count.", fix: "Only count values with $\\gcd = 1$; $n$ itself is never coprime to $n$." }
+    ],
+    connections: [
+      { concept: "modular_arithmetic", note: "Euler's theorem uses $\\phi(n)$ to collapse modular powers $a^{\\phi(n)} \\equiv 1 \\pmod n$." },
+      { concept: "gcd_lcm", note: "'Coprime' means a GCD of $1$ — the totient counts how many numbers hit that." }
+    ],
+    examples: [
+      { question: "Evaluate $\\phi(119)$, where $119 = 7 \\times 17$.", answer: "96", explanation: "$\\phi(7\\cdot 17) = (7-1)(17-1) = 6\\times 16 = 96$." },
+      { question: "Evaluate $\\phi(13)$ for the prime $13$.", answer: "12", explanation: "For a prime $p$, $\\phi(p) = p - 1 = 12$." }
+    ]
   }
 };
 
@@ -1051,9 +1271,30 @@ function levelToConceptId(category, level) {
     return 'pemdas';
   }
   if (cat === 'algebra') {
-    if (lvl <= 13) return 'linear_one_step';
-    if (lvl <= 16) return 'linear_two_step';
-    return null; // matrices etc. — legacy lessons handle these
+    if (lvl <= 12) return 'linear_one_step';
+    if (lvl <= 14) return 'linear_two_step';
+    if (lvl <= 15) return 'quadratic';
+    // L16 (matrix_trace concept) / L17 (matrix_determinant concept) are CONCEPT_TO_LEVEL ↔
+    // template misaligned (template L16 = linear_system, L17 = trace), so keep their legacy
+    // lessons until that mapping bug is fixed rather than serve a contradicting lesson.
+    return null;
+  }
+  if (cat === 'combinatorics') {
+    if (lvl <= 22) return 'pigeonhole';
+    if (lvl <= 23) return 'permutations';
+    // L24 (combinations concept) template actually generates a permutation problem — leave legacy.
+    return null;
+  }
+  if (cat === 'calculus') {
+    if (lvl <= 34) return 'derivative';
+    if (lvl <= 37) return 'integral';
+    return null; // limits (L38-39) keep legacy
+  }
+  if (cat === 'number_theory' || cat === 'number theory') {
+    if (lvl <= 42) return 'gcd_lcm';
+    if (lvl <= 46) return 'modular_arithmetic';
+    if (lvl === 48 || lvl === 49) return 'totient';
+    return null; // L47 divisors / L50,L60 milestones keep legacy
   }
   if (cat === 'mental') {
     if (lvl <= 4) return 'percentage';

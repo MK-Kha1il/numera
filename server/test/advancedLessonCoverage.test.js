@@ -1,0 +1,53 @@
+// Advanced-concept lesson coverage (audit #1.1 — upgrading the ORIGINAL advanced concepts from the
+// generic legacy lessons to the rich, concept-first shape). Unlike the foundational strands, the
+// advanced catalog is only PARTLY concept-first: a concept earns a rich lesson only when its
+// canonical-level template actually generates that concept (some CONCEPT_TO_LEVEL ↔ template
+// mappings are off-by, tracked separately). This locks the concepts we HAVE upgraded so a future
+// edit can't silently drop them back to the legacy fallback.
+const { test } = require('node:test');
+const assert = require('node:assert');
+const { getLessonAndExamples } = require('../mathEngine/lessons');
+const { CONCEPT_TO_LEVEL } = require('../mathGenerator');
+
+// The advanced concepts upgraded to concept-first lessons (canonical-level template matches).
+const UPGRADED = [
+  'quadratic', 'pigeonhole', 'permutations', 'derivative',
+  'integral', 'gcd_lcm', 'modular_arithmetic', 'totient'
+];
+
+// Same control-char fingerprint guard as the other content gates (tab/newline/CR are legitimate).
+const ALLOWED_CONTROLS = new Set([9, 10, 13]);
+function controlCharIn(value) {
+  const str = JSON.stringify(value == null ? '' : value);
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    if (code < 32 && !ALLOWED_CONTROLS.has(code)) return code;
+  }
+  return null;
+}
+
+for (const conceptId of UPGRADED) {
+  test(`${conceptId} serves a complete, corruption-free concept-first lesson`, () => {
+    const meta = CONCEPT_TO_LEVEL[conceptId];
+    assert.ok(meta, `${conceptId} is missing from CONCEPT_TO_LEVEL`);
+
+    const lesson = getLessonAndExamples(meta.category, meta.level);
+    assert.ok(lesson && lesson.lessonTitle && lesson.lessonTitle.trim().length > 0, `${conceptId}: no lesson title`);
+    assert.ok(lesson.lessonFormula && lesson.lessonFormula.trim().length > 0, `${conceptId}: no formula`);
+
+    const s = lesson.sections;
+    assert.ok(s, `${conceptId}: fell back to a legacy lesson with no concept-first sections`);
+    assert.ok(s.intuitionHook && s.intuitionHook.length > 20, `${conceptId}: missing/short intuitionHook`);
+    assert.ok(s.whyItWorks && s.whyItWorks.length > 20, `${conceptId}: missing/short whyItWorks`);
+    assert.ok(Array.isArray(s.representations) && s.representations.length >= 2, `${conceptId}: needs >=2 representations`);
+    assert.ok(Array.isArray(s.commonMistakes) && s.commonMistakes.length >= 1, `${conceptId}: needs >=1 common mistake`);
+    assert.ok(Array.isArray(s.connections) && s.connections.length >= 1, `${conceptId}: needs >=1 connection`);
+    assert.ok(Array.isArray(lesson.examples) && lesson.examples.length >= 2, `${conceptId}: needs >=2 worked examples`);
+    for (const ex of lesson.examples) {
+      assert.ok(ex.question && ex.answer != null && ex.explanation, `${conceptId}: a worked example is incomplete`);
+    }
+
+    const cc = controlCharIn(lesson);
+    assert.equal(cc, null, `${conceptId}: lesson contains a control char (code ${cc}) — LaTeX-corruption fingerprint`);
+  });
+}
