@@ -4,6 +4,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { db } = require('../db');
+const { withTransaction } = require('../dbx');
 const { JWT_SECRET } = require('../config');
 const { authenticateToken } = require('../middleware/auth');
 const { notify } = require('../services/notificationService');
@@ -236,41 +237,25 @@ function finalizeLogin(user, username, req, res) {
       if (user.last_active > 0) {
         const elapsed = now - user.last_active;
         if (elapsed > 2 * dayInSecs) {
-          // Missed a day! Check if they have a streak shield
-          db.get("SELECT quantity FROM user_utilities WHERE user_id = ? AND item_id = 'item_streak_shield'", [user.id], (errShield, shieldRow) => {
-            const hasShield = shieldRow && shieldRow.quantity > 0;
-            if (hasShield) {
-              // Consume 1 shield, keep streak, set state = 'protected'
-              db.run("UPDATE user_utilities SET quantity = quantity - 1 WHERE user_id = ? AND item_id = 'item_streak_shield'", [user.id], () => {
-                db.run(
-                  "UPDATE users SET commitment_state = 'protected', last_active = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
-                  [now, user.id],
-                  () => {
-                    sendLoginResponse(user.id, username, req, res);
-                  }
-                );
-              });
-            } else {
-              // No shield! They enter fading state (preserve the climb count for recovery)
-              // If they were already in fading state or too much time has passed (> 3 days), they finally reset to 0.
-              if (user.commitment_state === 'fading' || elapsed > 3 * dayInSecs) {
-                db.run(
-                  "UPDATE users SET streak = 0, commitment_state = 'active', last_active = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
-                  [now, user.id],
-                  () => {
-                    sendLoginResponse(user.id, username, req, res);
-                  }
-                );
-              } else {
-                db.run(
-                  "UPDATE users SET commitment_state = 'fading', last_active = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
-                  [now, user.id],
-                  () => {
-                    sendLoginResponse(user.id, username, req, res);
-                  }
-                );
-              }
+          // Missed a day. Streak insurance: if the learner holds a Streak Shield (the
+          // streak-freeze utility), consume one and PRESERVE the streak instead of letting it
+          // fade/reset. The check-and-consume runs in one ACID transaction with a conditional
+          // `WHERE quantity > 0`, so two concurrent logins can't double-spend a single shield and
+          // a crash can't leave the shield consumed without the streak preserved (or vice-versa).
+          handleMissedDay(user, now, elapsed, (savedStreak) => {
+            if (savedStreak > 0) {
+              // Fire-and-forget: a save notification (in-app + email). Never blocks login. The
+              // date-stamped dedupKey makes it at-most-once per day even if something re-enters.
+              notify(user.id, {
+                category: 'streak_freeze_used',
+                title: 'Your Streak Shield saved your streak! 🛡️',
+                message: `You missed a day, but a Streak Shield kept your ${savedStreak}-day streak alive. Welcome back — keep it going!`,
+                type: 'reward',
+                channels: ['inapp', 'email'],
+                dedupKey: new Date(now * 1000).toISOString().slice(0, 10),
+              }).catch(() => {});
             }
+            sendLoginResponse(user.id, username, req, res);
           });
         } else if (elapsed > dayInSecs) {
           // Showed up next day!
@@ -298,6 +283,51 @@ function finalizeLogin(user, username, req, res) {
           }
         );
       }
+    });
+}
+
+// Resolve a missed-day login (>2 days since last active) in one ACID transaction: first try to
+// spend a Streak Shield (the streak-freeze utility) to PRESERVE the streak, otherwise walk the
+// fading -> reset ladder. Calls back with the streak value that was *saved* by a shield (> 0 only
+// when a shield was actually consumed), or 0 when no shield was spent (faded or reset). Doing the
+// conditional `quantity > 0` consume + the users update together is what makes streak insurance
+// race-safe and crash-safe. Best-effort: on a transaction error we report 0 so login never hangs.
+function handleMissedDay(user, now, elapsed, done) {
+  const dayInSecs = 86400;
+  withTransaction(async (tx) => {
+    // Only spend a shield when there's actually a streak worth saving.
+    if (user.streak > 0) {
+      const consumed = await tx.run(
+        "UPDATE user_utilities SET quantity = quantity - 1 WHERE user_id = ? AND item_id = 'item_streak_shield' AND quantity > 0",
+        [user.id]
+      );
+      if (consumed.changes > 0) {
+        await tx.run(
+          "UPDATE users SET commitment_state = 'protected', last_active = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
+          [now, user.id]
+        );
+        return user.streak; // saved by a shield
+      }
+    }
+    // No shield spent. Enter fading state (preserves the climb count for recovery); finally
+    // reset to 0 only if already fading or more than 3 days have passed.
+    if (user.commitment_state === 'fading' || elapsed > 3 * dayInSecs) {
+      await tx.run(
+        "UPDATE users SET streak = 0, commitment_state = 'active', last_active = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
+        [now, user.id]
+      );
+    } else {
+      await tx.run(
+        "UPDATE users SET commitment_state = 'fading', last_active = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
+        [now, user.id]
+      );
+    }
+    return 0;
+  })
+    .then((savedStreak) => done(savedStreak))
+    .catch((err) => {
+      logger.error(`[auth] missed-day handling failed for user ${user.id}: ${err.message}`);
+      done(0);
     });
 }
 

@@ -31,7 +31,10 @@ function allUsersActiveOn(db, nBack, extraWhere = '') {
   return new Promise((resolve) => {
     db.all(
       `SELECT id, username, email, birth_year, telemetry_enabled, streak, level, xp,
-              solved_count, coins, last_active
+              solved_count, coins, last_active,
+              COALESCE((SELECT quantity FROM user_utilities
+                          WHERE user_id = users.id AND item_id = 'item_streak_shield'), 0)
+                AS streak_shields
          FROM users
         WHERE last_active >= ? AND last_active < ? ${extraWhere}`,
       [start, end],
@@ -53,11 +56,19 @@ const TRIGGERS = [
     category: 'streak_risk',
     // Active yesterday, still has a streak — remind them before it breaks.
     audience: (db) => allUsersActiveOn(db, 1, 'AND streak > 0'),
-    build: (u) => ({
-      title: `Don't lose your ${u.streak}-day streak! 🔥`,
-      message: `You're on a ${u.streak}-day streak. Solve a few problems today to keep it alive.`,
-      type: 'reward',
-    }),
+    build: (u) => {
+      // Surface streak insurance: if they hold Streak Shield(s) (the streak-freeze utility),
+      // reassure them it's a safety net — and still nudge them to keep the streak honestly.
+      const safetyNet =
+        u.streak_shields > 0
+          ? ` (You also have ${u.streak_shields} Streak Shield${u.streak_shields === 1 ? '' : 's'} as backup, but why spend one?)`
+          : '';
+      return {
+        title: `Don't lose your ${u.streak}-day streak! 🔥`,
+        message: `You're on a ${u.streak}-day streak. Solve a few problems today to keep it alive.${safetyNet}`,
+        type: 'reward',
+      };
+    },
   },
   {
     category: 'winback_d1',
