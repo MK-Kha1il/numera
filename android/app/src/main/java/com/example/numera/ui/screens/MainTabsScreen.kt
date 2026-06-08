@@ -78,6 +78,8 @@ fun MainTabsScreen(
     var showSkillTree by remember { mutableStateOf(false) }
     var showWeeklyRecap by remember { mutableStateOf(false) }
     var showGoal by remember { mutableStateOf(false) }
+    var discussConceptId by remember { mutableStateOf<String?>(null) }
+    var discussConceptName by remember { mutableStateOf("") }
     var showMapTooltip by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -157,6 +159,19 @@ fun MainTabsScreen(
         return
     }
 
+    // Concept discussion overlays the skill tree (the per-concept community thread). Rendered
+    // before the skill-tree block so it takes precedence; closing it falls back to the tree.
+    discussConceptId?.let { cid ->
+        NumeraTheme {
+            com.example.numera.ui.feature.social.ConceptDiscussionScreen(
+                conceptId = cid,
+                conceptName = discussConceptName,
+                onBack = { discussConceptId = null }
+            )
+        }
+        return
+    }
+
     if (showSkillTree) {
         NumeraTheme {
             com.example.numera.ui.feature.profile.SkillTreeScreen(
@@ -164,6 +179,10 @@ fun MainTabsScreen(
                 onPractice = { node ->
                     showSkillTree = false
                     onStartSoloGame(SoloGame(category = node.category, level = node.level, gameMode = "level"))
+                },
+                onDiscuss = { node ->
+                    discussConceptName = node.name
+                    discussConceptId = node.conceptId
                 }
             )
         }

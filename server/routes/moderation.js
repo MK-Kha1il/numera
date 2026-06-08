@@ -75,8 +75,8 @@ router.get('/api/blocks', authenticateToken, (req, res) => {
 
 router.post('/api/reports', authenticateToken, rateLimiter(10, 15 * 60 * 1000), (req, res) => {
   const { targetType, targetId, reason } = req.body;
-  if (targetType !== 'user' && targetType !== 'collection') {
-    return res.status(400).json({ error: "targetType must be 'user' or 'collection'." });
+  if (!['user', 'collection', 'concept_post'].includes(targetType)) {
+    return res.status(400).json({ error: "targetType must be 'user', 'collection', or 'concept_post'." });
   }
   const tid = parseInt(targetId, 10);
   if (isNaN(tid)) return res.status(400).json({ error: 'A valid targetId is required.' });

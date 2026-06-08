@@ -429,6 +429,26 @@ const migrations = [
       `);
     },
   },
+  {
+    version: 16,
+    name: 'concept_discussion',
+    // Per-concept discussion (audit #1.7/#1.18 — community). A flat, newest-first message list
+    // attached to a curriculum concept. `hidden` is the moderation soft-delete (set when a report
+    // is actioned) so a removed post leaves the thread intact. Reportable via /api/reports.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS concept_posts (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          concept_id TEXT NOT NULL,
+          user_id    INTEGER NOT NULL,
+          body       TEXT NOT NULL,
+          hidden     INTEGER DEFAULT 0,
+          created_at INTEGER NOT NULL
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_concept_posts ON concept_posts(concept_id, created_at)');
+    },
+  },
 ];
 
 /**

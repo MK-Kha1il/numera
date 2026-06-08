@@ -214,6 +214,25 @@ interface ApiService {
         @Header("Authorization") token: String
     ): WeeklyRecap
 
+    @GET("api/concepts/{conceptId}/posts")
+    suspend fun getConceptPosts(
+        @Header("Authorization") token: String,
+        @Path("conceptId") conceptId: String
+    ): ConceptPostsResponse
+
+    @POST("api/concepts/{conceptId}/posts")
+    suspend fun createConceptPost(
+        @Header("Authorization") token: String,
+        @Path("conceptId") conceptId: String,
+        @Body request: CreatePostPayload
+    ): SimpleResponse
+
+    @DELETE("api/concepts/posts/{postId}")
+    suspend fun deleteConceptPost(
+        @Header("Authorization") token: String,
+        @Path("postId") postId: Int
+    ): SimpleResponse
+
     @GET("api/account/goal")
     suspend fun getGoal(
         @Header("Authorization") token: String

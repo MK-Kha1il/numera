@@ -926,6 +926,27 @@ data class SkillTreeNode(
 @Serializable
 data class MasteryDimensionMeta(val key: String = "", val label: String = "", val blurb: String = "")
 
+// ---- Per-concept discussion ----
+@Serializable
+data class ConceptPost(
+    val id: Int = 0,
+    val userId: Int = 0,
+    val username: String = "",
+    val body: String = "",
+    val createdAt: Long = 0,
+    val mine: Boolean = false
+)
+
+@Serializable
+data class ConceptPostsResponse(
+    val conceptId: String = "",
+    val name: String = "",
+    val posts: List<ConceptPost> = emptyList()
+)
+
+@Serializable
+data class CreatePostPayload(val body: String)
+
 // ---- Learner-set goals ----
 @Serializable
 data class GoalTypeMeta(val key: String = "", val label: String = "", val unit: String = "", val min: Int = 1, val max: Int = 100)

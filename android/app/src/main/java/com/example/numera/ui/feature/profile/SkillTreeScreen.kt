@@ -1,6 +1,7 @@
 package com.example.numera.ui.feature.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,7 +33,7 @@ import kotlinx.coroutines.withContext
 // This is the simpler correct option: the server is authoritative and generates level-appropriate
 // problems for any (category, level) we hand it.
 @Composable
-fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit) {
+fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit, onDiscuss: (SkillTreeNode) -> Unit) {
     var data by remember { mutableStateOf<SkillTreeResponse?>(null) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -110,7 +111,7 @@ fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit) {
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                         )
-                        reviewNodes.forEach { node -> ConceptCard(node, dimLabels, onPractice) }
+                        reviewNodes.forEach { node -> ConceptCard(node, dimLabels, onPractice, onDiscuss) }
                     }
 
                     // Concepts grouped by category, in curriculum (level) order.
@@ -123,7 +124,7 @@ fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit) {
                             color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.padding(top = Spacing.s)
                         )
-                        nodes.forEach { node -> ConceptCard(node, dimLabels, onPractice) }
+                        nodes.forEach { node -> ConceptCard(node, dimLabels, onPractice, onDiscuss) }
                     }
                 }
             }
@@ -132,7 +133,7 @@ fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit) {
 }
 
 @Composable
-private fun ConceptCard(node: SkillTreeNode, dimLabels: Map<String, String>, onPractice: (SkillTreeNode) -> Unit) {
+private fun ConceptCard(node: SkillTreeNode, dimLabels: Map<String, String>, onPractice: (SkillTreeNode) -> Unit, onDiscuss: (SkillTreeNode) -> Unit) {
     Card(
         onClick = { onPractice(node) },
         modifier = Modifier.fillMaxWidth(),
@@ -155,8 +156,16 @@ private fun ConceptCard(node: SkillTreeNode, dimLabels: Map<String, String>, onP
             } else {
                 Text("Not started yet", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
             }
-            // Practice affordance — tapping anywhere on the card launches practice for this concept.
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+            // Affordances: tapping the card body launches practice; "Discuss" opens the concept's
+            // community thread (its own clickable, so it doesn't trigger the card's practice tap).
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "💬 Discuss",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.clickable { onDiscuss(node) }
+                )
                 Text(
                     when {
                         node.needsReview -> "Review ▸"
