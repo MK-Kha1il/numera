@@ -2,6 +2,34 @@
 // index + burnout risk, advances or restores the streak, and unlocks milestone relics.
 // Used by math/complete (per session) and the commitment routes.
 const { db } = require('../db');
+const { notify } = require('./notificationService');
+
+// Celebrate the moment a learner crosses their self-set daily-problems goal (audit #2/#19 — the
+// positive-reinforcement half of the goal loop). Fires only when THIS session is the one that
+// pushed today's total across the target (so it doesn't re-congratulate on every later session),
+// and the date-stamped dedupKey makes it at-most-once-per-day regardless. Fire-and-forget.
+function maybeCelebrateDailyGoal(user, todaySolved, solvedThisSession) {
+  db.get(
+    "SELECT target_value FROM user_goals WHERE user_id = ? AND goal_type = 'daily_problems'",
+    [user.id],
+    (err, goal) => {
+      if (err || !goal) return;
+      const target = goal.target_value;
+      const before = todaySolved - solvedThisSession;
+      if (todaySolved >= target && before < target) {
+        notify(user.id, {
+          category: 'daily_goal_reached',
+          title: 'Daily goal smashed! 🎯',
+          message: `You hit your goal of ${target} problems today. Great work — see you tomorrow!`,
+          type: 'reward',
+          channels: ['inapp', 'email'],
+          dedupKey: new Date().toISOString().slice(0, 10),
+          user,
+        }).catch(() => {});
+      }
+    }
+  );
+}
 
 // Idempotently unlock a relic (and mirror it into inventory). callback(true) if newly unlocked.
 function unlockRelic(userId, relicId, callback) {
@@ -46,6 +74,9 @@ function updateCommitmentAndBurnout(userId, solvedCountThisSession, callback) {
 
           db.get('SELECT * FROM users WHERE id = ?', [userId], (errUser, user) => {
             if (errUser || !user) return callback && callback();
+
+            // Positive reinforcement: did this session just complete the learner's daily goal?
+            maybeCelebrateDailyGoal(user, todaySolved, solvedCountThisSession);
 
             let burnoutRisk = 'low';
             let newBurnoutCounter = user.burnout_counter || 0;
