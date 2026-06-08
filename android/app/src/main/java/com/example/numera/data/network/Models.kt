@@ -988,6 +988,26 @@ data class PlayChallengeResponse(
     val leaderboard: List<ChallengeLeaderboardEntry> = emptyList()
 )
 
+// ---- Ranked seasons with rewards (audit #4) ----
+@Serializable
+data class SeasonInfo(val id: Int = 0, val name: String = "", val endAt: Long = 0)
+
+@Serializable
+data class SeasonLeaderboardEntry(
+    val position: Int = 0,
+    val username: String = "",
+    val userId: Int = 0,
+    val peak: Int = 0,
+    val isMe: Boolean = false
+)
+
+@Serializable
+data class SeasonLeaderboardResponse(
+    val season: SeasonInfo = SeasonInfo(),
+    val leaderboard: List<SeasonLeaderboardEntry> = emptyList(),
+    val yourRank: Int? = null
+)
+
 // ---- Learning plan (goal-driven concept path — audit #19) ----
 @Serializable
 data class LearningPlanStep(

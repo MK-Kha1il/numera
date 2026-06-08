@@ -616,6 +616,17 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_tournament_entries_board ON tournament_entries(tournament_id, status, score)');
     },
   },
+  {
+    version: 23,
+    name: 'season_rewards_finalized',
+    // Ranked seasons with rewards (audit #4 — "daily ranked seasons with rewards"). The seasons
+    // table already tracks peak ratings; this flag makes the end-of-season payout idempotent so a
+    // season can only ever reward its top finishers ONCE, whether the rollover is triggered by the
+    // admin endpoint or lazily when an expired season is next read.
+    up: async (run) => {
+      await run('ALTER TABLE seasons ADD COLUMN rewards_finalized INTEGER NOT NULL DEFAULT 0');
+    },
+  },
 ];
 
 /**

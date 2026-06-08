@@ -82,6 +82,7 @@ fun MainTabsScreen(
     var showClubs by remember { mutableStateOf(false) }
     var showChallenges by remember { mutableStateOf(false) }
     var showTournament by remember { mutableStateOf(false) }
+    var showSeason by remember { mutableStateOf(false) }
     var discussConceptId by remember { mutableStateOf<String?>(null) }
     var discussConceptName by remember { mutableStateOf("") }
     var showMapTooltip by remember { mutableStateOf(false) }
@@ -241,6 +242,13 @@ fun MainTabsScreen(
         return
     }
 
+    if (showSeason) {
+        NumeraTheme {
+            com.example.numera.ui.feature.arena.SeasonScreen(user = currentUser, onExit = { showSeason = false })
+        }
+        return
+    }
+
     LaunchedEffect(Unit) {
         refreshProfile()
         RetrofitClient.profileRefreshFlow.collect {
@@ -295,8 +303,11 @@ fun MainTabsScreen(
             CommandItem("Challenges", CommandCategory.QuickAction, NumeraIconType.Arena, "Create or play a shared problem set", "challenge custom problem set share code leaderboard ugc compete friends") {
                 showChallenges = true
             },
-            CommandItem("Weekly Tournament", CommandCategory.QuickAction, NumeraIconType.Arena, "Race the global weekly event", "tournament weekly event compete leaderboard prize coins ladder season") {
+            CommandItem("Weekly Tournament", CommandCategory.QuickAction, NumeraIconType.Arena, "Race the global weekly event", "tournament weekly event compete leaderboard prize coins ladder") {
                 showTournament = true
+            },
+            CommandItem("Ranked Season", CommandCategory.QuickAction, NumeraIconType.Arena, "Season standings & prizes", "season standings rank rating leaderboard prize reset ladder competitive") {
+                showSeason = true
             },
             CommandItem("Notifications", CommandCategory.QuickAction, NumeraIconType.Notification, "See your latest activity", "alerts inbox bell") { showNotificationsDialog = true },
             CommandItem("Consistency Climb", CommandCategory.QuickAction, NumeraIconType.Streak, "Check your streak status", "streak commitment fire") { showCommitmentDialog = true },

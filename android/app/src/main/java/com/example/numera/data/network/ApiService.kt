@@ -509,6 +509,10 @@ interface ApiService {
     @GET("api/engine/learning-plan")
     suspend fun getLearningPlan(@Header("Authorization") token: String): LearningPlanResponse
 
+    // ---- Ranked seasons ----
+    @GET("api/rating/season/leaderboard")
+    suspend fun getSeasonLeaderboard(@Header("Authorization") token: String): SeasonLeaderboardResponse
+
     // ---- Weekly tournaments (async global event) ----
     @GET("api/tournaments/current")
     suspend fun getCurrentTournament(@Header("Authorization") token: String): TournamentCurrentResponse

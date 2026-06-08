@@ -39,6 +39,7 @@ fun ArenaScreen(
     var showBotDuel by remember { mutableStateOf(false) }
     var showChallenges by remember { mutableStateOf(false) }
     var showTournament by remember { mutableStateOf(false) }
+    var showSeason by remember { mutableStateOf(false) }
     // Ranked requires fair-play (telemetry) consent so the server's anti-cheat scorer may run.
     var showRankedConsent by remember { mutableStateOf(false) }
     var consentGrantedThisSession by remember { mutableStateOf(false) }
@@ -153,6 +154,10 @@ fun ArenaScreen(
     }
     if (showTournament) {
         TournamentScreen(user = user, onExit = { showTournament = false })
+        return
+    }
+    if (showSeason) {
+        SeasonScreen(user = user, onExit = { showSeason = false })
         return
     }
 
@@ -514,6 +519,39 @@ fun ArenaScreen(
                                 text = "Start Puzzle Rush",
                                 onClick = { showPuzzleRush = true },
                                 color = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
+                // Ranked Season standings (peak-rating leaderboard with end-of-season prizes)
+                item {
+                    DuoCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        borderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(Spacing.l),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
+                        ) {
+                            Column {
+                                Text(
+                                    text = "🏅 Ranked Season",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                                Text(
+                                    text = "Climb the season standings by peak rating — top 3 win coins when it ends.",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                            DuoButton(
+                                text = "View Standings",
+                                onClick = { showSeason = true },
+                                color = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

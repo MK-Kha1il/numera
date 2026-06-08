@@ -8,8 +8,14 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { securityLog } = require('../middleware/security');
 const NRS = require('../mathEngine/ratingEngine');
 const { notify } = require('../services/notificationService');
+const { withTransaction } = require('../dbx');
 
 const router = express.Router();
+
+// End-of-season coin prizes for the top finishers (by season peak rating).
+const SEASON_REWARDS = [500, 300, 150];
+const SEASON_DEFAULT_DAYS = 90;
+const nextSeasonName = () => `New Season (${new Date().toISOString().slice(0, 10)})`;
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
@@ -86,6 +92,80 @@ function maybeUpdateSeasonPeak(userId, domain, displayRating) {
       [userId, season.id, domain, displayRating, displayRating]
     );
   });
+}
+
+// ── Season rollover (shared by the admin endpoint and the lazy auto-rollover) ──
+// Reward the top finishers (idempotent via rewards_finalized), soft-reset every rating, close the
+// old season, and open the next. Runs inside one transaction. Returns the new season + the list of
+// rewarded winners (notified by the caller AFTER commit).
+async function rolloverSeason(tx, oldSeason, { name, durationDays }) {
+  const now = Math.floor(Date.now() / 1000);
+  const winners = [];
+
+  if (!oldSeason.rewards_finalized) {
+    // A player's "season score" is their best peak across domains.
+    const top = await tx.all(
+      `SELECT user_id, MAX(peak_display) AS peak
+         FROM season_ratings WHERE season_id = ?
+        GROUP BY user_id ORDER BY peak DESC LIMIT ?`,
+      [oldSeason.id, SEASON_REWARDS.length]
+    );
+    for (let i = 0; i < top.length; i++) {
+      const reward = SEASON_REWARDS[i];
+      await tx.run('UPDATE users SET coins = coins + ? WHERE id = ?', [reward, top[i].user_id]);
+      winners.push({ userId: top[i].user_id, reward, position: i + 1, seasonName: oldSeason.name });
+    }
+    await tx.run('UPDATE seasons SET rewards_finalized = 1 WHERE id = ?', [oldSeason.id]);
+  }
+
+  await tx.run('UPDATE seasons SET is_active = 0, end_at = ? WHERE id = ?', [now, oldSeason.id]);
+
+  // Soft-reset every rating toward the mean (same regression the admin path applied).
+  const ratings = await tx.all('SELECT user_id, domain, mu, sigma FROM user_ratings', []);
+  for (const r of ratings) {
+    const { mu, sigma } = NRS.applySeasonReset(r.mu, r.sigma);
+    const display = Math.max(0, Math.floor(mu - 2 * sigma));
+    await tx.run('UPDATE user_ratings SET mu = ?, sigma = ?, display_rating = ? WHERE user_id = ? AND domain = ?', [mu, sigma, display, r.user_id, r.domain]);
+  }
+
+  const ins = await tx.run(
+    'INSERT INTO seasons (name, start_at, end_at, is_active, rewards_finalized) VALUES (?, ?, ?, 1, 0)',
+    [name, now, now + durationDays * 86400]
+  );
+  const next = await tx.get('SELECT * FROM seasons WHERE id = ?', [ins.lastID]);
+  return { next, winners, playersReset: ratings.length };
+}
+
+// Ensure there's a current active season, auto-rolling over an expired one (rewards + reset + new).
+async function ensureSeason(tx) {
+  const now = Math.floor(Date.now() / 1000);
+  let active = await tx.get('SELECT * FROM seasons WHERE is_active = 1 LIMIT 1');
+  let winners = [];
+  if (active && active.end_at <= now) {
+    const r = await rolloverSeason(tx, active, { name: nextSeasonName(), durationDays: SEASON_DEFAULT_DAYS });
+    active = r.next;
+    winners = r.winners;
+  } else if (!active) {
+    const ins = await tx.run(
+      'INSERT INTO seasons (name, start_at, end_at, is_active, rewards_finalized) VALUES (?, ?, ?, 1, 0)',
+      [nextSeasonName(), now, now + SEASON_DEFAULT_DAYS * 86400]
+    );
+    active = await tx.get('SELECT * FROM seasons WHERE id = ?', [ins.lastID]);
+  }
+  return { season: active, winners };
+}
+
+// Fire the post-commit "you placed in the season" notifications for a winners list.
+function notifySeasonWinners(winners) {
+  for (const w of winners) {
+    notify(w.userId, {
+      category: 'season_result',
+      title: '🏅 Season Result',
+      message: `You finished #${w.position} in ${w.seasonName} and earned ${w.reward} coins!`,
+      type: 'social',
+      dedupKey: `season:${w.seasonName}:${w.userId}`,
+    });
+  }
 }
 
 function nrsUpdateVelocity(userId, domain, delta) {
@@ -399,11 +479,13 @@ router.get('/api/rating/matchmaking', authenticateToken, (req, res) => {
 });
 
 // ── GET /api/rating/season ────────────────────────────────────────────────────
-router.get('/api/rating/season', authenticateToken, (req, res) => {
+// The current season + the caller's peaks. Lazily auto-rolls over an expired season (paying its
+// top finishers and opening the next), so seasons keep cycling without an admin or a cron.
+router.get('/api/rating/season', authenticateToken, async (req, res) => {
   const userId = req.user.id;
-
-  db.get('SELECT * FROM seasons WHERE is_active = 1 LIMIT 1', (errSe, season) => {
-    if (errSe || !season) return res.json({ season: null });
+  try {
+    const { season, winners } = await withTransaction((tx) => ensureSeason(tx));
+    notifySeasonWinners(winners);
     const now = Math.floor(Date.now() / 1000);
     const daysRemaining = Math.max(0, Math.ceil((season.end_at - now) / 86400));
 
@@ -414,6 +496,7 @@ router.get('/api/rating/season', authenticateToken, (req, res) => {
        WHERE sr.user_id = ? AND sr.season_id = ?`,
       [userId, season.id],
       (errPk, peaks) => {
+        if (errPk) return res.status(500).json({ error: errPk.message });
         res.json({
           season: { id: season.id, name: season.name, startAt: season.start_at, endAt: season.end_at, daysRemaining },
           myPeaks: (peaks || []).map((p) => ({
@@ -425,41 +508,58 @@ router.get('/api/rating/season', authenticateToken, (req, res) => {
         });
       }
     );
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/rating/season/leaderboard ────────────────────────────────────────
+// This season's standings: players ranked by their best peak rating, plus the caller's own rank.
+router.get('/api/rating/season/leaderboard', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const { season } = await withTransaction((tx) => ensureSeason(tx));
+    db.all(
+      `SELECT u.username, sr.user_id AS userId, MAX(sr.peak_display) AS peak
+         FROM season_ratings sr JOIN users u ON u.id = sr.user_id
+        WHERE sr.season_id = ?
+        GROUP BY sr.user_id
+        ORDER BY peak DESC
+        LIMIT 50`,
+      [season.id],
+      (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const board = (rows || []).map((r, i) => ({ position: i + 1, username: r.username, userId: r.userId, peak: r.peak, isMe: r.userId === userId }));
+        const mine = board.find((b) => b.isMe);
+        res.json({
+          season: { id: season.id, name: season.name, endAt: season.end_at },
+          leaderboard: board,
+          yourRank: mine ? mine.position : null,
+        });
+      }
+    );
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── POST /api/rating/season/end — admin only ──────────────────────────────────
+// Force the current season to close NOW. Shares rolloverSeason with the lazy auto-rollover, so the
+// admin path also pays the top finishers and soft-resets ratings before opening the next season.
 router.post('/api/rating/season/end', authenticateToken, requireAdmin, (req, res) => {
-  const now = Math.floor(Date.now() / 1000);
-  const newSeasonName = req.body.newSeasonName || `Season (${new Date().toLocaleDateString()})`;
-  const newDurationDays = Math.min(Math.max(parseInt(req.body.durationDays, 10) || 90, 30), 365);
+  const newSeasonName = req.body.newSeasonName || nextSeasonName();
+  const durationDays = Math.min(Math.max(parseInt(req.body.durationDays, 10) || SEASON_DEFAULT_DAYS, 30), 365);
 
-  db.get('SELECT * FROM seasons WHERE is_active = 1 LIMIT 1', (errS, oldSeason) => {
-    if (errS || !oldSeason) return res.status(400).json({ error: 'No active season found' });
-
-    db.run('UPDATE seasons SET is_active = 0, end_at = ? WHERE id = ?', [now, oldSeason.id], (errEnd) => {
-      if (errEnd) return res.status(500).json({ error: errEnd.message });
-
-      const newEnd = now + newDurationDays * 86400;
-      db.run('INSERT INTO seasons (name, start_at, end_at, is_active) VALUES (?, ?, ?, 1)', [newSeasonName, now, newEnd], function (errNew) {
-        if (errNew) return res.status(500).json({ error: errNew.message });
-
-        db.all('SELECT user_id, domain, mu, sigma FROM user_ratings', (errAll, allRatings) => {
-          if (errAll || !allRatings || allRatings.length === 0) {
-            return res.json({ success: true, playersReset: 0 });
-          }
-          let pending = allRatings.length;
-          allRatings.forEach((row) => {
-            const { mu: newMu, sigma: newSigma } = NRS.applySeasonReset(row.mu, row.sigma);
-            const newDisplay = Math.max(0, Math.floor(newMu - 2 * newSigma));
-            db.run('UPDATE user_ratings SET mu = ?, sigma = ?, display_rating = ? WHERE user_id = ? AND domain = ?', [newMu, newSigma, newDisplay, row.user_id, row.domain], () => {
-              if (--pending === 0) res.json({ success: true, playersReset: allRatings.length });
-            });
-          });
-        });
-      });
-    });
-  });
+  withTransaction(async (tx) => {
+    const oldSeason = await tx.get('SELECT * FROM seasons WHERE is_active = 1 LIMIT 1');
+    if (!oldSeason) throw new Error('No active season found');
+    return rolloverSeason(tx, oldSeason, { name: newSeasonName, durationDays });
+  })
+    .then((result) => {
+      notifySeasonWinners(result.winners);
+      res.json({ success: true, playersReset: result.playersReset, rewarded: result.winners.length, season: { id: result.next.id, name: result.next.name } });
+    })
+    .catch((err) => res.status(err.message === 'No active season found' ? 400 : 500).json({ error: err.message }));
 });
 
 // ── GET /api/rating/analytics — admin only ────────────────────────────────────
