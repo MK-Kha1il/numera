@@ -3,7 +3,7 @@
 // flag COUNTS are passed directly so verdicts don't depend on PUZZLE_RUSH_SUPERHUMAN_MS.
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { resolveDuel, flagAnswer, CHEAT_ELO_PENALTY } = require('../lib/duelIntegrity');
+const { resolveDuel, flagAnswer, rankedMatchmakingError, CHEAT_ELO_PENALTY } = require('../lib/duelIntegrity');
 
 const cfg = { superhumanBaseMs: 400, perLevelMs: 25, cheatThreshold: 3 };
 
@@ -83,6 +83,14 @@ test('bot opponent: fixed deltas, bot never flagged, human cheat still penalized
   const cheat = resolveDuel({ p1Score: 100, p2Score: 0, p2IsBot: true, p1FlaggedCount: 3 });
   assert.equal(cheat.winner, 'p2', 'cheating human forfeits even to a bot');
   assert.equal(cheat.p1EloChange, CHEAT_ELO_PENALTY);
+});
+
+test('rankedMatchmakingError: ranked needs fair-play consent; only telemetry-on may queue', () => {
+  assert.equal(rankedMatchmakingError(1), null, 'consented player may queue ranked');
+  assert.equal(rankedMatchmakingError(true), null);
+  const off = rankedMatchmakingError(0);
+  assert.ok(off && off.code === 'FAIRPLAY_CONSENT_REQUIRED', 'opted-out player is blocked with a reason');
+  assert.equal(rankedMatchmakingError(undefined).code, 'FAIRPLAY_CONSENT_REQUIRED', 'missing flag → blocked');
 });
 
 test('cheatThreshold boundary matches integrityEngine config (3 flags)', () => {

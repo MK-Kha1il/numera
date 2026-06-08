@@ -17,8 +17,10 @@ import com.example.numera.theme.*
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.RankBadge
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
 @Composable
@@ -34,7 +36,12 @@ fun ArenaScreen(
     var queueSecondsElapsed by remember { mutableIntStateOf(0) }
     var showPuzzleRush by remember { mutableStateOf(false) }
     var showAsyncDuel by remember { mutableStateOf(false) }
+    // Ranked requires fair-play (telemetry) consent so the server's anti-cheat scorer may run.
+    var showRankedConsent by remember { mutableStateOf(false) }
+    var consentGrantedThisSession by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    val hasFairplayConsent = consentGrantedThisSession || (user?.telemetry_enabled ?: 0) == 1
 
     DisposableEffect(Unit) {
         onDispose {
@@ -51,6 +58,16 @@ fun ArenaScreen(
             sock?.off("friend_room_created")
             sock?.off("friend_room_error")
             sock?.off("duel_start")
+            sock?.off("matchmaking_error")
+
+            sock?.on("matchmaking_error") { args ->
+                val data = args.getOrNull(0) as? JSONObject ?: return@on
+                val code = data.optString("code")
+                scope.launch(Dispatchers.Main) {
+                    matchmakingMode = null
+                    if (code == "FAIRPLAY_CONSENT_REQUIRED") showRankedConsent = true
+                }
+            }
 
             sock?.on("friend_room_created") { args ->
                 val data = args.getOrNull(0) as? JSONObject ?: return@on
@@ -406,7 +423,10 @@ fun ArenaScreen(
                             }
                             DuoButton(
                                 text = "Find Ranked Duel",
-                                onClick = { matchmakingMode = "ranked" },
+                                onClick = {
+                                    if (hasFairplayConsent) matchmakingMode = "ranked"
+                                    else showRankedConsent = true
+                                },
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -569,5 +589,55 @@ fun ArenaScreen(
                 }
             }
         }
+    }
+
+    if (showRankedConsent) {
+        AlertDialog(
+            onDismissRequest = { showRankedConsent = false },
+            title = {
+                Text(
+                    text = "Enable Fair-Play Monitoring",
+                    fontWeight = FontWeight.ExtraBold
+                )
+            },
+            text = {
+                Text(
+                    text = "Ranked duels check your answer timing to keep competition fair. " +
+                        "This needs Telemetry turned on. If a result is ever flagged we always " +
+                        "tell you why — no silent bans. You can turn it back off in Privacy settings anytime."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch(Dispatchers.IO) {
+                        val ok = try {
+                            val token = RetrofitClient.authToken ?: ""
+                            RetrofitClient.apiService.updatePrivacy(
+                                token,
+                                PrivacyUpdateRequest(true, (user?.profile_private ?: 0) == 1)
+                            )
+                            true
+                        } catch (e: Exception) {
+                            Log.e("Arena", "Fair-play consent update failed: ${e.message}")
+                            false
+                        }
+                        withContext(Dispatchers.Main) {
+                            showRankedConsent = false
+                            if (ok) {
+                                consentGrantedThisSession = true
+                                matchmakingMode = "ranked"
+                            }
+                        }
+                    }
+                }) {
+                    Text("Enable & Find Match", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRankedConsent = false }) {
+                    Text("Not now")
+                }
+            }
+        )
     }
 }

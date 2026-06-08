@@ -21,6 +21,18 @@ function flagAnswer({ elapsedMs, correct, level } = {}) {
   return assessAnswer({ elapsedMs, correct, level });
 }
 
+// Ranked play requires fair-play (behavioral telemetry) consent so the integrity scorer is
+// allowed to run — otherwise anti-cheat could be sidestepped just by leaving telemetry off
+// (it's opt-in by default). Returns an error object to emit, or null if the player may queue.
+// Only RANKED is gated; casual/friend/bot duels don't move rating and stay open.
+function rankedMatchmakingError(telemetryEnabled) {
+  if (telemetryEnabled === 1 || telemetryEnabled === true) return null;
+  return {
+    code: 'FAIRPLAY_CONSENT_REQUIRED',
+    message: 'Ranked play requires fair-play monitoring. Turn on Telemetry in Privacy settings to compete for rating — your answer timing is checked for cheating (see why any result was flagged; no silent bans).',
+  };
+}
+
 function expectedScore(rating, oppRating) {
   return 1 / (1 + Math.pow(10, (oppRating - rating) / 400));
 }
@@ -100,4 +112,4 @@ function resolveDuel({
   };
 }
 
-module.exports = { flagAnswer, resolveDuel, expectedScore, K, CHEAT_ELO_PENALTY };
+module.exports = { flagAnswer, rankedMatchmakingError, resolveDuel, expectedScore, K, CHEAT_ELO_PENALTY };

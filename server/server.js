@@ -19,7 +19,7 @@ const { globalRateLimiter } = require('./middleware/rateLimit');
 const { calculateRankFromElo } = require('./lib/progression');
 const { updateAchievements } = require('./services/achievementService');
 const { grantRankRewards } = require('./services/rankRewardService');
-const { flagAnswer, resolveDuel } = require('./lib/duelIntegrity');
+const { flagAnswer, resolveDuel, rankedMatchmakingError } = require('./lib/duelIntegrity');
 
 const app = express();
 
@@ -612,10 +612,20 @@ io.on('connection', (socket) => {
     const username = socket.username;
     const mode = (data && data.mode) === 'casual' ? 'casual' : 'ranked';
 
-    db.get("SELECT elo, rank, competitive_matches FROM users WHERE id = ?", [userId], (err, row) => {
+    db.get("SELECT elo, rank, competitive_matches, telemetry_enabled FROM users WHERE id = ?", [userId], (err, row) => {
       const elo = row ? (row.elo || 1000) : 1000;
       const rank = row ? row.rank : 'Unranked (Placement: 0/5)';
       const competitiveMatches = row ? (row.competitive_matches || 0) : 0;
+
+      // Ranked requires fair-play consent so the integrity scorer may run (no opt-out cheating).
+      if (mode === 'ranked') {
+        const gateError = rankedMatchmakingError(row ? row.telemetry_enabled : 0);
+        if (gateError) {
+          socket.emit('matchmaking_error', gateError);
+          logger.info(`User ${username} blocked from RANKED queue: no fair-play consent.`);
+          return;
+        }
+      }
 
       // remove duplicates from both queues
       const cleanQueue = (q) => {

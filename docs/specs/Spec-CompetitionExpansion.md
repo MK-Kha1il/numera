@@ -46,10 +46,15 @@
   `verdictForRun` + Elo). A **cheat verdict (≥3 flags) forfeits the match to the clean opponent
   and applies a fixed −15 Elo penalty instead of the gain** (mirrors Puzzle Rush's reward=0). The
   reason is surfaced in the audit log + `duel_end` payload (ethics: no silent shadow-bans), and
-  scoring **honors `telemetry_enabled`** (opted-out players aren't behaviorally profiled — note:
-  telemetry is opt-in, so ranked play should nudge competitors to enable it). Guarded by a pure
-  unit suite (`test/duelIntegrity.test.js`) **and** a socket-free integration test driving the real
-  `endDuel` rating/reward commit (`test/duelEndToEnd.test.js`). `npm test` 142 pass / 0 lint errors.
+  scoring **honors `telemetry_enabled`** (opted-out players aren't behaviorally profiled). To stop
+  anti-cheat being sidestepped by leaving the opt-in off, **ranked matchmaking now REQUIRES
+  fair-play consent**: `join_queue` (ranked only) rejects players with telemetry off via a
+  `matchmaking_error` { code: `FAIRPLAY_CONSENT_REQUIRED` } event (pure-tested
+  `rankedMatchmakingError`); casual/friend/bot duels stay open. The Arena client gates the "Find
+  Ranked Duel" button behind a consent dialog that flips telemetry on via `POST /api/user/privacy`
+  then queues. Guarded by a pure unit suite (`test/duelIntegrity.test.js`) **and** a socket-free
+  integration test driving the real `endDuel` rating/reward commit (`test/duelEndToEnd.test.js`).
+  `npm test` 146 pass / 0 lint errors; `assembleDebug` + `testDebugUnitTest` green.
 - ⬜ **Next:** the `server.js` arena extraction → tournaments. `integrityEngine` is the shared
   scorer those modes should call before committing rating/rewards.
 
