@@ -49,6 +49,11 @@ const CONCEPT_TO_LEVEL = {
   stat_median:          { category: 'statistics',    level: 9  },
   stat_range:           { category: 'statistics',    level: 11 },
   stat_probability:     { category: 'statistics',    level: 13 },
+  // Algebraic-expressions strand (audit #1.1 — the bridge into algebra).
+  eval_expression:      { category: 'expressions',   level: 11 },
+  eval_two_var:         { category: 'expressions',   level: 12 },
+  combine_like_terms:   { category: 'expressions',   level: 13 },
+  distribute:           { category: 'expressions',   level: 15 },
   linear_one_step:      { category: 'algebra',       level: 11 },
   linear_two_step:      { category: 'algebra',       level: 13 },
   quadratic:            { category: 'algebra',       level: 15 },
@@ -197,6 +202,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'number_sense';
   } else if (normalizedCat === 'statistics') {
     catKey = 'statistics';
+  } else if (normalizedCat === 'expressions') {
+    catKey = 'expressions';
   } else {
     catKey = 'arithmetic';
   }

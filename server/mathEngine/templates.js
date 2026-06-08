@@ -1413,6 +1413,69 @@ templates.statistics = {
   }
 };
 
+// -------------------------------------------------------------
+// ALGEBRAIC EXPRESSIONS TEMPLATES — the bridge from arithmetic to equation-solving (audit #1.1
+// Phase 5): evaluating expressions, combining like terms, and distributing. Numeric answers stay
+// positive; the simplify/expand items use symbolic STRING answers with custom string distractors
+// (the distractor engine passes those through untouched). Routed by the 'expressions' category.
+// -------------------------------------------------------------
+templates.expressions = {
+  // Evaluate a x + b at a given x.
+  11: (_diffFactor, idx) => {
+    const a = 2 + (idx % 4);
+    const b = 1 + (idx % 6);
+    const x = 2 + (idx % 5);
+    const answer = a * x + b;
+    return {
+      question: `Evaluate $${a}x + ${b}$ when $x = ${x}$.`,
+      answer,
+      distractors: [a + x + b, a * x, a * (x + b)], // added everything; forgot +b; wrong order of ops
+      explanation: `Substitute $x = ${x}$ and follow order of operations: $${a}(${x}) + ${b} = ${a * x} + ${b} = ${answer}$.`,
+      type: "eval_expression"
+    };
+  },
+  // Evaluate a two-variable expression a·m + b·n.
+  12: (_diffFactor, idx) => {
+    const a = 2 + (idx % 3);
+    const b = 2 + (idx % 4);
+    const m = 2 + (idx % 4);
+    const n = 1 + (idx % 5);
+    const answer = a * m + b * n;
+    return {
+      question: `Evaluate $${a}m + ${b}n$ when $m = ${m}$ and $n = ${n}$.`,
+      answer,
+      distractors: [a + b + m + n, a * m, a * n + b * m], // added all; only first term; swapped values
+      explanation: `Substitute both values: $${a}(${m}) + ${b}(${n}) = ${a * m} + ${b * n} = ${answer}$.`,
+      type: "eval_two_var"
+    };
+  },
+  // Combine like terms a x + b x.
+  13: (_diffFactor, idx) => {
+    const a = 2 + (idx % 5);
+    const b = 3 + (idx % 4);
+    const sum = a + b;
+    return {
+      question: `Simplify: $${a}x + ${b}x$`,
+      answer: `${sum}x`,
+      distractors: [`${a * b}x`, `${sum}x^2`, `${sum}`], // multiplied coefficients; added exponents; dropped x
+      explanation: `Like terms share the variable, so add their coefficients: $${a}x + ${b}x = (${a} + ${b})x = ${sum}x$.`,
+      type: "combine_like_terms"
+    };
+  },
+  // Distribute a(x + b).
+  15: (_diffFactor, idx) => {
+    const a = 2 + (idx % 4);
+    const b = 3 + (idx % 5);
+    return {
+      question: `Expand: $${a}(x + ${b})$`,
+      answer: `${a}x + ${a * b}`,
+      distractors: [`${a}x + ${b}`, `x + ${a * b}`, `${a}x + ${a + b}`], // forgot to distribute to constant; to first term; added instead of multiplied
+      explanation: `Multiply $${a}$ by each term inside the parentheses: $${a}(x + ${b}) = ${a}x + ${a * b}$.`,
+      type: "distribute"
+    };
+  }
+};
+
 module.exports = {
   templates
 };

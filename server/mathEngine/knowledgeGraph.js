@@ -301,6 +301,40 @@ const concepts = {
     misconceptions: [
       { id: "used_complement", label: "Computed the complement (probability of the other outcome)", rule: (ans) => 100 - ans }
     ]
+  },
+
+  // Algebraic expressions (audit #1.1 — the bridge from arithmetic into algebra)
+  "eval_expression": {
+    name: "Evaluating Expressions",
+    prereqs: ["pemdas"],
+    baseElo: 900,
+    misconceptions: [
+      { id: "added_all", label: "Added every number instead of substituting", rule: (ans) => ans + 1 }
+    ]
+  },
+  "eval_two_var": {
+    name: "Two-Variable Expressions",
+    prereqs: ["eval_expression"],
+    baseElo: 980,
+    misconceptions: [
+      { id: "swapped_values", label: "Substituted the values into the wrong variables", rule: (ans) => ans + 1 }
+    ]
+  },
+  "combine_like_terms": {
+    name: "Combining Like Terms",
+    prereqs: ["arithmetic_add"],
+    baseElo: 940,
+    misconceptions: [
+      { id: "multiplied_coeffs", label: "Multiplied the coefficients instead of adding them", rule: (ans) => ans }
+    ]
+  },
+  "distribute": {
+    name: "The Distributive Property",
+    prereqs: ["arithmetic_mult"],
+    baseElo: 1000,
+    misconceptions: [
+      { id: "partial_distribute", label: "Distributed to only the first term inside the parentheses", rule: (ans) => ans }
+    ]
   }
 };
 
@@ -329,6 +363,10 @@ const STANDARDS = {
   stat_median: "6.SP.B.5c",
   stat_range: "6.SP.B.5c",
   stat_probability: "7.SP.C.5",
+  eval_expression: "6.EE.A.2c",
+  eval_two_var: "6.EE.A.2c",
+  combine_like_terms: "7.EE.A.1",
+  distribute: "6.EE.A.3",
   linear_one_step: "6.EE.B.7",
   linear_two_step: "7.EE.B.4",
   quadratic: "HSA-REI.B.4",

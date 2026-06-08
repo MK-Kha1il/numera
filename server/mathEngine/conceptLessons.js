@@ -694,6 +694,119 @@ const CONCEPT_LESSONS = {
       { question: "A bag has $5$ red marbles out of $20$. What is the probability of red, as a percent?", answer: "25", explanation: "$P(\\text{red}) = \\frac{5}{20} = \\frac14 = 25\\%$." },
       { question: "A bag has $2$ red marbles out of $20$. What is the probability of red, as a percent?", answer: "10", explanation: "$P(\\text{red}) = \\frac{2}{20} = \\frac1{10} = 10\\%$." }
     ]
+  },
+
+  // ===========================================================================
+  // ALGEBRAIC EXPRESSIONS STRAND
+  // ===========================================================================
+  eval_expression: {
+    title: "Evaluating Expressions",
+    formula: "\\text{replace the letter with its value, then compute}",
+    oneLineSummary: "A variable is a placeholder for a number — to evaluate, substitute the value and follow order of operations.",
+    intuitionHook: "A taxi charges 2 dollars per mile plus a 3 dollar flag fee: cost $= 2x + 3$. For a 4-mile trip, the $x$ is just standing in for $4$. Swap it in: $2(4)+3 = 11$. A variable is a number wearing a name tag.",
+    whatItIs: "An algebraic expression like $2x + 3$ is a recipe built from numbers and variables. Evaluating it means putting in a specific value for the variable and working out the single number that results.",
+    whyItWorks: "A variable holds a place for a number you'll supply later — the expression $2x+3$ describes a RELATIONSHIP that works for any $x$. Evaluating just fills the slot and computes. The one rule: respect order of operations. $2x$ means $2 \\times x$, so multiply BEFORE adding the $3$ — exactly the PEMDAS habit from arithmetic, now with a letter in the mix.",
+    whenToUse: "Whenever a formula meets a specific case: plugging a number into a cost formula, a temperature conversion, a physics equation, or a spreadsheet cell.",
+    representations: [
+      { kind: "real_world", label: "Formula with a value", body: "Cost $= 2x + 3$; for $x = 4$ miles, cost $= 2(4) + 3 = 11$ dollars." },
+      { kind: "symbolic", label: "Substitute, then compute", body: "$3x + 2$ at $x = 4$: write $3(4) + 2$, multiply first ($12$), then add ($14$)." },
+      { kind: "balance", label: "The letter is a slot", body: "$x$ is an empty box; evaluating drops a number into the box and simplifies." }
+    ],
+    commonMistakes: [
+      { label: "Adding instead of substituting", why: "Reading $3x + 2$ at $x=4$ as $3 + 4 + 2$, treating the coefficient as a separate term.", fix: "$3x$ means $3 \\times x$. Replace $x$ with its value and MULTIPLY: $3(4) = 12$, then add $2$." },
+      { label: "Ignoring order of operations", why: "Adding before multiplying, e.g. $3 \\times (4+2)$ instead of $3\\times4 + 2$.", fix: "Multiplication binds tighter than addition. Do $3x$ first, then add the constant." }
+    ],
+    connections: [
+      { concept: "pemdas", note: "Evaluating is order-of-operations with a value substituted for the letter." },
+      { concept: "linear_one_step", note: "Solving an equation reverses this: instead of plugging in $x$, you find the $x$ that makes it true." },
+      { concept: "eval_two_var", note: "The same substitution move, now with two letters to fill." }
+    ],
+    examples: [
+      { question: "Evaluate $3x + 2$ when $x = 4$.", answer: "14", explanation: "Substitute: $3(4) + 2$. Multiply first: $12 + 2 = 14$." },
+      { question: "A cost is $5x + 1$ dollars for $x$ items. Find the cost of $3$ items.", answer: "16", explanation: "$5(3) + 1 = 15 + 1 = 16$ dollars." }
+    ]
+  },
+
+  eval_two_var: {
+    title: "Two-Variable Expressions",
+    formula: "a\\,m + b\\,n \\;\\to\\; \\text{substitute both, then compute}",
+    oneLineSummary: "Same idea as one variable, but fill EACH letter with its own value before computing.",
+    intuitionHook: "A snack stall sells pretzels at 2 dollars and drinks at 3 dollars: total $= 2m + 3n$ for $m$ pretzels and $n$ drinks. Buy 4 pretzels and 2 drinks? Fill both slots: $2(4) + 3(2) = 14$.",
+    whatItIs: "A two-variable expression like $2m + 3n$ depends on two independent quantities. Evaluating means substituting a value for each variable, then simplifying to one number.",
+    whyItWorks: "Each variable is its own placeholder, and they don't interfere: replace $m$ with its value and $n$ with its value, keeping each with its own coefficient. Then it's ordinary arithmetic — multiply each term, then add. The only new discipline is bookkeeping: make sure each number lands on the RIGHT letter.",
+    whenToUse: "Totals built from two different rates or prices, area as length times width, distance as speed times time across two legs, any formula with two inputs.",
+    representations: [
+      { kind: "real_world", label: "Two prices", body: "$2m + 3n$: $m$ pretzels at 2 dollars, $n$ drinks at 3 dollars. For $m=4, n=2$: $8 + 6 = 14$." },
+      { kind: "symbolic", label: "Fill both slots", body: "$2m + 3n$ at $m=4, n=2$ becomes $2(4) + 3(2) = 8 + 6 = 14$." },
+      { kind: "grid", label: "Keep the pairs straight", body: "Line up each value under its letter so $m$'s value never wanders into $n$'s term." }
+    ],
+    commonMistakes: [
+      { label: "Swapping the values", why: "Putting $m$'s value into $n$'s term (or vice versa), e.g. $2(2) + 3(4)$ instead of $2(4) + 3(2)$.", fix: "Label as you substitute: write the value directly beneath its matching letter before computing." },
+      { label: "Merging the variables", why: "Treating $m$ and $n$ as the same quantity and adding their coefficients first.", fix: "$m$ and $n$ are independent — keep their terms separate; only combine after substituting numbers." }
+    ],
+    connections: [
+      { concept: "eval_expression", note: "The one-variable case; this just adds a second slot to fill." },
+      { concept: "geo_area_rect", note: "Area $= l \\times w$ is a two-variable expression evaluated at specific dimensions." }
+    ],
+    examples: [
+      { question: "Evaluate $2m + 3n$ when $m = 4$ and $n = 2$.", answer: "14", explanation: "Substitute both: $2(4) + 3(2) = 8 + 6 = 14$." },
+      { question: "Evaluate $3a + 2b$ when $a = 5$ and $b = 4$.", answer: "23", explanation: "$3(5) + 2(4) = 15 + 8 = 23$." }
+    ]
+  },
+
+  combine_like_terms: {
+    title: "Combining Like Terms",
+    formula: "a x + b x = (a + b)\\,x",
+    oneLineSummary: "Terms with the same variable can be merged by adding their coefficients — like counting the same kind of object.",
+    intuitionHook: "Three apples plus five apples is eight apples — you'd never call it 'fifteen apples' or 'eight apple-squared'. So $3x + 5x = 8x$. The $x$ is just the name of the thing you're counting.",
+    whatItIs: "Like terms have the exact same variable part (e.g. both are $x$ terms). Combining them collapses a sum into a single term by adding the coefficients while keeping the variable unchanged.",
+    whyItWorks: "$3x$ means 'three $x$s' and $5x$ means 'five $x$s'; together that's eight $x$s — $8x$. This is the distributive property read backwards: $3x + 5x = (3+5)x$. The variable is the UNIT being counted, so it stays exactly as it is: you don't add the exponents (that would change what you're counting) and you don't multiply the coefficients (that would be groups-of-groups, not a total).",
+    whenToUse: "Simplifying expressions before solving, tidying a formula, collecting terms after expanding brackets — a constant housekeeping step in algebra.",
+    representations: [
+      { kind: "real_world", label: "Counting one kind", body: "$3x + 5x$ is $3$ boxes plus $5$ boxes of the same item: $8$ boxes, $8x$." },
+      { kind: "symbolic", label: "Add the coefficients", body: "$3x + 5x = (3+5)x = 8x$ — the $x$ rides along unchanged." },
+      { kind: "area_model", label: "Bars of x", body: "Lay three $x$-length bars next to five more; the total length is $8x$." }
+    ],
+    commonMistakes: [
+      { label: "Multiplying the coefficients", why: "Writing $3x + 5x = 15x$, multiplying when the operation is addition.", fix: "Adding three $x$s and five $x$s gives eight $x$s. Multiply only if the problem actually multiplies." },
+      { label: "Changing the variable's power", why: "Writing $3x + 5x = 8x^2$, adding exponents that were never multiplied.", fix: "The variable is the unit you're counting — it stays $x$. Exponents change only when terms are MULTIPLIED, not added." }
+    ],
+    connections: [
+      { concept: "arithmetic_add", note: "Combining like terms is addition, with the variable as the unit." },
+      { concept: "distribute", note: "This is distribution in reverse: $(a+b)x = ax + bx$." }
+    ],
+    examples: [
+      { question: "Simplify $3x + 5x$.", answer: "8x", explanation: "Add the coefficients: $(3+5)x = 8x$. The variable stays $x$." },
+      { question: "Simplify $4x + 2x$.", answer: "6x", explanation: "$ (4+2)x = 6x$ — six $x$s in total." }
+    ]
+  },
+
+  distribute: {
+    title: "The Distributive Property",
+    formula: "a(x + b) = a x + a b",
+    oneLineSummary: "Multiplying a group means multiplying EVERY term inside it — share the multiplier across the bracket.",
+    intuitionHook: "Buying 4 combo meals, each a burger ($x$) plus 3-dollar fries: total $= 4(x + 3)$. That's 4 burgers AND 4 fries — $4x + 12$ — not 4 burgers and a lone 3. The multiplier reaches everything in the bag.",
+    whatItIs: "The distributive property expands a product over a sum: $a(x + b)$ becomes $a x + a b$. The outside factor multiplies each term inside the parentheses.",
+    whyItWorks: "$a(x+b)$ means $a$ copies of the whole group $(x+b)$. With $a$ copies you get $a$ of the $x$s AND $a$ of the $b$s — that's $ax + ab$. Pictured as area: a rectangle of height $a$ and width $(x+b)$ splits into an $a$-by-$x$ piece and an $a$-by-$b$ piece, whose areas $ax$ and $ab$ add to the whole. The multiplier must touch BOTH terms because both are inside the group being copied.",
+    whenToUse: "Expanding brackets before combining terms or solving, mental-math splits ($7 \\times 14 = 7(10+4)$), factoring in reverse, and almost every multi-step algebra simplification.",
+    representations: [
+      { kind: "area_model", label: "Split the rectangle", body: "An $a \\times (x+b)$ rectangle divides into $a\\times x$ and $a\\times b$: areas $ax$ and $ab$." },
+      { kind: "symbolic", label: "Multiply each term", body: "$4(x + 3) = 4\\cdot x + 4\\cdot 3 = 4x + 12$." },
+      { kind: "real_world", label: "Copies of a group", body: "$4$ combos of (burger $+$ 3 fries) is $4$ burgers and $12$ fries: $4x + 12$." }
+    ],
+    commonMistakes: [
+      { label: "Distributing to only the first term", why: "Writing $4(x + 3) = 4x + 3$, multiplying the $x$ but leaving the $3$ untouched.", fix: "The factor multiplies EVERY term inside: $4\\times x$ and $4\\times 3$. The constant gets multiplied too." },
+      { label: "Adding instead of multiplying the constant", why: "Writing $4(x+3) = 4x + 7$, adding $4+3$ instead of multiplying.", fix: "Inside the bracket each term is MULTIPLIED by the outside factor: $4 \\times 3 = 12$, not $4 + 3$." }
+    ],
+    connections: [
+      { concept: "arithmetic_mult", note: "Distribution is the area-model of multiplication, splitting one factor into a sum." },
+      { concept: "combine_like_terms", note: "Expanding often produces like terms to collect next." },
+      { concept: "linear_two_step", note: "Solving equations with brackets starts by distributing." }
+    ],
+    examples: [
+      { question: "Expand $4(x + 3)$.", answer: "4x + 12", explanation: "Multiply the $4$ by each term: $4\\cdot x + 4\\cdot 3 = 4x + 12$." },
+      { question: "Expand $2(x + 5)$.", answer: "2x + 10", explanation: "$2\\cdot x + 2\\cdot 5 = 2x + 10$." }
+    ]
   }
 };
 
@@ -740,6 +853,12 @@ function levelToConceptId(category, level) {
     if (lvl <= 9) return 'stat_median';
     if (lvl <= 11) return 'stat_range';
     return 'stat_probability';
+  }
+  if (cat === 'expressions') {
+    if (lvl <= 11) return 'eval_expression';
+    if (lvl <= 12) return 'eval_two_var';
+    if (lvl <= 13) return 'combine_like_terms';
+    return 'distribute';
   }
   return null;
 }
