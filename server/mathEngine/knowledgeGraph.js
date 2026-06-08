@@ -217,6 +217,48 @@ const concepts = {
     misconceptions: [
       { id: "circumference_instead", label: "Used circumference (2πr) instead of area (πr²)", rule: (ans) => ans }
     ]
+  },
+
+  // Number sense / pre-algebra (audit #1.1 — the band the curriculum used to skip)
+  "percentage_of": {
+    name: "Percent of a Number",
+    prereqs: ["arithmetic_mult"],
+    baseElo: 700,
+    misconceptions: [
+      { id: "decimal_place", label: "Decimal-place slip (off by 10×)", rule: (ans) => ans * 10 }
+    ]
+  },
+  "fraction_of": {
+    name: "Fraction of a Number",
+    prereqs: ["arithmetic_div"],
+    baseElo: 720,
+    misconceptions: [
+      { id: "took_complement", label: "Computed the remaining part instead", rule: (ans) => ans }
+    ]
+  },
+  "ratio_solve": {
+    name: "Solving Ratios & Proportions",
+    prereqs: ["arithmetic_mult"],
+    baseElo: 780,
+    misconceptions: [
+      { id: "added_difference", label: "Added the ratio difference instead of scaling", rule: (ans) => ans + 1 }
+    ]
+  },
+  "percent_change": {
+    name: "Percent Increase & Decrease",
+    prereqs: ["percentage_of"],
+    baseElo: 850,
+    misconceptions: [
+      { id: "reported_change_only", label: "Gave only the change, not the new total", rule: (ans) => ans }
+    ]
+  },
+  "exponent_power": {
+    name: "Exponents & Powers",
+    prereqs: ["arithmetic_mult"],
+    baseElo: 760,
+    misconceptions: [
+      { id: "multiplied_base_exp", label: "Multiplied base × exponent instead of powering", rule: (ans) => ans }
+    ]
   }
 };
 
@@ -235,6 +277,11 @@ const STANDARDS = {
   geo_area_triangle: "6.G.A.1",
   geo_angles_triangle: "8.G.A.5",
   geo_circle_area: "7.G.B.4",
+  percentage_of: "6.RP.A.3c",
+  fraction_of: "5.NF.B.4",
+  ratio_solve: "6.RP.A.3",
+  percent_change: "7.RP.A.3",
+  exponent_power: "6.EE.A.1",
   linear_one_step: "6.EE.B.7",
   linear_two_step: "7.EE.B.4",
   quadratic: "HSA-REI.B.4",

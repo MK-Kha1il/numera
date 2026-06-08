@@ -1257,6 +1257,84 @@ templates.geometry = {
   }
 };
 
+// -------------------------------------------------------------
+// NUMBER SENSE / PRE-ALGEBRA TEMPLATES — the band the curriculum used to skip entirely (it jumped
+// straight from arithmetic to algebra). Percentages, fractions-of, ratios, percent change, and
+// powers. All answers are integer so the distractor + correctness layers stay robust; the setups
+// pick divisible operands so the "nice" answer is guaranteed.
+// -------------------------------------------------------------
+templates.number_sense = {
+  // P% of N  (N is a multiple of 20 so 10/20/25/50% lands on a whole number)
+  6: (_diffFactor, idx) => {
+    const P = [10, 20, 25, 50][idx % 4];
+    const N = 20 * (2 + (idx % 5));
+    const answer = (N * P) / 100;
+    return {
+      question: `What is $${P}\\%$ of $${N}$?`,
+      answer,
+      distractors: [(N * P) / 10, N - answer, P], // decimal-place slip; forgot to take the part; echoed P
+      explanation: `$${P}\\%$ of $${N}$ is $\\frac{${P}}{100} \\times ${N} = ${answer}$.`,
+      type: "percentage_of"
+    };
+  },
+  // p/q of N  (N is a multiple of q)
+  7: (_diffFactor, idx) => {
+    const q = [2, 3, 4, 5][idx % 4];
+    const p = 1 + (idx % (q - 1));
+    const N = q * (2 + (idx % 6));
+    const answer = (N / q) * p;
+    return {
+      question: `What is $\\frac{${p}}{${q}}$ of $${N}$?`,
+      answer,
+      distractors: [N - answer, N / q, p * q], // the complement; just one part; multiplied p·q
+      explanation: `$\\frac{${p}}{${q}}$ of $${N}$ is $\\frac{${p}}{${q}} \\times ${N} = ${answer}$.`,
+      type: "fraction_of"
+    };
+  },
+  // Ratio a:b — given the first quantity, find the second. (b > a so the ratio is never degenerate.)
+  8: (_diffFactor, idx) => {
+    const a = 2 + (idx % 3);          // 2..4
+    const b = a + 1 + (idx % 3);      // a+1 .. a+3, always distinct from a
+    const mult = 2 + (idx % 4);
+    const X = a * mult;
+    const answer = b * mult;
+    return {
+      question: `Two quantities are in the ratio $${a} : ${b}$. If the first is $${X}$, what is the second?`,
+      answer,
+      distractors: [X + (b - a), a * b, X], // added the difference; multiplied the ratio; echoed X
+      explanation: `Scale the ratio: $${X} \\div ${a} = ${mult}$, so the second is $${b} \\times ${mult} = ${answer}$.`,
+      type: "ratio_solve"
+    };
+  },
+  // Increase N by P%.
+  9: (_diffFactor, idx) => {
+    const P = [10, 20, 25, 50][idx % 4];
+    const N = 20 * (2 + (idx % 5));
+    const change = (N * P) / 100;
+    const answer = N + change;
+    return {
+      question: `A price of $${N}$ is increased by $${P}\\%$. What is the new price?`,
+      answer,
+      distractors: [change, N - change, N + P], // reported just the increase; decreased instead; added P directly
+      explanation: `The increase is $${P}\\%$ of $${N} = ${change}$, so the new price is $${N} + ${change} = ${answer}$.`,
+      type: "percent_change"
+    };
+  },
+  // Evaluate b^e.
+  14: (_diffFactor, idx) => {
+    const b = [2, 3, 4, 5][idx % 4];
+    const e = 2 + (idx % 3);
+    const answer = Math.pow(b, e);
+    return {
+      question: `Evaluate $${b}^{${e}}$.`,
+      answer,
+      distractors: [b * e, Math.pow(b, e - 1), b + e], // multiplied instead of powered; off-by-one exponent; added
+      explanation: `$${b}^{${e}}$ means $${b}$ multiplied by itself $${e}$ times: $${b}^{${e}} = ${answer}$.`,
+      type: "exponent_power"
+    };
+  }
+};
+
 module.exports = {
   templates
 };

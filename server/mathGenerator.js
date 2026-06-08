@@ -37,6 +37,12 @@ const CONCEPT_TO_LEVEL = {
   geo_area_triangle:    { category: 'geometry',      level: 4  },
   geo_angles_triangle:  { category: 'geometry',      level: 5  },
   geo_circle_area:      { category: 'geometry',      level: 12 },
+  // Number-sense / pre-algebra strand (audit #1.1 — the band the ladder used to skip).
+  percentage_of:        { category: 'number_sense',  level: 6  },
+  fraction_of:          { category: 'number_sense',  level: 7  },
+  ratio_solve:          { category: 'number_sense',  level: 8  },
+  percent_change:       { category: 'number_sense',  level: 9  },
+  exponent_power:       { category: 'number_sense',  level: 14 },
   linear_one_step:      { category: 'algebra',       level: 11 },
   linear_two_step:      { category: 'algebra',       level: 13 },
   quadratic:            { category: 'algebra',       level: 15 },
@@ -181,6 +187,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'number_theory';
   } else if (normalizedCat === 'geometry') {
     catKey = 'geometry';
+  } else if (normalizedCat === 'number_sense' || normalizedCat === 'number sense') {
+    catKey = 'number_sense';
   } else {
     catKey = 'arithmetic';
   }
