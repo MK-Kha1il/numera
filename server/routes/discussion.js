@@ -20,20 +20,60 @@ router.get('/api/concepts/:conceptId/posts', authenticateToken, (req, res) => {
   if (!concept) return res.status(404).json({ error: 'Unknown concept' });
 
   db.all(
-    `SELECT p.id, p.user_id AS userId, u.username, p.body, p.created_at AS createdAt
+    `SELECT p.id, p.user_id AS userId, u.username, p.body, p.created_at AS createdAt,
+            (SELECT COUNT(*) FROM concept_post_votes v WHERE v.post_id = p.id) AS votes,
+            EXISTS(SELECT 1 FROM concept_post_votes v WHERE v.post_id = p.id AND v.user_id = ?) AS voted
        FROM concept_posts p JOIN users u ON u.id = p.user_id
       WHERE p.concept_id = ? AND p.hidden = 0
         AND p.user_id NOT IN (SELECT blocked_id FROM user_blocks WHERE blocker_id = ?)
         AND p.user_id NOT IN (SELECT blocker_id FROM user_blocks WHERE blocked_id = ?)
-      ORDER BY p.created_at DESC
+      ORDER BY votes DESC, p.created_at DESC
       LIMIT 100`,
-    [conceptId, req.user.id, req.user.id],
+    [req.user.id, conceptId, req.user.id, req.user.id],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
-      const posts = (rows || []).map((r) => ({ ...r, mine: r.userId === req.user.id }));
+      // Best answers first (most upvotes), ties broken by recency.
+      const posts = (rows || []).map((r) => ({ ...r, voted: !!r.voted, mine: r.userId === req.user.id }));
       res.json({ conceptId, name: concept.name, posts });
     }
   );
+});
+
+// Toggle an upvote on a post. You can't upvote your own post. Returns the fresh state.
+router.post('/api/concepts/posts/:postId/upvote', authenticateToken, (req, res) => {
+  const postId = parseInt(req.params.postId, 10);
+  if (!Number.isFinite(postId)) return res.status(400).json({ error: 'Invalid post id' });
+
+  db.get('SELECT user_id FROM concept_posts WHERE id = ? AND hidden = 0', [postId], (err, post) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    if (post.user_id === req.user.id) return res.status(400).json({ error: 'You cannot upvote your own post' });
+
+    const finish = (voted) =>
+      db.get('SELECT COUNT(*) AS votes FROM concept_post_votes WHERE post_id = ?', [postId], (cErr, row) => {
+        if (cErr) return res.status(500).json({ error: cErr.message });
+        res.json({ postId, voted, votes: (row && row.votes) || 0 });
+      });
+
+    db.get('SELECT 1 FROM concept_post_votes WHERE post_id = ? AND user_id = ?', [postId, req.user.id], (vErr, existing) => {
+      if (vErr) return res.status(500).json({ error: vErr.message });
+      if (existing) {
+        db.run('DELETE FROM concept_post_votes WHERE post_id = ? AND user_id = ?', [postId, req.user.id], (dErr) => {
+          if (dErr) return res.status(500).json({ error: dErr.message });
+          finish(false);
+        });
+      } else {
+        db.run(
+          'INSERT INTO concept_post_votes (post_id, user_id, created_at) VALUES (?, ?, ?)',
+          [postId, req.user.id, Math.floor(Date.now() / 1000)],
+          (iErr) => {
+            if (iErr) return res.status(500).json({ error: iErr.message });
+            finish(true);
+          }
+        );
+      }
+    });
+  });
 });
 
 // Create a post on a concept.
@@ -65,7 +105,8 @@ router.delete('/api/concepts/posts/:postId', authenticateToken, (req, res) => {
   db.run('DELETE FROM concept_posts WHERE id = ? AND user_id = ?', [postId, req.user.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     if (this.changes === 0) return res.status(404).json({ error: 'Post not found' });
-    res.json({ success: true });
+    // Clean up its votes so they don't dangle.
+    db.run('DELETE FROM concept_post_votes WHERE post_id = ?', [postId], () => res.json({ success: true }));
   });
 });
 

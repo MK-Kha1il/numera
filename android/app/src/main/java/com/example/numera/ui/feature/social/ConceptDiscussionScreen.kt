@@ -71,17 +71,36 @@ fun ConceptDiscussionScreen(conceptId: String, conceptName: String, onBack: () -
                     verticalArrangement = Arrangement.spacedBy(Spacing.s)
                 ) {
                     items(posts, key = { it.id }) { post ->
-                        PostCard(post, onDelete = {
-                            scope.launch {
-                                try {
-                                    val token = RetrofitClient.authToken ?: ""
-                                    withContext(Dispatchers.IO) { RetrofitClient.apiService.deleteConceptPost(token, post.id) }
-                                    refresh()
-                                } catch (e: Exception) {
-                                    Log.e("Discussion", "delete err: ${e.message}")
+                        PostCard(
+                            post,
+                            onDelete = {
+                                scope.launch {
+                                    try {
+                                        val token = RetrofitClient.authToken ?: ""
+                                        withContext(Dispatchers.IO) { RetrofitClient.apiService.deleteConceptPost(token, post.id) }
+                                        refresh()
+                                    } catch (e: Exception) {
+                                        Log.e("Discussion", "delete err: ${e.message}")
+                                    }
+                                }
+                            },
+                            onUpvote = {
+                                // Optimistic toggle; reconcile with the server's authoritative count.
+                                posts = posts.map {
+                                    if (it.id == post.id) it.copy(voted = !it.voted, votes = it.votes + if (it.voted) -1 else 1) else it
+                                }
+                                scope.launch {
+                                    try {
+                                        val token = RetrofitClient.authToken ?: ""
+                                        val r = withContext(Dispatchers.IO) { RetrofitClient.apiService.upvoteConceptPost(token, post.id) }
+                                        posts = posts.map { if (it.id == post.id) it.copy(voted = r.voted, votes = r.votes) else it }
+                                    } catch (e: Exception) {
+                                        Log.e("Discussion", "upvote err: ${e.message}")
+                                        refresh() // roll back to server truth on failure
+                                    }
                                 }
                             }
-                        })
+                        )
                     }
                 }
             }
@@ -132,7 +151,7 @@ fun ConceptDiscussionScreen(conceptId: String, conceptName: String, onBack: () -
 }
 
 @Composable
-private fun PostCard(post: ConceptPost, onDelete: () -> Unit) {
+private fun PostCard(post: ConceptPost, onDelete: () -> Unit, onUpvote: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(CornerRadius.m),
@@ -148,6 +167,17 @@ private fun PostCard(post: ConceptPost, onDelete: () -> Unit) {
                 }
             }
             Text(post.body, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (post.mine) {
+                    // You can't upvote your own post — show the count only.
+                    Text("▲ ${post.votes}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                } else {
+                    val accent = if (post.voted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    TextButton(onClick = onUpvote, contentPadding = PaddingValues(horizontal = Spacing.s)) {
+                        Text("▲ ${post.votes}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = accent)
+                    }
+                }
+            }
         }
     }
 }

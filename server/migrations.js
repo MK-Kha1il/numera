@@ -449,6 +449,23 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_concept_posts ON concept_posts(concept_id, created_at)');
     },
   },
+  {
+    version: 17,
+    name: 'concept_post_votes',
+    // Upvotes on discussion posts (audit #1.18 — let the best answers rise). One vote per
+    // (post, user); the list sorts by vote count so quality surfaces. PK enforces at-most-one.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS concept_post_votes (
+          post_id    INTEGER NOT NULL,
+          user_id    INTEGER NOT NULL,
+          created_at INTEGER NOT NULL,
+          PRIMARY KEY (post_id, user_id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_post_votes_user ON concept_post_votes(user_id)');
+    },
+  },
 ];
 
 /**

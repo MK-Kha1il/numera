@@ -233,6 +233,12 @@ interface ApiService {
         @Path("postId") postId: Int
     ): SimpleResponse
 
+    @POST("api/concepts/posts/{postId}/upvote")
+    suspend fun upvoteConceptPost(
+        @Header("Authorization") token: String,
+        @Path("postId") postId: Int
+    ): VoteResponse
+
     @GET("api/account/goal")
     suspend fun getGoal(
         @Header("Authorization") token: String

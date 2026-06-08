@@ -69,3 +69,35 @@ test('an author can delete their own post but not someone else\'s; a post is rep
   const del = await api(ctx.base, 'DELETE', `/api/concepts/posts/${postId}`, { token: a.token });
   assert.equal(del.status, 200);
 });
+
+test('upvotes toggle, surface the best post first, and reject self-upvote', async () => {
+  const a = await registerUser(ctx.base); // author of the good answer
+  const b = await registerUser(ctx.base); // voter
+  // A makes a strong post; A also makes a throwaway later post (newer).
+  const good = await api(ctx.base, 'POST', `/api/concepts/${CONCEPT}/posts`, { token: a.token, body: { body: 'The identity property in detail ABC' } });
+  const goodId = good.body.id;
+  await api(ctx.base, 'POST', `/api/concepts/${CONCEPT}/posts`, { token: a.token, body: { body: 'a newer but unvoted note XYZ' } });
+
+  // A cannot upvote their own post.
+  const self = await api(ctx.base, 'POST', `/api/concepts/posts/${goodId}/upvote`, { token: a.token });
+  assert.equal(self.status, 400);
+
+  // B upvotes the good post → voted true, count 1.
+  const up = await api(ctx.base, 'POST', `/api/concepts/posts/${goodId}/upvote`, { token: b.token });
+  assert.equal(up.status, 200);
+  assert.equal(up.body.voted, true);
+  assert.equal(up.body.votes, 1);
+
+  // The upvoted post now sorts above the newer-but-unvoted one, and shows voted=true to B.
+  const list = await api(ctx.base, 'GET', `/api/concepts/${CONCEPT}/posts`, { token: b.token });
+  const idxGood = list.body.posts.findIndex((p) => p.id === goodId);
+  const idxNew = list.body.posts.findIndex((p) => p.body.includes('XYZ'));
+  assert.ok(idxGood < idxNew, 'the upvoted post ranks above the newer unvoted one');
+  assert.equal(list.body.posts[idxGood].votes, 1);
+  assert.equal(list.body.posts[idxGood].voted, true);
+
+  // Toggling again removes the vote.
+  const down = await api(ctx.base, 'POST', `/api/concepts/posts/${goodId}/upvote`, { token: b.token });
+  assert.equal(down.body.voted, false);
+  assert.equal(down.body.votes, 0);
+});

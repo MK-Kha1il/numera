@@ -934,8 +934,13 @@ data class ConceptPost(
     val username: String = "",
     val body: String = "",
     val createdAt: Long = 0,
-    val mine: Boolean = false
+    val mine: Boolean = false,
+    val votes: Int = 0,
+    val voted: Boolean = false
 )
+
+@Serializable
+data class VoteResponse(val postId: Int = 0, val voted: Boolean = false, val votes: Int = 0)
 
 @Serializable
 data class ConceptPostsResponse(
