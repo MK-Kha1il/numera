@@ -1,7 +1,10 @@
 // Clubs/teams (audit #1.7 community). A learner belongs to at most one club at a time. Create a
 // club (name content-filtered + unique, creator auto-joins), browse open clubs with member counts,
 // join/leave (the club is deleted when its last member leaves), and view your club's member
-// ranking. ACID create/join/leave via withTransaction; no special owner powers in v1.
+// ranking. Owner governance (audit #1.7 — kick/owner powers): the owner can remove a member,
+// transfer ownership, or disband the club; when an owner leaves a club that still has members,
+// ownership auto-transfers to the top-ranked remaining member (no dangling owner_id). ACID
+// throughout via withTransaction.
 const express = require('express');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
@@ -16,6 +19,27 @@ const DESC_MAX = 200;
 
 const getMyClubId = (tx, userId) =>
   tx.get('SELECT club_id FROM club_members WHERE user_id = ?', [userId]).then((r) => (r ? r.club_id : null));
+
+// The top-ranked remaining member (by level then XP), excluding one user. Used to hand ownership
+// to a successor when the owner leaves so a club is never left with a dangling owner_id.
+function pickSuccessor(tx, clubId, excludeUserId) {
+  return tx
+    .get(
+      `SELECT cm.user_id AS id FROM club_members cm JOIN users u ON u.id = cm.user_id
+        WHERE cm.club_id = ? AND cm.user_id != ?
+        ORDER BY u.level DESC, u.xp DESC LIMIT 1`,
+      [clubId, excludeUserId]
+    )
+    .then((r) => (r ? r.id : null));
+}
+
+// Load a club for an owner-only action; throws if it doesn't exist or the caller isn't the owner.
+async function requireOwnedClub(tx, clubId, userId, action) {
+  const club = await tx.get('SELECT id, owner_id FROM clubs WHERE id = ?', [clubId]);
+  if (!club) throw httpError(404, 'Club not found');
+  if (club.owner_id !== userId) throw httpError(403, `Only the club owner can ${action}`);
+  return club;
+}
 
 // Members of a club, ranked by level then XP (the team ladder).
 function membersOf(clubId) {
@@ -141,9 +165,64 @@ router.post('/api/clubs/:id/leave', authenticateToken, (req, res) => {
   withTransaction(async (tx) => {
     const membership = await tx.get('SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ?', [clubId, req.user.id]);
     if (!membership) throw httpError(404, 'You are not in this club');
+    const club = await tx.get('SELECT owner_id FROM clubs WHERE id = ?', [clubId]);
     await tx.run('DELETE FROM club_members WHERE club_id = ? AND user_id = ?', [clubId, req.user.id]);
     const remaining = await tx.get('SELECT COUNT(*) AS n FROM club_members WHERE club_id = ?', [clubId]);
-    if ((remaining.n || 0) === 0) await tx.run('DELETE FROM clubs WHERE id = ?', [clubId]);
+    if ((remaining.n || 0) === 0) {
+      await tx.run('DELETE FROM clubs WHERE id = ?', [clubId]);
+    } else if (club && club.owner_id === req.user.id) {
+      // The owner left but members remain — hand ownership to the next-ranked member.
+      const successor = await pickSuccessor(tx, clubId, req.user.id);
+      if (successor) await tx.run('UPDATE clubs SET owner_id = ? WHERE id = ?', [successor, clubId]);
+    }
+  })
+    .then(() => res.json({ success: true }))
+    .catch((err) => res.status(err.status || 500).json({ error: err.message }));
+});
+
+// Owner-only: remove a member from the club (moderation/safety lever). Can't kick yourself.
+router.post('/api/clubs/:id/kick', authenticateToken, (req, res) => {
+  const clubId = parseInt(req.params.id, 10);
+  const targetId = parseInt(req.body && req.body.userId, 10);
+  if (!Number.isFinite(clubId) || !Number.isFinite(targetId)) return res.status(400).json({ error: 'Invalid request' });
+
+  withTransaction(async (tx) => {
+    await requireOwnedClub(tx, clubId, req.user.id, 'remove members');
+    if (targetId === req.user.id) throw httpError(400, "You can't remove yourself — use Leave or Disband");
+    const member = await tx.get('SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ?', [clubId, targetId]);
+    if (!member) throw httpError(404, 'That user is not in your club');
+    await tx.run('DELETE FROM club_members WHERE club_id = ? AND user_id = ?', [clubId, targetId]);
+  })
+    .then(() => res.json({ success: true }))
+    .catch((err) => res.status(err.status || 500).json({ error: err.message }));
+});
+
+// Owner-only: hand ownership to another member.
+router.post('/api/clubs/:id/transfer', authenticateToken, (req, res) => {
+  const clubId = parseInt(req.params.id, 10);
+  const targetId = parseInt(req.body && req.body.userId, 10);
+  if (!Number.isFinite(clubId) || !Number.isFinite(targetId)) return res.status(400).json({ error: 'Invalid request' });
+
+  withTransaction(async (tx) => {
+    await requireOwnedClub(tx, clubId, req.user.id, 'transfer ownership');
+    if (targetId === req.user.id) throw httpError(400, 'You already own this club');
+    const member = await tx.get('SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ?', [clubId, targetId]);
+    if (!member) throw httpError(404, 'That user is not in your club');
+    await tx.run('UPDATE clubs SET owner_id = ? WHERE id = ?', [targetId, clubId]);
+  })
+    .then(() => res.json({ success: true }))
+    .catch((err) => res.status(err.status || 500).json({ error: err.message }));
+});
+
+// Owner-only: disband the club entirely (removes all members + the club).
+router.delete('/api/clubs/:id', authenticateToken, (req, res) => {
+  const clubId = parseInt(req.params.id, 10);
+  if (!Number.isFinite(clubId)) return res.status(400).json({ error: 'Invalid club id' });
+
+  withTransaction(async (tx) => {
+    await requireOwnedClub(tx, clubId, req.user.id, 'disband the club');
+    await tx.run('DELETE FROM club_members WHERE club_id = ?', [clubId]);
+    await tx.run('DELETE FROM clubs WHERE id = ?', [clubId]);
   })
     .then(() => res.json({ success: true }))
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));

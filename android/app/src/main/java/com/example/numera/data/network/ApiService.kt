@@ -209,6 +209,26 @@ interface ApiService {
         @Path("id") id: Int
     ): SimpleResponse
 
+    @POST("api/clubs/{id}/kick")
+    suspend fun kickClubMember(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body request: ClubMemberActionRequest
+    ): SimpleResponse
+
+    @POST("api/clubs/{id}/transfer")
+    suspend fun transferClubOwnership(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body request: ClubMemberActionRequest
+    ): SimpleResponse
+
+    @DELETE("api/clubs/{id}")
+    suspend fun disbandClub(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): SimpleResponse
+
     @GET("api/achievements")
     suspend fun getAchievements(
         @Header("Authorization") token: String

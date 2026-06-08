@@ -1,5 +1,6 @@
 // Clubs: create (auto-join, name validation/uniqueness, one-club rule), browse with counts,
-// join/leave, member ranking, and auto-delete of an emptied club.
+// join/leave, member ranking, auto-delete of an emptied club, and owner governance
+// (kick / transfer / disband + auto-succession when an owner leaves).
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const { bootServer, shutdown, api, registerUser } = require('./helpers');
@@ -98,4 +99,76 @@ test('club leaderboard ranks clubs by their members\' combined level', async () 
   assert.ok(ib < ia, 'the club with the higher-level member ranks first');
   assert.equal(lb.body[ib].totalLevel, 40);
   assert.equal(lb.body[ib].position, ib + 1);
+});
+
+// --- Owner governance ---------------------------------------------------------
+async function clubWithMember() {
+  const owner = await registerUser(ctx.base);
+  const member = await registerUser(ctx.base);
+  const create = await api(ctx.base, 'POST', '/api/clubs', { token: owner.token, body: { name: uniqueName() } });
+  const clubId = create.body.clubId;
+  await api(ctx.base, 'POST', `/api/clubs/${clubId}/join`, { token: member.token });
+  return { owner, member, clubId };
+}
+
+test('owner can kick a member; non-owners cannot, and the owner cannot kick themselves', async () => {
+  const { owner, member, clubId } = await clubWithMember();
+  const memberId = await idOf(member.username);
+  const ownerId = await idOf(owner.username);
+
+  // A non-owner can't kick.
+  const byMember = await api(ctx.base, 'POST', `/api/clubs/${clubId}/kick`, { token: member.token, body: { userId: ownerId } });
+  assert.equal(byMember.status, 403);
+
+  // The owner can't kick themselves.
+  const selfKick = await api(ctx.base, 'POST', `/api/clubs/${clubId}/kick`, { token: owner.token, body: { userId: ownerId } });
+  assert.equal(selfKick.status, 400);
+
+  // The owner kicks the member.
+  const kick = await api(ctx.base, 'POST', `/api/clubs/${clubId}/kick`, { token: owner.token, body: { userId: memberId } });
+  assert.equal(kick.status, 200);
+  const mine = await api(ctx.base, 'GET', '/api/clubs/mine', { token: owner.token });
+  assert.equal(mine.body.members.length, 1);
+  // The kicked member is now club-less and free to join elsewhere.
+  assert.equal((await api(ctx.base, 'GET', '/api/clubs/mine', { token: member.token })).body.club, null);
+});
+
+test('owner can transfer ownership to a member', async () => {
+  const { owner, member, clubId } = await clubWithMember();
+  const memberId = await idOf(member.username);
+
+  const transfer = await api(ctx.base, 'POST', `/api/clubs/${clubId}/transfer`, { token: owner.token, body: { userId: memberId } });
+  assert.equal(transfer.status, 200);
+
+  // The new owner sees isOwner; the old owner doesn't.
+  assert.equal((await api(ctx.base, 'GET', '/api/clubs/mine', { token: member.token })).body.club.isOwner, true);
+  assert.equal((await api(ctx.base, 'GET', '/api/clubs/mine', { token: owner.token })).body.club.isOwner, false);
+  // The former owner can no longer perform owner actions.
+  const denied = await api(ctx.base, 'POST', `/api/clubs/${clubId}/transfer`, { token: owner.token, body: { userId: memberId } });
+  assert.equal(denied.status, 403);
+});
+
+test('owner can disband the club, removing it for everyone', async () => {
+  const { owner, member, clubId } = await clubWithMember();
+
+  // A member can't disband.
+  assert.equal((await api(ctx.base, 'DELETE', `/api/clubs/${clubId}`, { token: member.token })).status, 403);
+
+  const disband = await api(ctx.base, 'DELETE', `/api/clubs/${clubId}`, { token: owner.token });
+  assert.equal(disband.status, 200);
+  assert.equal((await api(ctx.base, 'GET', '/api/clubs/mine', { token: owner.token })).body.club, null);
+  assert.equal((await api(ctx.base, 'GET', '/api/clubs/mine', { token: member.token })).body.club, null);
+});
+
+test('when the owner leaves, ownership passes to the top-ranked remaining member', async () => {
+  const { owner, member, clubId } = await clubWithMember();
+  // Make the remaining member clearly top-ranked.
+  await dbRun('UPDATE users SET level = 30, xp = 5000 WHERE id = ?', [await idOf(member.username)]);
+
+  const leave = await api(ctx.base, 'POST', `/api/clubs/${clubId}/leave`, { token: owner.token });
+  assert.equal(leave.status, 200);
+
+  const mine = await api(ctx.base, 'GET', '/api/clubs/mine', { token: member.token });
+  assert.ok(mine.body.club, 'the club still exists with the remaining member');
+  assert.equal(mine.body.club.isOwner, true, 'the remaining member inherited ownership');
 });

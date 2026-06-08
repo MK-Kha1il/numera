@@ -104,9 +104,28 @@ fun ClubsScreen(onBack: () -> Unit) {
                     }
                 }
                 Text("TEAM RANKING", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
-                mine?.members?.forEach { m -> ClubMemberRow(m) }
+                mine?.members?.forEach { m ->
+                    val canManage = club.isOwner && m.id != club.ownerId
+                    ClubMemberRow(
+                        m = m,
+                        isOwner = m.id == club.ownerId,
+                        canManage = canManage,
+                        onPromote = { act({ RetrofitClient.apiService.transferClubOwnership(it, club.id, ClubMemberActionRequest(m.id)) }, "Couldn't transfer ownership.") },
+                        onKick = { act({ RetrofitClient.apiService.kickClubMember(it, club.id, ClubMemberActionRequest(m.id)) }, "Couldn't remove member.") }
+                    )
+                }
                 OutlinedButton(onClick = { act({ RetrofitClient.apiService.leaveClub(it, club.id) }, "Couldn't leave the club.") }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
                     Text("Leave club")
+                }
+                if (club.isOwner) {
+                    OutlinedButton(
+                        onClick = { act({ RetrofitClient.apiService.disbandClub(it, club.id) }, "Couldn't disband the club.") },
+                        enabled = !busy,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Disband club")
+                    }
                 }
             } else {
                 // ---- Create a club ----
@@ -175,7 +194,14 @@ fun ClubsScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun ClubMemberRow(m: ClubMember) {
+private fun ClubMemberRow(
+    m: ClubMember,
+    isOwner: Boolean = false,
+    canManage: Boolean = false,
+    onPromote: () -> Unit = {},
+    onKick: () -> Unit = {}
+) {
+    var menuOpen by remember { mutableStateOf(false) }
     DuoCard(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth().padding(Spacing.m), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
             Text(
@@ -186,10 +212,22 @@ private fun ClubMemberRow(m: ClubMember) {
                 modifier = Modifier.width(36.dp)
             )
             Column(modifier = Modifier.weight(1f)) {
-                Text(m.username, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    Text(m.username, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    if (isOwner) Text("👑", fontSize = 12.sp)
+                }
                 Text("${m.rank} · Lvl ${m.level}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             }
             Text("${m.xp} XP", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+            if (canManage) {
+                Box {
+                    IconButton(onClick = { menuOpen = true }) { Text("⋮", fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(text = { Text("Make owner") }, onClick = { menuOpen = false; onPromote() })
+                        DropdownMenuItem(text = { Text("Remove from club") }, onClick = { menuOpen = false; onKick() })
+                    }
+                }
+            }
         }
     }
 }

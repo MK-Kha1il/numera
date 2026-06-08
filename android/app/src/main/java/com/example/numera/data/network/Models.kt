@@ -1140,6 +1140,9 @@ data class MyClubResponse(
 data class CreateClubRequest(val name: String, val description: String? = null)
 
 @Serializable
+data class ClubMemberActionRequest(val userId: Int)
+
+@Serializable
 data class ClubLeaderboardEntry(
     val id: Int = 0,
     val name: String = "",
