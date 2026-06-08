@@ -11,6 +11,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
@@ -40,10 +42,14 @@ fun MathText(
     val htmlContent = remember(text, hexColor, fontSizePx) {
         buildMathHtml(text, hexColor, fontSizePx)
     }
+    // Accessibility: the KaTeX WebView is opaque to TalkBack, so carry a spoken description on the
+    // Compose node and silence the WebView's own (empty/CDN) a11y subtree (audit #1.12 / #45).
+    val spoken = remember(text) { latexToSpeech(text) }
 
     AndroidView(
         factory = { context ->
             WebView(context).apply {
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                 // Software layer: the hardware (GPU) WebView render path crashes with a native
                 // SIGSEGV in libhwui's Skia-GL pipeline on emulated GPUs (e.g. BlueStacks). KaTeX
                 // here is static math, so software rendering has no meaningful perf cost and is the
@@ -70,7 +76,10 @@ fun MathText(
         update = { webView ->
             webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
         },
-        modifier = modifier.fillMaxWidth().heightIn(min = 60.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 60.dp)
+            .semantics { if (spoken.isNotBlank()) contentDescription = spoken }
     )
 }
 
