@@ -1335,6 +1335,84 @@ templates.number_sense = {
   }
 };
 
+// -------------------------------------------------------------
+// STATISTICS TEMPLATES — descriptive statistics & basic probability (audit #1.1 Phase 3). Data
+// sets are plain text with numeric answers (no LaTeX), and the setups are constructed so the
+// statistic is a whole number; distractors encode the classic errors (forgot to divide for the
+// mean, took the middle of the UNSORTED list for the median, reported a count instead of the
+// statistic). Routed by the 'statistics' category.
+// -------------------------------------------------------------
+templates.statistics = {
+  // Mode: the value that appears most often (one clear mode, appears twice; others once).
+  7: (_diffFactor, idx) => {
+    const mode = 3 + (idx % 6);
+    const a = mode + 2, b = mode + 4, c = mode + 6;
+    const set = [mode, a, mode, b, c];
+    return {
+      question: `Find the mode of the data set: ${set.join(', ')}`,
+      answer: mode,
+      distractors: [a, c, mode + a],
+      explanation: `The mode is the most frequent value. ${mode} appears twice; every other value appears once, so the mode is ${mode}.`,
+      type: "stat_mode"
+    };
+  },
+  // Mean: the four values sum to 4·m, so the average is the whole number m.
+  8: (_diffFactor, idx) => {
+    const m = 5 + (idx % 8);
+    const set = [m - 3, m - 1, m + 1, m + 3];
+    const sum = set.reduce((s, v) => s + v, 0);
+    return {
+      question: `Find the mean (average) of: ${set.join(', ')}`,
+      answer: m,
+      distractors: [sum, m + 2, m - 2],
+      explanation: `Add the values to get ${sum}, then divide by how many there are (4): ${sum} / 4 = ${m}.`,
+      type: "stat_mean"
+    };
+  },
+  // Median: the middle value of the SORTED list (the unsorted-middle is offered as a trap).
+  9: (_diffFactor, idx) => {
+    const base = 3 + (idx % 5);
+    const vals = [base + 8, base + 1, base + 5, base, base + 3]; // distinct, intentionally unsorted
+    const sorted = [...vals].sort((x, y) => x - y);
+    const answer = sorted[2];
+    return {
+      question: `Find the median of: ${vals.join(', ')}`,
+      answer,
+      distractors: [vals[2], sorted[0], sorted[4]], // middle of the unsorted list; min; max
+      explanation: `Order the values: ${sorted.join(', ')}. The middle (3rd of 5) value is ${answer}.`,
+      type: "stat_median"
+    };
+  },
+  // Range: largest minus smallest (the spread varies so the answer isn't constant).
+  11: (_diffFactor, idx) => {
+    const base = 4 + (idx % 5);
+    const spread = 6 + (idx % 6);
+    const vals = [base + 2, base + spread, base, base + 4, base + 1];
+    const max = Math.max(...vals), min = Math.min(...vals);
+    const answer = max - min;
+    return {
+      question: `Find the range of: ${vals.join(', ')}`,
+      answer,
+      distractors: [max, max + min, base + 2], // gave the max; summed instead; a stray value
+      explanation: `Range = largest - smallest = ${max} - ${min} = ${answer}.`,
+      type: "stat_range"
+    };
+  },
+  // Probability as a percent (operands chosen so the percent is a whole number).
+  13: (_diffFactor, idx) => {
+    const total = 20;
+    const pct = [10, 20, 25, 30, 40, 60][idx % 6];
+    const R = (total * pct) / 100;
+    return {
+      question: `A bag holds ${R} red marbles out of ${total} marbles in total. What is the probability of drawing a red marble, expressed as a percent?`,
+      answer: pct,
+      distractors: [R, 100 - pct, total - R], // the count; the complement; the blue count
+      explanation: `Probability of red = ${R} out of ${total} = ${R}/${total} = ${pct}%.`,
+      type: "stat_probability"
+    };
+  }
+};
+
 module.exports = {
   templates
 };

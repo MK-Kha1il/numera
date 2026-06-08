@@ -43,6 +43,12 @@ const CONCEPT_TO_LEVEL = {
   ratio_solve:          { category: 'number_sense',  level: 8  },
   percent_change:       { category: 'number_sense',  level: 9  },
   exponent_power:       { category: 'number_sense',  level: 14 },
+  // Statistics strand (audit #1.1 — descriptive stats & basic probability).
+  stat_mode:            { category: 'statistics',    level: 7  },
+  stat_mean:            { category: 'statistics',    level: 8  },
+  stat_median:          { category: 'statistics',    level: 9  },
+  stat_range:           { category: 'statistics',    level: 11 },
+  stat_probability:     { category: 'statistics',    level: 13 },
   linear_one_step:      { category: 'algebra',       level: 11 },
   linear_two_step:      { category: 'algebra',       level: 13 },
   quadratic:            { category: 'algebra',       level: 15 },
@@ -189,6 +195,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'geometry';
   } else if (normalizedCat === 'number_sense' || normalizedCat === 'number sense') {
     catKey = 'number_sense';
+  } else if (normalizedCat === 'statistics') {
+    catKey = 'statistics';
   } else {
     catKey = 'arithmetic';
   }

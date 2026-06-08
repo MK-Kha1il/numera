@@ -259,6 +259,48 @@ const concepts = {
     misconceptions: [
       { id: "multiplied_base_exp", label: "Multiplied base × exponent instead of powering", rule: (ans) => ans }
     ]
+  },
+
+  // Statistics & probability (audit #1.1 — descriptive statistics strand)
+  "stat_mode": {
+    name: "Mode of a Data Set",
+    prereqs: ["arithmetic_add"],
+    baseElo: 620,
+    misconceptions: [
+      { id: "picked_max", label: "Chose the largest value instead of the most frequent", rule: (ans) => ans + 1 }
+    ]
+  },
+  "stat_mean": {
+    name: "Mean (Average)",
+    prereqs: ["arithmetic_div"],
+    baseElo: 700,
+    misconceptions: [
+      { id: "forgot_divide", label: "Reported the total instead of dividing by the count", rule: (ans) => ans }
+    ]
+  },
+  "stat_median": {
+    name: "Median of a Data Set",
+    prereqs: ["arithmetic_add"],
+    baseElo: 740,
+    misconceptions: [
+      { id: "unsorted_middle", label: "Took the middle of the unsorted list", rule: (ans) => ans }
+    ]
+  },
+  "stat_range": {
+    name: "Range of a Data Set",
+    prereqs: ["arithmetic_sub"],
+    baseElo: 660,
+    misconceptions: [
+      { id: "gave_max", label: "Reported the maximum instead of max − min", rule: (ans) => ans }
+    ]
+  },
+  "stat_probability": {
+    name: "Simple Probability",
+    prereqs: ["fraction_of"],
+    baseElo: 820,
+    misconceptions: [
+      { id: "used_complement", label: "Computed the complement (probability of the other outcome)", rule: (ans) => 100 - ans }
+    ]
   }
 };
 
@@ -282,6 +324,11 @@ const STANDARDS = {
   ratio_solve: "6.RP.A.3",
   percent_change: "7.RP.A.3",
   exponent_power: "6.EE.A.1",
+  stat_mode: "6.SP.B.5c",
+  stat_mean: "6.SP.B.5c",
+  stat_median: "6.SP.B.5c",
+  stat_range: "6.SP.B.5c",
+  stat_probability: "7.SP.C.5",
   linear_one_step: "6.EE.B.7",
   linear_two_step: "7.EE.B.4",
   quadratic: "HSA-REI.B.4",
