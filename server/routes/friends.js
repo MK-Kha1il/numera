@@ -1,5 +1,6 @@
 // Friends: list connections, send a request (auto-accepts a reciprocal pending request),
-// accept a pending request, and decline a pending request. Emits social notifications.
+// accept a pending request, decline a pending request, and remove a connection (unfriend / cancel
+// an outgoing request). Emits social notifications.
 const express = require('express');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
@@ -130,6 +131,25 @@ router.post('/api/friends/decline', authenticateToken, (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0) return res.status(404).json({ error: 'Pending friend request not found' });
       res.json({ success: true, message: 'Friend request declined' });
+    }
+  );
+});
+
+// Remove a connection with another user ENTIRELY — unfriend an accepted friend, cancel a request
+// you sent, or drop a pending incoming one. Deletes any friends row in either direction. Silent
+// (no notification): severing a tie shouldn't ping the other person. Idempotent-ish: 404 only when
+// there was nothing to remove.
+router.delete('/api/friends/:friendId', authenticateToken, (req, res) => {
+  const friendId = parseInt(req.params.friendId, 10);
+  if (!Number.isFinite(friendId)) return res.status(400).json({ error: 'Invalid friend id' });
+
+  db.run(
+    `DELETE FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)`,
+    [req.user.id, friendId, friendId, req.user.id],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: 'No connection found' });
+      res.json({ success: true, message: 'Connection removed' });
     }
   );
 });

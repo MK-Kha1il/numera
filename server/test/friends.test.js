@@ -61,3 +61,41 @@ test('only the recipient of a pending request can decline it; missing requests 4
   const ok = await api(ctx.base, 'POST', '/api/friends/decline', { token: b.token, body: { friendId: aId } });
   assert.strictEqual(ok.status, 200);
 });
+
+test('unfriend removes an accepted connection for both users', async () => {
+  const a = await registerUser(ctx.base);
+  const b = await registerUser(ctx.base);
+  const aId = await meId(a.token);
+  const bId = await meId(b.token);
+
+  await api(ctx.base, 'POST', '/api/friends/request', { token: a.token, body: { friendUsername: b.username } });
+  await api(ctx.base, 'POST', '/api/friends/accept', { token: b.token, body: { friendId: aId } });
+
+  // Either side can sever the tie; here B unfriends A.
+  const removed = await api(ctx.base, 'DELETE', `/api/friends/${aId}`, { token: b.token });
+  assert.strictEqual(removed.status, 200);
+
+  const aList = await api(ctx.base, 'GET', '/api/friends', { token: a.token });
+  assert.ok(!aList.body.some((f) => f.id === bId), 'gone from the remover-target side');
+  const bList = await api(ctx.base, 'GET', '/api/friends', { token: b.token });
+  assert.ok(!bList.body.some((f) => f.id === aId), 'gone from the remover side');
+
+  // A second removal finds nothing.
+  const again = await api(ctx.base, 'DELETE', `/api/friends/${aId}`, { token: b.token });
+  assert.strictEqual(again.status, 404);
+});
+
+test('a sender can cancel their own outgoing pending request', async () => {
+  const a = await registerUser(ctx.base);
+  const b = await registerUser(ctx.base);
+  const aId = await meId(a.token);
+  const bId = await meId(b.token);
+
+  await api(ctx.base, 'POST', '/api/friends/request', { token: a.token, body: { friendUsername: b.username } });
+  // A cancels the request it sent.
+  const cancel = await api(ctx.base, 'DELETE', `/api/friends/${bId}`, { token: a.token });
+  assert.strictEqual(cancel.status, 200);
+
+  const bList = await api(ctx.base, 'GET', '/api/friends', { token: b.token });
+  assert.ok(!bList.body.some((f) => f.id === aId), 'the recipient no longer sees the canceled request');
+});

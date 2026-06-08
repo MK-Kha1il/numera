@@ -229,7 +229,25 @@ fun SocialScreen() {
                                 }
                             }
                             friend.status == "pending" -> {
-                                Text("Requested", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                                // Outgoing request still awaiting their response → let me cancel it.
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                                    Text("Requested", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                                    TextButton(
+                                        onClick = {
+                                            scope.launch(Dispatchers.IO) {
+                                                try {
+                                                    val token = RetrofitClient.authToken ?: ""
+                                                    RetrofitClient.apiService.removeFriend(token, friend.id)
+                                                    withContext(Dispatchers.Main) { fetchFriends() }
+                                                } catch (e: Exception) {
+                                                    Log.e("Social", "Cancel request err: ${e.message}")
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 13.sp)
+                                    }
+                                }
                             }
                             else -> {
                                 Row(
@@ -243,6 +261,21 @@ fun SocialScreen() {
                                             .background(CorrectGreen)
                                     )
                                     Text("Online", fontSize = 11.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
+                                    TextButton(
+                                        onClick = {
+                                            scope.launch(Dispatchers.IO) {
+                                                try {
+                                                    val token = RetrofitClient.authToken ?: ""
+                                                    RetrofitClient.apiService.removeFriend(token, friend.id)
+                                                    withContext(Dispatchers.Main) { fetchFriends() }
+                                                } catch (e: Exception) {
+                                                    Log.e("Social", "Remove friend err: ${e.message}")
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Text("Remove", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 13.sp)
+                                    }
                                 }
                             }
                         }

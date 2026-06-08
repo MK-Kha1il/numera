@@ -136,6 +136,12 @@ interface ApiService {
         @Body request: FriendAcceptPayload
     ): SimpleResponse
 
+    @DELETE("api/friends/{friendId}")
+    suspend fun removeFriend(
+        @Header("Authorization") token: String,
+        @Path("friendId") friendId: Int
+    ): SimpleResponse
+
     // ---- UGC moderation: block & report -----------------------------------
     @POST("api/blocks")
     suspend fun blockUser(
