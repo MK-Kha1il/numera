@@ -926,6 +926,23 @@ data class SkillTreeNode(
 @Serializable
 data class MasteryDimensionMeta(val key: String = "", val label: String = "", val blurb: String = "")
 
+// ---- Weekly "Your Week" recap (in-app, shareable) ----
+@Serializable
+data class RecapTopConcept(val name: String = "", val overall: Float = 0f)
+
+@Serializable
+data class WeeklyRecap(
+    val weekProblems: Int = 0,
+    val activeDays: Int = 0,
+    val streak: Int = 0,
+    val level: Int = 1,
+    val coins: Int = 0,
+    val conceptsPracticed: Int = 0,
+    val overallMastery: Float = 0f,
+    val masteryStage: String = "Novice",
+    val topConcept: RecapTopConcept? = null
+)
+
 @Serializable
 data class SkillTreeResponse(
     val nodes: List<SkillTreeNode> = emptyList(),

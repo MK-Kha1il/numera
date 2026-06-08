@@ -203,6 +203,11 @@ interface ApiService {
         @Header("Authorization") token: String
     ): SkillTreeResponse
 
+    @GET("api/engine/weekly-recap")
+    suspend fun getWeeklyRecap(
+        @Header("Authorization") token: String
+    ): WeeklyRecap
+
     @POST("api/assessment/skip")
     suspend fun skipAssessment(
         @Header("Authorization") token: String

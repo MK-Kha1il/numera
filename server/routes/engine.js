@@ -214,6 +214,57 @@ router.get('/api/engine/skill-tree', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /api/engine/weekly-recap
+// A "Your Week" snapshot for an in-app, shareable recap (Wrapped-style). Unlike the lifecycle
+// recap EMAIL (cumulative totals), this reports a REAL last-7-days figure from the daily
+// user_commitment_history, plus current standing + the learner-wide mastery aggregate and the
+// strongest concept. Honest framing: weekly = activity (problems/active days); the rest is "where
+// you stand now" (no fake week-over-week deltas — that needs a weekly snapshot table).
+router.get('/api/engine/weekly-recap', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const dbGet = (sql, p) => new Promise((resolve, reject) => db.get(sql, p, (e, r) => (e ? reject(e) : resolve(r))));
+    // Last 7 UTC days inclusive of today.
+    const since = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+
+    const week = await dbGet(
+      `SELECT COALESCE(SUM(solved_count), 0) AS weekProblems, COUNT(DISTINCT date) AS activeDays
+         FROM user_commitment_history WHERE user_id = ? AND date >= ?`,
+      [userId, since]
+    );
+    const user = await dbGet('SELECT streak, level, coins FROM users WHERE id = ?', [userId]);
+
+    const snapshot = await LearnerModel.getLearnerSnapshot(db, userId);
+    const agg = MasteryEngine.aggregateDimensions(snapshot);
+    let topConcept = null;
+    let topOverall = -1;
+    for (const c of snapshot) {
+      const meta = KnowledgeGraph.concepts[c.concept_id];
+      if (!meta) continue;
+      const mp = MasteryEngine.computeMasteryProfile(c);
+      if (mp.overall > topOverall) {
+        topOverall = mp.overall;
+        topConcept = { name: meta.name, overall: mp.overall };
+      }
+    }
+
+    res.json({
+      weekProblems: (week && week.weekProblems) || 0,
+      activeDays: (week && week.activeDays) || 0,
+      streak: (user && user.streak) || 0,
+      level: (user && user.level) || 1,
+      coins: (user && user.coins) || 0,
+      conceptsPracticed: snapshot.length,
+      overallMastery: agg ? agg.overall : 0,
+      masteryStage: agg ? agg.stage : 'Novice',
+      topConcept,
+    });
+  } catch (err) {
+    logger.error('[Engine/weekly-recap]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/engine/misconceptions
 // Active (unresolved) misconceptions for the current user
 router.get('/api/engine/misconceptions', authenticateToken, async (req, res) => {

@@ -77,3 +77,36 @@ test('a learned-but-fading concept is flagged needsReview; a strong one is not',
   // Every unstarted node stays false.
   assert.ok(r.body.nodes.filter((n) => !n.started).every((n) => n.needsReview === false));
 });
+
+test('weekly-recap counts only the last 7 days of activity, plus standing + mastery', async () => {
+  const u = await registerUser(ctx.base);
+  const userId = await idOf(u.username);
+  const dayStr = (daysAgo) => new Date(Date.now() - daysAgo * 86400000).toISOString().slice(0, 10);
+
+  // Two days within the window contribute; a 30-day-old day must NOT count.
+  await dbRun('INSERT INTO user_commitment_history (user_id, date, solved_count) VALUES (?,?,?)', [userId, dayStr(0), 5]);
+  await dbRun('INSERT INTO user_commitment_history (user_id, date, solved_count) VALUES (?,?,?)', [userId, dayStr(2), 3]);
+  await dbRun('INSERT INTO user_commitment_history (user_id, date, solved_count) VALUES (?,?,?)', [userId, dayStr(30), 100]);
+  await dbRun('UPDATE users SET streak = 4, level = 6, coins = 120 WHERE id = ?', [userId]);
+
+  // A solid concept so mastery + topConcept populate.
+  await dbRun(
+    `INSERT INTO learner_profiles
+       (user_id, concept_id, mastery_score, confidence_score, avg_response_ms, retention_score,
+        accuracy_rate, hint_usage_rate, calculator_usage_rate, retry_rate, exposure_count,
+        correct_first_try, learning_velocity, last_seen)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [userId, 'arithmetic_add', 0.85, 0.8, 5000, 0.8, 0.9, 0.1, 0.0, 0.1, 10, 8, 0.5, Math.floor(Date.now() / 1000)]
+  );
+
+  const r = await api(ctx.base, 'GET', '/api/engine/weekly-recap', { token: u.token });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.weekProblems, 8, 'only the last 7 days count (5 + 3, not the old 100)');
+  assert.equal(r.body.activeDays, 2);
+  assert.equal(r.body.streak, 4);
+  assert.equal(r.body.level, 6);
+  assert.equal(r.body.coins, 120);
+  assert.ok(r.body.conceptsPracticed >= 1);
+  assert.ok(r.body.overallMastery > 0.5, `expected solid mastery, got ${r.body.overallMastery}`);
+  assert.ok(r.body.topConcept && r.body.topConcept.name, 'a strongest concept is surfaced');
+});
