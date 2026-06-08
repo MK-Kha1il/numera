@@ -31,7 +31,7 @@ function allUsersActiveOn(db, nBack, extraWhere = '') {
   return new Promise((resolve) => {
     db.all(
       `SELECT id, username, email, birth_year, telemetry_enabled, streak, level, xp,
-              solved_count, coins, last_active,
+              solved_count, coins, last_active, burnout_risk,
               COALESCE((SELECT quantity FROM user_utilities
                           WHERE user_id = users.id AND item_id = 'item_streak_shield'), 0)
                 AS streak_shields
@@ -57,11 +57,28 @@ const TRIGGERS = [
     // Active yesterday, still has a streak — remind them before it breaks.
     audience: (db) => allUsersActiveOn(db, 1, 'AND streak > 0'),
     build: (u) => {
+      // Wellbeing-aware nudge (audit #15 — close the personalization loop + dark-pattern ethics
+      // pass). The engine already MEASURES burnout (commitmentService → users.burnout_risk); a
+      // learner flagged 'high' should NOT get a loss-framed FOMO push. We still re-engage them
+      // (retention), but swap to a supportive, low-pressure framing — honoring the measured
+      // emotional state instead of exploiting it. Everyone else gets the standard streak reminder.
+      const shields = u.streak_shields || 0;
+      if (u.burnout_risk === 'high') {
+        const gentleNet =
+          shields > 0
+            ? ` And you've got ${shields} Streak Shield${shields === 1 ? '' : 's'} in reserve, so there's truly no rush.`
+            : '';
+        return {
+          title: 'No pressure — a quick visit keeps your streak 🌱',
+          message: `You've been putting in real work lately. A short, easy session today is plenty to keep your ${u.streak}-day streak alive — be kind to yourself.${gentleNet}`,
+          type: 'info',
+        };
+      }
       // Surface streak insurance: if they hold Streak Shield(s) (the streak-freeze utility),
       // reassure them it's a safety net — and still nudge them to keep the streak honestly.
       const safetyNet =
-        u.streak_shields > 0
-          ? ` (You also have ${u.streak_shields} Streak Shield${u.streak_shields === 1 ? '' : 's'} as backup, but why spend one?)`
+        shields > 0
+          ? ` (You also have ${shields} Streak Shield${shields === 1 ? '' : 's'} as backup, but why spend one?)`
           : '';
       return {
         title: `Don't lose your ${u.streak}-day streak! 🔥`,
