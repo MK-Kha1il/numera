@@ -211,6 +211,40 @@ const concepts = {
     ]
   },
 
+  // Decimals (audit #1.1 — decimal place value & the four operations to hundredths)
+  "decimal_add": {
+    name: "Adding Decimals",
+    prereqs: ["arithmetic_add"],
+    baseElo: 560,
+    misconceptions: [
+      { id: "carry_slip", label: "Forgot to carry into the ones place", rule: (ans) => ans - 1 }
+    ]
+  },
+  "decimal_sub": {
+    name: "Subtracting Decimals",
+    prereqs: ["decimal_add", "arithmetic_sub"],
+    baseElo: 640,
+    misconceptions: [
+      { id: "borrow_slip", label: "Forgot to borrow across the decimal point", rule: (ans) => ans + 1 }
+    ]
+  },
+  "decimal_mult": {
+    name: "Multiplying Decimals",
+    prereqs: ["decimal_add", "arithmetic_mult"],
+    baseElo: 720,
+    misconceptions: [
+      { id: "place_count_slip", label: "Miscounted the decimal places in the product", rule: (ans) => ans * 10 }
+    ]
+  },
+  "decimal_round": {
+    name: "Rounding Decimals",
+    prereqs: ["decimal_add"],
+    baseElo: 600,
+    misconceptions: [
+      { id: "round_direction", label: "Rounded the wrong direction", rule: (ans) => ans + 0.1 }
+    ]
+  },
+
   // Geometry (audit #1.1 — a parallel strand broadening the catalog beyond the single number ladder)
   "geo_perimeter_rect": {
     name: "Perimeter of a Rectangle",
@@ -386,6 +420,10 @@ const STANDARDS = {
   integer_add: "7.NS.A.1",
   integer_sub: "7.NS.A.1",
   integer_mult: "7.NS.A.2",
+  decimal_add: "5.NBT.B.7",
+  decimal_sub: "5.NBT.B.7",
+  decimal_mult: "5.NBT.B.7",
+  decimal_round: "5.NBT.A.4",
   geo_perimeter_rect: "3.MD.D.8",
   geo_area_rect: "3.MD.C.7",
   geo_area_triangle: "6.G.A.1",

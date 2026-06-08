@@ -42,6 +42,11 @@ const CONCEPT_TO_LEVEL = {
   integer_add:          { category: 'integers',      level: 5  },
   integer_sub:          { category: 'integers',      level: 6  },
   integer_mult:         { category: 'integers',      level: 8  },
+  // Decimals strand (audit #1.1 — decimal place value & operations; all math in scaled ints).
+  decimal_add:          { category: 'decimals',      level: 3  },
+  decimal_sub:          { category: 'decimals',      level: 5  },
+  decimal_mult:         { category: 'decimals',      level: 7  },
+  decimal_round:        { category: 'decimals',      level: 9  },
   // Number-sense / pre-algebra strand (audit #1.1 — the band the ladder used to skip).
   percentage_of:        { category: 'number_sense',  level: 6  },
   fraction_of:          { category: 'number_sense',  level: 7  },
@@ -211,6 +216,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'expressions';
   } else if (normalizedCat === 'integers') {
     catKey = 'integers';
+  } else if (normalizedCat === 'decimals') {
+    catKey = 'decimals';
   } else {
     catKey = 'arithmetic';
   }

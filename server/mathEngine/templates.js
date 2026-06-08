@@ -1544,6 +1544,98 @@ templates.integers = {
   }
 };
 
+// -------------------------------------------------------------
+// DECIMALS TEMPLATES (audit #1.1 — decimal place value & operations).
+// Every arithmetic step is done in scaled INTEGERS (tenths / hundredths) and only
+// formatted with toFixed at the very end, so binary-float noise (the classic
+// 0.1 + 0.2 = 0.30000000000000004 bug) can never reach a question, answer, or
+// distractor. Distractors encode real place-value misconceptions.
+// -------------------------------------------------------------
+templates.decimals = {
+  // Adding decimals — line up the decimal points (one decimal place each).
+  3: (_diffFactor, idx) => {
+    const a10 = 12 + (idx % 58);          // 1.2 .. 6.9
+    const b10 = 7 + ((idx * 3) % 42);     // 0.7 .. 4.8
+    const sum10 = a10 + b10;
+    const a = (a10 / 10).toFixed(1);
+    const b = (b10 / 10).toFixed(1);
+    const answer = (sum10 / 10).toFixed(1);
+    return {
+      question: `Add the decimals: $${a} + ${b}$`,
+      answer,
+      distractors: [
+        ((sum10 - 10) / 10).toFixed(1),   // forgot to carry into the ones place
+        ((sum10 + 1) / 10).toFixed(1),     // tenths-place slip
+        ((sum10 - 1) / 10).toFixed(1)      // tenths-place slip
+      ],
+      explanation: `Line up the decimal points and add column by column: $${a} + ${b} = ${answer}$.`,
+      type: "decimal_add"
+    };
+  },
+  // Subtracting decimals — line up the points (result kept positive; signs are the integers strand).
+  5: (_diffFactor, idx) => {
+    const b10 = 8 + ((idx * 3) % 36);     // 0.8 .. 4.3
+    const a10 = b10 + 12 + (idx % 47);    // always greater than b10
+    const diff10 = a10 - b10;
+    const a = (a10 / 10).toFixed(1);
+    const b = (b10 / 10).toFixed(1);
+    const answer = (diff10 / 10).toFixed(1);
+    return {
+      question: `Subtract the decimals: $${a} - ${b}$`,
+      answer,
+      distractors: [
+        ((diff10 + 10) / 10).toFixed(1),  // forgot to borrow (off by a whole)
+        ((diff10 + 1) / 10).toFixed(1),    // tenths-place slip
+        ((diff10 - 1) / 10).toFixed(1)     // tenths-place slip
+      ],
+      explanation: `Line up the decimal points and subtract column by column: $${a} - ${b} = ${answer}$.`,
+      type: "decimal_sub"
+    };
+  },
+  // Multiplying decimals — multiply the digits, then count decimal places.
+  7: (_diffFactor, idx) => {
+    const a10 = 3 + (idx % 12);           // 0.3 .. 1.4
+    const b10 = 2 + ((idx * 3) % 11);     // 0.2 .. 1.2
+    const prod100 = a10 * b10;
+    const a = (a10 / 10).toFixed(1);
+    const b = (b10 / 10).toFixed(1);
+    const answer = (prod100 / 100).toFixed(2);
+    return {
+      question: `Multiply the decimals: $${a} \\times ${b}$`,
+      answer,
+      distractors: [
+        (prod100 / 10).toFixed(1),         // miscounted decimal places (10x too big)
+        ((a10 + b10) / 10).toFixed(1),     // added instead of multiplying
+        ((prod100 + 1) / 100).toFixed(2)   // hundredths slip
+      ],
+      explanation: `Multiply the digits as whole numbers ($${a10} \\times ${b10} = ${prod100}$), then place the point so the product has $2$ decimal places: $${answer}$.`,
+      type: "decimal_mult"
+    };
+  },
+  // Rounding decimals — round a hundredths value to the nearest tenth.
+  9: (_diffFactor, idx) => {
+    const whole = 1 + (idx % 8);          // 1 .. 8
+    const tenth = 1 + ((idx * 2) % 8);    // 1 .. 8 (keeps the answer off whole numbers)
+    const hund = 1 + ((idx * 3) % 9);     // 1 .. 9 (never .x0, so rounding always matters)
+    const n100 = whole * 100 + tenth * 10 + hund;
+    const value = (n100 / 100).toFixed(2);
+    const rounded10 = Math.round(n100 / 10);           // nearest tenth, expressed in tenths
+    const answer = (rounded10 / 10).toFixed(1);
+    const altTenth = hund >= 5 ? rounded10 - 1 : rounded10 + 1; // rounded the wrong direction
+    return {
+      question: `Round $${value}$ to the nearest tenth.`,
+      answer,
+      distractors: [
+        value,                                  // never rounded — kept both decimals
+        (altTenth / 10).toFixed(1),             // rounded the wrong direction
+        String(Math.round(n100 / 100))          // rounded to the nearest whole instead
+      ],
+      explanation: `The hundredths digit is $${hund}$, so round ${hund >= 5 ? 'up' : 'down'}: $${value} \\approx ${answer}$ to the nearest tenth.`,
+      type: "decimal_round"
+    };
+  }
+};
+
 module.exports = {
   templates
 };

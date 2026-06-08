@@ -390,6 +390,120 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // DECIMALS STRAND
+  // ===========================================================================
+  decimal_add: {
+    title: "Adding Decimals",
+    formula: "\\text{line up the decimal points, then add column by column}",
+    oneLineSummary: "Stack the numbers so the decimal points line up, then add as usual — the point drops straight down.",
+    intuitionHook: "Buy a snack for $1.40$ dollars and a drink for $2.70$ dollars. You don't add the $40$ cents to the $2$ dollars — you add cents to cents and dollars to dollars: $4.10$. Lining up the decimal point is just lining up dollars over dollars, dimes over dimes.",
+    whatItIs: "Adding decimals combines two numbers that include a fractional part. The only new rule beyond whole-number addition is making sure each place value sits above its match.",
+    whyItWorks: "Place value is the whole story. The digit just right of the point is tenths, the next is hundredths — and you can only add like to like. Lining up the decimal points forces tenths over tenths and ones over ones, so each column adds digits of the SAME size. Carrying works exactly as with whole numbers: ten tenths make one whole and carry left. The point in the answer sits directly below the points above it because the place values never moved.",
+    whenToUse: "Totalling prices, summing measurements (lengths in metres, masses in kilograms), or combining any quantities written with a decimal point.",
+    representations: [
+      { kind: "symbolic", label: "Stack and align", body: "$3.4 + 2.7$: align the points, add tenths ($4+7=11$, write $1$ carry $1$), add ones ($3+2+1=6$) $\\to 6.1$." },
+      { kind: "real_world", label: "Money", body: "$1.40 + 2.70$ dollars: cents add to cents ($40+70=110$, i.e. a dollar and $10$ cents), dollars to dollars $\\to 4.10$." },
+      { kind: "place_value", label: "Like over like", body: "Tenths column over tenths column, ones over ones — never tenths over ones." }
+    ],
+    commonMistakes: [
+      { label: "Not lining up the points", why: "Right-justifying digits instead, so $3.4 + 2.75$ adds the $4$ to the $5$.", fix: "Align the DECIMAL POINTS, not the right edges. Pad with a zero if needed: $3.40 + 2.75$." },
+      { label: "Forgetting to carry", why: "Adding $4 + 7 = 11$ in the tenths but writing $1$ and dropping the carried whole.", fix: "Ten tenths make one whole — carry the $1$ left into the ones column, just like whole-number addition." }
+    ],
+    connections: [
+      { concept: "arithmetic_add", note: "Decimal addition IS whole-number addition once the columns are aligned by place value." },
+      { concept: "decimal_sub", note: "Subtraction uses the same align-the-points setup, then borrows instead of carries." },
+      { concept: "decimal_mult", note: "Multiplying decimals does NOT align points — that's the key contrast to remember." }
+    ],
+    examples: [
+      { question: "Add the decimals: $3.4 + 2.7$.", answer: "6.1", explanation: "Tenths: $4 + 7 = 11$ (write $1$, carry $1$). Ones: $3 + 2 + 1 = 6$. Result $6.1$." },
+      { question: "Add the decimals: $5.6 + 1.8$.", answer: "7.4", explanation: "Tenths: $6 + 8 = 14$ (write $4$, carry $1$). Ones: $5 + 1 + 1 = 7$. Result $7.4$." }
+    ]
+  },
+
+  decimal_sub: {
+    title: "Subtracting Decimals",
+    formula: "\\text{line up the decimal points, then subtract column by column}",
+    oneLineSummary: "Stack so the points line up, then subtract place by place — borrow across the point exactly as with whole numbers.",
+    intuitionHook: "You have $5.20$ dollars and spend $1.80$. To find what's left you don't subtract $80$ cents from $20$ cents directly — you borrow a whole dollar, making it $120$ cents minus $80$ cents. Borrowing across the decimal point is the same trick as borrowing across any column.",
+    whatItIs: "Subtracting decimals finds the difference between two numbers with fractional parts. Like addition, the work is whole-number subtraction once the place values are aligned.",
+    whyItWorks: "Each column holds one place value, and you can only subtract like from like, so aligning the decimal points puts tenths under tenths and ones under ones. When the top digit is smaller, you borrow: one whole becomes ten tenths, one tenth becomes ten hundredths — the same regrouping as whole numbers, just one place to the right of the point. The answer's decimal point sits directly under the others because no place value ever shifted.",
+    whenToUse: "Making change, finding how much taller/heavier/longer one measurement is than another, or any 'how much is left' or 'how much more' with decimal quantities.",
+    representations: [
+      { kind: "symbolic", label: "Align and borrow", body: "$5.2 - 1.8$: tenths $2 - 8$ needs a borrow $\\to 12 - 8 = 4$; ones $4 - 1 = 3$ (after lending). Result $3.4$." },
+      { kind: "real_world", label: "Making change", body: "$5.20 - 1.80$ dollars: borrow a dollar so $120$ cents $- 80$ cents $= 40$ cents, leaving $3.40$." },
+      { kind: "place_value", label: "Like under like", body: "Tenths under tenths, ones under ones — the points form a single vertical line." }
+    ],
+    commonMistakes: [
+      { label: "Subtracting the smaller digit from the larger per column", why: "In $5.2 - 1.8$, doing $8 - 2 = 6$ in the tenths because $8 > 2$.", fix: "Keep the order: top minus bottom. If the top is smaller, BORROW from the next column ($12 - 8 = 4$)." },
+      { label: "Not lining up the points", why: "Right-justifying so $5.2 - 1.85$ subtracts the wrong digits.", fix: "Align the decimal points and pad with a zero: $5.20 - 1.85$." }
+    ],
+    connections: [
+      { concept: "decimal_add", note: "Same align-the-points setup; subtraction borrows where addition carries." },
+      { concept: "arithmetic_sub", note: "It's ordinary subtraction once the place values are stacked correctly." },
+      { concept: "integer_sub", note: "Subtracting a larger from a smaller decimal gives a negative — handled by the integers strand." }
+    ],
+    examples: [
+      { question: "Subtract the decimals: $5.2 - 1.8$.", answer: "3.4", explanation: "Tenths: $2 - 8$ borrows $\\to 12 - 8 = 4$. Ones: $4 - 1 = 3$. Result $3.4$." },
+      { question: "Subtract the decimals: $7.3 - 2.9$.", answer: "4.4", explanation: "Tenths: $3 - 9$ borrows $\\to 13 - 9 = 4$. Ones: $6 - 2 = 4$. Result $4.4$." }
+    ]
+  },
+
+  decimal_mult: {
+    title: "Multiplying Decimals",
+    formula: "\\text{multiply the digits, then place the point: total decimal places of the factors}",
+    oneLineSummary: "Ignore the points and multiply as whole numbers, then give the answer as many decimal places as the two factors had together.",
+    intuitionHook: "What is $0.3 \\times 0.4$? Three tenths of four tenths is a small sliver of a square — much less than one. Multiplying $3 \\times 4 = 12$, then realising the answer must be tiny, you place the point to get $0.12$. The size sanity-check is half the skill.",
+    whatItIs: "Multiplying decimals scales one decimal by another. Unlike addition, you do NOT line up the points — you multiply the digits and then count decimal places to position the point.",
+    whyItWorks: "A decimal is a fraction in disguise: $0.3 = 3/10$ and $0.4 = 4/10$. Multiplying gives $\\frac{3}{10} \\times \\frac{4}{10} = \\frac{12}{100} = 0.12$. The denominators $10 \\times 10 = 100$ explain the rule: each factor's decimal places ADD, so one place times one place gives two places. That's why you multiply the digits ($3 \\times 4 = 12$) and then shift the point left by the TOTAL number of decimal places in the factors.",
+    whenToUse: "Scaling a price by a quantity ($2.5$ kg at $1.20$ per kg), finding a fraction-of via a decimal, areas with decimal side lengths, and unit conversions.",
+    representations: [
+      { kind: "fraction", label: "Tenths times tenths", body: "$0.3 \\times 0.4 = \\frac{3}{10} \\times \\frac{4}{10} = \\frac{12}{100} = 0.12$ — the hundredths come from $10 \\times 10$." },
+      { kind: "symbolic", label: "Digits then point", body: "$0.3 \\times 0.4$: multiply $3 \\times 4 = 12$; factors have $1 + 1 = 2$ decimal places, so $0.12$." },
+      { kind: "estimation", label: "Sanity-check the size", body: "Both factors are below $1$, so the product must be below either — $0.12$, not $1.2$." }
+    ],
+    commonMistakes: [
+      { label: "Miscounting the decimal places", why: "Writing $0.3 \\times 0.4 = 1.2$ — placing only one decimal instead of two.", fix: "ADD the factors' decimal places: $1 + 1 = 2$. The answer needs two places: $0.12$." },
+      { label: "Lining up the points like addition", why: "Trying to align the decimals before multiplying, as if adding.", fix: "Multiplication ignores alignment: multiply the digits first, then count places to set the point." }
+    ],
+    connections: [
+      { concept: "arithmetic_mult", note: "You multiply the digits exactly as whole numbers; only the point-placement is new." },
+      { concept: "decimal_add", note: "A key contrast: addition aligns points, multiplication counts them — don't mix the rules." },
+      { concept: "fraction_of", note: "Multiplying by a decimal below $1$ is taking a fraction-of, so the result shrinks." }
+    ],
+    examples: [
+      { question: "Multiply the decimals: $0.3 \\times 0.4$.", answer: "0.12", explanation: "Digits: $3 \\times 4 = 12$. Two decimal places total $\\to 0.12$." },
+      { question: "Multiply the decimals: $1.2 \\times 0.5$.", answer: "0.60", explanation: "Digits: $12 \\times 5 = 60$. Two decimal places total $\\to 0.60$." }
+    ]
+  },
+
+  decimal_round: {
+    title: "Rounding Decimals",
+    formula: "\\text{look at the next digit: } \\geq 5 \\text{ rounds up, } < 5 \\text{ rounds down}",
+    oneLineSummary: "To round to a place, look at the very next digit: 5 or more rounds the place up, less than 5 leaves it.",
+    intuitionHook: "Is $3.47$ closer to $3.4$ or $3.5$? It's past the halfway mark $3.45$, so it's nearer $3.5$. Rounding is just asking 'which marked tick on the ruler is closest?' — and the digit after the cut-off tells you the answer.",
+    whatItIs: "Rounding a decimal replaces it with the nearest value at a chosen place (nearest tenth, hundredth, whole) — a controlled simplification that keeps the size while dropping precision.",
+    whyItWorks: "Rounding to the nearest tenth means choosing whichever tenth ($3.4$ or $3.5$) the number is closest to. The midpoint is $3.45$; anything from $3.45$ up is nearer $3.5$, anything below is nearer $3.4$. You only need the hundredths digit to decide: $5$–$9$ means you're at or past halfway (round up), $0$–$4$ means you're below it (round down). The deciding digit and everything after it then disappear, because they were only there to locate you between the two ticks.",
+    whenToUse: "Reporting money to the cent, a measurement to a sensible precision, an average that came out long, or any time extra decimals add noise rather than meaning.",
+    representations: [
+      { kind: "number_line", label: "Nearest tick", body: "$3.47$ sits between $3.4$ and $3.5$, past the midpoint $3.45$ — so it rounds to $3.5$." },
+      { kind: "symbolic", label: "Check the next digit", body: "Round $3.47$ to a tenth: the hundredths digit is $7 \\geq 5$, so round up to $3.5$." },
+      { kind: "real_world", label: "Cents and precision", body: "An average of $3.47$ stars, reported 'to the nearest tenth', is $3.5$ stars." }
+    ],
+    commonMistakes: [
+      { label: "Truncating instead of rounding", why: "Chopping $3.47$ to $3.4$ by just deleting the extra digits, ignoring that $7 \\geq 5$.", fix: "Don't just cut — CHECK the next digit. $7$ is $5$ or more, so the tenths digit goes up: $3.5$." },
+      { label: "Rounding the wrong digit", why: "Looking at the tenths digit itself instead of the one AFTER the place you're rounding to.", fix: "To round to tenths, the DECIDER is the hundredths digit (the next one to the right)." }
+    ],
+    connections: [
+      { concept: "decimal_add", note: "Rounding rests on the same place-value reading — knowing which digit is tenths vs hundredths." },
+      { concept: "percent_change", note: "Results from real data are usually rounded to a sensible place before reporting." }
+    ],
+    examples: [
+      { question: "Round $3.47$ to the nearest tenth.", answer: "3.5", explanation: "The hundredths digit is $7 \\geq 5$, so round up: $3.5$." },
+      { question: "Round $6.23$ to the nearest tenth.", answer: "6.2", explanation: "The hundredths digit is $3 < 5$, so round down: $6.2$." }
+    ]
+  },
+
+  // ===========================================================================
   // GEOMETRY STRAND
   // ===========================================================================
   geo_perimeter_rect: {
@@ -951,6 +1065,12 @@ function levelToConceptId(category, level) {
     if (lvl <= 5) return 'integer_add';
     if (lvl <= 6) return 'integer_sub';
     return 'integer_mult';
+  }
+  if (cat === 'decimals') {
+    if (lvl <= 3) return 'decimal_add';
+    if (lvl <= 5) return 'decimal_sub';
+    if (lvl <= 7) return 'decimal_mult';
+    return 'decimal_round';
   }
   if (cat === 'geometry') {
     if (lvl <= 2) return 'geo_perimeter_rect';
