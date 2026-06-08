@@ -38,6 +38,7 @@ fun ArenaScreen(
     var showAsyncDuel by remember { mutableStateOf(false) }
     var showBotDuel by remember { mutableStateOf(false) }
     var showChallenges by remember { mutableStateOf(false) }
+    var showTournament by remember { mutableStateOf(false) }
     // Ranked requires fair-play (telemetry) consent so the server's anti-cheat scorer may run.
     var showRankedConsent by remember { mutableStateOf(false) }
     var consentGrantedThisSession by remember { mutableStateOf(false) }
@@ -148,6 +149,10 @@ fun ArenaScreen(
     }
     if (showChallenges) {
         ChallengesScreen(onBack = { showChallenges = false })
+        return
+    }
+    if (showTournament) {
+        TournamentScreen(user = user, onExit = { showTournament = false })
         return
     }
 
@@ -509,6 +514,39 @@ fun ArenaScreen(
                                 text = "Start Puzzle Rush",
                                 onClick = { showPuzzleRush = true },
                                 color = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
+                // Weekly Tournament (the headline async event — everyone races the same set)
+                item {
+                    DuoCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        borderColor = MilestoneGold.copy(alpha = 0.6f)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(Spacing.l),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
+                        ) {
+                            Column {
+                                Text(
+                                    text = "🏆 Weekly Tournament",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp,
+                                    color = MilestoneGold
+                                )
+                                Text(
+                                    text = "One global event a week — everyone races the same set. Top 3 win coins.",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                            DuoButton(
+                                text = "Enter Tournament",
+                                onClick = { showTournament = true },
+                                color = MilestoneGold,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

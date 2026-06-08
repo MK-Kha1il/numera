@@ -573,6 +573,49 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_challenge_attempts_challenge ON challenge_attempts(challenge_id, score)');
     },
   },
+  {
+    version: 22,
+    name: 'tournaments',
+    // Weekly async tournaments (audit #21 / #1.8 / #1.19 — recurring re-engagement + an endless
+    // competitive ladder, WITHOUT the real-time Socket.IO arena). One global event runs per week:
+    // a server-generated FIXED problem set everyone races on the same terms, one timed attempt per
+    // player (started_at/elapsed are server-measured so the speed tiebreak can't be faked). The
+    // event self-perpetuates (lazy seed) and pays the top 3 on lazy finalize after it ends.
+    // tournament_entries (keyed by user_id) joins USER_SCOPED_TABLES; tournaments is global.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS tournaments (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          title         TEXT NOT NULL,
+          concept_id    TEXT NOT NULL,
+          category      TEXT NOT NULL,
+          level         INTEGER NOT NULL,
+          problem_count INTEGER NOT NULL,
+          problems_json TEXT NOT NULL,
+          starts_at     INTEGER NOT NULL,
+          ends_at       INTEGER NOT NULL,
+          status        TEXT NOT NULL DEFAULT 'active',
+          created_at    INTEGER NOT NULL
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_tournaments_status ON tournaments(status, ends_at)');
+      await run(`
+        CREATE TABLE IF NOT EXISTS tournament_entries (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          tournament_id INTEGER NOT NULL,
+          user_id       INTEGER NOT NULL,
+          started_at    INTEGER NOT NULL,
+          score         INTEGER,
+          elapsed_ms    INTEGER,
+          reward        INTEGER NOT NULL DEFAULT 0,
+          status        TEXT NOT NULL DEFAULT 'pending',
+          created_at    INTEGER NOT NULL,
+          UNIQUE (tournament_id, user_id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_tournament_entries_board ON tournament_entries(tournament_id, status, score)');
+    },
+  },
 ];
 
 /**

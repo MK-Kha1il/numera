@@ -485,6 +485,23 @@ interface ApiService {
         @Body request: BotPlayRequest
     ): BotPlayResponse
 
+    // ---- Weekly tournaments (async global event) ----
+    @GET("api/tournaments/current")
+    suspend fun getCurrentTournament(@Header("Authorization") token: String): TournamentCurrentResponse
+
+    @POST("api/tournaments/{id}/start")
+    suspend fun startTournament(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): TournamentStartResponse
+
+    @POST("api/tournaments/{id}/play")
+    suspend fun playTournament(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body request: TournamentPlayRequest
+    ): TournamentPlayResponse
+
     // ---- Custom Challenges (user-created problem sets) ----
     @GET("api/challenges/concepts")
     suspend fun getChallengeConcepts(@Header("Authorization") token: String): ChallengeConceptsResponse

@@ -988,6 +988,64 @@ data class PlayChallengeResponse(
     val leaderboard: List<ChallengeLeaderboardEntry> = emptyList()
 )
 
+// ---- Weekly tournaments (async global event — audit #21) ----
+@Serializable
+data class TournamentMeta(
+    val id: Int = 0,
+    val title: String = "",
+    val conceptName: String = "",
+    val problemCount: Int = 0,
+    val startsAt: Long = 0,
+    val endsAt: Long = 0,
+    val msRemaining: Long = 0,
+    val status: String = ""
+)
+
+@Serializable
+data class TournamentEntryDto(
+    val status: String = "",
+    val score: Int? = null,
+    val elapsedMs: Long? = null,
+    val reward: Int = 0
+)
+
+@Serializable
+data class TournamentLeaderboardEntry(
+    val position: Int = 0,
+    val username: String = "",
+    val userId: Int = 0,
+    val score: Int = 0,
+    val elapsedMs: Long = 0,
+    val reward: Int = 0
+)
+
+@Serializable
+data class TournamentCurrentResponse(
+    val tournament: TournamentMeta = TournamentMeta(),
+    val yourEntry: TournamentEntryDto? = null,
+    val yourRank: Int? = null,
+    val leaderboard: List<TournamentLeaderboardEntry> = emptyList()
+)
+
+@Serializable
+data class TournamentStartResponse(
+    val tournamentId: Int = 0,
+    val problemCount: Int = 0,
+    val problems: List<AsyncProblemDto> = emptyList()
+)
+
+@Serializable
+data class TournamentPlayRequest(val answers: List<String>)
+
+@Serializable
+data class TournamentPlayResponse(
+    val score: Int = 0,
+    val elapsedMs: Long = 0,
+    val total: Int = 0,
+    val yourRank: Int? = null,
+    val leaderboard: List<TournamentLeaderboardEntry> = emptyList()
+)
+
 // ---- Adaptive diagnostic (server-authoritative placement) ----
 @Serializable
 data class AdaptiveStartResponse(
