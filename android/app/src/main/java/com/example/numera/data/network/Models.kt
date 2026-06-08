@@ -991,6 +991,16 @@ data class MyClubResponse(
 @Serializable
 data class CreateClubRequest(val name: String, val description: String? = null)
 
+@Serializable
+data class ClubLeaderboardEntry(
+    val id: Int = 0,
+    val name: String = "",
+    val memberCount: Int = 0,
+    val totalLevel: Int = 0,
+    val totalXp: Int = 0,
+    val position: Int = 0
+)
+
 // ---- Friends leaderboard ----
 @Serializable
 data class FriendLeaderboardEntry(

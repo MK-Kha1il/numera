@@ -186,6 +186,11 @@ interface ApiService {
         @Header("Authorization") token: String
     ): MyClubResponse
 
+    @GET("api/clubs/leaderboard")
+    suspend fun clubsLeaderboard(
+        @Header("Authorization") token: String
+    ): List<ClubLeaderboardEntry>
+
     @POST("api/clubs")
     suspend fun createClub(
         @Header("Authorization") token: String,

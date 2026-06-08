@@ -8,6 +8,8 @@ let ctx;
 before(async () => { ctx = await bootServer(); });
 after(async () => { await shutdown(ctx); });
 
+const dbRun = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.run(sql, p, (e) => (e ? rej(e) : res())));
+const idOf = (username) => new Promise((res, rej) => ctx.mod.db.get('SELECT id FROM users WHERE username = ?', [username], (e, r) => (e ? rej(e) : res(r.id))));
 const uniqueName = () => `Mathletes ${Math.random().toString(36).slice(2, 8)}`;
 
 test('create a club: creator auto-joins as owner and shows in their "mine"', async () => {
@@ -75,4 +77,25 @@ test('browse, join (one-club rule), member ranking, leave, and auto-delete when 
   assert.ok(!after.body.some((c) => c.id === clubId), 'empty club was deleted');
   const ownerMine = await api(ctx.base, 'GET', '/api/clubs/mine', { token: owner.token });
   assert.equal(ownerMine.body.club, null);
+});
+
+test('club leaderboard ranks clubs by their members\' combined level', async () => {
+  // Two clubs; the second gets a high-level member so it should outrank the first.
+  const a = await registerUser(ctx.base);
+  const b = await registerUser(ctx.base);
+  const nameA = uniqueName();
+  const nameB = uniqueName();
+  const ca = await api(ctx.base, 'POST', '/api/clubs', { token: a.token, body: { name: nameA } });
+  const cb = await api(ctx.base, 'POST', '/api/clubs', { token: b.token, body: { name: nameB } });
+  await dbRun('UPDATE users SET level = 2, xp = 10 WHERE id = ?', [await idOf(a.username)]);
+  await dbRun('UPDATE users SET level = 40, xp = 9000 WHERE id = ?', [await idOf(b.username)]);
+
+  const lb = await api(ctx.base, 'GET', '/api/clubs/leaderboard', { token: a.token });
+  assert.equal(lb.status, 200);
+  const ia = lb.body.findIndex((c) => c.id === ca.body.clubId);
+  const ib = lb.body.findIndex((c) => c.id === cb.body.clubId);
+  assert.ok(ib >= 0 && ia >= 0);
+  assert.ok(ib < ia, 'the club with the higher-level member ranks first');
+  assert.equal(lb.body[ib].totalLevel, 40);
+  assert.equal(lb.body[ib].position, ib + 1);
 });

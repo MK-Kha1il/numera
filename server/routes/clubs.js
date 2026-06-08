@@ -76,6 +76,27 @@ router.get('/api/clubs', authenticateToken, (req, res) => {
   );
 });
 
+// Club leaderboard (the team league): clubs ranked by the combined level of their members, so a
+// club has a competitive reason to recruit and climb. Total XP breaks ties.
+router.get('/api/clubs/leaderboard', authenticateToken, (req, res) => {
+  db.all(
+    `SELECT c.id, c.name,
+            COUNT(cm.user_id) AS memberCount,
+            COALESCE(SUM(u.level), 0) AS totalLevel,
+            COALESCE(SUM(u.xp), 0) AS totalXp
+       FROM clubs c
+       JOIN club_members cm ON cm.club_id = c.id
+       JOIN users u ON u.id = cm.user_id
+      GROUP BY c.id
+      ORDER BY totalLevel DESC, totalXp DESC
+      LIMIT 50`,
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json((rows || []).map((r, i) => ({ ...r, position: i + 1 })));
+    }
+  );
+});
+
 // My club + its ranked members (or null if I'm not in one).
 router.get('/api/clubs/mine', authenticateToken, async (req, res) => {
   db.get('SELECT club_id FROM club_members WHERE user_id = ?', [req.user.id], async (err, row) => {

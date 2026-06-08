@@ -27,6 +27,7 @@ import kotlinx.coroutines.withContext
 fun ClubsScreen(onBack: () -> Unit) {
     var mine by remember { mutableStateOf<MyClubResponse?>(null) }
     var clubs by remember { mutableStateOf<List<ClubSummary>>(emptyList()) }
+    var topClubs by remember { mutableStateOf<List<ClubLeaderboardEntry>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var busy by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
@@ -41,6 +42,7 @@ fun ClubsScreen(onBack: () -> Unit) {
                 val m = withContext(Dispatchers.IO) { RetrofitClient.apiService.getMyClub(token) }
                 mine = m
                 clubs = if (m.club == null) withContext(Dispatchers.IO) { RetrofitClient.apiService.browseClubs(token) } else emptyList()
+                topClubs = withContext(Dispatchers.IO) { RetrofitClient.apiService.clubsLeaderboard(token) }
             } catch (e: Exception) {
                 Log.e("Clubs", "load err: ${e.message}")
             } finally {
@@ -135,6 +137,34 @@ fun ClubsScreen(onBack: () -> Unit) {
                                     Text("${c.memberCount} ${if (c.memberCount == 1) "member" else "members"}${if (!c.description.isNullOrBlank()) " · ${c.description}" else ""}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), maxLines = 2)
                                 }
                                 DuoButton(text = "Join", onClick = { act({ RetrofitClient.apiService.joinClub(it, c.id) }, "Couldn't join.") }, enabled = !busy)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Top Clubs — the team league: every club ranked by its members' combined level.
+            Text("🏆 TOP CLUBS", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(top = Spacing.s))
+            if (topClubs.isEmpty()) {
+                Text("No clubs ranked yet.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+            } else {
+                topClubs.forEach { tc ->
+                    val isMine = mine?.club?.id == tc.id
+                    DuoCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        borderColor = if (isMine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                    ) {
+                        Row(modifier = Modifier.fillMaxWidth().padding(Spacing.m), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
+                            Text(
+                                "#${tc.position}",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 15.sp,
+                                color = when (tc.position) { 1 -> MilestoneGold; 2 -> MedalSilver; 3 -> MedalBronze; else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) },
+                                modifier = Modifier.width(36.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(if (isMine) "${tc.name} (your club)" else tc.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isMine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                                Text("${tc.memberCount} ${if (tc.memberCount == 1) "member" else "members"} · ${tc.totalLevel} total levels", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                             }
                         }
                     }
