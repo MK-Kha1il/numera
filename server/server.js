@@ -19,6 +19,7 @@ const { globalRateLimiter } = require('./middleware/rateLimit');
 const { calculateRankFromElo } = require('./lib/progression');
 const { updateAchievements } = require('./services/achievementService');
 const { grantRankRewards } = require('./services/rankRewardService');
+const { flagAnswer, resolveDuel } = require('./lib/duelIntegrity');
 
 const app = express();
 
@@ -544,8 +545,12 @@ io.use((socket, next) => {
 
 const rankedQueue = []; // ranked matchmaking queue: [{ socketId, userId, username, rank, elo, competitiveMatches, joinTime }]
 const casualQueue = []; // casual matchmaking queue
-const rooms = {}; // active rooms: { roomId: { p1, p2, problems, isCasual, startTime } }
+const rooms = {}; // active rooms: { roomId: { p1, p2, problems, isCasual, startTime, problemLevel } }
 const friendRooms = {}; // code lobby rooms: { code: { creatorSocketId, userId, username, rank, elo } }
+
+// Live duels serve a fixed difficulty (arithmetic, level 5); the integrity scorer's human-timing
+// floor scales with this level. Kept as a constant so submit_answer and the generators agree.
+const DUEL_PROBLEM_LEVEL = 5;
 
 function matchmake(queueArray, isRanked) {
   for (let i = 0; i < queueArray.length; i++) {
@@ -723,7 +728,8 @@ io.on('connection', (socket) => {
         p2: { id: userId, username: username, score: 0, progress: 0, elo: elo },
         problems,
         isCasual: true,
-        startTime: Date.now()
+        startTime: Date.now(),
+        problemLevel: DUEL_PROBLEM_LEVEL
       };
 
       // Join both sockets to the real gameplay roomId
@@ -753,15 +759,19 @@ io.on('connection', (socket) => {
     else if (room.p2.id === userId) playerKey = 'p2';
 
     if (playerKey) {
-      // Anti-Cheat: Validate Timing Pattern
+      // Anti-cheat: the SHARED integrityEngine scorer (the same one Puzzle Rush uses) flags a
+      // correct answer returned faster than a human could plausibly read + solve at this
+      // difficulty. Flags accumulate per player and become a verdict at duel end (resolveDuel).
       const now = Date.now();
       const startTime = room[playerKey].problemStartTime || room.startTime || now;
       const elapsed = now - startTime;
 
-      // If correct solution submitted in <350ms, flag as suspicious timing
-      if (isCorrect && elapsed < 350) {
-        room[playerKey].suspiciousTimingFlags = (room[playerKey].suspiciousTimingFlags || 0) + 1;
-        logger.warn(`[Anti-Cheat] Suspicious solver timing detected for ${room[playerKey].username}: ${elapsed}ms. Flags: ${room[playerKey].suspiciousTimingFlags}`);
+      const assessment = flagAnswer({ elapsedMs: elapsed, correct: isCorrect, level: room.problemLevel || DUEL_PROBLEM_LEVEL });
+      if (assessment.flagged) {
+        room[playerKey].integrityFlags = (room[playerKey].integrityFlags || 0) + 1;
+        // Surface the first reason so the debrief can tell the player WHY (spec §5: no silent bans).
+        if (!room[playerKey].integrityReason) room[playerKey].integrityReason = assessment.reason;
+        logger.warn(`[Anti-Cheat] ${room[playerKey].username}: ${assessment.reason}. Flags: ${room[playerKey].integrityFlags}`);
       }
 
       room[playerKey].problemStartTime = now;
@@ -813,7 +823,8 @@ function startDuel(p1, p2, isRanked) {
     p2: { id: p2.userId, username: p2.username, score: 0, progress: 0, elo: p2.elo },
     problems,
     isCasual: !isRanked,
-    startTime: Date.now()
+    startTime: Date.now(),
+    problemLevel: DUEL_PROBLEM_LEVEL
   };
 
   io.sockets.sockets.get(p1.socketId)?.join(roomId);
@@ -843,7 +854,8 @@ function startDuelWithBot(player, isRanked) {
     p2: { id: 9999, username: 'MathBot', score: 0, progress: 0, elo: botElo, isBot: true },
     problems,
     isCasual: !isRanked,
-    startTime: Date.now()
+    startTime: Date.now(),
+    problemLevel: DUEL_PROBLEM_LEVEL
   };
 
   const socket = io.sockets.sockets.get(player.socketId);
@@ -930,84 +942,72 @@ function processPlayerDuelResult(userId, eloChange, isWinner, callback) {
   });
 }
 
-function endDuel(roomId) {
-  const room = rooms[roomId];
-  if (!room) return;
+// Look up a player's behavioral-telemetry opt-in. Integrity scoring is behavioral profiling, so
+// per spec §5 it only runs for players who have enabled telemetry. Returns false for a null/bot
+// id (never assessed); a real user's stored flag otherwise. NOTE: telemetry is opt-in (off by
+// default), so timing enforcement only kicks in for players who have turned it on — ranked play
+// should nudge competitors to enable it (see the spec's ethics note).
+function getTelemetryEnabled(userId, cb) {
+  if (!userId || typeof userId !== 'number' || userId === 9999) return cb(false);
+  db.get('SELECT telemetry_enabled FROM users WHERE id = ?', [userId], (err, row) => {
+    if (err || !row) return cb(false);
+    cb(row.telemetry_enabled === 1);
+  });
+}
 
-  const p1Score = room.p1.score;
-  const p2Score = room.p2.score;
-  
-  let winner = null;
-  if (p1Score > p2Score) winner = room.p1.id;
-  else if (p2Score > p1Score) winner = room.p2.id;
+// Finish a duel: resolve winner + Elo + integrity verdicts via the SHARED integrityEngine scorer
+// (lib/duelIntegrity.resolveDuel — the same scorer Puzzle Rush uses), then commit. `done` is an
+// optional completion callback (used by tests; production socket callers omit it).
+function endDuel(roomId, done) {
+  const room = rooms[roomId];
+  if (!room) { if (done) done(); return; }
 
   const p2IsBot = room.p2.id === 9999 || room.p2.isBot;
+  const p1IsHuman = typeof room.p1.id === 'number' && room.p1.id !== 9999;
+  const p2IsHuman = typeof room.p2.id === 'number' && !p2IsBot;
 
-  const p1Cheated = (room.p1.suspiciousTimingFlags || 0) >= 3;
-  const p2Cheated = !p2IsBot && (room.p2.suspiciousTimingFlags || 0) >= 3;
+  getTelemetryEnabled(p1IsHuman ? room.p1.id : null, (p1IntegrityEnabled) => {
+    getTelemetryEnabled(p2IsHuman ? room.p2.id : null, (p2IntegrityEnabled) => {
+      const resolution = resolveDuel({
+        p1Score: room.p1.score,
+        p2Score: room.p2.score,
+        p1Rating: room.p1.elo || 1000,
+        p2Rating: room.p2.elo || 1000,
+        p1FlaggedCount: room.p1.integrityFlags || 0,
+        p2FlaggedCount: room.p2.integrityFlags || 0,
+        p1IntegrityEnabled,
+        p2IntegrityEnabled,
+        p2IsBot,
+        isCasual: !!room.isCasual,
+      });
 
-  if (p1Cheated) {
-    room.p1.cheated = true;
-    securityLog(room.p1.id, 'ARENA_DUEL_CHEATING_DISQUALIFIED', null, `Player 1 (${room.p1.username}) disqualified for suspicious timing flags (${room.p1.suspiciousTimingFlags}).`);
-  }
-  if (p2Cheated) {
-    room.p2.cheated = true;
-    securityLog(room.p2.id, 'ARENA_DUEL_CHEATING_DISQUALIFIED', null, `Player 2 (${room.p2.username}) disqualified for suspicious timing flags (${room.p2.suspiciousTimingFlags}).`);
-  }
+      // Map the pure 'p1'/'p2'/null winner back to a userId for the emit + DB commit.
+      let winner = null;
+      if (resolution.winner === 'p1') winner = room.p1.id;
+      else if (resolution.winner === 'p2') winner = room.p2.id;
 
-  // Adjust winner based on cheating disqualification
-  if (p1Cheated && p2Cheated) {
-    winner = null; // Both disqualified
-  } else if (p1Cheated) {
-    winner = room.p2.id; // P2 wins by default
-  } else if (p2Cheated) {
-    winner = room.p1.id; // P1 wins by default
-  }
+      // Surface WHY a flagged player was disqualified (spec §5: no silent shadow-bans). The
+      // reason rides along on room.pN (spread into the duel_end payload) for the client debrief.
+      if (resolution.p1Cheated) {
+        room.p1.cheated = true;
+        room.p1.integrityReason = room.p1.integrityReason || 'superhuman answer timing';
+        securityLog(room.p1.id, 'ARENA_DUEL_CHEATING_DISQUALIFIED', null, `${room.p1.username} disqualified: ${room.p1.integrityReason} (${room.p1.integrityFlags || 0} flags).`);
+      }
+      if (resolution.p2Cheated) {
+        room.p2.cheated = true;
+        room.p2.integrityReason = room.p2.integrityReason || 'superhuman answer timing';
+        securityLog(room.p2.id, 'ARENA_DUEL_CHEATING_DISQUALIFIED', null, `${room.p2.username} disqualified: ${room.p2.integrityReason} (${room.p2.integrityFlags || 0} flags).`);
+      }
 
-  let p1EloChange = 0;
-  let p2EloChange = 0;
+      finalizeDuel(roomId, room, winner, resolution.p1EloChange, resolution.p2EloChange, p2IsBot, done);
+    });
+  });
+}
 
-  if (room.isCasual) {
-    p1EloChange = 0;
-    p2EloChange = 0;
-  } else {
-    // REAL MATHEMATICAL ELO CALCULATION
-    const p1Rating = room.p1.elo || 1000;
-    const p2Rating = room.p2.elo || 1000;
-
-    const expectedP1 = 1 / (1 + Math.pow(10, (p2Rating - p1Rating) / 400));
-    const expectedP2 = 1 / (1 + Math.pow(10, (p1Rating - p2Rating) / 400));
-
-    let actualP1 = 0.5;
-    let actualP2 = 0.5;
-    if (winner === room.p1.id) {
-      actualP1 = 1;
-      actualP2 = 0;
-    } else if (winner === room.p2.id) {
-      actualP1 = 0;
-      actualP2 = 1;
-    }
-
-    const K = 32;
-    p1EloChange = Math.round(K * (actualP1 - expectedP1));
-    p2EloChange = p2IsBot ? 0 : Math.round(K * (actualP2 - expectedP2));
-
-    // Bot match specific override fallback
-    if (p2IsBot) {
-      if (winner === room.p1.id) p1EloChange = 15;
-      else if (winner === room.p2.id) p1EloChange = -10;
-      else p1EloChange = 0;
-    }
-
-    // Anti-Cheat timing validation overrides: deduct ELO if cheated
-    if (p1Cheated) {
-      p1EloChange = -15;
-    }
-    if (p2Cheated) {
-      p2EloChange = -15;
-    }
-  }
-
+// Commit a resolved duel: quest increment, challenge-ticket doubling, the rating/reward writes
+// (processPlayerDuelResult), then emit duel_end and free the room. Split out of endDuel so the
+// pure resolution above stays readable; the body is the original (untested) commit logic.
+function finalizeDuel(roomId, room, winner, p1EloChange, p2EloChange, p2IsBot, done) {
   // Increment duels_today in user_quests for human players
   if (room.p1.id && typeof room.p1.id === 'number') {
     db.run("UPDATE user_quests SET duels_today = duels_today + 1 WHERE user_id = ?", [room.p1.id]);
@@ -1061,6 +1061,7 @@ function endDuel(roomId) {
               isCasual: room.isCasual || false
             });
             delete rooms[roomId];
+            if (done) done();
           });
         });
       };
@@ -1120,4 +1121,6 @@ if (require.main === module) {
   });
 }
 
-module.exports = { app, server, io, db, ready };
+// `rooms` + `endDuel` are exported for the duel integration test (test/duelEndToEnd.test.js),
+// which drives a finished duel through the real rating/reward commit without a live socket.
+module.exports = { app, server, io, db, ready, rooms, endDuel };

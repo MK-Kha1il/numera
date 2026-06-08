@@ -40,9 +40,18 @@
   accepted friend, a "Your Duels" list (your-turn / waiting / won·lost·draw / expired), and a
   one-at-a-time MCQ play flow → result. ApiService `asyncChallenge`/`asyncActiveDuels`/
   `asyncFetchDuel`/`asyncPlayDuel` + `Async*` DTOs. `assembleDebug` + `testDebugUnitTest` green.
-- ⬜ **Next:** wire `integrityEngine` into ranked **socket duels** (untested `server.js` socket
-  code — guard with a duel smoke test first); then the `server.js` arena extraction → tournaments.
-  `integrityEngine` is the shared scorer those modes should call before committing rating/rewards.
+- ✅ **`integrityEngine` wired into ranked socket duels** (§5): the ad-hoc `<350ms` timing check
+  in `server.js`'s `submit_answer`/`endDuel` is replaced by the **shared scorer** via a new pure,
+  unit-tested `lib/duelIntegrity.js` (`flagAnswer` → per-answer `assessAnswer`; `resolveDuel` →
+  `verdictForRun` + Elo). A **cheat verdict (≥3 flags) forfeits the match to the clean opponent
+  and applies a fixed −15 Elo penalty instead of the gain** (mirrors Puzzle Rush's reward=0). The
+  reason is surfaced in the audit log + `duel_end` payload (ethics: no silent shadow-bans), and
+  scoring **honors `telemetry_enabled`** (opted-out players aren't behaviorally profiled — note:
+  telemetry is opt-in, so ranked play should nudge competitors to enable it). Guarded by a pure
+  unit suite (`test/duelIntegrity.test.js`) **and** a socket-free integration test driving the real
+  `endDuel` rating/reward commit (`test/duelEndToEnd.test.js`). `npm test` 142 pass / 0 lint errors.
+- ⬜ **Next:** the `server.js` arena extraction → tournaments. `integrityEngine` is the shared
+  scorer those modes should call before committing rating/rewards.
 
 ## 1. What exists today
 - **1v1 duels** over Socket.IO in `server.js` (lines ~539–1050): `rankedQueue`/`casualQueue`
