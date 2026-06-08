@@ -1162,6 +1162,36 @@ data class CreateClubRequest(val name: String, val description: String? = null)
 @Serializable
 data class ClubMemberActionRequest(val userId: Int)
 
+// ---- Club wars (team competition — audit #1.7) ----
+@Serializable
+data class ClubWarSide(val clubId: Int = 0, val name: String = "", val total: Int = 0, val players: Int = 0)
+
+@Serializable
+data class ClubWar(
+    val id: Int = 0,
+    val concept: String = "",
+    val problemCount: Int = 0,
+    val endsAt: Long = 0,
+    val msRemaining: Long = 0,
+    val status: String = "",
+    val challenger: ClubWarSide = ClubWarSide(),
+    val opponent: ClubWarSide = ClubWarSide(),
+    val myClubId: Int = 0,
+    val winnerClubId: Int? = null,
+    val youPlayed: Boolean = false,
+    val yourScore: Int? = null,
+    val problems: List<AsyncProblemDto> = emptyList()
+)
+
+@Serializable
+data class ClubWarsResponse(val wars: List<ClubWar> = emptyList(), val myClubId: Int? = null)
+
+@Serializable
+data class ChallengeClubRequest(val opponentClubId: Int)
+
+@Serializable
+data class ClubWarPlayResponse(val score: Int = 0, val total: Int = 0, val war: ClubWar = ClubWar())
+
 @Serializable
 data class NudgeRequest(val type: String)
 

@@ -627,6 +627,47 @@ const migrations = [
       await run('ALTER TABLE seasons ADD COLUMN rewards_finalized INTEGER NOT NULL DEFAULT 0');
     },
   },
+  {
+    version: 24,
+    name: 'club_wars',
+    // Club wars (audit #1.7 — team competition; ties the community moat to the async-event infra).
+    // An owner challenges another club to a head-to-head over a window: both clubs' members race the
+    // SAME server-generated set once, and the club with the higher combined score wins (lazy
+    // finalize pays the winning side). club_war_entries (keyed by user_id) joins USER_SCOPED_TABLES;
+    // club_wars is keyed by club ids.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS club_wars (
+          id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+          challenger_club_id  INTEGER NOT NULL,
+          opponent_club_id    INTEGER NOT NULL,
+          concept_id          TEXT NOT NULL,
+          category            TEXT NOT NULL,
+          level               INTEGER NOT NULL,
+          problem_count       INTEGER NOT NULL,
+          problems_json       TEXT NOT NULL,
+          starts_at           INTEGER NOT NULL,
+          ends_at             INTEGER NOT NULL,
+          status              TEXT NOT NULL DEFAULT 'active',
+          winner_club_id      INTEGER,
+          created_at          INTEGER NOT NULL
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_club_wars_clubs ON club_wars(challenger_club_id, opponent_club_id, status)');
+      await run(`
+        CREATE TABLE IF NOT EXISTS club_war_entries (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          war_id     INTEGER NOT NULL,
+          user_id    INTEGER NOT NULL,
+          club_id    INTEGER NOT NULL,
+          score      INTEGER NOT NULL,
+          created_at INTEGER NOT NULL,
+          UNIQUE (war_id, user_id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_club_war_entries_war ON club_war_entries(war_id, club_id)');
+    },
+  },
 ];
 
 /**

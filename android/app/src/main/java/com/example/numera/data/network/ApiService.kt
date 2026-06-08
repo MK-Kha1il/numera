@@ -229,6 +229,28 @@ interface ApiService {
         @Path("id") id: Int
     ): SimpleResponse
 
+    @GET("api/clubs/wars")
+    suspend fun getClubWars(@Header("Authorization") token: String): ClubWarsResponse
+
+    @POST("api/clubs/wars/challenge")
+    suspend fun challengeClub(
+        @Header("Authorization") token: String,
+        @Body request: ChallengeClubRequest
+    ): SimpleResponse
+
+    @GET("api/clubs/wars/{id}")
+    suspend fun getClubWar(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): ClubWar
+
+    @POST("api/clubs/wars/{id}/play")
+    suspend fun playClubWar(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body request: TournamentPlayRequest
+    ): ClubWarPlayResponse
+
     @POST("api/friends/{friendId}/nudge")
     suspend fun nudgeFriend(
         @Header("Authorization") token: String,

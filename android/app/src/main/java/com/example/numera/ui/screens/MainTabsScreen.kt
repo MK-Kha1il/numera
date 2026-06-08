@@ -80,6 +80,7 @@ fun MainTabsScreen(
     var showWeeklyRecap by remember { mutableStateOf(false) }
     var showGoal by remember { mutableStateOf(false) }
     var showClubs by remember { mutableStateOf(false) }
+    var showClubWars by remember { mutableStateOf(false) }
     var showChallenges by remember { mutableStateOf(false) }
     var showTournament by remember { mutableStateOf(false) }
     var showSeason by remember { mutableStateOf(false) }
@@ -223,7 +224,17 @@ fun MainTabsScreen(
 
     if (showClubs) {
         NumeraTheme {
-            com.example.numera.ui.feature.social.ClubsScreen(onBack = { showClubs = false })
+            com.example.numera.ui.feature.social.ClubsScreen(
+                onBack = { showClubs = false },
+                onOpenWars = { showClubs = false; showClubWars = true }
+            )
+        }
+        return
+    }
+
+    if (showClubWars) {
+        NumeraTheme {
+            com.example.numera.ui.feature.social.ClubWarsScreen(onBack = { showClubWars = false })
         }
         return
     }
@@ -299,6 +310,9 @@ fun MainTabsScreen(
             },
             CommandItem("Clubs", CommandCategory.QuickAction, NumeraIconType.Arena, "Join or create a team", "club team group community join members ranking") {
                 showClubs = true
+            },
+            CommandItem("Club Wars", CommandCategory.QuickAction, NumeraIconType.Arena, "Battle a rival club", "club war team battle versus challenge competition rival") {
+                showClubWars = true
             },
             CommandItem("Challenges", CommandCategory.QuickAction, NumeraIconType.Arena, "Create or play a shared problem set", "challenge custom problem set share code leaderboard ugc compete friends") {
                 showChallenges = true

@@ -24,7 +24,7 @@ import kotlinx.coroutines.withContext
 // members + leave. Not in one → create a club or browse and join. One club at a time; the club is
 // deleted server-side when its last member leaves. Server-authoritative (routes/clubs.js).
 @Composable
-fun ClubsScreen(onBack: () -> Unit) {
+fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
     var mine by remember { mutableStateOf<MyClubResponse?>(null) }
     var clubs by remember { mutableStateOf<List<ClubSummary>>(emptyList()) }
     var topClubs by remember { mutableStateOf<List<ClubLeaderboardEntry>>(emptyList()) }
@@ -114,6 +114,7 @@ fun ClubsScreen(onBack: () -> Unit) {
                         onKick = { act({ RetrofitClient.apiService.kickClubMember(it, club.id, ClubMemberActionRequest(m.id)) }, "Couldn't remove member.") }
                     )
                 }
+                DuoButton(text = "⚔️ Club Wars", onClick = onOpenWars, color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth())
                 OutlinedButton(onClick = { act({ RetrofitClient.apiService.leaveClub(it, club.id) }, "Couldn't leave the club.") }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
                     Text("Leave club")
                 }
