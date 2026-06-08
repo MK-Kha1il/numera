@@ -176,6 +176,34 @@ interface ApiService {
         @Header("Authorization") token: String
     ): List<FriendLeaderboardEntry>
 
+    @GET("api/clubs")
+    suspend fun browseClubs(
+        @Header("Authorization") token: String
+    ): List<ClubSummary>
+
+    @GET("api/clubs/mine")
+    suspend fun getMyClub(
+        @Header("Authorization") token: String
+    ): MyClubResponse
+
+    @POST("api/clubs")
+    suspend fun createClub(
+        @Header("Authorization") token: String,
+        @Body request: CreateClubRequest
+    ): SimpleResponse
+
+    @POST("api/clubs/{id}/join")
+    suspend fun joinClub(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): SimpleResponse
+
+    @POST("api/clubs/{id}/leave")
+    suspend fun leaveClub(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): SimpleResponse
+
     @GET("api/achievements")
     suspend fun getAchievements(
         @Header("Authorization") token: String

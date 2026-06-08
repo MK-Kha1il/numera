@@ -78,6 +78,7 @@ fun MainTabsScreen(
     var showSkillTree by remember { mutableStateOf(false) }
     var showWeeklyRecap by remember { mutableStateOf(false) }
     var showGoal by remember { mutableStateOf(false) }
+    var showClubs by remember { mutableStateOf(false) }
     var discussConceptId by remember { mutableStateOf<String?>(null) }
     var discussConceptName by remember { mutableStateOf("") }
     var showMapTooltip by remember { mutableStateOf(false) }
@@ -203,6 +204,13 @@ fun MainTabsScreen(
         return
     }
 
+    if (showClubs) {
+        NumeraTheme {
+            com.example.numera.ui.feature.social.ClubsScreen(onBack = { showClubs = false })
+        }
+        return
+    }
+
     LaunchedEffect(Unit) {
         refreshProfile()
         RetrofitClient.profileRefreshFlow.collect {
@@ -247,6 +255,9 @@ fun MainTabsScreen(
             },
             CommandItem("My Goal", CommandCategory.QuickAction, NumeraIconType.Quests, "Set a target and track your progress", "goal target daily aim objective plan motivation") {
                 showGoal = true
+            },
+            CommandItem("Clubs", CommandCategory.QuickAction, NumeraIconType.Arena, "Join or create a team", "club team group community join members ranking") {
+                showClubs = true
             },
             CommandItem("Notifications", CommandCategory.QuickAction, NumeraIconType.Notification, "See your latest activity", "alerts inbox bell") { showNotificationsDialog = true },
             CommandItem("Consistency Climb", CommandCategory.QuickAction, NumeraIconType.Streak, "Check your streak status", "streak commitment fire") { showCommitmentDialog = true },

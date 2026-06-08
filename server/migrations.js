@@ -505,6 +505,33 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_bot_matches_user ON bot_matches(user_id, status)');
     },
   },
+  {
+    version: 20,
+    name: 'clubs',
+    // Clubs/teams (audit #1.7 — the community spine beyond a friend list). A learner belongs to at
+    // most one club at a time. owner_id is the creator (informational in v1 — no special powers); a
+    // club is deleted when its last member leaves.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS clubs (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          name        TEXT NOT NULL UNIQUE,
+          description TEXT,
+          owner_id    INTEGER NOT NULL,
+          created_at  INTEGER NOT NULL
+        )
+      `);
+      await run(`
+        CREATE TABLE IF NOT EXISTS club_members (
+          club_id   INTEGER NOT NULL,
+          user_id   INTEGER NOT NULL,
+          joined_at INTEGER NOT NULL,
+          PRIMARY KEY (club_id, user_id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_club_members_user ON club_members(user_id)');
+    },
+  },
 ];
 
 /**

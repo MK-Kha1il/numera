@@ -951,6 +951,46 @@ data class SkillTreeNode(
 @Serializable
 data class MasteryDimensionMeta(val key: String = "", val label: String = "", val blurb: String = "")
 
+// ---- Clubs / teams ----
+@Serializable
+data class ClubMember(
+    val id: Int = 0,
+    val username: String = "",
+    val level: Int = 0,
+    val xp: Int = 0,
+    val rank: String = "",
+    val avatar: String? = null,
+    val position: Int = 0
+)
+
+@Serializable
+data class ClubSummary(
+    val id: Int = 0,
+    val name: String = "",
+    val description: String? = null,
+    val ownerId: Int = 0,
+    val memberCount: Int = 0,
+    val joined: Boolean = false
+)
+
+@Serializable
+data class ClubDetail(
+    val id: Int = 0,
+    val name: String = "",
+    val description: String? = null,
+    val ownerId: Int = 0,
+    val isOwner: Boolean = false
+)
+
+@Serializable
+data class MyClubResponse(
+    val club: ClubDetail? = null,
+    val members: List<ClubMember> = emptyList()
+)
+
+@Serializable
+data class CreateClubRequest(val name: String, val description: String? = null)
+
 // ---- Friends leaderboard ----
 @Serializable
 data class FriendLeaderboardEntry(

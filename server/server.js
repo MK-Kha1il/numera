@@ -67,6 +67,7 @@ app.use(require('./routes/account'));
 app.use(require('./routes/friends'));
 app.use(require('./routes/moderation'));
 app.use(require('./routes/discussion'));
+app.use(require('./routes/clubs'));
 app.use(require('./routes/achievements'));
 const logger = require('./logger');
 app.use(require('./routes/engine'));
