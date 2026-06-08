@@ -466,6 +466,17 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_post_votes_user ON concept_post_votes(user_id)');
     },
   },
+  {
+    version: 18,
+    name: 'concept_post_replies',
+    // One level of threading on discussion posts: a reply carries parent_id = the top-level post
+    // it answers (NULL = top-level). Kept to a single level (no reply-to-a-reply) for a clean,
+    // readable thread. Backfills as NULL on the existing rows.
+    up: async (run) => {
+      await run('ALTER TABLE concept_posts ADD COLUMN parent_id INTEGER');
+      await run('CREATE INDEX IF NOT EXISTS idx_concept_posts_parent ON concept_posts(parent_id)');
+    },
+  },
 ];
 
 /**

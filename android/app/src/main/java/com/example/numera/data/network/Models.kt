@@ -930,13 +930,15 @@ data class MasteryDimensionMeta(val key: String = "", val label: String = "", va
 @Serializable
 data class ConceptPost(
     val id: Int = 0,
+    val parentId: Int? = null,
     val userId: Int = 0,
     val username: String = "",
     val body: String = "",
     val createdAt: Long = 0,
     val mine: Boolean = false,
     val votes: Int = 0,
-    val voted: Boolean = false
+    val voted: Boolean = false,
+    val replies: List<ConceptPost> = emptyList()
 )
 
 @Serializable
@@ -950,7 +952,7 @@ data class ConceptPostsResponse(
 )
 
 @Serializable
-data class CreatePostPayload(val body: String)
+data class CreatePostPayload(val body: String, val parentId: Int? = null)
 
 // ---- Learner-set goals ----
 @Serializable

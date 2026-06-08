@@ -30,6 +30,7 @@ fun ConceptDiscussionScreen(conceptId: String, conceptName: String, onBack: () -
     var draft by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
+    var replyingTo by remember { mutableStateOf<ConceptPost?>(null) }
     val scope = rememberCoroutineScope()
 
     fun refresh() {
@@ -71,36 +72,44 @@ fun ConceptDiscussionScreen(conceptId: String, conceptName: String, onBack: () -
                     verticalArrangement = Arrangement.spacedBy(Spacing.s)
                 ) {
                     items(posts, key = { it.id }) { post ->
-                        PostCard(
-                            post,
-                            onDelete = {
-                                scope.launch {
-                                    try {
-                                        val token = RetrofitClient.authToken ?: ""
-                                        withContext(Dispatchers.IO) { RetrofitClient.apiService.deleteConceptPost(token, post.id) }
-                                        refresh()
-                                    } catch (e: Exception) {
-                                        Log.e("Discussion", "delete err: ${e.message}")
-                                    }
-                                }
-                            },
-                            onUpvote = {
-                                // Optimistic toggle; reconcile with the server's authoritative count.
-                                posts = posts.map {
-                                    if (it.id == post.id) it.copy(voted = !it.voted, votes = it.votes + if (it.voted) -1 else 1) else it
-                                }
-                                scope.launch {
-                                    try {
-                                        val token = RetrofitClient.authToken ?: ""
-                                        val r = withContext(Dispatchers.IO) { RetrofitClient.apiService.upvoteConceptPost(token, post.id) }
-                                        posts = posts.map { if (it.id == post.id) it.copy(voted = r.voted, votes = r.votes) else it }
-                                    } catch (e: Exception) {
-                                        Log.e("Discussion", "upvote err: ${e.message}")
-                                        refresh() // roll back to server truth on failure
-                                    }
+                        val deletePost: (Int) -> Unit = { id ->
+                            scope.launch {
+                                try {
+                                    val token = RetrofitClient.authToken ?: ""
+                                    withContext(Dispatchers.IO) { RetrofitClient.apiService.deleteConceptPost(token, id) }
+                                    refresh()
+                                } catch (e: Exception) {
+                                    Log.e("Discussion", "delete err: ${e.message}")
                                 }
                             }
-                        )
+                        }
+                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                            PostCard(
+                                post,
+                                onDelete = { deletePost(post.id) },
+                                onReply = { replyingTo = post },
+                                onUpvote = {
+                                    // Optimistic toggle; reconcile with the server's authoritative count.
+                                    posts = posts.map {
+                                        if (it.id == post.id) it.copy(voted = !it.voted, votes = it.votes + if (it.voted) -1 else 1) else it
+                                    }
+                                    scope.launch {
+                                        try {
+                                            val token = RetrofitClient.authToken ?: ""
+                                            val r = withContext(Dispatchers.IO) { RetrofitClient.apiService.upvoteConceptPost(token, post.id) }
+                                            posts = posts.map { if (it.id == post.id) it.copy(voted = r.voted, votes = r.votes) else it }
+                                        } catch (e: Exception) {
+                                            Log.e("Discussion", "upvote err: ${e.message}")
+                                            refresh() // roll back to server truth on failure
+                                        }
+                                    }
+                                }
+                            )
+                            // Replies, indented under their parent.
+                            post.replies.forEach { reply ->
+                                ReplyCard(reply, onDelete = { deletePost(reply.id) })
+                            }
+                        }
                     }
                 }
             }
@@ -108,6 +117,18 @@ fun ConceptDiscussionScreen(conceptId: String, conceptName: String, onBack: () -
 
         statusMessage?.let {
             Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(horizontal = Spacing.l, vertical = Spacing.xs))
+        }
+
+        // "Replying to" context chip.
+        replyingTo?.let { target ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.m),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Replying to ${target.username}", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                TextButton(onClick = { replyingTo = null }) { Text("Cancel", fontSize = 12.sp) }
+            }
         }
 
         // Composer.
@@ -120,7 +141,7 @@ fun ConceptDiscussionScreen(conceptId: String, conceptName: String, onBack: () -
                 value = draft,
                 onValueChange = { if (it.length <= 500) draft = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Ask or share a tip…") },
+                placeholder = { Text(if (replyingTo != null) "Write a reply…" else "Ask or share a tip…") },
                 maxLines = 4,
                 shape = RoundedCornerShape(CornerRadius.m)
             )
@@ -130,11 +151,13 @@ fun ConceptDiscussionScreen(conceptId: String, conceptName: String, onBack: () -
                     if (text.isEmpty()) return@Button
                     sending = true
                     statusMessage = null
+                    val parentId = replyingTo?.id
                     scope.launch {
                         try {
                             val token = RetrofitClient.authToken ?: ""
-                            withContext(Dispatchers.IO) { RetrofitClient.apiService.createConceptPost(token, conceptId, CreatePostPayload(text)) }
+                            withContext(Dispatchers.IO) { RetrofitClient.apiService.createConceptPost(token, conceptId, CreatePostPayload(text, parentId)) }
                             draft = ""
+                            replyingTo = null
                             refresh()
                         } catch (e: Exception) {
                             statusMessage = "Couldn't post. Keep it respectful and under 500 chars."
@@ -145,13 +168,13 @@ fun ConceptDiscussionScreen(conceptId: String, conceptName: String, onBack: () -
                     }
                 },
                 enabled = draft.isNotBlank() && !sending
-            ) { Text(if (sending) "…" else "Post", fontWeight = FontWeight.Bold) }
+            ) { Text(if (sending) "…" else if (replyingTo != null) "Reply" else "Post", fontWeight = FontWeight.Bold) }
         }
     }
 }
 
 @Composable
-private fun PostCard(post: ConceptPost, onDelete: () -> Unit, onUpvote: () -> Unit) {
+private fun PostCard(post: ConceptPost, onDelete: () -> Unit, onUpvote: () -> Unit, onReply: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(CornerRadius.m),
@@ -167,7 +190,7 @@ private fun PostCard(post: ConceptPost, onDelete: () -> Unit, onUpvote: () -> Un
                 }
             }
             Text(post.body, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
                 if (post.mine) {
                     // You can't upvote your own post — show the count only.
                     Text("▲ ${post.votes}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
@@ -177,6 +200,35 @@ private fun PostCard(post: ConceptPost, onDelete: () -> Unit, onUpvote: () -> Un
                         Text("▲ ${post.votes}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = accent)
                     }
                 }
+                TextButton(onClick = onReply, contentPadding = PaddingValues(horizontal = Spacing.s)) {
+                    Text("Reply", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                }
+                if (post.replies.isNotEmpty()) {
+                    Text("${post.replies.size} ${if (post.replies.size == 1) "reply" else "replies"}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReplyCard(reply: ConceptPost, onDelete: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth().padding(start = Spacing.l)) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(CornerRadius.m),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+        ) {
+            Column(modifier = Modifier.padding(Spacing.m), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("↳ ${if (reply.mine) "${reply.username} (you)" else reply.username}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary)
+                    if (reply.mine) {
+                        TextButton(onClick = onDelete, contentPadding = PaddingValues(horizontal = Spacing.s)) {
+                            Text("Delete", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                        }
+                    }
+                }
+                Text(reply.body, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
             }
         }
     }

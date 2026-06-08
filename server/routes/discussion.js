@@ -20,21 +20,35 @@ router.get('/api/concepts/:conceptId/posts', authenticateToken, (req, res) => {
   if (!concept) return res.status(404).json({ error: 'Unknown concept' });
 
   db.all(
-    `SELECT p.id, p.user_id AS userId, u.username, p.body, p.created_at AS createdAt,
+    `SELECT p.id, p.parent_id AS parentId, p.user_id AS userId, u.username, p.body, p.created_at AS createdAt,
             (SELECT COUNT(*) FROM concept_post_votes v WHERE v.post_id = p.id) AS votes,
             EXISTS(SELECT 1 FROM concept_post_votes v WHERE v.post_id = p.id AND v.user_id = ?) AS voted
        FROM concept_posts p JOIN users u ON u.id = p.user_id
       WHERE p.concept_id = ? AND p.hidden = 0
         AND p.user_id NOT IN (SELECT blocked_id FROM user_blocks WHERE blocker_id = ?)
         AND p.user_id NOT IN (SELECT blocker_id FROM user_blocks WHERE blocked_id = ?)
-      ORDER BY votes DESC, p.created_at DESC
-      LIMIT 100`,
+      LIMIT 300`,
     [req.user.id, conceptId, req.user.id, req.user.id],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
-      // Best answers first (most upvotes), ties broken by recency.
-      const posts = (rows || []).map((r) => ({ ...r, voted: !!r.voted, mine: r.userId === req.user.id }));
-      res.json({ conceptId, name: concept.name, posts });
+      const all = (rows || []).map((r) => ({ ...r, voted: !!r.voted, mine: r.userId === req.user.id, replies: [] }));
+      const byId = new Map(all.map((p) => [p.id, p]));
+
+      // Nest one level: attach each reply under its (visible) parent; drop replies whose parent is
+      // hidden/blocked (no context). Top-level sorted by votes (best answers first); replies read
+      // chronologically within a thread.
+      const top = [];
+      for (const p of all) {
+        if (p.parentId) {
+          const parent = byId.get(p.parentId);
+          if (parent) parent.replies.push(p);
+        } else {
+          top.push(p);
+        }
+      }
+      top.sort((a, b) => b.votes - a.votes || b.createdAt - a.createdAt);
+      for (const p of top) p.replies.sort((a, b) => a.createdAt - b.createdAt);
+      res.json({ conceptId, name: concept.name, posts: top.slice(0, 100) });
     }
   );
 });
@@ -88,14 +102,27 @@ router.post('/api/concepts/:conceptId/posts', authenticateToken, rateLimiter(20,
   if (!clean.ok) return res.status(400).json({ error: clean.error });
 
   const now = Math.floor(Date.now() / 1000);
-  db.run(
-    'INSERT INTO concept_posts (concept_id, user_id, body, hidden, created_at) VALUES (?, ?, ?, 0, ?)',
-    [conceptId, req.user.id, body, now],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.status(201).json({ success: true, id: this.lastID, createdAt: now });
-    }
-  );
+  const doInsert = (parentId) =>
+    db.run(
+      'INSERT INTO concept_posts (concept_id, user_id, body, hidden, parent_id, created_at) VALUES (?, ?, ?, 0, ?, ?)',
+      [conceptId, req.user.id, body, parentId, now],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.status(201).json({ success: true, id: this.lastID, createdAt: now });
+      }
+    );
+
+  const parentId = req.body && req.body.parentId ? parseInt(req.body.parentId, 10) : null;
+  if (!parentId) return doInsert(null);
+
+  // Reply: the parent must exist, be visible, in this concept, and itself be top-level (one level).
+  db.get('SELECT concept_id, parent_id FROM concept_posts WHERE id = ? AND hidden = 0', [parentId], (pErr, parent) => {
+    if (pErr) return res.status(500).json({ error: pErr.message });
+    if (!parent) return res.status(404).json({ error: 'Parent post not found' });
+    if (parent.concept_id !== conceptId) return res.status(400).json({ error: 'Parent belongs to a different concept' });
+    if (parent.parent_id) return res.status(400).json({ error: 'Cannot reply to a reply' });
+    doInsert(parentId);
+  });
 });
 
 // Delete my own post (author-only hard delete; moderation uses hidden=1 instead).

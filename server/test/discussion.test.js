@@ -101,3 +101,30 @@ test('upvotes toggle, surface the best post first, and reject self-upvote', asyn
   assert.equal(down.body.voted, false);
   assert.equal(down.body.votes, 0);
 });
+
+test('replies nest under their parent; you cannot reply to a reply or an unknown parent', async () => {
+  const a = await registerUser(ctx.base);
+  const b = await registerUser(ctx.base);
+  const q = await api(ctx.base, 'POST', `/api/concepts/${CONCEPT}/posts`, { token: a.token, body: { body: 'Question: why does this work QPARENT' } });
+  const qid = q.body.id;
+
+  // B answers it.
+  const reply = await api(ctx.base, 'POST', `/api/concepts/${CONCEPT}/posts`, { token: b.token, body: { body: 'Because of the identity property RCHILD', parentId: qid } });
+  assert.equal(reply.status, 201);
+  const replyId = reply.body.id;
+
+  // The list nests the reply under the question and does NOT show it as a top-level post.
+  const list = await api(ctx.base, 'GET', `/api/concepts/${CONCEPT}/posts`, { token: a.token });
+  const parent = list.body.posts.find((p) => p.id === qid);
+  assert.ok(parent, 'question is top-level');
+  assert.ok(parent.replies.some((r) => r.id === replyId), 'reply nested under its parent');
+  assert.ok(!list.body.posts.some((p) => p.id === replyId), 'reply is not a top-level post');
+
+  // No second level of nesting.
+  const deep = await api(ctx.base, 'POST', `/api/concepts/${CONCEPT}/posts`, { token: a.token, body: { body: 'nested too deep', parentId: replyId } });
+  assert.equal(deep.status, 400);
+
+  // Unknown parent.
+  const orphan = await api(ctx.base, 'POST', `/api/concepts/${CONCEPT}/posts`, { token: a.token, body: { body: 'to nobody', parentId: 999999 } });
+  assert.equal(orphan.status, 404);
+});
