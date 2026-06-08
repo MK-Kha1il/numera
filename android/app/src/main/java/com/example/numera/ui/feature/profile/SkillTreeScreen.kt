@@ -24,9 +24,15 @@ import kotlinx.coroutines.withContext
 
 // Skill Tree — the hero mastery view (audit #6). Surfaces the per-concept, multi-dimensional
 // mastery the engine already computes (accuracy/fluency/retention/independence/transfer) across
-// the whole curriculum, so it's visible instead of buried in one profile card. Read-only.
+// the whole curriculum, so it's visible instead of buried in one profile card. Tapping a concept
+// launches practice for it, turning the view into a learning driver (not just a read-only report).
+//
+// Gating: every node the server returns is already filtered to the playable curriculum
+// (CONCEPT_TO_LEVEL), so all concepts are practiceable — no prereq/level gate is applied here.
+// This is the simpler correct option: the server is authoritative and generates level-appropriate
+// problems for any (category, level) we hand it.
 @Composable
-fun SkillTreeScreen(onBack: () -> Unit) {
+fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit) {
     var data by remember { mutableStateOf<SkillTreeResponse?>(null) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -93,7 +99,7 @@ fun SkillTreeScreen(onBack: () -> Unit) {
                             color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.padding(top = Spacing.s)
                         )
-                        nodes.forEach { node -> ConceptCard(node, tree?.dimensions?.associate { it.key to it.label } ?: emptyMap()) }
+                        nodes.forEach { node -> ConceptCard(node, tree?.dimensions?.associate { it.key to it.label } ?: emptyMap(), onPractice) }
                     }
                 }
             }
@@ -102,8 +108,9 @@ fun SkillTreeScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun ConceptCard(node: SkillTreeNode, dimLabels: Map<String, String>) {
+private fun ConceptCard(node: SkillTreeNode, dimLabels: Map<String, String>, onPractice: (SkillTreeNode) -> Unit) {
     Card(
+        onClick = { onPractice(node) },
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(CornerRadius.m),
         colors = CardDefaults.cardColors(
@@ -120,6 +127,15 @@ private fun ConceptCard(node: SkillTreeNode, dimLabels: Map<String, String>) {
                 node.dimensions?.let { DimensionGrid(it, dimLabels) }
             } else {
                 Text("Not started yet", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+            }
+            // Practice affordance — tapping anywhere on the card launches practice for this concept.
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (node.started) "Practice ▸" else "Start ▸",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }

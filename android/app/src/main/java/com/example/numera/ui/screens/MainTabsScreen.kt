@@ -157,7 +157,13 @@ fun MainTabsScreen(
 
     if (showSkillTree) {
         NumeraTheme {
-            com.example.numera.ui.feature.profile.SkillTreeScreen(onBack = { showSkillTree = false })
+            com.example.numera.ui.feature.profile.SkillTreeScreen(
+                onBack = { showSkillTree = false },
+                onPractice = { node ->
+                    showSkillTree = false
+                    onStartSoloGame(SoloGame(category = node.category, level = node.level, gameMode = "level"))
+                }
+            )
         }
         return
     }
