@@ -951,6 +951,18 @@ data class SkillTreeNode(
 @Serializable
 data class MasteryDimensionMeta(val key: String = "", val label: String = "", val blurb: String = "")
 
+// ---- Friends leaderboard ----
+@Serializable
+data class FriendLeaderboardEntry(
+    val id: Int = 0,
+    val username: String = "",
+    val xp: Int = 0,
+    val level: Int = 0,
+    val rank: String = "",
+    val position: Int = 0,
+    val isMe: Boolean = false
+)
+
 // ---- Per-concept discussion ----
 @Serializable
 data class ConceptPost(

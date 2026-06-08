@@ -32,6 +32,8 @@ fun SocialScreen() {
     var friendsList by remember { mutableStateOf<List<Friend>>(emptyList()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
     var statusIsError by remember { mutableStateOf(false) }
+    var tab by remember { mutableStateOf("friends") } // friends | leaderboard
+    var leaderboard by remember { mutableStateOf<List<FriendLeaderboardEntry>>(emptyList()) }
     val scope = rememberCoroutineScope()
 
     val fetchFriends = {
@@ -49,6 +51,18 @@ fun SocialScreen() {
 
     LaunchedEffect(Unit) {
         fetchFriends()
+    }
+
+    // Load the friends ranking lazily when that tab is opened.
+    LaunchedEffect(tab) {
+        if (tab == "leaderboard") {
+            try {
+                val list = withContext(Dispatchers.IO) { RetrofitClient.apiService.getFriendsLeaderboard(RetrofitClient.authToken ?: "") }
+                leaderboard = list
+            } catch (e: Exception) {
+                Log.e("Social", "Leaderboard fetch err: ${e.message}")
+            }
+        }
     }
 
     LazyColumn(
@@ -115,6 +129,36 @@ fun SocialScreen() {
                 )
             }
         }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth().padding(top = Spacing.s), horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                FilterChip(selected = tab == "friends", onClick = { tab = "friends" }, label = { Text("Friends") })
+                FilterChip(selected = tab == "leaderboard", onClick = { tab = "leaderboard" }, label = { Text("🏆 Leaderboard") })
+            }
+        }
+
+        if (tab == "leaderboard") {
+            item {
+                Text(
+                    text = "🏆 FRIENDS RANKING",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(top = Spacing.s)
+                )
+            }
+            if (leaderboard.isEmpty()) {
+                item {
+                    Text(
+                        "Add friends to see how you rank against them.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            } else {
+                items(leaderboard, key = { it.id }) { entry -> LeaderboardRow(entry) }
+            }
+        } else {
 
         item {
             Text(
@@ -282,6 +326,44 @@ fun SocialScreen() {
                     }
                 }
             }
+        }
+        } // end tab == "friends"
+    }
+}
+
+@Composable
+private fun LeaderboardRow(entry: FriendLeaderboardEntry) {
+    DuoCard(
+        modifier = Modifier.fillMaxWidth(),
+        borderColor = if (entry.isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(Spacing.m),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.m)
+        ) {
+            Text(
+                "#${entry.position}",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 16.sp,
+                color = when (entry.position) {
+                    1 -> MilestoneGold
+                    2 -> MedalSilver
+                    3 -> MedalBronze
+                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                },
+                modifier = Modifier.width(36.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    if (entry.isMe) "${entry.username} (you)" else entry.username,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = if (entry.isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+                Text("${entry.rank} · Lvl ${entry.level}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+            }
+            Text("${entry.xp} XP", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
         }
     }
 }

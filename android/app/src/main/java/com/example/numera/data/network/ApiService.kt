@@ -171,6 +171,11 @@ interface ApiService {
         @Header("Authorization") token: String
     ): List<User>
 
+    @GET("api/leaderboard/friends")
+    suspend fun getFriendsLeaderboard(
+        @Header("Authorization") token: String
+    ): List<FriendLeaderboardEntry>
+
     @GET("api/achievements")
     suspend fun getAchievements(
         @Header("Authorization") token: String
