@@ -434,6 +434,19 @@ interface ApiService {
         @Body request: AsyncPlayRequest
     ): AsyncPlayResponse
 
+    @POST("api/duel/bot/start")
+    suspend fun startBotDuel(
+        @Header("Authorization") token: String,
+        @Body request: BotStartRequest
+    ): BotDuelStartResponse
+
+    @POST("api/duel/bot/{id}/play")
+    suspend fun playBotDuel(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body request: BotPlayRequest
+    ): BotPlayResponse
+
     @POST("api/user/change-username")
     suspend fun changeUsername(
         @Header("Authorization") token: String,

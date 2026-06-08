@@ -477,6 +477,34 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_concept_posts_parent ON concept_posts(parent_id)');
     },
   },
+  {
+    version: 19,
+    name: 'bot_duels',
+    // Calibrated bot opponents (audit #1.8 / top-50 #30 — practice competition anytime, no
+    // matchmaking wait). Single-player vs an AI whose per-problem accuracy is fixed by tier; the
+    // bot's score is rolled at start and stored (server-authoritative, invisible to the player)
+    // and the match resolves the instant the player submits.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS bot_matches (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id       INTEGER NOT NULL,
+          tier          TEXT NOT NULL,
+          bot_rating    INTEGER NOT NULL,
+          problems_json TEXT NOT NULL,
+          problem_count INTEGER NOT NULL,
+          bot_score     INTEGER NOT NULL,
+          user_score    INTEGER,
+          winner        TEXT,
+          reward        INTEGER DEFAULT 0,
+          status        TEXT DEFAULT 'pending',
+          created_at    INTEGER NOT NULL,
+          finished_at   INTEGER
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_bot_matches_user ON bot_matches(user_id, status)');
+    },
+  },
 ];
 
 /**

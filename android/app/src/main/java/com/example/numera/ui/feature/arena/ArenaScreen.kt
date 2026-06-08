@@ -36,6 +36,7 @@ fun ArenaScreen(
     var queueSecondsElapsed by remember { mutableIntStateOf(0) }
     var showPuzzleRush by remember { mutableStateOf(false) }
     var showAsyncDuel by remember { mutableStateOf(false) }
+    var showBotDuel by remember { mutableStateOf(false) }
     // Ranked requires fair-play (telemetry) consent so the server's anti-cheat scorer may run.
     var showRankedConsent by remember { mutableStateOf(false) }
     var consentGrantedThisSession by remember { mutableStateOf(false) }
@@ -138,6 +139,10 @@ fun ArenaScreen(
     }
     if (showAsyncDuel) {
         AsyncDuelScreen(user = user, onExit = { showAsyncDuel = false })
+        return
+    }
+    if (showBotDuel) {
+        BotDuelScreen(onExit = { showBotDuel = false })
         return
     }
 
@@ -499,6 +504,39 @@ fun ArenaScreen(
                                 text = "Start Puzzle Rush",
                                 onClick = { showPuzzleRush = true },
                                 color = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
+                // Bot Duels (practice vs a calibrated AI — no matchmaking wait)
+                item {
+                    DuoCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(Spacing.l),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
+                        ) {
+                            Column {
+                                Text(
+                                    text = "🤖 Bot Duel",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "Practice against a calibrated AI opponent — instant match, win coins.",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                            DuoButton(
+                                text = "Play a Bot",
+                                onClick = { showBotDuel = true },
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

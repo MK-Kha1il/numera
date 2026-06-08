@@ -60,6 +60,7 @@ const USER_SCOPED_TABLES = [
   'user_goals',
   'concept_posts',
   'concept_post_votes',
+  'bot_matches',
 ];
 
 const router = express.Router();

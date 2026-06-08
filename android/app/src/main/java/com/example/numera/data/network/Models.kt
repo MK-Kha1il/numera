@@ -898,6 +898,31 @@ data class AsyncPlayResponse(
     val result: AsyncResultDto? = null
 )
 
+// ---- Bot duels (calibrated AI opponent) ----
+@Serializable
+data class BotStartRequest(val tier: String)
+
+@Serializable
+data class BotDuelStartResponse(
+    val matchId: Int = 0,
+    val tier: String = "",
+    val botRating: Int = 0,
+    val problemCount: Int = 0,
+    val problems: List<AsyncProblemDto> = emptyList()
+)
+
+@Serializable
+data class BotPlayRequest(val answers: List<String>)
+
+@Serializable
+data class BotPlayResponse(
+    val success: Boolean = false,
+    val userScore: Int = 0,
+    val botScore: Int = 0,
+    val winner: String = "",
+    val reward: Int = 0
+)
+
 // ---- Adaptive diagnostic (server-authoritative placement) ----
 @Serializable
 data class AdaptiveStartResponse(
