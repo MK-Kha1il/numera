@@ -1,5 +1,5 @@
 // Friends: list connections, send a request (auto-accepts a reciprocal pending request),
-// and accept a pending request. Emits social notifications.
+// accept a pending request, and decline a pending request. Emits social notifications.
 const express = require('express');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
@@ -9,16 +9,20 @@ const router = express.Router();
 
 router.get('/api/friends', authenticateToken, (req, res) => {
   db.all(
-    `SELECT u.id, u.username, u.xp, u.level, u.rank, u.active_badge, u.avatar, u.active_banner, f.status
+    // `incoming` distinguishes a request someone sent TO me (I can accept/decline it) from one I
+    // sent OUT (still pending on their side). I'm the recipient exactly when f.friend_id is me.
+    `SELECT u.id, u.username, u.xp, u.level, u.rank, u.active_badge, u.avatar, u.active_banner,
+            f.status, CASE WHEN f.friend_id = ? THEN 1 ELSE 0 END AS incoming
      FROM friends f
      JOIN users u ON (f.friend_id = u.id OR f.user_id = u.id)
      WHERE (f.user_id = ? OR f.friend_id = ?) AND u.id != ?
        AND u.id NOT IN (SELECT blocked_id FROM user_blocks WHERE blocker_id = ?)
        AND u.id NOT IN (SELECT blocker_id FROM user_blocks WHERE blocked_id = ?)`,
-    [req.user.id, req.user.id, req.user.id, req.user.id, req.user.id],
+    [req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
+      // Coerce the SQLite 1/0 into a real JSON boolean for the client.
+      res.json((rows || []).map((r) => ({ ...r, incoming: !!r.incoming })));
     }
   );
 });
@@ -107,6 +111,25 @@ router.post('/api/friends/accept', authenticateToken, (req, res) => {
         type: 'social',
       });
       res.json({ success: true, message: 'Friend request accepted' });
+    }
+  );
+});
+
+// Decline a pending INCOMING request. We silently remove the row rather than ping the requester —
+// a "X declined you" notification creates social pressure/friction (and a safety vector), so the
+// quiet default is the kind one; the requester simply sees the request never accepted and may
+// re-send later. Only the recipient (friend_id = me) of a still-pending request can decline it.
+router.post('/api/friends/decline', authenticateToken, (req, res) => {
+  const { friendId } = req.body;
+  if (!friendId) return res.status(400).json({ error: 'Friend ID required' });
+
+  db.run(
+    `DELETE FROM friends WHERE user_id = ? AND friend_id = ? AND status = 'pending'`,
+    [friendId, req.user.id], // request was sent FROM friendId TO the current user
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: 'Pending friend request not found' });
+      res.json({ success: true, message: 'Friend request declined' });
     }
   );
 });

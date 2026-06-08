@@ -130,6 +130,12 @@ interface ApiService {
         @Body request: FriendAcceptPayload
     ): SimpleResponse
 
+    @POST("api/friends/decline")
+    suspend fun declineFriend(
+        @Header("Authorization") token: String,
+        @Body request: FriendAcceptPayload
+    ): SimpleResponse
+
     // ---- UGC moderation: block & report -----------------------------------
     @POST("api/blocks")
     suspend fun blockUser(

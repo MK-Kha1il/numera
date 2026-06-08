@@ -144,7 +144,8 @@ data class Friend(
     val active_badge: String? = null,
     val avatar: String? = null,
     val active_banner: String? = null,
-    val status: String // "pending" or "accepted"
+    val status: String, // "pending" or "accepted"
+    val incoming: Boolean = false // true = they sent it to me (I can accept/decline)
 )
 
 @Serializable

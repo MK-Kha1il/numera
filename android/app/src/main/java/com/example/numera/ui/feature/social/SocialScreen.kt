@@ -185,38 +185,65 @@ fun SocialScreen() {
                             }
                         }
 
-                        // Status / Accept request
-                        if (friend.status == "pending") {
-                            DuoButton(
-                                text = "Accept",
-                                onClick = {
-                                    scope.launch(Dispatchers.IO) {
-                                        try {
-                                            val token = RetrofitClient.authToken ?: ""
-                                            RetrofitClient.apiService.acceptFriend(
-                                                token, FriendAcceptPayload(friend.id)
-                                            )
-                                            withContext(Dispatchers.Main) {
-                                                fetchFriends()
+                        // Incoming request → accept or decline. Outgoing request → just a pending
+                        // label (you can't accept your own). Accepted → online indicator.
+                        when {
+                            friend.status == "pending" && friend.incoming -> {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+                                ) {
+                                    DuoButton(
+                                        text = "Accept",
+                                        onClick = {
+                                            scope.launch(Dispatchers.IO) {
+                                                try {
+                                                    val token = RetrofitClient.authToken ?: ""
+                                                    RetrofitClient.apiService.acceptFriend(
+                                                        token, FriendAcceptPayload(friend.id)
+                                                    )
+                                                    withContext(Dispatchers.Main) { fetchFriends() }
+                                                } catch (e: Exception) {
+                                                    Log.e("Social", "Accept friend err: ${e.message}")
+                                                }
                                             }
-                                        } catch (e: Exception) {
-                                            Log.e("Social", "Accept friend err: ${e.message}")
                                         }
+                                    )
+                                    TextButton(
+                                        onClick = {
+                                            scope.launch(Dispatchers.IO) {
+                                                try {
+                                                    val token = RetrofitClient.authToken ?: ""
+                                                    RetrofitClient.apiService.declineFriend(
+                                                        token, FriendAcceptPayload(friend.id)
+                                                    )
+                                                    withContext(Dispatchers.Main) { fetchFriends() }
+                                                } catch (e: Exception) {
+                                                    Log.e("Social", "Decline friend err: ${e.message}")
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Text("Decline", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 13.sp)
                                     }
                                 }
-                            )
-                        } else {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(Spacing.s)
-                                        .clip(CircleShape)
-                                        .background(CorrectGreen)
-                                )
-                                Text("Online", fontSize = 11.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
+                            }
+                            friend.status == "pending" -> {
+                                Text("Requested", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                            }
+                            else -> {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(Spacing.s)
+                                            .clip(CircleShape)
+                                            .background(CorrectGreen)
+                                    )
+                                    Text("Online", fontSize = 11.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }
