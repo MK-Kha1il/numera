@@ -134,11 +134,19 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     : calculateDifficultyProfile(elo);
   const diffFactor = profile.diffFactor;
 
-  // If the orchestrator has nominated a specific concept, override category+level
+  // If the orchestrator has nominated a specific concept, override level — but only
+  // when the concept belongs to the same category the caller requested, so a stale
+  // orchestrator result can never inject cross-category content.
   if (engineOptions.targetConceptId && CONCEPT_TO_LEVEL[engineOptions.targetConceptId]) {
     const mapped = CONCEPT_TO_LEVEL[engineOptions.targetConceptId];
-    category = mapped.category;
-    level    = mapped.level;
+    const requestedCat = category.toLowerCase().replace(' ', '_');
+    const mappedCat    = mapped.category.toLowerCase().replace(' ', '_');
+    if (requestedCat === mappedCat || requestedCat === 'mental') {
+      category = mapped.category;
+      level    = mapped.level;
+    }
+    // else: concept is from a different category — ignore the override and
+    // generate from the requested category+level as-is.
   }
   const idx = index !== undefined ? index : Math.floor(Math.random() * 10);
   

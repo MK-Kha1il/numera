@@ -189,21 +189,6 @@ fun DashboardScreen(
         // Daily Puzzle daily quest, and the stacked hero+tiles dominated the tab before any quest
         // content. The engine-driven nudge below stays: it's contextual guidance, not redundant nav.
 
-        // Engine-driven nudge: surfaces dimension_building / transfer_practice / review / etc.
-        // Only shown on the Daily Quests sub-tab — it's quest/learning guidance, not relevant on the
-        // Weekly Leagues / Global Standings leaderboards.
-        if (homeSubTab == 0) {
-            RecommendationNudge(
-                recommendation = recommendation,
-                onTakeTransferChallenge = {
-                    onStartQuickGame(SoloGame(category = "General", level = 0, gameMode = "transfer_challenge"))
-                },
-                onContinueLearning = { onNavigateTab(0) },
-                onReview = onReviewNow,
-                modifier = Modifier.padding(horizontal = Spacing.l).padding(bottom = Spacing.s)
-            )
-        }
-
         AnimatedContent(
             targetState = homeSubTab,
             transitionSpec = {
@@ -227,6 +212,24 @@ fun DashboardScreen(
                         .padding(horizontal = Spacing.l, vertical = Spacing.m),
                     verticalArrangement = Arrangement.spacedBy(Spacing.m)
                 ) {
+                // Engine-driven nudge inside the scroll so it disappears when scrolled past.
+                // Only shown when there is actionable guidance — low-signal reasons return null.
+                recommendation?.let { rec ->
+                    if (rec.reason in listOf("transfer_practice", "dimension_building", "misconception_remediation", "retention_review", "prerequisite_gap")) {
+                        item(key = "nudge") {
+                            RecommendationNudge(
+                                recommendation = rec,
+                                onTakeTransferChallenge = {
+                                    onStartQuickGame(SoloGame(category = "General", level = 0, gameMode = "transfer_challenge"))
+                                },
+                                onContinueLearning = { onNavigateTab(0) },
+                                onReview = onReviewNow,
+                                modifier = Modifier.padding(bottom = Spacing.xs)
+                            )
+                        }
+                    }
+                }
+
                 item {
                     // Lightweight section header (was a full DuoCard wrapping just a title +
                     // subtitle — heavy card chrome that bloated the top of the Quests tab).

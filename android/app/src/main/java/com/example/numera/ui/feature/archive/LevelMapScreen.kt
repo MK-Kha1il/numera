@@ -933,17 +933,7 @@ fun LevelMapScreen(
                             val srsCat = if (lastUnderscoreIdx != -1) item.topic.substring(0, lastUnderscoreIdx) else item.topic
                             val srsLvl = if (lastUnderscoreIdx != -1) item.topic.substring(lastUnderscoreIdx + 1).toIntOrNull() ?: 1 else 1
                             DuoCard(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onStartSoloGame(
-                                            SoloGame(
-                                                category = srsCat,
-                                                level = srsLvl,
-                                                gameMode = "level"
-                                            )
-                                        )
-                                    },
+                                modifier = Modifier.fillMaxWidth(),
                                 borderColor = WrongRed
                             ) {
                                 Row(
@@ -953,7 +943,7 @@ fun LevelMapScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = item.topic.replace("_", " ").uppercase(),
                                             fontWeight = FontWeight.Bold,
@@ -965,10 +955,49 @@ fun LevelMapScreen(
                                             color = WrongRed
                                         )
                                     }
-                                    com.example.numera.ui.components.NumeraIcon(
-                                        type = com.example.numera.ui.components.NumeraIconType.Warning,
-                                        tint = WrongRed
-                                    )
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                                    ) {
+                                        DuoButton(
+                                            text = "Review",
+                                            onClick = {
+                                                onStartSoloGame(
+                                                    SoloGame(
+                                                        category = srsCat,
+                                                        level = srsLvl,
+                                                        gameMode = "level"
+                                                    )
+                                                )
+                                            },
+                                            modifier = Modifier.width(90.dp),
+                                            color = WrongRed
+                                        )
+                                        TextButton(
+                                            onClick = {
+                                                // Optimistic: remove from list immediately, sync in background
+                                                srsDueItems = srsDueItems.filterNot { it.id == item.id }
+                                                scope.launch(Dispatchers.IO) {
+                                                    try {
+                                                        RetrofitClient.apiService.dismissSrsItem(
+                                                            RetrofitClient.authToken ?: "",
+                                                            item.topic
+                                                        )
+                                                    } catch (e: Exception) {
+                                                        Log.e("LevelMap", "SRS dismiss failed: ${e.message}")
+                                                        // Silently ignore — item is already gone from UI
+                                                    }
+                                                }
+                                            }
+                                        ) {
+                                            Text(
+                                                "Ignore",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

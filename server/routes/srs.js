@@ -78,4 +78,21 @@ router.post('/api/math/srs/review', authenticateToken, (req, res) => {
   );
 });
 
+// Dismiss (snooze) an SRS item — pushes its next_review 7 days out without
+// resetting SM-2 state (ease_factor / repetitions stay intact).
+router.delete('/api/math/srs/dismiss/:topic', authenticateToken, (req, res) => {
+  const topic = req.params.topic;
+  const snoozeUntil = Math.floor(Date.now() / 1000) + 7 * 86400;
+  db.run(
+    `INSERT INTO srs_reviews (user_id, topic, ease_factor, interval, repetitions, next_review)
+     VALUES (?, ?, 2.5, 7, 0, ?)
+     ON CONFLICT(user_id, topic) DO UPDATE SET next_review = excluded.next_review`,
+    [req.user.id, topic, snoozeUntil],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ topic, snoozed_until: snoozeUntil });
+    }
+  );
+});
+
 module.exports = router;

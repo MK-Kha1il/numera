@@ -42,6 +42,9 @@ import com.example.numera.ui.components.LocalToast
 import com.example.numera.ui.components.runOptimistic
 import com.example.numera.ui.components.AchievementSkeleton
 import com.example.numera.ui.components.SkeletonList
+import com.example.numera.ui.components.DuoCard
+import com.example.numera.ui.components.NumeraEmptyState
+import com.example.numera.ui.components.EmptyIllustration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -1132,10 +1135,8 @@ fun ProfileScreen(
 
         if (selectedSubTab == 3) {
             // Saved exercises and collections UI
-            Card(
+            DuoCard(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
-                shape = RoundedCornerShape(CornerRadius.l),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(Spacing.l)) {
                     Row(
@@ -1247,10 +1248,8 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(6.dp))
 
             // Exercises Section
-            Card(
+            DuoCard(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
-                shape = RoundedCornerShape(CornerRadius.l),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(Spacing.l)) {
                     Text(
@@ -1260,34 +1259,27 @@ fun ProfileScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(Spacing.m))
-                    
+
                     val filteredExercises = if (selectedCollectionFilterId == null) {
                         favoritesList
                     } else {
                         favoritesList.filter { it.collection_id == selectedCollectionFilterId }
                     }
-                    
+
                     if (favoritesLoading) {
                         Box(modifier = Modifier.fillMaxWidth().padding(Spacing.xl), contentAlignment = Alignment.Center) {
                             com.example.numera.ui.components.MathIconSpinner(modifier = Modifier.size(40.dp))
                         }
                     } else if (filteredExercises.isEmpty()) {
-                        Text(
-                            text = if (selectedCollectionFilterId == null) "No saved exercises yet." else "No exercises in this collection.",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            fontSize = 13.sp,
-                            modifier = Modifier.padding(vertical = Spacing.m)
+                        NumeraEmptyState(
+                            illustration = EmptyIllustration.Saved,
+                            title = if (selectedCollectionFilterId == null) "No saved exercises yet" else "Collection is empty",
+                            message = if (selectedCollectionFilterId == null) "Tap the ❤️ button on any exercise to save it here." else "Move exercises into this collection from All Favorites."
                         )
                     } else {
                         Column(verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
                             filteredExercises.forEach { ex ->
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(CornerRadius.m))
-                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f), RoundedCornerShape(CornerRadius.m))
-                                        .padding(Spacing.m)
-                                ) {
+                                DuoCard(modifier = Modifier.fillMaxWidth()) {
                                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),

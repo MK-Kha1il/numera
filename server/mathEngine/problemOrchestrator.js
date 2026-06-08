@@ -84,9 +84,14 @@ async function selectNextConcept(db, userId, currentCategory, currentLevel) {
   }
   const stalest = (candidates) => leastRecentlySeen(candidates, conceptRecency) || candidates[0];
 
-  // 1. Check for critical misconceptions
+  // 1. Check for critical misconceptions — scoped to current category so we don't
+  //    inject calculus problems into an arithmetic session.
+  const categoryConceptIdsEarly = getCategoryConceptIds(currentCategory, currentLevel);
   const misconceptions = await getActiveMisconceptions(db, userId, 5);
-  const critical = misconceptions.find(m => m.severity === 'high' || m.persistence > 0.6);
+  const critical = misconceptions.find(
+    m => (m.severity === 'high' || m.persistence > 0.6) &&
+         categoryConceptIdsEarly.includes(m.concept_id)
+  );
   if (critical) {
     return {
       conceptId: critical.concept_id,
@@ -96,22 +101,25 @@ async function selectNextConcept(db, userId, currentCategory, currentLevel) {
     };
   }
 
-  // 2. Check overdue retention reviews
+  // 2. Check overdue retention reviews — same category guard.
   const overdueReviews = await getOverdueReviews(db, userId);
-  if (overdueReviews.length > 0) {
-    const top = overdueReviews[0];
+  const topOverdue = overdueReviews.find(r => categoryConceptIdsEarly.includes(r.concept_id));
+  if (topOverdue) {
     return {
-      conceptId: top.concept_id,
+      conceptId: topOverdue.concept_id,
       reason:    'retention_review',
       priority:  2,
-      meta:      { schedule: top }
+      meta:      { schedule: topOverdue }
     };
   }
 
-  // 3. Identify prerequisite gaps for the current concept path
-  const categoryConceptIds = getCategoryConceptIds(currentCategory, currentLevel);
+  // 3. Identify prerequisite gaps for the current concept path — only surface
+  //    prereqs that are themselves within the same category so a permutations
+  //    session never injects arithmetic_mult problems.
+  const categoryConceptIds = categoryConceptIdsEarly;
   for (const conceptId of categoryConceptIds) {
-    const prereqs = getDependencies(conceptId).filter(p => p !== conceptId);
+    const prereqs = getDependencies(conceptId)
+      .filter(p => p !== conceptId && categoryConceptIds.includes(p));
     for (const prereqId of prereqs) {
       const profile = await getProfile(db, userId, prereqId);
       if (profile.exposure_count > 0 && profile.mastery_score < 0.55) {
@@ -180,14 +188,11 @@ async function selectNextConcept(db, userId, currentCategory, currentLevel) {
     }
   }
 
-  // 5. Exploration — find concepts whose prereqs are all mastered. Among all that are ready,
-  //    introduce the one seen least recently (instead of always the first in graph order, which
-  //    made "what's next" feel fixed).
+  // 5. Exploration — find concepts in this category whose prereqs are all mastered.
   const strongConcepts = await getStrongConcepts(db, userId, 0.75);
   const masteredIds = new Set(strongConcepts.map(s => s.concept_id));
-  const allConceptIds = Object.keys(concepts);
-  const readyToExplore = allConceptIds.filter(
-    cId => !masteredIds.has(cId) && concepts[cId].prereqs.every(p => masteredIds.has(p))
+  const readyToExplore = categoryConceptIds.filter(
+    cId => !masteredIds.has(cId) && concepts[cId] && concepts[cId].prereqs.every(p => masteredIds.has(p))
   );
   if (readyToExplore.length > 0) {
     return {
@@ -198,11 +203,11 @@ async function selectNextConcept(db, userId, currentCategory, currentLevel) {
     };
   }
 
-  // 6. Challenge — push a mastered concept further; rotate among strong concepts by freshness
-  //    so the "victory lap" isn't always the same one.
-  if (strongConcepts.length > 0) {
-    const chosenId = stalest(strongConcepts.map(s => s.concept_id));
-    const picked = strongConcepts.find(s => s.concept_id === chosenId) || strongConcepts[0];
+  // 6. Challenge — push a mastered concept further, scoped to current category.
+  const relevantStrong = strongConcepts.filter(s => categoryConceptIds.includes(s.concept_id));
+  if (relevantStrong.length > 0) {
+    const chosenId = stalest(relevantStrong.map(s => s.concept_id));
+    const picked = relevantStrong.find(s => s.concept_id === chosenId) || relevantStrong[0];
     return {
       conceptId: picked.concept_id,
       reason:    'challenge',

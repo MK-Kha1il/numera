@@ -57,14 +57,20 @@ fun MathText(
                 }
                 setBackgroundColor(0)
                 webViewClient = WebViewClient()
-                // Pass all touch events up so parent Compose handlers (answer tap, etc.) work
+                // Prevent the WebView from consuming touch events so Compose's pointerInput
+                // handlers (answer tap, scroll, etc.) receive them. setOnTouchListener returning
+                // false is not enough — the WebView's own onTouchEvent still consumes events.
+                // Making it non-clickable/non-focusable blocks that path entirely.
+                isClickable = false
+                isFocusable = false
+                isFocusableInTouchMode = false
                 setOnTouchListener { _, _ -> false }
             }
         },
         update = { webView ->
             webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
         },
-        modifier = modifier.fillMaxWidth().heightIn(min = 40.dp)
+        modifier = modifier.fillMaxWidth().heightIn(min = 60.dp)
     )
 }
 
@@ -103,8 +109,8 @@ private fun buildMathHtml(text: String, hexColor: String, fontSizePx: Int): Stri
       if (window.katex && window.renderMathInElement && src && dst) {
         var raw = src.textContent;
         var len = raw.length;
-        if (len > 250)      document.body.style.fontSize = (${fontSizePx} * 0.65) + 'px';
-        else if (len > 120) document.body.style.fontSize = (${fontSizePx} * 0.80) + 'px';
+        if (len > 250)      document.body.style.fontSize = (${fontSizePx} * 0.78) + 'px';
+        else if (len > 120) document.body.style.fontSize = (${fontSizePx} * 0.88) + 'px';
         try {
           dst.textContent = raw;
           renderMathInElement(dst, {
