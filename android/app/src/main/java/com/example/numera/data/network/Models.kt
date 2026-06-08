@@ -988,6 +988,31 @@ data class PlayChallengeResponse(
     val leaderboard: List<ChallengeLeaderboardEntry> = emptyList()
 )
 
+// ---- Learning plan (goal-driven concept path — audit #19) ----
+@Serializable
+data class LearningPlanStep(
+    val conceptId: String = "",
+    val name: String = "",
+    val category: String = "",
+    val level: Int = 0,
+    val status: String = "", // done | in_progress | available | locked
+    val overall: Double = 0.0,
+    val isNext: Boolean = false
+)
+
+@Serializable
+data class LearningPlanResponse(
+    val currentLevel: Int = 0,
+    val targetLevel: Int = 0,
+    val goalDriven: Boolean = false,
+    val goalType: String? = null,
+    val total: Int = 0,
+    val done: Int = 0,
+    val percent: Int = 0,
+    val nextStep: LearningPlanStep? = null,
+    val steps: List<LearningPlanStep> = emptyList()
+)
+
 // ---- Weekly tournaments (async global event — audit #21) ----
 @Serializable
 data class TournamentMeta(

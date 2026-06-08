@@ -485,6 +485,10 @@ interface ApiService {
         @Body request: BotPlayRequest
     ): BotPlayResponse
 
+    // ---- Learning plan (goal-driven concept path) ----
+    @GET("api/engine/learning-plan")
+    suspend fun getLearningPlan(@Header("Authorization") token: String): LearningPlanResponse
+
     // ---- Weekly tournaments (async global event) ----
     @GET("api/tournaments/current")
     suspend fun getCurrentTournament(@Header("Authorization") token: String): TournamentCurrentResponse

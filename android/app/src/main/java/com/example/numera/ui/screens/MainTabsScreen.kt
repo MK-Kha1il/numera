@@ -76,6 +76,7 @@ fun MainTabsScreen(
     var notificationsList by remember { mutableStateOf<List<NotificationItemDto>>(emptyList()) }
     var showNotificationsDialog by remember { mutableStateOf(false) }
     var showSkillTree by remember { mutableStateOf(false) }
+    var showLearningPlan by remember { mutableStateOf(false) }
     var showWeeklyRecap by remember { mutableStateOf(false) }
     var showGoal by remember { mutableStateOf(false) }
     var showClubs by remember { mutableStateOf(false) }
@@ -192,6 +193,19 @@ fun MainTabsScreen(
         return
     }
 
+    if (showLearningPlan) {
+        NumeraTheme {
+            com.example.numera.ui.feature.profile.LearningPlanScreen(
+                onBack = { showLearningPlan = false },
+                onPractice = { category, level ->
+                    showLearningPlan = false
+                    onStartSoloGame(SoloGame(category = category, level = level, gameMode = "level"))
+                }
+            )
+        }
+        return
+    }
+
     if (showWeeklyRecap) {
         NumeraTheme {
             com.example.numera.ui.feature.profile.WeeklyRecapScreen(onBack = { showWeeklyRecap = false })
@@ -268,6 +282,9 @@ fun MainTabsScreen(
             },
             CommandItem("Your Week", CommandCategory.QuickAction, NumeraIconType.Streak, "A shareable recap of your week", "recap wrapped weekly summary share stats progress") {
                 showWeeklyRecap = true
+            },
+            CommandItem("Learning Plan", CommandCategory.QuickAction, NumeraIconType.Learn, "Your ordered path to your goal", "plan path roadmap next step concept order prerequisite study learn goal") {
+                showLearningPlan = true
             },
             CommandItem("My Goal", CommandCategory.QuickAction, NumeraIconType.Quests, "Set a target and track your progress", "goal target daily aim objective plan motivation") {
                 showGoal = true

@@ -214,6 +214,86 @@ router.get('/api/engine/skill-tree', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /api/engine/learning-plan
+// Goal actuation (audit #19): turn the learner's goal into an ORDERED, prerequisite-correct path of
+// concepts with a single clear "next step" — the audit's "measures like a pro, acts like a beginner"
+// gap. Unlike the skill tree (the whole map), this is a focused sequence toward a target: an explicit
+// reach_level goal if set, else a near-term horizon from where the learner is now. Each step's status
+// is derived from the SAME mastery the rest of the engine computes, so the path stays honest.
+const PLAN_PROFICIENT = 0.6; // "you've learned this" bar — both marks a step done and gates prereqs
+
+router.get('/api/engine/learning-plan', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const dbGet = (sql, p) => new Promise((resolve, reject) => db.get(sql, p, (e, r) => (e ? reject(e) : resolve(r))));
+
+    const userRow = await dbGet('SELECT level FROM users WHERE id = ?', [userId]);
+    const currentLevel = (userRow && userRow.level) || 1;
+    const goal = await dbGet('SELECT goal_type, target_value FROM user_goals WHERE user_id = ?', [userId]);
+
+    // Target: an explicit reach_level goal, else a near-term horizon ahead of the learner.
+    let targetLevel;
+    let goalDriven = false;
+    if (goal && goal.goal_type === 'reach_level') {
+      targetLevel = goal.target_value;
+      goalDriven = true;
+    } else {
+      targetLevel = Math.min(50, currentLevel + 12);
+    }
+
+    const snapshot = await LearnerModel.getLearnerSnapshot(db, userId);
+    const byConcept = {};
+    for (const c of snapshot) byConcept[c.concept_id] = c;
+    const overallOf = (conceptId) => {
+      const p = byConcept[conceptId];
+      if (!p || (p.exposure_count || 0) === 0) return { started: false, overall: 0 };
+      return { started: true, overall: MasteryEngine.computeMasteryProfile(p).overall };
+    };
+    const isSatisfied = (conceptId) => {
+      const o = overallOf(conceptId);
+      return o.started && o.overall >= PLAN_PROFICIENT;
+    };
+
+    // Curriculum level already follows prerequisite order (a prereq always sits at a lower level),
+    // so a level sort is a valid topological order for the path.
+    const ordered = Object.keys(KnowledgeGraph.concepts)
+      .filter((id) => CONCEPT_TO_LEVEL[id] && CONCEPT_TO_LEVEL[id].level <= targetLevel)
+      .sort((a, b) => CONCEPT_TO_LEVEL[a].level - CONCEPT_TO_LEVEL[b].level);
+
+    let nextStepId = null;
+    const steps = ordered.map((id) => {
+      const meta = CONCEPT_TO_LEVEL[id];
+      const o = overallOf(id);
+      // Ignore prereqs that aren't in the playable curriculum (can't be practiced anyway).
+      const prereqsMet = (KnowledgeGraph.concepts[id].prereqs || []).every((p) => !CONCEPT_TO_LEVEL[p] || isSatisfied(p));
+      let status;
+      if (o.started && o.overall >= PLAN_PROFICIENT) status = 'done';
+      else if (!prereqsMet) status = 'locked';
+      else if (o.started) status = 'in_progress';
+      else status = 'available';
+      if (!nextStepId && (status === 'in_progress' || status === 'available')) nextStepId = id;
+      return { conceptId: id, name: KnowledgeGraph.concepts[id].name, category: meta.category, level: meta.level, status, overall: Math.round(o.overall * 100) / 100, isNext: false };
+    });
+    for (const s of steps) s.isNext = s.conceptId === nextStepId;
+
+    const done = steps.filter((s) => s.status === 'done').length;
+    res.json({
+      currentLevel,
+      targetLevel,
+      goalDriven,
+      goalType: goal ? goal.goal_type : null,
+      total: steps.length,
+      done,
+      percent: steps.length ? Math.round((done / steps.length) * 100) : 0,
+      nextStep: steps.find((s) => s.isNext) || null,
+      steps,
+    });
+  } catch (err) {
+    logger.error('[Engine/learning-plan]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/engine/weekly-recap
 // A "Your Week" snapshot for an in-app, shareable recap (Wrapped-style). Unlike the lifecycle
 // recap EMAIL (cumulative totals), this reports a REAL last-7-days figure from the daily
