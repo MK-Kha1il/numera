@@ -63,6 +63,22 @@ function hasTransferData(profile) {
   return (profile && profile.transfer_exposure > 0) || false;
 }
 
+// A concept only counts as "learned" (and therefore reviewable) once accuracy is established —
+// below this it's still in the learning phase, which is "keep going", not "review".
+const REVIEW_MIN_ACCURACY = 0.6;
+
+// Does this concept need a spaced review? True only when the learner GENUINELY LEARNED it
+// (accuracy established) but the memory is now FADING (retention dimension decayed below the weak
+// threshold). This is the mastery-decay signal surfaced across the whole skill tree, so a learner
+// sees *what to revisit*, not just what they've mastered. Brand-new or never-learned-yet concepts
+// are deliberately excluded — those are "keep learning", a different prompt. Pure (no DB/IO).
+function needsRetentionReview(profile) {
+  const p = profile || {};
+  if (!(p.exposure_count > 0)) return false; // never started
+  if (clamp01(p.accuracy_rate) < REVIEW_MIN_ACCURACY) return false; // not learned yet
+  return clamp01(p.retention_score) < WEAK_THRESHOLD; // it's fading
+}
+
 // Decompose a learner_profiles row into the five mastery dimensions (each 0..1).
 function computeDimensions(profile = {}) {
   const p = profile || {};
@@ -185,8 +201,10 @@ module.exports = {
   BASE_WEIGHTS,
   TRANSFER_WEIGHTS,
   WEAK_THRESHOLD,
+  REVIEW_MIN_ACCURACY,
   DIMENSION_FOCUS,
   hasTransferData,
+  needsRetentionReview,
   computeDimensions,
   computeOverall,
   masteryStage,

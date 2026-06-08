@@ -182,11 +182,14 @@ router.get('/api/engine/skill-tree', authenticateToken, async (req, res) => {
         let dimensions = null;
         let overall = 0;
         let stage = 'Locked';
+        let needsReview = false;
         if (started) {
           const mp = MasteryEngine.computeMasteryProfile(profile);
           dimensions = mp.dimensions;
           overall = mp.overall;
           stage = mp.stage;
+          // Mastery-decay signal: learned-but-fading concepts the learner should revisit.
+          needsReview = MasteryEngine.needsRetentionReview(profile);
         }
         return {
           conceptId,
@@ -198,6 +201,7 @@ router.get('/api/engine/skill-tree', authenticateToken, async (req, res) => {
           dimensions,
           overall,
           stage,
+          needsReview,
         };
       })
       .sort((a, b) => a.level - b.level);

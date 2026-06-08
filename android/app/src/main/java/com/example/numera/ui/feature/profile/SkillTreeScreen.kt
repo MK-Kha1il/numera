@@ -89,8 +89,32 @@ fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit) {
                         }
                     }
 
+                    val allNodes = tree?.nodes ?: emptyList()
+                    val dimLabels = tree?.dimensions?.associate { it.key to it.label } ?: emptyMap()
+
+                    // Needs Review — concepts the learner once had but whose memory is fading
+                    // (mastery-decay surfaced across the whole graph). Most-decayed first; tapping
+                    // any of them launches a refresher. This turns the skill tree from a report into
+                    // a "what should I do next" driver.
+                    val reviewNodes = allNodes.filter { it.needsReview }.sortedBy { it.dimensions?.retention ?: 1f }
+                    if (reviewNodes.isNotEmpty()) {
+                        Text(
+                            "🔁 Needs Review",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(top = Spacing.s)
+                        )
+                        Text(
+                            "These are slipping — a quick review locks them back in.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                        )
+                        reviewNodes.forEach { node -> ConceptCard(node, dimLabels, onPractice) }
+                    }
+
                     // Concepts grouped by category, in curriculum (level) order.
-                    val grouped = (tree?.nodes ?: emptyList()).groupBy { it.category }
+                    val grouped = allNodes.groupBy { it.category }
                     grouped.forEach { (category, nodes) ->
                         Text(
                             categoryLabel(category),
@@ -99,7 +123,7 @@ fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit) {
                             color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.padding(top = Spacing.s)
                         )
-                        nodes.forEach { node -> ConceptCard(node, tree?.dimensions?.associate { it.key to it.label } ?: emptyMap(), onPractice) }
+                        nodes.forEach { node -> ConceptCard(node, dimLabels, onPractice) }
                     }
                 }
             }
@@ -119,8 +143,11 @@ private fun ConceptCard(node: SkillTreeNode, dimLabels: Map<String, String>, onP
     ) {
         Column(modifier = Modifier.padding(Spacing.m), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(node.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (node.started) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-                StageChip(node.stage)
+                Text(node.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (node.started) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), modifier = Modifier.weight(1f, fill = false))
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
+                    if (node.needsReview) ReviewChip()
+                    StageChip(node.stage)
+                }
             }
             if (node.started) {
                 OverallBar(node.overall, stageColor(node.stage))
@@ -131,7 +158,11 @@ private fun ConceptCard(node: SkillTreeNode, dimLabels: Map<String, String>, onP
             // Practice affordance — tapping anywhere on the card launches practice for this concept.
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    if (node.started) "Practice ▸" else "Start ▸",
+                    when {
+                        node.needsReview -> "Review ▸"
+                        node.started -> "Practice ▸"
+                        else -> "Start ▸"
+                    },
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -171,6 +202,14 @@ private fun OverallBar(value: Float, color: Color) {
 private fun MiniBar(value: Float, modifier: Modifier = Modifier) {
     Box(modifier = modifier.height(7.dp).clip(RoundedCornerShape(CornerRadius.s)).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))) {
         Box(modifier = Modifier.fillMaxWidth(value.coerceIn(0f, 1f)).fillMaxHeight().clip(RoundedCornerShape(CornerRadius.s)).background(MaterialTheme.colorScheme.primary))
+    }
+}
+
+@Composable
+private fun ReviewChip() {
+    val c = MilestoneGold
+    Box(modifier = Modifier.clip(RoundedCornerShape(CornerRadius.s)).background(c.copy(alpha = 0.18f)).padding(horizontal = Spacing.s, vertical = 2.dp)) {
+        Text("🔁 Review", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = c)
     }
 }
 

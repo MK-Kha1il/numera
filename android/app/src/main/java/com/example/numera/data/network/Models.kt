@@ -918,7 +918,8 @@ data class SkillTreeNode(
     val started: Boolean = false,
     val dimensions: MasteryDimensions? = null,
     val overall: Float = 0f,
-    val stage: String = "Locked"
+    val stage: String = "Locked",
+    val needsReview: Boolean = false
 )
 
 @Serializable

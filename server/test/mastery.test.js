@@ -86,6 +86,19 @@ test('transfer dimension is dormant until attempted, then counts toward mastery'
   assert.ok(after.overall < before.overall, 'failed transfer should lower overall mastery');
 });
 
+test('needsRetentionReview flags learned-but-fading concepts only', () => {
+  // Genuinely learned (accuracy high) but memory now fading → needs review.
+  assert.strictEqual(M.needsRetentionReview({ exposure_count: 12, accuracy_rate: 0.9, retention_score: 0.3 }), true);
+  // Strong and still retained → not a review candidate.
+  assert.strictEqual(M.needsRetentionReview(strong), false);
+  // Never started → not reviewable.
+  assert.strictEqual(M.needsRetentionReview({ exposure_count: 0, accuracy_rate: 0, retention_score: 0 }), false);
+  // Started but never actually learned (low accuracy) → "keep learning", not "review".
+  assert.strictEqual(M.needsRetentionReview({ exposure_count: 5, accuracy_rate: 0.3, retention_score: 0.2 }), false);
+  // Null-safe.
+  assert.strictEqual(M.needsRetentionReview(undefined), false);
+});
+
 test('aggregateDimensions weights by exposure and returns null for no data', () => {
   assert.strictEqual(M.aggregateDimensions([]), null);
   const agg = M.aggregateDimensions([

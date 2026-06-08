@@ -53,4 +53,27 @@ test('a seeded concept profile shows up as started with computed dimensions', as
 
   // The learner-wide aggregate is now populated too.
   assert.ok(r.body.masteryProfile && r.body.masteryProfile.conceptCount >= 1);
+  // A solidly-retained concept is not flagged for review.
+  assert.equal(node.needsReview, false);
+});
+
+test('a learned-but-fading concept is flagged needsReview; a strong one is not', async () => {
+  const u = await registerUser(ctx.base);
+  const userId = await idOf(u.username);
+  // Learned (accuracy 0.9) but memory fading (retention 0.25) → should surface for review.
+  await dbRun(
+    `INSERT INTO learner_profiles
+       (user_id, concept_id, mastery_score, confidence_score, avg_response_ms, retention_score,
+        accuracy_rate, hint_usage_rate, calculator_usage_rate, retry_rate, exposure_count,
+        correct_first_try, learning_velocity, last_seen)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [userId, 'arithmetic_add', 0.6, 0.6, 5000, 0.25, 0.9, 0.1, 0.0, 0.1, 12, 10, 0.5, Math.floor(Date.now() / 1000)]
+  );
+
+  const r = await api(ctx.base, 'GET', '/api/engine/skill-tree', { token: u.token });
+  const fading = r.body.nodes.find((n) => n.conceptId === 'arithmetic_add');
+  assert.ok(fading && fading.started);
+  assert.equal(fading.needsReview, true, 'fading concept should be flagged for review');
+  // Every unstarted node stays false.
+  assert.ok(r.body.nodes.filter((n) => !n.started).every((n) => n.needsReview === false));
 });
