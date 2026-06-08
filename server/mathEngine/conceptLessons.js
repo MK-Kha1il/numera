@@ -277,6 +277,119 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // INTEGERS STRAND
+  // ===========================================================================
+  absolute_value: {
+    title: "Absolute Value",
+    formula: "|x| = \\text{distance of } x \\text{ from } 0",
+    oneLineSummary: "Absolute value is how far a number sits from zero — a distance, so it is never negative.",
+    intuitionHook: "Walk $7$ steps left or $7$ steps right from a doorway: either way you've travelled $7$ steps. Direction differs, distance doesn't. Absolute value throws away the direction and keeps the distance.",
+    whatItIs: "The absolute value $|x|$ is the distance between $x$ and $0$ on the number line. Distances are never negative, so $|x|$ is always zero or positive.",
+    whyItWorks: "On the number line, $-7$ and $7$ sit the same distance from $0$ — just on opposite sides. Absolute value reports that distance, $7$, ignoring which side. That is why $|{-7}| = 7$ and $|7| = 7$: the bars strip the sign and leave the size. Only $0$ has absolute value $0$, because only $0$ is no distance away.",
+    whenToUse: "Use it whenever only the size matters, not the direction: distance travelled, the gap between two values, error magnitude, or 'how far off' regardless of over/under.",
+    representations: [
+      { kind: "number_line", label: "Distance from zero", body: "$-7$ is seven units left of $0$; its distance — its absolute value — is $7$." },
+      { kind: "real_world", label: "Steps, not direction", body: "Owing 5 dollars or having 5 dollars: the AMOUNT is $5$ either way. $|{-5}| = 5$." },
+      { kind: "symbolic", label: "Strip the sign", body: "$|{-3}| = 3$, $|3| = 3$, $|0| = 0$ — the bars remove any minus sign." }
+    ],
+    commonMistakes: [
+      { label: "Keeping the negative sign", why: "Writing $|{-7}| = -7$, treating the bars as if they did nothing.", fix: "Absolute value is a DISTANCE — never negative. The result of $|{-7}|$ is the positive $7$." },
+      { label: "Thinking absolute value just flips the sign", why: "Assuming $|x|$ always makes a number negative or always positive by flipping.", fix: "It makes the result non-negative: $|5|$ stays $5$ (already positive); only negatives lose their sign." }
+    ],
+    connections: [
+      { concept: "integer_add", note: "Adding integers compares distances from zero — absolute values — to find the result's size and sign." },
+      { concept: "arithmetic_sub", note: "The distance between two numbers is the absolute value of their difference." }
+    ],
+    examples: [
+      { question: "Evaluate $|{-7}|$.", answer: "7", explanation: "$-7$ is $7$ units from $0$, so its absolute value is $7$." },
+      { question: "Evaluate $|9|$.", answer: "9", explanation: "$9$ is already $9$ units from $0$; a positive number is its own absolute value." }
+    ]
+  },
+
+  integer_add: {
+    title: "Adding Integers",
+    formula: "\\text{same sign: add \\& keep; different: subtract \\& take the bigger sign}",
+    oneLineSummary: "Adding integers is moving along the number line — right for positives, left for negatives.",
+    intuitionHook: "Owe 5 dollars, then earn 3: you're still 2 dollars short, so $-5 + 3 = -2$. Owe 5, then borrow 3 more: you're 8 short, $-5 + (-3) = -8$. Money makes the signs obvious.",
+    whatItIs: "Adding integers combines signed numbers — positives push right (up), negatives push left (down) — to land on a single result with its own sign.",
+    whyItWorks: "Picture each number as a move on the number line: $+3$ steps right, $-3$ steps left. Adding stacks the moves. SAME signs march the same way, so add the sizes and keep that direction: $-5 + (-3)$ goes $8$ left, $-8$. DIFFERENT signs pull against each other, so subtract the sizes and the winner's sign survives: $-5 + 3$ — the $5$-left beats the $3$-right by $2$ left, $-2$. That is why $7 + (-7) = 0$: equal and opposite cancel.",
+    whenToUse: "Temperatures rising and falling, money in and out, gaining and losing yards, elevators going up and down — any quantity with two opposing directions.",
+    representations: [
+      { kind: "number_line", label: "Stack the moves", body: "$-5 + 3$: start at $-5$, move $3$ right, land on $-2$." },
+      { kind: "real_world", label: "Money in and out", body: "Debt of $5$ plus income of $3$ leaves a debt of $2$: $-5 + 3 = -2$." },
+      { kind: "symbolic", label: "Same vs different signs", body: "Same: $-4 + (-3) = -7$ (add, keep sign). Different: $5 + (-4) = 1$ (subtract, bigger sign wins)." }
+    ],
+    commonMistakes: [
+      { label: "Dropping the sign", why: "Adding the sizes and reporting a positive, e.g. $-5 + 3 = 8$ or $2$ without the minus.", fix: "With different signs, SUBTRACT the sizes, then copy the sign of the number with the bigger size." },
+      { label: "Treating two negatives as a positive", why: "Reading $-4 + (-3)$ as $-4 + 3 = -1$ or as $+7$.", fix: "Two negatives both move LEFT, so they add up further negative: $-4 + (-3) = -7$." }
+    ],
+    connections: [
+      { concept: "absolute_value", note: "Different-sign addition compares the absolute values to find the result's size and sign." },
+      { concept: "integer_sub", note: "Subtraction is just adding the opposite — same number-line moves." },
+      { concept: "arithmetic_add", note: "Adding positives is the right-moving special case you already know." }
+    ],
+    examples: [
+      { question: "Calculate $-5 + 3$.", answer: "-2", explanation: "Different signs: subtract sizes ($5 - 3 = 2$) and keep the bigger size's sign (negative): $-2$." },
+      { question: "Calculate $-4 + (-3)$.", answer: "-7", explanation: "Same sign: add sizes ($4 + 3 = 7$) and keep the shared sign: $-7$." }
+    ]
+  },
+
+  integer_sub: {
+    title: "Subtracting Integers",
+    formula: "a - b = a + (-b)",
+    oneLineSummary: "Subtracting an integer means adding its opposite — flip the sign of the second number, then add.",
+    intuitionHook: "It's $2^{\\circ}$ and the temperature drops $4^{\\circ}$: now $-2^{\\circ}$, so $2 - 4 = -2$. And subtracting a debt? Forgiving a 6-dollar debt LEAVES you richer: $4 - (-6) = 10$. Minus-a-minus turns into plus.",
+    whatItIs: "Subtracting integers finds the difference between two signed numbers. The reliable method is to rewrite it as adding the opposite of the second number.",
+    whyItWorks: "Subtraction is 'add the opposite': $a - b = a + (-b)$. This single rule handles every sign. $2 - 4 = 2 + (-4) = -2$. And subtracting a negative adds a positive — $4 - (-6) = 4 + 6 = 10$ — because the opposite of $-6$ is $+6$. On the number line, $a - b$ is the jump FROM $b$ TO $a$; that jump can point either direction, which is why differences can be negative.",
+    whenToUse: "Finding a drop in temperature, change in elevation, the gap between two signed readings, or how much was lost — anywhere you compare two signed amounts.",
+    representations: [
+      { kind: "symbolic", label: "Add the opposite", body: "$4 - (-6) = 4 + (+6) = 10$; $2 - 4 = 2 + (-4) = -2$." },
+      { kind: "number_line", label: "Jump between points", body: "$2 - 4$ is the move from $4$ to $2$: two steps LEFT, so $-2$." },
+      { kind: "real_world", label: "Temperature drop", body: "From $2^{\\circ}$ down $4^{\\circ}$ lands at $-2^{\\circ}$." }
+    ],
+    commonMistakes: [
+      { label: "Subtracting the wrong way round", why: "Reading $2 - 4$ as $4 - 2 = 2$ because 'big minus small'.", fix: "Order matters. $2 - 4 = 2 + (-4) = -2$; let the answer be negative when it should be." },
+      { label: "Minus-a-minus mishandled", why: "Treating $4 - (-6)$ as $4 - 6 = -2$ instead of $4 + 6$.", fix: "Subtracting a negative ADDS: the two minus signs combine into a plus, so $4 - (-6) = 10$." }
+    ],
+    connections: [
+      { concept: "integer_add", note: "Every subtraction becomes an addition of the opposite." },
+      { concept: "arithmetic_sub", note: "Positive subtraction is the familiar special case." },
+      { concept: "absolute_value", note: "The distance between two numbers is the absolute value of their difference." }
+    ],
+    examples: [
+      { question: "Calculate $2 - 4$.", answer: "-2", explanation: "Add the opposite: $2 + (-4) = -2$." },
+      { question: "Calculate $4 - (-6)$.", answer: "10", explanation: "Subtracting a negative adds: $4 + 6 = 10$." }
+    ]
+  },
+
+  integer_mult: {
+    title: "Multiplying Integers",
+    formula: "(-)(-) = +,\\quad (-)( + ) = -",
+    oneLineSummary: "Multiply the sizes, then set the sign: same signs make a positive, different signs make a negative.",
+    intuitionHook: "Lose 3 dollars a day for 4 days: that's $-3 \\times 4 = -12$, a 12-dollar loss. Now REMOVE four such losses from the record — undoing four debts of 3 — and you're 12 dollars better off: $-3 \\times (-4) = +12$. Negating a negative is a positive.",
+    whatItIs: "Multiplying integers combines a count and a size, both possibly signed. You multiply the magnitudes and then decide the sign from a simple rule.",
+    whyItWorks: "Multiplication is repeated grouping, and the sign tracks direction. A negative times a positive repeats a LEFT-ward (negative) amount, staying negative: $-3 \\times 4 = -12$. A negative times a negative REVERSES that direction — taking away negative groups — flipping it positive: $-3 \\times (-4) = 12$. Hence the rule: same signs $\\to +$, different signs $\\to -$. The size is always just the product of the magnitudes.",
+    whenToUse: "Rates of loss or decline over time, reversing repeated debts, areas/products in coordinate work, and any scaling where direction can flip.",
+    representations: [
+      { kind: "symbolic", label: "Sign rule", body: "$(-)(+) = -$ and $(-)(-) = +$. $-2 \\times 5 = -10$; $-2 \\times (-5) = 10$." },
+      { kind: "real_world", label: "Repeated loss", body: "Losing 3 dollars daily for 4 days: $-3 \\times 4 = -12$." },
+      { kind: "number_line", label: "Direction flips", body: "Multiplying by a negative flips the number line; an even count of flips returns to positive." }
+    ],
+    commonMistakes: [
+      { label: "Wrong sign on the product", why: "Reporting $-3 \\times 4 = 12$ (dropped the minus) or $-3 \\times (-4) = -12$ (kept it).", fix: "Apply the rule deliberately: different signs $\\to$ negative; same signs $\\to$ positive. Size first, then sign." },
+      { label: "Adding instead of multiplying", why: "Computing $-3 + 4 = 1$ when the operation is multiplication.", fix: "Multiplication groups: $-3 \\times 4$ is four lots of $-3$, which is $-12$, not $1$." }
+    ],
+    connections: [
+      { concept: "arithmetic_mult", note: "Positive multiplication is the magnitude part; integers just add the sign rule." },
+      { concept: "integer_add", note: "A negative times a whole number is repeated addition of that negative." }
+    ],
+    examples: [
+      { question: "Calculate $-3 \\times 4$.", answer: "-12", explanation: "Sizes: $3 \\times 4 = 12$. Different signs give a negative: $-12$." },
+      { question: "Calculate $-3 \\times (-4)$.", answer: "12", explanation: "Sizes: $3 \\times 4 = 12$. Same signs give a positive: $12$." }
+    ]
+  },
+
+  // ===========================================================================
   // GEOMETRY STRAND
   // ===========================================================================
   geo_perimeter_rect: {
@@ -833,6 +946,12 @@ function levelToConceptId(category, level) {
     return null; // squaring / probability — legacy
   }
   // Strand-based curriculum (audit #1.1): each new strand maps its levels to a rich concept lesson.
+  if (cat === 'integers') {
+    if (lvl <= 4) return 'absolute_value';
+    if (lvl <= 5) return 'integer_add';
+    if (lvl <= 6) return 'integer_sub';
+    return 'integer_mult';
+  }
   if (cat === 'geometry') {
     if (lvl <= 2) return 'geo_perimeter_rect';
     if (lvl <= 3) return 'geo_area_rect';

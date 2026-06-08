@@ -25,12 +25,17 @@ function generateDistractors(answer, type, params = {}) {
     return Array.from(distractors).slice(0, 3);
   }
 
+  // Negative answers are legitimate (integer arithmetic, signed results), so the >=0 guards below
+  // are relaxed for them. Author-supplied custom distractors are trusted regardless of sign — a
+  // negative distractor like the "-7" for $|{-7}|$ IS the misconception we want to offer.
+  const allowNegative = numericAnswer < 0;
+
   // Numerical Distractors
   // 1. Check if template provided custom math distractors
   if (params.distractors && params.distractors.length > 0) {
     params.distractors.forEach(d => {
       const dNum = Number(d);
-      if (!isNaN(dNum) && d.toString().trim() !== correctStr && dNum >= 0) {
+      if (!isNaN(dNum) && d.toString().trim() !== correctStr) {
         distractors.add(d.toString().trim());
       }
     });
@@ -74,12 +79,13 @@ function generateDistractors(answer, type, params = {}) {
     if (slip2.toString() !== correctStr) distractors.add(slip2.toString());
   }
 
-  // 4. General mathematical offsets
+  // 4. General mathematical offsets (negatives permitted only when the answer is itself negative,
+  // so positive-answer concepts keep their existing non-negative option sets unchanged).
   const offsets = [1, -1, 2, -2, 10, -10, 5, -5];
   for (const offset of offsets) {
     if (distractors.size >= 3) break;
     const val = numericAnswer + offset;
-    if (val.toString() !== correctStr && val >= 0) {
+    if (val.toString() !== correctStr && (val >= 0 || allowNegative)) {
       distractors.add(val.toString());
     }
   }

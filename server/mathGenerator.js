@@ -37,6 +37,11 @@ const CONCEPT_TO_LEVEL = {
   geo_area_triangle:    { category: 'geometry',      level: 4  },
   geo_angles_triangle:  { category: 'geometry',      level: 5  },
   geo_circle_area:      { category: 'geometry',      level: 12 },
+  // Integers strand (audit #1.1 — signed-number arithmetic; the negatives band).
+  absolute_value:       { category: 'integers',      level: 4  },
+  integer_add:          { category: 'integers',      level: 5  },
+  integer_sub:          { category: 'integers',      level: 6  },
+  integer_mult:         { category: 'integers',      level: 8  },
   // Number-sense / pre-algebra strand (audit #1.1 — the band the ladder used to skip).
   percentage_of:        { category: 'number_sense',  level: 6  },
   fraction_of:          { category: 'number_sense',  level: 7  },
@@ -204,6 +209,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'statistics';
   } else if (normalizedCat === 'expressions') {
     catKey = 'expressions';
+  } else if (normalizedCat === 'integers') {
+    catKey = 'integers';
   } else {
     catKey = 'arithmetic';
   }

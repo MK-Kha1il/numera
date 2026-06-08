@@ -1476,6 +1476,74 @@ templates.expressions = {
   }
 };
 
+// -------------------------------------------------------------
+// INTEGERS TEMPLATES — signed-number arithmetic & absolute value (audit #1.1): the negative-number
+// band the curriculum lacked entirely. Answers may be NEGATIVE; the distractor engine now passes
+// author-supplied signed distractors through (see distractors.js), so the wrong options encode the
+// real sign errors (dropped the minus, added magnitudes, kept the sign through an absolute value).
+// Routed by the 'integers' category. `wrap` parenthesises a negative so "$-5 + (-3)$" reads clean.
+// -------------------------------------------------------------
+const wrap = (n) => (n < 0 ? `(${n})` : `${n}`);
+
+templates.integers = {
+  // Absolute value: distance from zero, always non-negative.
+  4: (_diffFactor, idx) => {
+    const p = 3 + (idx % 8);
+    return {
+      question: `Evaluate: $|{-${p}}|$`,
+      answer: p,
+      distractors: [-p, 0, 2 * p], // kept the sign; collapsed to zero; doubled
+      explanation: `Absolute value is distance from zero, which is never negative: $|{-${p}}| = ${p}$.`,
+      type: "absolute_value"
+    };
+  },
+  // Adding integers with mixed signs.
+  5: (_diffFactor, idx) => {
+    const m1 = 3 + (idx % 6);
+    const m2 = 2 + (idx % 5);
+    const [s1, s2] = [[-1, 1], [-1, -1], [1, -1]][idx % 3];
+    const a = s1 * m1, b = s2 * m2;
+    const answer = a + b;
+    return {
+      question: `Calculate: $${a} + ${wrap(b)}$`,
+      answer,
+      distractors: [a - b, -(a + b), b - a], // subtracted instead; flipped the sign; reversed
+      explanation: `Combine the signed numbers on the number line: $${a} + ${wrap(b)} = ${answer}$.`,
+      type: "integer_add"
+    };
+  },
+  // Subtracting integers (including subtracting a negative).
+  6: (_diffFactor, idx) => {
+    const m1 = 2 + (idx % 5);
+    const m2 = 4 + (idx % 5);
+    const [s1, s2] = [[1, 1], [-1, 1], [1, -1]][idx % 3];
+    const a = s1 * m1, b = s2 * m2;
+    const answer = a - b;
+    return {
+      question: `Calculate: $${a} - ${wrap(b)}$`,
+      answer,
+      distractors: [b - a, a + b, -(a + b)], // reversed the order; added instead; flipped
+      explanation: `Subtracting is adding the opposite: $${a} - ${wrap(b)} = ${a} + ${wrap(-b)} = ${answer}$.`,
+      type: "integer_sub"
+    };
+  },
+  // Multiplying signed integers (sign rules).
+  8: (_diffFactor, idx) => {
+    const m1 = 2 + (idx % 5);
+    const m2 = 2 + (idx % 4);
+    const [s1, s2] = [[-1, 1], [-1, -1], [1, -1]][idx % 3];
+    const a = s1 * m1, b = s2 * m2;
+    const answer = a * b;
+    return {
+      question: `Calculate: $${a} \\times ${wrap(b)}$`,
+      answer,
+      distractors: [-(a * b), a + b, -(a + b)], // wrong sign; added instead; flipped sum
+      explanation: `Like signs give a positive product, unlike signs a negative one: $${a} \\times ${wrap(b)} = ${answer}$.`,
+      type: "integer_mult"
+    };
+  }
+};
+
 module.exports = {
   templates
 };

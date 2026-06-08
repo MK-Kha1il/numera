@@ -177,6 +177,40 @@ const concepts = {
     ]
   },
 
+  // Integers (audit #1.1 — signed-number arithmetic, the negatives band)
+  "absolute_value": {
+    name: "Absolute Value",
+    prereqs: ["arithmetic_sub"],
+    baseElo: 600,
+    misconceptions: [
+      { id: "kept_sign", label: "Kept the negative sign instead of the distance", rule: (ans) => -ans }
+    ]
+  },
+  "integer_add": {
+    name: "Adding Integers",
+    prereqs: ["absolute_value"],
+    baseElo: 700,
+    misconceptions: [
+      { id: "dropped_sign", label: "Added magnitudes and dropped the sign", rule: (ans) => Math.abs(ans) }
+    ]
+  },
+  "integer_sub": {
+    name: "Subtracting Integers",
+    prereqs: ["integer_add"],
+    baseElo: 780,
+    misconceptions: [
+      { id: "subtract_reversed", label: "Subtracted in the wrong order", rule: (ans) => -ans }
+    ]
+  },
+  "integer_mult": {
+    name: "Multiplying Integers",
+    prereqs: ["integer_add", "arithmetic_mult"],
+    baseElo: 820,
+    misconceptions: [
+      { id: "sign_rule_slip", label: "Got the sign of the product wrong", rule: (ans) => -ans }
+    ]
+  },
+
   // Geometry (audit #1.1 — a parallel strand broadening the catalog beyond the single number ladder)
   "geo_perimeter_rect": {
     name: "Perimeter of a Rectangle",
@@ -348,6 +382,10 @@ const STANDARDS = {
   arithmetic_div: "3.OA.C.7",
   pemdas: "5.OA.A.1",
   pythagorean: "8.G.B.7",
+  absolute_value: "6.NS.C.7c",
+  integer_add: "7.NS.A.1",
+  integer_sub: "7.NS.A.1",
+  integer_mult: "7.NS.A.2",
   geo_perimeter_rect: "3.MD.D.8",
   geo_area_rect: "3.MD.C.7",
   geo_area_triangle: "6.G.A.1",
