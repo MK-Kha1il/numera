@@ -411,6 +411,24 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_diag_user ON diagnostic_sessions(user_id, status)');
     },
   },
+  {
+    version: 15,
+    name: 'learning_goals',
+    // Learner-set goals (audit #2/#19 — close the personalization loop with an explicit target the
+    // learner chooses). One ACTIVE goal per user (PRIMARY KEY user_id = upsert-in-place). Progress
+    // is computed on read from existing stats, so no progress column to keep in sync. goal_type is
+    // one of: daily_problems | reach_level | streak.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS user_goals (
+          user_id      INTEGER PRIMARY KEY,
+          goal_type    TEXT NOT NULL,
+          target_value INTEGER NOT NULL,
+          created_at   INTEGER NOT NULL
+        )
+      `);
+    },
+  },
 ];
 
 /**

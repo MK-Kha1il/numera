@@ -77,6 +77,7 @@ fun MainTabsScreen(
     var showNotificationsDialog by remember { mutableStateOf(false) }
     var showSkillTree by remember { mutableStateOf(false) }
     var showWeeklyRecap by remember { mutableStateOf(false) }
+    var showGoal by remember { mutableStateOf(false) }
     var showMapTooltip by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -176,6 +177,13 @@ fun MainTabsScreen(
         return
     }
 
+    if (showGoal) {
+        NumeraTheme {
+            com.example.numera.ui.feature.profile.GoalScreen(onBack = { showGoal = false })
+        }
+        return
+    }
+
     LaunchedEffect(Unit) {
         refreshProfile()
         RetrofitClient.profileRefreshFlow.collect {
@@ -217,6 +225,9 @@ fun MainTabsScreen(
             },
             CommandItem("Your Week", CommandCategory.QuickAction, NumeraIconType.Streak, "A shareable recap of your week", "recap wrapped weekly summary share stats progress") {
                 showWeeklyRecap = true
+            },
+            CommandItem("My Goal", CommandCategory.QuickAction, NumeraIconType.Quests, "Set a target and track your progress", "goal target daily aim objective plan motivation") {
+                showGoal = true
             },
             CommandItem("Notifications", CommandCategory.QuickAction, NumeraIconType.Notification, "See your latest activity", "alerts inbox bell") { showNotificationsDialog = true },
             CommandItem("Consistency Climb", CommandCategory.QuickAction, NumeraIconType.Streak, "Check your streak status", "streak commitment fire") { showCommitmentDialog = true },

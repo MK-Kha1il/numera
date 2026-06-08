@@ -57,9 +57,87 @@ const USER_SCOPED_TABLES = [
   'push_tokens',
   'puzzle_rush_runs',
   'diagnostic_sessions',
+  'user_goals',
 ];
 
 const router = express.Router();
+
+// ── Learning goals (audit #2/#19) ───────────────────────────────────────────────
+// One explicit, learner-CHOSEN goal — closing the personalization loop (the app measured plenty
+// but let the learner set nothing). One active goal per user (PRIMARY KEY user_id = upsert).
+// Progress is derived from existing stats ON READ, so there's no stored progress to keep in sync.
+const GOAL_TYPES = {
+  daily_problems: { label: 'Solve problems every day', unit: 'problems/day', min: 1, max: 100 },
+  reach_level: { label: 'Reach a level', unit: 'level', min: 2, max: 50 },
+  streak: { label: 'Build a daily streak', unit: 'days', min: 2, max: 365 },
+};
+const goalTypeMeta = () =>
+  Object.entries(GOAL_TYPES).map(([key, m]) => ({ key, label: m.label, unit: m.unit, min: m.min, max: m.max }));
+const todayStr = () => new Date().toISOString().slice(0, 10);
+
+// Current progress value for a goal type (raw count; capping/percent is the client's concern).
+function goalProgress(userId, goalType) {
+  return new Promise((resolve) => {
+    if (goalType === 'reach_level') {
+      db.get('SELECT level FROM users WHERE id = ?', [userId], (e, r) => resolve(r ? r.level || 0 : 0));
+    } else if (goalType === 'streak') {
+      db.get('SELECT streak FROM users WHERE id = ?', [userId], (e, r) => resolve(r ? r.streak || 0 : 0));
+    } else {
+      // daily_problems — today's solved count from the daily commitment history.
+      db.get(
+        'SELECT solved_count FROM user_commitment_history WHERE user_id = ? AND date = ?',
+        [userId, todayStr()],
+        (e, r) => resolve(r ? r.solved_count || 0 : 0)
+      );
+    }
+  });
+}
+
+router.get('/api/account/goal', authenticateToken, (req, res) => {
+  db.get('SELECT goal_type, target_value, created_at FROM user_goals WHERE user_id = ?', [req.user.id], async (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.json({ goal: null, types: goalTypeMeta() });
+    const current = await goalProgress(req.user.id, row.goal_type);
+    res.json({
+      goal: {
+        goalType: row.goal_type,
+        targetValue: row.target_value,
+        current,
+        completed: current >= row.target_value,
+        createdAt: row.created_at,
+      },
+      types: goalTypeMeta(),
+    });
+  });
+});
+
+router.put('/api/account/goal', authenticateToken, (req, res) => {
+  const { goalType, targetValue } = req.body || {};
+  const meta = GOAL_TYPES[goalType];
+  if (!meta) return res.status(400).json({ error: 'Invalid goal type' });
+  const tv = parseInt(targetValue, 10);
+  if (!Number.isFinite(tv) || tv < meta.min || tv > meta.max) {
+    return res.status(400).json({ error: `Target must be between ${meta.min} and ${meta.max}` });
+  }
+  db.run(
+    `INSERT INTO user_goals (user_id, goal_type, target_value, created_at) VALUES (?,?,?,?)
+       ON CONFLICT(user_id) DO UPDATE SET goal_type = excluded.goal_type,
+                                          target_value = excluded.target_value,
+                                          created_at = excluded.created_at`,
+    [req.user.id, goalType, tv, Math.floor(Date.now() / 1000)],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+router.delete('/api/account/goal', authenticateToken, (req, res) => {
+  db.run('DELETE FROM user_goals WHERE user_id = ?', [req.user.id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
 
 router.post('/api/user/settings', authenticateToken, async (req, res) => {
   const { oldPassword, newPassword } = req.body;

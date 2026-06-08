@@ -926,6 +926,28 @@ data class SkillTreeNode(
 @Serializable
 data class MasteryDimensionMeta(val key: String = "", val label: String = "", val blurb: String = "")
 
+// ---- Learner-set goals ----
+@Serializable
+data class GoalTypeMeta(val key: String = "", val label: String = "", val unit: String = "", val min: Int = 1, val max: Int = 100)
+
+@Serializable
+data class LearningGoal(
+    val goalType: String = "",
+    val targetValue: Int = 0,
+    val current: Int = 0,
+    val completed: Boolean = false,
+    val createdAt: Long = 0
+)
+
+@Serializable
+data class GoalResponse(
+    val goal: LearningGoal? = null,
+    val types: List<GoalTypeMeta> = emptyList()
+)
+
+@Serializable
+data class SetGoalPayload(val goalType: String, val targetValue: Int)
+
 // ---- Weekly "Your Week" recap (in-app, shareable) ----
 @Serializable
 data class RecapTopConcept(val name: String = "", val overall: Float = 0f)

@@ -208,6 +208,22 @@ interface ApiService {
         @Header("Authorization") token: String
     ): WeeklyRecap
 
+    @GET("api/account/goal")
+    suspend fun getGoal(
+        @Header("Authorization") token: String
+    ): GoalResponse
+
+    @PUT("api/account/goal")
+    suspend fun setGoal(
+        @Header("Authorization") token: String,
+        @Body request: SetGoalPayload
+    ): SimpleResponse
+
+    @DELETE("api/account/goal")
+    suspend fun deleteGoal(
+        @Header("Authorization") token: String
+    ): SimpleResponse
+
     @POST("api/assessment/skip")
     suspend fun skipAssessment(
         @Header("Authorization") token: String
