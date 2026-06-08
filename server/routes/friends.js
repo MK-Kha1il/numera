@@ -154,4 +154,69 @@ router.delete('/api/friends/:friendId', authenticateToken, (req, res) => {
   );
 });
 
+// Friend nudges (audit #1.7 / #20 — safe peer interaction without free-text chat). A friend can
+// send one of a FIXED set of canned encouragements; the message text is server-defined (the client
+// only picks a type), so there's no user-generated text to moderate — the right default for a
+// likely-minors product. Delivered through the in-app notification funnel, friends-only and
+// block-aware. Rate-limited to one delivered nudge per friend per 5-minute window via notify()'s
+// dedup key (keyed by sender), so no extra table is needed.
+const NUDGES = {
+  cheer: '👏 is cheering you on!',
+  duel: '⚔️ wants to duel you!',
+  gg: '🎮 says: good game!',
+  streak: '🔥 says: keep that streak going!',
+  study: '📚 says: study session?',
+  congrats: '🎉 says: congrats!',
+};
+
+// The nudge catalog, so the client renders the options instead of hardcoding them.
+router.get('/api/friends/nudge-types', authenticateToken, (req, res) => {
+  res.json({ types: Object.entries(NUDGES).map(([key, text]) => ({ key, text })) });
+});
+
+router.post('/api/friends/:friendId/nudge', authenticateToken, (req, res) => {
+  const friendId = parseInt(req.params.friendId, 10);
+  const type = String((req.body && req.body.type) || '');
+  if (!Number.isFinite(friendId)) return res.status(400).json({ error: 'Invalid friend id' });
+  if (!NUDGES[type]) return res.status(400).json({ error: 'Unknown nudge type' });
+  if (friendId === req.user.id) return res.status(400).json({ error: 'You cannot nudge yourself' });
+
+  // Must be accepted friends (in either direction).
+  db.get(
+    `SELECT 1 FROM friends WHERE status = 'accepted'
+       AND ((user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?))`,
+    [req.user.id, friendId, friendId, req.user.id],
+    (err, friendship) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!friendship) return res.status(403).json({ error: 'You can only nudge friends' });
+
+      // Block-aware: if either side blocked the other, silently succeed without delivering.
+      db.get(
+        'SELECT 1 FROM user_blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)',
+        [req.user.id, friendId, friendId, req.user.id],
+        (bErr, blocked) => {
+          if (bErr) return res.status(500).json({ error: bErr.message });
+          if (blocked) return res.json({ success: true }); // don't reveal the block
+
+          db.get('SELECT username FROM users WHERE id = ?', [req.user.id], async (uErr, sender) => {
+            if (uErr) return res.status(500).json({ error: uErr.message });
+            const name = (sender && sender.username) || 'A friend';
+            // One delivered nudge per (sender → recipient) per 5-minute bucket (anti-spam).
+            const bucket = Math.floor(Date.now() / 300000);
+            // Await delivery so the 200 means "sent" (and so callers don't race the write).
+            await notify(friendId, {
+              category: 'friend_nudge',
+              title: 'Friend Nudge',
+              message: `${name} ${NUDGES[type]}`,
+              type: 'social',
+              dedupKey: `nudge:${req.user.id}:${bucket}`,
+            });
+            res.json({ success: true });
+          });
+        }
+      );
+    }
+  );
+});
+
 module.exports = router;

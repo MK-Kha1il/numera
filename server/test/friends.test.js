@@ -14,6 +14,16 @@ const meId = async (token) => {
   return r.body.user ? r.body.user.id : r.body.id;
 };
 
+const dbGet = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.get(sql, p, (e, r) => (e ? rej(e) : res(r))));
+
+// Make `a` and `b` accepted friends; returns their ids.
+async function befriend(a, b) {
+  const aId = await meId(a.token);
+  await api(ctx.base, 'POST', '/api/friends/request', { token: a.token, body: { friendUsername: b.username } });
+  await api(ctx.base, 'POST', '/api/friends/accept', { token: b.token, body: { friendId: aId } });
+  return { aId, bId: await meId(b.token) };
+}
+
 test('a pending friend request is declinable by the recipient and clears for both sides', async () => {
   const a = await registerUser(ctx.base); // requester
   const b = await registerUser(ctx.base); // recipient
@@ -98,4 +108,44 @@ test('a sender can cancel their own outgoing pending request', async () => {
 
   const bList = await api(ctx.base, 'GET', '/api/friends', { token: b.token });
   assert.ok(!bList.body.some((f) => f.id === aId), 'the recipient no longer sees the canceled request');
+});
+
+test('a friend nudge delivers a server-defined message to the recipient', async () => {
+  const a = await registerUser(ctx.base);
+  const b = await registerUser(ctx.base);
+  const { bId } = await befriend(a, b);
+
+  // The catalog only ever exposes fixed types.
+  const types = await api(ctx.base, 'GET', '/api/friends/nudge-types', { token: a.token });
+  assert.equal(types.status, 200);
+  assert.ok(types.body.types.length > 0 && types.body.types.every((t) => t.key && t.text));
+
+  const nudge = await api(ctx.base, 'POST', `/api/friends/${bId}/nudge`, { token: a.token, body: { type: 'cheer' } });
+  assert.equal(nudge.status, 200);
+
+  // The recipient got an in-app notification naming the sender (no user free text).
+  const note = await dbGet("SELECT title, message FROM user_notifications WHERE user_id = ? ORDER BY id DESC LIMIT 1", [bId]);
+  assert.ok(note && note.message.includes(a.username), 'notification names the sender');
+  assert.ok(note.message.includes('cheering'), 'carries the canned cheer text');
+});
+
+test('nudges are friends-only and reject unknown/self targets', async () => {
+  const a = await registerUser(ctx.base);
+  const stranger = await registerUser(ctx.base);
+  const aId = await meId(a.token);
+  const strangerId = await meId(stranger.token);
+
+  // Not friends → 403.
+  const notFriends = await api(ctx.base, 'POST', `/api/friends/${strangerId}/nudge`, { token: a.token, body: { type: 'gg' } });
+  assert.equal(notFriends.status, 403);
+
+  // Unknown type → 400 (even between friends).
+  const b = await registerUser(ctx.base);
+  const { bId } = await befriend(a, b);
+  const badType = await api(ctx.base, 'POST', `/api/friends/${bId}/nudge`, { token: a.token, body: { type: 'insult' } });
+  assert.equal(badType.status, 400);
+
+  // Self-nudge → 400.
+  const self = await api(ctx.base, 'POST', `/api/friends/${aId}/nudge`, { token: a.token, body: { type: 'cheer' } });
+  assert.equal(self.status, 400);
 });

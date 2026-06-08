@@ -229,6 +229,13 @@ interface ApiService {
         @Path("id") id: Int
     ): SimpleResponse
 
+    @POST("api/friends/{friendId}/nudge")
+    suspend fun nudgeFriend(
+        @Header("Authorization") token: String,
+        @Path("friendId") friendId: Int,
+        @Body request: NudgeRequest
+    ): SimpleResponse
+
     @GET("api/achievements")
     suspend fun getAchievements(
         @Header("Authorization") token: String

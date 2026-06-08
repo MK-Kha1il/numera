@@ -22,12 +22,26 @@ import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.NumeraEmptyState
 import com.example.numera.ui.components.EmptyIllustration
+import com.example.numera.ui.components.LocalToast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+// Preset friend nudges (keys must match the server's NUDGES catalog in routes/friends.js). Fixed
+// set → no free text → nothing to moderate.
+private val NUDGE_OPTIONS = listOf(
+    "cheer" to "👏 Cheer on",
+    "duel" to "⚔️ Challenge",
+    "gg" to "🎮 Good game",
+    "streak" to "🔥 Keep streak",
+    "study" to "📚 Study?",
+    "congrats" to "🎉 Congrats"
+)
+
 @Composable
 fun SocialScreen() {
+    val toast = LocalToast.current
+    var nudgeMenuFriendId by remember { mutableStateOf<Int?>(null) }
     var searchUsername by remember { mutableStateOf("") }
     var friendsList by remember { mutableStateOf<List<Friend>>(emptyList()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
@@ -305,6 +319,30 @@ fun SocialScreen() {
                                             .background(CorrectGreen)
                                     )
                                     Text("Online", fontSize = 11.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
+                                    // Friend nudge — send a canned encouragement (no free text).
+                                    Box {
+                                        TextButton(onClick = { nudgeMenuFriendId = friend.id }) {
+                                            Text("👋", fontSize = 15.sp)
+                                        }
+                                        DropdownMenu(expanded = nudgeMenuFriendId == friend.id, onDismissRequest = { nudgeMenuFriendId = null }) {
+                                            NUDGE_OPTIONS.forEach { (key, label) ->
+                                                DropdownMenuItem(
+                                                    text = { Text(label) },
+                                                    onClick = {
+                                                        nudgeMenuFriendId = null
+                                                        scope.launch(Dispatchers.IO) {
+                                                            try {
+                                                                RetrofitClient.apiService.nudgeFriend(RetrofitClient.authToken ?: "", friend.id, NudgeRequest(key))
+                                                                withContext(Dispatchers.Main) { toast.success("Nudge sent to ${friend.username}!") }
+                                                            } catch (e: Exception) {
+                                                                Log.e("Social", "Nudge err: ${e.message}")
+                                                            }
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
                                     TextButton(
                                         onClick = {
                                             scope.launch(Dispatchers.IO) {
