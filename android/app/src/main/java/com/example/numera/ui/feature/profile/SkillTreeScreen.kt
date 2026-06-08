@@ -150,6 +150,10 @@ private fun ConceptCard(node: SkillTreeNode, dimLabels: Map<String, String>, onP
                     StageChip(node.stage)
                 }
             }
+            // Standards alignment tag (e.g. Common Core "6.G.A.1") — the school-market framing.
+            node.standard?.takeIf { it.isNotBlank() }?.let { std ->
+                Text("📐 $std", fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f))
+            }
             if (node.started) {
                 OverallBar(node.overall, stageColor(node.stage))
                 node.dimensions?.let { DimensionGrid(it, dimLabels) }

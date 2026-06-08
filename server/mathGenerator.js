@@ -31,6 +31,12 @@ const CONCEPT_TO_LEVEL = {
   arithmetic_div:       { category: 'arithmetic',    level: 8  },
   pemdas:               { category: 'arithmetic',    level: 9  },
   pythagorean:          { category: 'arithmetic',    level: 10 },
+  // Geometry strand (audit #1.1 — parallel curriculum, routed by category not level band).
+  geo_perimeter_rect:   { category: 'geometry',      level: 2  },
+  geo_area_rect:        { category: 'geometry',      level: 3  },
+  geo_area_triangle:    { category: 'geometry',      level: 4  },
+  geo_angles_triangle:  { category: 'geometry',      level: 5  },
+  geo_circle_area:      { category: 'geometry',      level: 12 },
   linear_one_step:      { category: 'algebra',       level: 11 },
   linear_two_step:      { category: 'algebra',       level: 13 },
   quadratic:            { category: 'algebra',       level: 15 },
@@ -173,6 +179,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'combinatorics';
   } else if (normalizedCat === 'number theory' || normalizedCat === 'number_theory') {
     catKey = 'number_theory';
+  } else if (normalizedCat === 'geometry') {
+    catKey = 'geometry';
   } else {
     catKey = 'arithmetic';
   }

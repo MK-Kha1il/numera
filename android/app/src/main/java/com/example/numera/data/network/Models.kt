@@ -1106,6 +1106,7 @@ data class AdaptiveStartResponse(
 data class SkillTreeNode(
     val conceptId: String = "",
     val name: String = "",
+    val standard: String? = null,
     val category: String = "",
     val level: Int = 0,
     val prereqs: List<String> = emptyList(),

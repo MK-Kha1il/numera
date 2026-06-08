@@ -194,6 +194,7 @@ router.get('/api/engine/skill-tree', authenticateToken, async (req, res) => {
         return {
           conceptId,
           name: KnowledgeGraph.concepts[conceptId].name,
+          standard: KnowledgeGraph.concepts[conceptId].standard || null,
           category: meta.category,
           level: meta.level,
           prereqs: KnowledgeGraph.concepts[conceptId].prereqs || [],

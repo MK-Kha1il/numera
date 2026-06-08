@@ -1182,6 +1182,81 @@ templates.mental = {
   }
 };
 
+// -------------------------------------------------------------
+// GEOMETRY TEMPLATES — a parallel strand (audit #1.1 curriculum breadth). Routed by the
+// 'geometry' category, NOT the level band, so it broadens the catalog without renumbering the
+// existing 1–60 ladder. Answers are integer (or "N\pi") so the distractor + correctness layers
+// stay robust. Distractors encode the classic confusions (perimeter vs. area, forgetting the ½,
+// area vs. circumference).
+// -------------------------------------------------------------
+templates.geometry = {
+  // Perimeter of a rectangle: P = 2(l + w)
+  2: (diffFactor, idx) => {
+    const l = Math.max(2, Math.round(((idx % 8) + 3) * diffFactor));
+    const w = Math.max(2, Math.round((((idx + 3) % 6) + 2) * diffFactor));
+    const answer = 2 * (l + w);
+    return {
+      question: `A rectangle is $${l}$ units long and $${w}$ units wide. What is its perimeter?`,
+      answer,
+      distractors: [l + w, l * w, 2 * l + w], // forgot to double; computed area; doubled one side only
+      explanation: `Perimeter adds all four sides: $P = 2(l + w) = 2(${l} + ${w}) = ${answer}$.`,
+      type: "geo_perimeter_rect"
+    };
+  },
+  // Area of a rectangle: A = l * w
+  3: (diffFactor, idx) => {
+    const l = Math.max(2, Math.round(((idx % 9) + 3) * diffFactor));
+    const w = Math.max(2, Math.round((((idx + 4) % 7) + 2) * diffFactor));
+    const answer = l * w;
+    return {
+      question: `Find the area of a rectangle with length $${l}$ and width $${w}$.`,
+      answer,
+      distractors: [2 * (l + w), l + w, l * w + l], // computed perimeter; added sides; arithmetic slip
+      explanation: `Area multiplies length by width: $A = l \\times w = ${l} \\times ${w} = ${answer}$.`,
+      type: "geo_area_rect"
+    };
+  },
+  // Area of a triangle: A = (b * h) / 2  (b nudged so the half-area is a whole number)
+  4: (diffFactor, idx) => {
+    let b = Math.max(2, Math.round(((idx % 8) + 3) * diffFactor));
+    const h = Math.max(2, Math.round((((idx + 2) % 6) + 2) * diffFactor));
+    if ((b * h) % 2 !== 0) b += 1;
+    const answer = (b * h) / 2;
+    return {
+      question: `A triangle has base $${b}$ and height $${h}$. What is its area?`,
+      answer,
+      distractors: [b * h, b + h, answer + b], // forgot the ½; added base+height; slip
+      explanation: `A triangle's area is half the base times the height: $A = \\frac{1}{2} b h = \\frac{1}{2}(${b})(${h}) = ${answer}$.`,
+      type: "geo_area_triangle"
+    };
+  },
+  // Missing interior angle of a triangle: the three angles sum to 180°.
+  5: (_diffFactor, idx) => {
+    const a = 30 + (idx % 5) * 10;       // 30..70
+    const c = 20 + ((idx + 2) % 6) * 10; // 20..70
+    const answer = 180 - a - c;
+    return {
+      question: `Two interior angles of a triangle measure $${a}^{\\circ}$ and $${c}^{\\circ}$. What is the measure of the third angle, in degrees?`,
+      answer,
+      distractors: [180 - a, a + c, 180 - c], // subtracted one angle only; added the two; other slip
+      explanation: `The interior angles of a triangle sum to $180^{\\circ}$, so the third angle is $180 - ${a} - ${c} = ${answer}$.`,
+      type: "geo_angles_triangle"
+    };
+  },
+  // Area of a circle in terms of pi: A = pi r^2  → answer like "16\\pi" (r >= 3 keeps all options distinct)
+  12: (diffFactor, idx) => {
+    const r = Math.max(3, Math.round(((idx % 5) + 3) * Math.max(1, diffFactor)));
+    const answer = `${r * r}\\pi`;
+    return {
+      question: `What is the area of a circle with radius $${r}$? Give your answer in terms of $\\pi$.`,
+      answer,
+      distractors: [`${2 * r}\\pi`, `${r}\\pi`, `${2 * r * r}\\pi`], // circumference 2πr; rπ; doubled area
+      explanation: `The area of a circle is $A = \\pi r^2 = \\pi (${r})^2 = ${r * r}\\pi$.`,
+      type: "geo_circle_area"
+    };
+  }
+};
+
 module.exports = {
   templates
 };
