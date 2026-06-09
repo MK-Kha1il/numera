@@ -87,14 +87,35 @@ object SocketClient {
         Log.d(TAG, "join_friend_room: $roomCode")
     }
 
-    fun submitAnswer(roomId: String, userId: Int, isCorrect: Boolean, nextIndex: Int) {
+    // Send the player's ACTUAL answer (selected option / typed value), not a self-judged boolean —
+    // the server is authoritative and grades it against the canonical answer it kept (which it never
+    // sent us). This closes the last client-trusted scoring path in ranked duels.
+    //
+    // The server replies via an ack with its verdict + the canonical answer (disclosed only AFTER
+    // this irreversible submission), which the caller uses to drive the answer-reveal animation.
+    fun submitAnswer(
+        roomId: String,
+        userId: Int,
+        answer: String,
+        nextIndex: Int,
+        onResult: ((correct: Boolean, correctAnswer: String) -> Unit)? = null
+    ) {
         val data = JSONObject().apply {
             put("roomId", roomId)
             put("userId", userId)
-            put("isCorrect", isCorrect)
+            put("answer", answer)
             put("nextIndex", nextIndex)
         }
-        mSocket?.emit("submit_answer", data)
-        Log.d(TAG, "submit_answer: correct=$isCorrect idx=$nextIndex")
+        if (onResult != null) {
+            mSocket?.emit("submit_answer", arrayOf<Any>(data), io.socket.client.Ack { ackArgs ->
+                val res = ackArgs.getOrNull(0) as? JSONObject
+                val correct = res?.optBoolean("correct", false) ?: false
+                val correctAnswer = res?.optString("correctAnswer", "") ?: ""
+                onResult(correct, correctAnswer)
+            })
+        } else {
+            mSocket?.emit("submit_answer", data)
+        }
+        Log.d(TAG, "submit_answer: answer=$answer idx=$nextIndex")
     }
 }

@@ -8,6 +8,7 @@ const path = require('path');
 const { db, initDb } = require('./db');
 const { runMigrations } = require('./migrations');
 const { generateProblem } = require('./mathGenerator'); // used by the duel/bot socket logic
+const { areEquivalent } = require('./mathEngine/answerEquivalence'); // server-authoritative duel grading
 
 // Centralized config + extracted cross-cutting middleware (see config.js, middleware/).
 // NOTE: server.js is now just bootstrap (app/middleware wiring + router mounts) and the
@@ -558,6 +559,63 @@ const friendRooms = {}; // code lobby rooms: { code: { creatorSocketId, userId, 
 // floor scales with this level. Kept as a constant so submit_answer and the generators agree.
 const DUEL_PROBLEM_LEVEL = 5;
 
+// Build a duel room's problem set: the FULL problems (with answers) for the client to render minus
+// their canonical answers, plus the answer key kept server-side. The server is the only authority
+// on correctness (CLAUDE.md: the client never computes rewards), so answers never leave the server.
+function buildDuelProblemSet(count = 5) {
+  const full = [];
+  for (let i = 0; i < count; i++) full.push(generateProblem('arithmetic', DUEL_PROBLEM_LEVEL));
+  // eslint-disable-next-line no-unused-vars
+  const problems = full.map(({ correctAnswer, ...rest }) => rest); // sent to clients (answer stripped)
+  const answers = full.map((p) => p.correctAnswer);                // server-only answer key
+  return { problems, answers };
+}
+
+// Grade + record one submitted duel answer SERVER-SIDE and advance the player. Exposed as a named
+// function (and exported) so the socket handler stays thin and this — the last formerly
+// client-trusted scoring path — is unit-testable without a live socket. Mutates room[playerKey].
+// `submitted` is the player's actual answer (selected option / typed value), NOT a self-judged
+// boolean: correctness is decided here against the stored canonical answer using the same
+// equivalence engine the REST competitive graders use (areEquivalent). Returns { isCorrect, ended }.
+function applyDuelAnswer(room, playerKey, { answer }) {
+  const now = Date.now();
+  const startTime = room[playerKey].problemStartTime || room.startTime || now;
+  const elapsed = now - startTime;
+
+  // The problem being answered is the one at the player's CURRENT progress (server-tracked), so a
+  // client cannot pick which answer key it is graded against, nor replay an earlier problem.
+  const maxProblems = room.problems.length;
+  const currentIndex = room[playerKey].progress;
+  if (currentIndex >= maxProblems) {
+    // This player already finished; ignore any further/duplicate submissions (no extra scoring).
+    const done = room.p1.progress >= maxProblems && room.p2.progress >= maxProblems;
+    return { isCorrect: false, ended: done, correctAnswer: null };
+  }
+  const canonical = room.answers ? room.answers[currentIndex] : undefined;
+  const isCorrect = canonical != null && areEquivalent(answer, canonical);
+
+  // Anti-cheat: the SHARED integrityEngine scorer (the same one Puzzle Rush uses) flags a correct
+  // answer returned faster than a human could plausibly read + solve at this difficulty. Flags
+  // accumulate per player and become a verdict at duel end (resolveDuel).
+  const assessment = flagAnswer({ elapsedMs: elapsed, correct: isCorrect, level: room.problemLevel || DUEL_PROBLEM_LEVEL });
+  if (assessment.flagged) {
+    room[playerKey].integrityFlags = (room[playerKey].integrityFlags || 0) + 1;
+    // Surface the first reason so the debrief can tell the player WHY (spec §5: no silent bans).
+    if (!room[playerKey].integrityReason) room[playerKey].integrityReason = assessment.reason;
+    logger.warn(`[Anti-Cheat] ${room[playerKey].username}: ${assessment.reason}. Flags: ${room[playerKey].integrityFlags}`);
+  }
+
+  room[playerKey].problemStartTime = now;
+  room[playerKey].progress = currentIndex + 1; // server advances the index; the client's value is ignored
+  if (isCorrect) room[playerKey].score += 20;
+
+  const ended = room.p1.progress >= maxProblems && room.p2.progress >= maxProblems;
+  // correctAnswer is returned for the submitting client's post-answer reveal ONLY — it is sent back
+  // after the (now-irreversible) submission, never bundled with the unanswered problem, so it can't
+  // be used to cheat the grade.
+  return { isCorrect, ended, correctAnswer: canonical == null ? null : canonical };
+}
+
 function matchmake(queueArray, isRanked) {
   for (let i = 0; i < queueArray.length; i++) {
     const p1 = queueArray[i];
@@ -732,10 +790,7 @@ io.on('connection', (socket) => {
       logger.info(`Friend Room ${roomCode} joined by ${username}`);
 
       // Start friend duel immediately (which is treated as casual, no Elo cost)
-      const problems = [];
-      for (let i = 0; i < 5; i++) {
-        problems.push(generateProblem('arithmetic', 5));
-      }
+      const { problems, answers } = buildDuelProblemSet();
 
       const roomId = `friend_duel_${roomCode}_${Date.now()}`;
       rooms[roomId] = {
@@ -743,6 +798,7 @@ io.on('connection', (socket) => {
         p1: { id: lobby.userId, username: lobby.username, score: 0, progress: 0, elo: lobby.elo },
         p2: { id: userId, username: username, score: 0, progress: 0, elo: elo },
         problems,
+        answers,
         isCasual: true,
         startTime: Date.now(),
         problemLevel: DUEL_PROBLEM_LEVEL
@@ -764,48 +820,32 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('submit_answer', (data) => {
-    const { roomId, isCorrect, nextIndex } = data;
+  socket.on('submit_answer', (data, ack) => {
+    // The client now sends its ACTUAL answer (selected option / typed value), not a self-judged
+    // boolean — the server grades it against the canonical answer it kept (see applyDuelAnswer).
+    const { roomId, answer } = data || {};
     const userId = socket.userId;
     const room = rooms[roomId];
-    if (!room) return;
+    if (!room) { if (typeof ack === 'function') ack({ error: 'room_not_found' }); return; }
 
     let playerKey = null;
     if (room.p1.id === userId) playerKey = 'p1';
     else if (room.p2.id === userId) playerKey = 'p2';
+    if (!playerKey) { if (typeof ack === 'function') ack({ error: 'not_a_player' }); return; }
 
-    if (playerKey) {
-      // Anti-cheat: the SHARED integrityEngine scorer (the same one Puzzle Rush uses) flags a
-      // correct answer returned faster than a human could plausibly read + solve at this
-      // difficulty. Flags accumulate per player and become a verdict at duel end (resolveDuel).
-      const now = Date.now();
-      const startTime = room[playerKey].problemStartTime || room.startTime || now;
-      const elapsed = now - startTime;
+    const { isCorrect, ended, correctAnswer } = applyDuelAnswer(room, playerKey, { answer });
 
-      const assessment = flagAnswer({ elapsedMs: elapsed, correct: isCorrect, level: room.problemLevel || DUEL_PROBLEM_LEVEL });
-      if (assessment.flagged) {
-        room[playerKey].integrityFlags = (room[playerKey].integrityFlags || 0) + 1;
-        // Surface the first reason so the debrief can tell the player WHY (spec §5: no silent bans).
-        if (!room[playerKey].integrityReason) room[playerKey].integrityReason = assessment.reason;
-        logger.warn(`[Anti-Cheat] ${room[playerKey].username}: ${assessment.reason}. Flags: ${room[playerKey].integrityFlags}`);
-      }
+    // Tell the submitting client the server's verdict + the canonical answer so it can drive its
+    // reveal animation (safe: the answer is disclosed only AFTER the irreversible submission).
+    if (typeof ack === 'function') ack({ correct: isCorrect, correctAnswer });
 
-      room[playerKey].problemStartTime = now;
-      room[playerKey].progress = nextIndex;
-      if (isCorrect) room[playerKey].score += 20;
+    // Broadcast update
+    io.to(roomId).emit('room_status', {
+      p1: room.p1,
+      p2: room.p2
+    });
 
-      // Broadcast update
-      io.to(roomId).emit('room_status', {
-        p1: room.p1,
-        p2: room.p2
-      });
-
-      // Check game end
-      const maxProblems = room.problems.length;
-      if (room.p1.progress >= maxProblems && room.p2.progress >= maxProblems) {
-        endDuel(roomId);
-      }
-    }
+    if (ended) endDuel(roomId);
   });
 
   socket.on('disconnect', () => {
@@ -828,16 +868,14 @@ io.on('connection', (socket) => {
 
 function startDuel(p1, p2, isRanked) {
   const roomId = `duel_${p1.userId}_${p2.userId}_${Date.now()}`;
-  const problems = [];
-  for (let i = 0; i < 5; i++) {
-    problems.push(generateProblem('arithmetic', 5));
-  }
+  const { problems, answers } = buildDuelProblemSet();
 
   rooms[roomId] = {
     roomId,
     p1: { id: p1.userId, username: p1.username, score: 0, progress: 0, elo: p1.elo },
     p2: { id: p2.userId, username: p2.username, score: 0, progress: 0, elo: p2.elo },
     problems,
+    answers,
     isCasual: !isRanked,
     startTime: Date.now(),
     problemLevel: DUEL_PROBLEM_LEVEL
@@ -856,10 +894,7 @@ function startDuel(p1, p2, isRanked) {
 
 function startDuelWithBot(player, isRanked) {
   const roomId = `duel_bot_${player.userId}_${Date.now()}`;
-  const problems = [];
-  for (let i = 0; i < 5; i++) {
-    problems.push(generateProblem('arithmetic', 5));
-  }
+  const { problems, answers } = buildDuelProblemSet();
 
   // Create Bot with rating close to user
   const botElo = Math.max(100, player.elo - 50 + Math.floor(Math.random() * 100));
@@ -869,6 +904,7 @@ function startDuelWithBot(player, isRanked) {
     p1: { id: player.userId, username: player.username, score: 0, progress: 0, elo: player.elo },
     p2: { id: 9999, username: 'MathBot', score: 0, progress: 0, elo: botElo, isBot: true },
     problems,
+    answers,
     isCasual: !isRanked,
     startTime: Date.now(),
     problemLevel: DUEL_PROBLEM_LEVEL
@@ -1139,4 +1175,4 @@ if (require.main === module) {
 
 // `rooms` + `endDuel` are exported for the duel integration test (test/duelEndToEnd.test.js),
 // which drives a finished duel through the real rating/reward commit without a live socket.
-module.exports = { app, server, io, db, ready, rooms, endDuel };
+module.exports = { app, server, io, db, ready, rooms, endDuel, applyDuelAnswer, buildDuelProblemSet };

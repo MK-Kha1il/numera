@@ -66,6 +66,9 @@ fun DuelGameScreen(
     
     var hasAnswered by remember { mutableStateOf(false) }
     var selectedAnswer by remember { mutableStateOf("") }
+    // The canonical answer is no longer shipped with the problem (server-authoritative grading);
+    // the server discloses it in its submit_answer ack, and we hold it here to drive the reveal.
+    var revealedCorrectAnswer by remember { mutableStateOf("") }
     
     var showParticles by remember { mutableStateOf(false) }
     
@@ -370,8 +373,8 @@ fun DuelGameScreen(
                 .fillMaxWidth()
                 .weight(1f)
                 .padding(vertical = 16.dp),
-            borderColor = if (hasAnswered) {
-                if (selectedAnswer == currentProblem.correctAnswer) CorrectGreen else WrongRed
+            borderColor = if (hasAnswered && revealedCorrectAnswer.isNotEmpty()) {
+                if (selectedAnswer == revealedCorrectAnswer) CorrectGreen else WrongRed
             } else {
                 MaterialTheme.colorScheme.outline
             }
@@ -418,7 +421,9 @@ fun DuelGameScreen(
                                         title = "Arena Duel Exercise",
                                         category = "Arena",
                                         question = currentProblem.question,
-                                        correct_answer = currentProblem.correctAnswer,
+                                        // Answer isn't shipped with the problem anymore; use the
+                                        // server-revealed one if the player has already answered.
+                                        correct_answer = revealedCorrectAnswer,
                                         options = currentProblem.options,
                                         explanation = currentProblem.explanation
                                     )
@@ -455,21 +460,23 @@ fun DuelGameScreen(
         ) {
             currentProblem.options.forEach { option ->
                 val isSelected = selectedAnswer == option
-                val isCorrect = currentProblem.correctAnswer == option
+                // Reveal correctness only once the server's verdict (the canonical answer) is back.
+                val revealed = hasAnswered && revealedCorrectAnswer.isNotEmpty()
+                val isCorrect = revealed && revealedCorrectAnswer == option
 
-                val outlineColor = if (hasAnswered) {
+                val outlineColor = if (revealed) {
                     if (isCorrect) CorrectGreen else if (isSelected) WrongRed else MaterialTheme.colorScheme.outline
                 } else {
                     MaterialTheme.colorScheme.outline
                 }
 
-                val depthColor = if (hasAnswered) {
+                val depthColor = if (revealed) {
                     if (isCorrect) CorrectGreenPressed else if (isSelected) WrongRed else MaterialTheme.colorScheme.outline
                 } else {
                     DuoBorder
                 }
 
-                val bgColor = if (hasAnswered) {
+                val bgColor = if (revealed) {
                     if (isCorrect) CorrectGreen.copy(alpha = 0.1f)
                     else if (isSelected) WrongRed.copy(alpha = 0.1f)
                     else MaterialTheme.colorScheme.surfaceVariant
@@ -477,7 +484,7 @@ fun DuelGameScreen(
                     MaterialTheme.colorScheme.surface
                 }
 
-                val textColor = if (hasAnswered) {
+                val textColor = if (revealed) {
                     if (isCorrect) CorrectGreenPressed else if (isSelected) WrongRed else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                 } else {
                     MaterialTheme.colorScheme.onBackground
@@ -502,20 +509,27 @@ fun DuelGameScreen(
                                         hasAnswered = true
                                         selectedAnswer = option
                                         com.example.numera.haptic.HapticManager.playSoft()
-                                        val correct = option == currentProblem.correctAnswer
-                                        
-                                        if (correct) {
-                                            SoundManager.playCorrect()
-                                            com.example.numera.haptic.HapticManager.playSuccess()
-                                            showParticles = true
-                                        } else {
-                                            SoundManager.playWrong()
-                                            com.example.numera.haptic.HapticManager.playError()
-                                        }
 
                                         val nextIdx = currentProblemIdx + 1
-                                        SocketClient.submitAnswer(roomId, myUserId, correct, nextIdx)
+                                        // Send the actual answer; the SERVER grades it and acks back
+                                        // its verdict + the canonical answer, which drives the reveal
+                                        // (sound/particles/highlight). The client no longer self-judges.
+                                        SocketClient.submitAnswer(roomId, myUserId, option, nextIdx) { correct, correctAnswer ->
+                                            scope.launch(Dispatchers.Main) {
+                                                revealedCorrectAnswer = correctAnswer
+                                                if (correct) {
+                                                    SoundManager.playCorrect()
+                                                    com.example.numera.haptic.HapticManager.playSuccess()
+                                                    showParticles = true
+                                                } else {
+                                                    SoundManager.playWrong()
+                                                    com.example.numera.haptic.HapticManager.playError()
+                                                }
+                                            }
+                                        }
 
+                                        // Advance on a timer, independent of the ack, so the duel keeps
+                                        // flowing even if the server reply is delayed or dropped.
                                         val isLast = currentProblemIdx >= problemsList.size - 1
                                         if (!isLast) {
                                             scope.launch {
@@ -523,6 +537,7 @@ fun DuelGameScreen(
                                                 currentProblemIdx++
                                                 hasAnswered = false
                                                 selectedAnswer = ""
+                                                revealedCorrectAnswer = ""
                                             }
                                         }
                                     }
