@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.*
 import com.example.numera.theme.*
+import com.example.numera.ui.components.AnswerInput
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.MathText
@@ -50,6 +51,7 @@ fun ChallengesScreen(onBack: () -> Unit) {
     // Detail / play
     var detail by remember { mutableStateOf<ChallengeDetailResponse?>(null) }
     var answers by remember { mutableStateOf(listOf<String>()) }
+    var typed by remember { mutableStateOf("") }
     var qIndex by remember { mutableIntStateOf(0) }
     var startedAt by remember { mutableLongStateOf(0L) }
     var lastResult by remember { mutableStateOf<PlayChallengeResponse?>(null) }
@@ -110,7 +112,7 @@ fun ChallengesScreen(onBack: () -> Unit) {
     }
 
     fun beginPlay() {
-        answers = emptyList(); qIndex = 0; startedAt = System.currentTimeMillis(); phase = "playing"
+        answers = emptyList(); typed = ""; qIndex = 0; startedAt = System.currentTimeMillis(); phase = "playing"
     }
 
     fun submitPlay(finalAnswers: List<String>) {
@@ -296,21 +298,17 @@ fun ChallengesScreen(onBack: () -> Unit) {
                             MathText(text = d.problems[qIndex].question, fontSizePx = 44)
                         }
                     }
-                    d.problems[qIndex].options.forEach { opt ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth().clickable(enabled = !busy) {
-                                val updated = answers + opt
-                                if (updated.size >= d.problems.size) { answers = updated; submitPlay(updated) }
-                                else { answers = updated; qIndex = updated.size }
-                            },
-                            shape = RoundedCornerShape(CornerRadius.m),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        ) {
-                            Box(modifier = Modifier.fillMaxWidth().padding(Spacing.m), contentAlignment = Alignment.Center) {
-                                MathText(text = opt, fontSizePx = 36)
-                            }
-                        }
-                    }
+                    AnswerInput(
+                        value = typed,
+                        onValueChange = { typed = it },
+                        onSubmit = {
+                            val updated = answers + typed.trim(); typed = ""
+                            if (updated.size >= d.problems.size) { answers = updated; submitPlay(updated) }
+                            else { answers = updated; qIndex = updated.size }
+                        },
+                        enabled = !busy,
+                        submitLabel = if (qIndex >= d.problems.size - 1) "Submit" else "Next"
+                    )
                     if (busy) {
                         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                     }

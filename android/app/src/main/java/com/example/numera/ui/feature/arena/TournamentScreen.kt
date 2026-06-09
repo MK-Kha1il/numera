@@ -1,10 +1,8 @@
 package com.example.numera.ui.feature.arena
 
 import android.util.Log
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.*
 import com.example.numera.theme.*
+import com.example.numera.ui.components.AnswerInput
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.MathText
@@ -37,6 +36,7 @@ fun TournamentScreen(user: User?, onExit: () -> Unit) {
     var current by remember { mutableStateOf<TournamentCurrentResponse?>(null) }
     var problems by remember { mutableStateOf(listOf<AsyncProblemDto>()) }
     var answers by remember { mutableStateOf(listOf<String>()) }
+    var typed by remember { mutableStateOf("") }
     var qIndex by remember { mutableIntStateOf(0) }
     var lastResult by remember { mutableStateOf<TournamentPlayResponse?>(null) }
 
@@ -56,7 +56,7 @@ fun TournamentScreen(user: User?, onExit: () -> Unit) {
         scope.launch {
             try {
                 val s = withContext(Dispatchers.IO) { RetrofitClient.apiService.startTournament(token, tid) }
-                problems = s.problems; answers = emptyList(); qIndex = 0; lastResult = null; phase = "playing"
+                problems = s.problems; answers = emptyList(); typed = ""; qIndex = 0; lastResult = null; phase = "playing"
             } catch (e: Exception) {
                 error = "Couldn't start your run."
                 Log.e("Tournament", "start: ${e.message}")
@@ -118,21 +118,17 @@ fun TournamentScreen(user: User?, onExit: () -> Unit) {
                     MathText(text = problems[qIndex].question, fontSizePx = 44)
                 }
             }
-            problems[qIndex].options.forEach { opt ->
-                Card(
-                    modifier = Modifier.fillMaxWidth().clickable(enabled = !busy) {
-                        val updated = answers + opt
-                        if (updated.size >= problems.size) { answers = updated; submit(updated) }
-                        else { answers = updated; qIndex = updated.size }
-                    },
-                    shape = RoundedCornerShape(CornerRadius.m),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                ) {
-                    Box(modifier = Modifier.fillMaxWidth().padding(Spacing.m), contentAlignment = Alignment.Center) {
-                        MathText(text = opt, fontSizePx = 36)
-                    }
-                }
-            }
+            AnswerInput(
+                value = typed,
+                onValueChange = { typed = it },
+                onSubmit = {
+                    val updated = answers + typed.trim(); typed = ""
+                    if (updated.size >= problems.size) { answers = updated; submit(updated) }
+                    else { answers = updated; qIndex = updated.size }
+                },
+                enabled = !busy,
+                submitLabel = if (qIndex >= problems.size - 1) "Submit" else "Next"
+            )
             if (busy) Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             return@Column
         }

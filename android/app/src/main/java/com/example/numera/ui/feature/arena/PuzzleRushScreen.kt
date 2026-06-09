@@ -2,20 +2,17 @@ package com.example.numera.ui.feature.arena
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.*
 import com.example.numera.theme.*
+import com.example.numera.ui.components.AnswerInput
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.MathText
@@ -138,24 +135,11 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
                     }
                 }
 
-                val enabled = feedback == null && !busy
-                OutlinedTextField(
+                AnswerInput(
                     value = typed,
                     onValueChange = { typed = it },
-                    enabled = enabled,
-                    singleLine = true,
-                    label = { Text("Type your answer") },
-                    placeholder = { Text("e.g. 3/4, 0.5, -7, 8x") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { if (typed.isNotBlank()) submit(typed.trim()) }),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                DuoButton(
-                    text = "Submit",
-                    onClick = { if (typed.isNotBlank()) submit(typed.trim()) },
-                    enabled = enabled && typed.isNotBlank(),
-                    modifier = Modifier.fillMaxWidth()
+                    onSubmit = { submit(typed.trim()) },
+                    enabled = feedback == null && !busy
                 )
 
                 feedback?.let { fb ->
