@@ -15,6 +15,8 @@
 //    (integers, fractions, decimals, percents, linear/quadratic expressions, pi multiples). The
 //    interface is the seam: a heavier symbolic backend can later answer the hard cases behind it.
 
+const { evaluateRational } = require('./cas/rationalEval');
+
 // Exact normalized form — identical to the per-route `normalize` graders use today (back-compat).
 function normalizeAnswer(s) {
   return String(s == null ? '' : s).trim().toLowerCase();
@@ -144,9 +146,12 @@ function areEquivalent(submitted, canonical) {
   // 1. Exact normalized match — preserves the existing grader's behaviour exactly.
   if (normalizeAnswer(submitted) === normalizeAnswer(canonical)) return true;
 
-  // 2. Rational equality: integers / fractions / decimals / percents.
-  const ra = parseRational(submitted);
-  const rb = parseRational(canonical);
+  // 2. Rational equality: integers / fractions / decimals / percents / mixed numbers (parseRational),
+  //    OR a full numeric arithmetic expression the player typed, e.g. "1/2 + 1/4" (evaluateRational —
+  //    exact, so still sound). parseRational handles the special forms (%/mixed/\frac) the evaluator
+  //    doesn't, so try it first and fall back to evaluating an arithmetic expression.
+  const ra = parseRational(submitted) || evaluateRational(cleanInput(submitted));
+  const rb = parseRational(canonical) || evaluateRational(cleanInput(canonical));
   if (ra && rb) return ra.n === rb.n && ra.d === rb.d;
   // If exactly one side is a plain number, they cannot be equal (don't fall through to pi/algebra).
   if (!!ra !== !!rb) return false;

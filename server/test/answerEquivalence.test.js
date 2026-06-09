@@ -42,7 +42,13 @@ const EQUIVALENT = [
   ['= 12', '12'],
   ['+5', '5'],             // leading unary plus
   ['−7', '-7'],       // unicode minus sign
-  ['y = 2x', '2x']         // equation form of an expression answer
+  ['y = 2x', '2x'],        // equation form of an expression answer
+  // Numeric arithmetic expressions a player might type (exact rational evaluation):
+  ['2+3', '5'],
+  ['1/2 + 1/4', '3/4'],
+  ['2*(3+1)', '8'],
+  ['10 - 2*3', '4'],
+  ['0.5 + 0.25', '3/4']
 ];
 
 // Pairs that MUST be judged different (no false positives).
@@ -63,7 +69,9 @@ const DIFFERENT = [
   ['x', 'x;return 1'],    // injection attempt is rejected, judged not-equal
   ['1/0', '5'],
   ['1 1/2', '11/2'],      // mixed 1½ (=3/2) must NOT equal eleven-halves (=5.5)
-  ['x=8', '9']            // a stripped prefix must still grade the value correctly
+  ['x=8', '9'],           // a stripped prefix must still grade the value correctly
+  ['2+2', '5'],           // exact arithmetic: 4 ≠ 5
+  ['1/2 + 1/4', '1/2']    // 3/4 ≠ 1/2
 ];
 
 for (const [a, b] of EQUIVALENT) {
