@@ -6,17 +6,7 @@
 // value). Anything non-numeric (a variable, pi, a letter, stray symbol, trailing garbage) ⇒ null,
 // so it composes cleanly with the rest of the equivalence engine (those cases fall to other paths).
 
-function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
-function rat(n, d) {
-  if (!Number.isFinite(n) || !Number.isFinite(d) || d === 0) return null;
-  if (d < 0) { n = -n; d = -d; }
-  const g = gcd(n, d);
-  return { n: n / g, d: d / g };
-}
-const add = (a, b) => rat(a.n * b.d + b.n * a.d, a.d * b.d);
-const sub = (a, b) => rat(a.n * b.d - b.n * a.d, a.d * b.d);
-const mul = (a, b) => rat(a.n * b.n, a.d * b.d);
-const div = (a, b) => (b.n === 0 ? null : rat(a.n * b.d, a.d * b.n));
+const { make: rat, add, sub, mul, div } = require('./rational');
 
 // Evaluate `raw` to a reduced rational, or null. Grammar:
 //   expr   := term (('+'|'-') term)*
