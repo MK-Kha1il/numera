@@ -18,7 +18,7 @@ const STARTING_LIVES = 3;
 const FIXED_ELO = 1200;          // standardized so the ladder is fair (difficulty ∝ score, not the player's profile)
 const MAX_COIN_REWARD = 50;
 
-const normalize = (s) => String(s == null ? '' : s).trim().toLowerCase();
+const { areEquivalent } = require('../mathEngine/answerEquivalence');
 
 // The difficulty ladder: level rises with score; category follows the level band (mirrors the
 // generator's CONCEPT_TO_LEVEL bands so every rung has real templates).
@@ -80,7 +80,7 @@ router.post('/api/puzzle-rush/submit', authenticateToken, idempotency, (req, res
 
     const now = Date.now();
     const elapsed = now - (run.last_action_at || now);
-    const correct = normalize(answer) === normalize(run.current_answer);
+    const correct = areEquivalent(answer, run.current_answer);
     // Integrity: the difficulty-scaled timing scorer flags superhuman-fast correct answers.
     // integrity_flag holds the running COUNT of flagged answers (0 = clean → eligible for boards).
     const assessment = assessAnswer({ elapsedMs: elapsed, correct, level: run.current_level });

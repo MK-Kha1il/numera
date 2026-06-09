@@ -20,7 +20,7 @@ const FIXED_ELO = 1200;          // standardized so difficulty is the concept's,
 const WEEK_MS = 7 * 86400000;
 const REWARDS = [100, 60, 40];   // top-3 coin prizes paid on finalize
 
-const normalize = (s) => String(s == null ? '' : s).trim().toLowerCase();
+const { areEquivalent } = require('../mathEngine/answerEquivalence');
 const conceptName = (id) => (KnowledgeGraph.concepts[id] && KnowledgeGraph.concepts[id].name) || id;
 
 function buildSet(category, level, count) {
@@ -175,7 +175,7 @@ router.post('/api/tournaments/:id/play', authenticateToken, (req, res) => {
     const problems = JSON.parse(t.problems_json);
     let score = 0;
     for (let i = 0; i < problems.length; i++) {
-      if (normalize(answers[i]) === normalize(problems[i].answer)) score += 1;
+      if (areEquivalent(answers[i], problems[i].answer)) score += 1;
     }
     const elapsedMs = Math.max(0, Date.now() - entry.started_at);
     await tx.run("UPDATE tournament_entries SET score = ?, elapsed_ms = ?, status = 'done' WHERE id = ?", [score, elapsedMs, entry.id]);

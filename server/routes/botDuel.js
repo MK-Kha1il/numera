@@ -33,7 +33,7 @@ const LADDER = [
   ['combinatorics', 21],
 ];
 
-const normalize = (s) => String(s == null ? '' : s).trim().toLowerCase();
+const { areEquivalent } = require('../mathEngine/answerEquivalence');
 const dayStart = () => Math.floor(Date.now() / 86400000) * 86400000;
 
 function buildProblemSet() {
@@ -92,7 +92,7 @@ router.post('/api/duel/bot/:id/play', authenticateToken, idempotency, (req, res)
     const problems = JSON.parse(m.problems_json);
     let userScore = 0;
     for (let i = 0; i < problems.length; i++) {
-      if (normalize(answers[i]) === normalize(problems[i].answer)) userScore += 1;
+      if (areEquivalent(answers[i], problems[i].answer)) userScore += 1;
     }
 
     let winner = 'draw';

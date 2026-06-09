@@ -19,7 +19,7 @@ const WINNER_REWARD = 25;
 const EXPIRY_MS = 24 * 60 * 60 * 1000;
 const FIXED_ELO = 1200;
 
-const normalize = (s) => String(s == null ? '' : s).trim().toLowerCase();
+const { areEquivalent } = require('../mathEngine/answerEquivalence');
 
 // A fixed, varied difficulty spread so the shared set is fair and not all one concept.
 const LADDER = [
@@ -166,7 +166,7 @@ router.post('/api/duel/async/:id/play', authenticateToken, idempotency, (req, re
     const problems = JSON.parse(m.problems_json);
     let score = 0;
     for (let i = 0; i < problems.length; i++) {
-      if (normalize(answers[i]) === normalize(problems[i].answer)) score += 1;
+      if (areEquivalent(answers[i], problems[i].answer)) score += 1;
     }
 
     const myCol = isChallenger ? 'challenger_score' : 'opponent_score';

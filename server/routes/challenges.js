@@ -23,7 +23,7 @@ const COUNT_MIN = 5;
 const COUNT_MAX = 15;
 const FIXED_ELO = 1200; // standardized so difficulty is set by the concept, not the author's profile
 
-const normalize = (s) => String(s == null ? '' : s).trim().toLowerCase();
+const { areEquivalent } = require('../mathEngine/answerEquivalence');
 const conceptName = (id) => (KnowledgeGraph.concepts[id] && KnowledgeGraph.concepts[id].name) || id;
 
 // A 6-char unambiguous share code (no 0/O/1/I/L so it reads/types cleanly).
@@ -182,7 +182,7 @@ router.post('/api/challenges/:code/play', authenticateToken, (req, res) => {
     const problems = JSON.parse(ch.problems_json);
     let score = 0;
     for (let i = 0; i < problems.length; i++) {
-      if (normalize(answers[i]) === normalize(problems[i].answer)) score += 1;
+      if (areEquivalent(answers[i], problems[i].answer)) score += 1;
     }
     const now = Date.now();
     await tx.run('INSERT INTO challenge_attempts (challenge_id, user_id, score, elapsed_ms, created_at) VALUES (?, ?, ?, ?, ?)', [ch.id, req.user.id, score, elapsedMs, now]);
