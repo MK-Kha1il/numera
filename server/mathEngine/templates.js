@@ -1633,6 +1633,26 @@ templates.decimals = {
       explanation: `The hundredths digit is $${hund}$, so round ${hund >= 5 ? 'up' : 'down'}: $${value} \\approx ${answer}$ to the nearest tenth.`,
       type: "decimal_round"
     };
+  },
+  // Dividing decimals — shift both numbers so the divisor is a whole number, then divide.
+  11: (_diffFactor, idx) => {
+    const q = 2 + (idx % 8);              // clean whole-number quotient 2..9
+    const d10 = 2 + ((idx * 3) % 8);      // divisor in tenths: 0.2..0.9
+    const dividend10 = q * d10;           // exact, in tenths
+    const a = (dividend10 / 10).toFixed(1);
+    const b = (d10 / 10).toFixed(1);
+    const answer = String(q);
+    return {
+      question: `Divide the decimals: $${a} \\div ${b}$`,
+      answer,
+      distractors: [
+        (q / 10).toFixed(1),   // didn't shift the divisor to a whole number (10x too small)
+        String(q + 1),          // arithmetic slip
+        String(q - 1)           // arithmetic slip
+      ],
+      explanation: `Multiply both numbers by $10$ so the divisor is whole, then divide: $${a} \\div ${b} = ${dividend10} \\div ${d10} = ${answer}$.`,
+      type: "decimal_div"
+    };
   }
 };
 
@@ -1764,6 +1784,28 @@ templates.fractions = {
       ]),
       explanation: `Multiply straight across: $\\frac{${a} \\times ${c}}{${b} \\times ${d}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
       type: "fraction_mult"
+    };
+  },
+  // Divide fractions — keep, change to multiply, flip the second (multiply by the reciprocal).
+  9: (_diffFactor, idx) => {
+    const b = FRACTION_DENS[idx % FRACTION_DENS.length];
+    const d = FRACTION_DENS[(idx + 3) % FRACTION_DENS.length]; // offset 3 ≠ 0 mod 6 ⇒ d ≠ b
+    const a = coprimeNumerator(b, idx);
+    const c = coprimeNumerator(d, idx + 1);
+    const cn = a * d, cd = b * c;          // a/b ÷ c/d = (a·d)/(b·c)
+    const answer = reduceFrac(cn, cd);
+    return {
+      question: `Divide the fractions: $\\frac{${a}}{${b}} \\div \\frac{${c}}{${d}}$`,
+      answer,
+      distractors: fracDistractors(answer, [
+        [a * c, b * d],        // multiplied straight across without flipping
+        [b * c, a * d],        // flipped the wrong fraction (reciprocal of the answer)
+        [cn + 1, cd],          // near miss
+        [cn - 1, cd],          // near miss
+        [cn, cd + 1]           // near miss
+      ]),
+      explanation: `Dividing is multiplying by the reciprocal (keep–change–flip): $\\frac{${a}}{${b}} \\div \\frac{${c}}{${d}} = \\frac{${a}}{${b}} \\times \\frac{${d}}{${c}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
+      type: "fraction_div"
     };
   }
 };

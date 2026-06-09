@@ -47,11 +47,13 @@ const CONCEPT_TO_LEVEL = {
   decimal_sub:          { category: 'decimals',      level: 5  },
   decimal_mult:         { category: 'decimals',      level: 7  },
   decimal_round:        { category: 'decimals',      level: 9  },
+  decimal_div:          { category: 'decimals',      level: 11 },
   // Fractions strand (audit #1.1 — fraction operations, the core middle-school topic).
   fraction_simplify:    { category: 'fractions',     level: 3  },
   fraction_add:         { category: 'fractions',     level: 4  },
   fraction_sub:         { category: 'fractions',     level: 6  },
   fraction_mult:        { category: 'fractions',     level: 8  },
+  fraction_div:         { category: 'fractions',     level: 9  },
   // Number-sense / pre-algebra strand (audit #1.1 — the band the ladder used to skip).
   percentage_of:        { category: 'number_sense',  level: 6  },
   fraction_of:          { category: 'number_sense',  level: 7  },

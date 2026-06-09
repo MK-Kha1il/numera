@@ -503,6 +503,33 @@ const CONCEPT_LESSONS = {
     ]
   },
 
+  decimal_div: {
+    title: "Dividing Decimals",
+    formula: "\\frac{a}{b} = \\frac{a \\times 10^k}{b \\times 10^k} \\;\\text{(shift until the divisor is whole)}",
+    oneLineSummary: "Slide the decimal point in BOTH numbers until the divisor is a whole number, then divide as usual.",
+    intuitionHook: "What is $4.8 \\div 0.6$? Dividing by $0.6$ feels awkward, so make the divisor whole: multiply BOTH by $10$ to get $48 \\div 6 = 8$. Scaling both numbers the same way doesn't change the quotient — like asking 'how many 6-cent coins in 48 cents' instead of 'how many 0.6 in 4.8'.",
+    whatItIs: "Dividing decimals finds how many times one decimal fits into another. The reliable method removes the decimal from the divisor by shifting the point in both numbers equally.",
+    whyItWorks: "A quotient is a ratio, and a ratio is unchanged when you scale BOTH numbers by the same factor: $\\frac{4.8}{0.6} = \\frac{4.8 \\times 10}{0.6 \\times 10} = \\frac{48}{6}$. So you multiply the divisor by whatever power of ten makes it a whole number, and multiply the dividend by the SAME power to keep the ratio fixed. Now it's ordinary whole-number (or whole-divisor) division: $48 \\div 6 = 8$. The point only ever moves the same number of places in both numbers — that equal shift is what preserves the answer.",
+    whenToUse: "Unit pricing ($/per item), splitting a decimal amount into equal parts, converting rates, and 'how many of this fit into that' with decimal quantities.",
+    representations: [
+      { kind: "shift", label: "Make the divisor whole", body: "$4.8 \\div 0.6$: shift both one place $\\to 48 \\div 6 = 8$." },
+      { kind: "ratio", label: "Scaling keeps the quotient", body: "$\\frac{4.8}{0.6} = \\frac{48}{6}$ — multiplying top and bottom by $10$ doesn't change the value." },
+      { kind: "real_world", label: "How many fit", body: "How many $0.6$-litre cups fill a $4.8$-litre jug? $8$ cups." }
+    ],
+    commonMistakes: [
+      { label: "Shifting only the divisor", why: "Turning $4.8 \\div 0.6$ into $4.8 \\div 6 = 0.8$ — moving the point in just one number.", fix: "Move the point the SAME number of places in BOTH numbers: $48 \\div 6 = 8$." },
+      { label: "Misplacing the decimal point in the answer", why: "Getting the right digits but the wrong size, e.g. $0.8$ or $80$.", fix: "After shifting to a whole divisor, the division is exact — sanity-check size: $0.6$ goes into $4.8$ about $8$ times, not $0.8$." }
+    ],
+    connections: [
+      { concept: "decimal_mult", note: "Division and multiplication of decimals are inverses; both hinge on tracking the decimal point carefully." },
+      { concept: "fraction_div", note: "Writing the division as a fraction and scaling top and bottom is the same idea as dividing fractions." }
+    ],
+    examples: [
+      { question: "Divide $4.8 \\div 0.6$.", answer: "8", explanation: "Multiply both by $10$: $48 \\div 6 = 8$." },
+      { question: "Divide $3.6 \\div 0.4$.", answer: "9", explanation: "Multiply both by $10$: $36 \\div 4 = 9$." }
+    ]
+  },
+
   // ===========================================================================
   // FRACTIONS STRAND
   // ===========================================================================
@@ -614,6 +641,34 @@ const CONCEPT_LESSONS = {
     examples: [
       { question: "Multiply $\\frac{1}{2} \\times \\frac{1}{3}$.", answer: "1/6", explanation: "Multiply across: $\\frac{1\\cdot1}{2\\cdot3} = \\frac{1}{6}$." },
       { question: "Multiply $\\frac{2}{3} \\times \\frac{4}{5}$.", answer: "8/15", explanation: "Multiply across: $\\frac{2\\cdot4}{3\\cdot5} = \\frac{8}{15}$ (already in lowest terms)." }
+    ]
+  },
+
+  fraction_div: {
+    title: "Dividing Fractions",
+    formula: "\\frac{a}{b} \\div \\frac{c}{d} = \\frac{a}{b} \\times \\frac{d}{c}",
+    oneLineSummary: "Keep the first fraction, change ÷ to ×, and flip the second — then multiply across.",
+    intuitionHook: "How many $\\frac{1}{2}$s are in $3$? Six. Notice $3 \\div \\frac{1}{2} = 6$ is the same as $3 \\times 2$ — dividing by a half is multiplying by two. Dividing by a fraction asks 'how many of THAT fit in this', and flipping turns it into a multiplication.",
+    whatItIs: "Dividing fractions finds how many times one fraction fits into another. The standard method rewrites the division as multiplication by the reciprocal (flip) of the second fraction.",
+    whyItWorks: "The reciprocal of $\\frac{c}{d}$ is $\\frac{d}{c}$, the number you multiply it by to get $1$. Dividing by a number is the same as multiplying by its reciprocal — true for whole numbers ($\\div 2 = \\times \\frac{1}{2}$) and for fractions too. So $\\frac{a}{b} \\div \\frac{c}{d} = \\frac{a}{b} \\times \\frac{d}{c} = \\frac{ad}{bc}$. 'Keep, change, flip': keep the first, change the sign to multiply, flip the second. Then multiply straight across and reduce. Because flipping a proper fraction makes it bigger than $1$, dividing by a small fraction yields a LARGE answer — matching the intuition that many small pieces fit inside a whole.",
+    whenToUse: "How many portions of a given size fit in a total, splitting a fractional amount into fractional shares, converting rates, and rational-expression algebra.",
+    representations: [
+      { kind: "keep_change_flip", label: "Multiply by the reciprocal", body: "$\\frac{1}{2} \\div \\frac{2}{5} = \\frac{1}{2} \\times \\frac{5}{2} = \\frac{5}{4}$." },
+      { kind: "real_world", label: "How many fit", body: "How many $\\frac{1}{2}$-cups in $3$ cups? $3 \\div \\frac{1}{2} = 3 \\times 2 = 6$." },
+      { kind: "reciprocal", label: "Flip makes it bigger", body: "Dividing by a fraction below $1$ flips it above $1$, so the quotient grows." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting to flip", why: "Multiplying straight across without taking the reciprocal: $\\frac{1}{2} \\div \\frac{2}{5} = \\frac{2}{10}$.", fix: "Division means multiply by the RECIPROCAL: flip the second fraction first, $\\frac{1}{2} \\times \\frac{5}{2} = \\frac{5}{4}$." },
+      { label: "Flipping the wrong fraction", why: "Inverting the first fraction instead of the second.", fix: "KEEP the first unchanged; flip only the SECOND (the divisor): $\\frac{a}{b} \\times \\frac{d}{c}$." }
+    ],
+    connections: [
+      { concept: "fraction_mult", note: "Division becomes multiplication once you flip the divisor — same multiply-across-and-reduce finish." },
+      { concept: "fraction_simplify", note: "Reduce the result to lowest terms as the final step." },
+      { concept: "decimal_div", note: "Both divisions work by rewriting into an easier equivalent — flip a fraction, or shift a decimal point." }
+    ],
+    examples: [
+      { question: "Divide $\\frac{1}{2} \\div \\frac{2}{5}$.", answer: "5/4", explanation: "Keep–change–flip: $\\frac{1}{2} \\times \\frac{5}{2} = \\frac{5}{4}$." },
+      { question: "Divide $\\frac{3}{4} \\div \\frac{1}{2}$.", answer: "3/2", explanation: "Keep–change–flip: $\\frac{3}{4} \\times \\frac{2}{1} = \\frac{6}{4} = \\frac{3}{2}$." }
     ]
   },
 
@@ -1507,13 +1562,15 @@ function levelToConceptId(category, level) {
     if (lvl <= 3) return 'decimal_add';
     if (lvl <= 5) return 'decimal_sub';
     if (lvl <= 7) return 'decimal_mult';
-    return 'decimal_round';
+    if (lvl <= 9) return 'decimal_round';
+    return 'decimal_div';
   }
   if (cat === 'fractions') {
     if (lvl <= 3) return 'fraction_simplify';
     if (lvl <= 4) return 'fraction_add';
     if (lvl <= 6) return 'fraction_sub';
-    return 'fraction_mult';
+    if (lvl <= 8) return 'fraction_mult';
+    return 'fraction_div';
   }
   if (cat === 'geometry') {
     if (lvl <= 2) return 'geo_perimeter_rect';

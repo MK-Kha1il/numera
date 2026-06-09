@@ -244,6 +244,14 @@ const concepts = {
       { id: "round_direction", label: "Rounded the wrong direction", rule: (ans) => ans + 0.1 }
     ]
   },
+  "decimal_div": {
+    name: "Dividing Decimals",
+    prereqs: ["decimal_mult"],
+    baseElo: 760,
+    misconceptions: [
+      { id: "unshifted_divisor", label: "Divided without shifting the divisor to a whole number", rule: (ans) => ans / 10 }
+    ]
+  },
 
   // Fractions (audit #1.1 — fraction operations, the core middle-school topic)
   "fraction_simplify": {
@@ -276,6 +284,14 @@ const concepts = {
     baseElo: 640,
     misconceptions: [
       { id: "cross_multiply", label: "Cross-multiplied instead of multiplying across", rule: (ans) => ans }
+    ]
+  },
+  "fraction_div": {
+    name: "Dividing Fractions",
+    prereqs: ["fraction_mult"],
+    baseElo: 720,
+    misconceptions: [
+      { id: "forgot_to_flip", label: "Multiplied across without flipping the second fraction", rule: (ans) => ans }
     ]
   },
 
@@ -458,10 +474,12 @@ const STANDARDS = {
   decimal_sub: "5.NBT.B.7",
   decimal_mult: "5.NBT.B.7",
   decimal_round: "5.NBT.A.4",
+  decimal_div: "6.NS.B.3",
   fraction_simplify: "4.NF.A.1",
   fraction_add: "5.NF.A.1",
   fraction_sub: "5.NF.A.1",
   fraction_mult: "5.NF.B.4",
+  fraction_div: "6.NS.A.1",
   geo_perimeter_rect: "3.MD.D.8",
   geo_area_rect: "3.MD.C.7",
   geo_area_triangle: "6.G.A.1",
