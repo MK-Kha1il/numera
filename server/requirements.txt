@@ -1,0 +1,5 @@
+# Python dependencies for the OPTIONAL SymPy-backed CAS (mathEngine/cas/sympy_bridge.py).
+# The server runs fine WITHOUT these — the CAS adapter (sympyClient.js) fails soft and the
+# hand-built JS primitives take over. Install to enable powerful symbolic solving/equivalence:
+#   python -m pip install -r requirements.txt
+sympy>=1.14
