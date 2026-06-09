@@ -1067,6 +1067,60 @@ const CONCEPT_LESSONS = {
     ]
   },
 
+  matrix_trace: {
+    title: "The Trace of a Matrix",
+    formula: "\\text{tr}(A) = a_{11} + a_{22} + \\cdots + a_{nn}",
+    oneLineSummary: "The trace is just the sum of the entries on the main diagonal — top-left to bottom-right — and nothing else.",
+    intuitionHook: "A matrix is a full grid of numbers, but the trace asks only one question: walk the main diagonal from the top-left corner straight down to the bottom-right and add up what you step on. For $\\begin{pmatrix} 3 & 7 \\\\ 2 & 5 \\end{pmatrix}$ that path hits $3$ and $5$, so the trace is $8$. The off-diagonal $7$ and $2$ are simply ignored.",
+    whatItIs: "The trace of a square matrix is the sum of the entries $a_{ii}$ lying on its main diagonal (where the row index equals the column index). It is defined only for square matrices and returns a single number.",
+    whyItWorks: "The main diagonal entries are special because they pair each row with the matching column — $a_{11}$ links row $1$ to column $1$, $a_{22}$ links row $2$ to column $2$, and so on. Summing exactly these positions produces a quantity that survives a change of coordinates: the trace equals the sum of a matrix's eigenvalues, so it measures total 'stretch' a transformation applies regardless of how you rotate your axes. That coordinate-independence is why we single out the diagonal sum and give it a name instead of summing all the entries.",
+    whenToUse: "Quick invariants of a linear map, the sum of eigenvalues without solving for them, checking a transformation's net scaling, and as a building block in physics (e.g. the divergence of a flow) and statistics (the total variance in a covariance matrix).",
+    representations: [
+      { kind: "diagonal_walk", label: "Sum the main diagonal", body: "$\\begin{pmatrix} 3 & 7 \\\\ 2 & 5 \\end{pmatrix}$: trace $= 3 + 5 = 8$ — only the corners on the $\\searrow$ diagonal." },
+      { kind: "symbolic", label: "General formula", body: "For $\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}$, $\\text{tr} = a + d$; the off-diagonal $b, c$ never appear." },
+      { kind: "invariant", label: "Sum of eigenvalues", body: "If a matrix has eigenvalues $\\lambda_1, \\lambda_2$, then $\\text{tr} = \\lambda_1 + \\lambda_2$ — the trace is coordinate-free." }
+    ],
+    commonMistakes: [
+      { label: "Adding every entry", why: "Summing all four numbers ($3+7+2+5 = 17$) instead of just the diagonal.", fix: "Use ONLY the main-diagonal entries $a_{11}$ and $a_{22}$: $3 + 5 = 8$. The off-diagonal numbers are not part of the trace." },
+      { label: "Using the anti-diagonal", why: "Adding the bottom-left and top-right ($2 + 7$) instead of top-left and bottom-right.", fix: "The MAIN diagonal runs top-left $\\to$ bottom-right ($a_{11}, a_{22}$). The anti-diagonal is a different set and is not the trace." }
+    ],
+    connections: [
+      { concept: "matrix_determinant", note: "Trace (sum of eigenvalues) and determinant (product of eigenvalues) are the two basic invariants of a 2×2 matrix." },
+      { concept: "arithmetic_add", note: "Once you've picked out the diagonal entries, the trace is just their sum — plain addition." }
+    ],
+    examples: [
+      { question: "Compute the trace of $\\begin{pmatrix} 3 & 7 \\\\ 2 & 5 \\end{pmatrix}$.", answer: "8", explanation: "Add the main-diagonal entries: $3 + 5 = 8$." },
+      { question: "Find the trace of $\\begin{pmatrix} 6 & 1 \\\\ 9 & 4 \\end{pmatrix}$.", answer: "10", explanation: "Main diagonal is $6$ and $4$: $6 + 4 = 10$ (the $1$ and $9$ are ignored)." }
+    ]
+  },
+
+  matrix_determinant: {
+    title: "The Determinant of a 2×2 Matrix",
+    formula: "\\det\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix} = ad - bc",
+    oneLineSummary: "Cross-multiply the diagonals and subtract: main-diagonal product minus anti-diagonal product, $ad - bc$.",
+    intuitionHook: "Picture the two columns of $\\begin{pmatrix} 4 & 3 \\\\ 2 & 5 \\end{pmatrix}$ as arrows from the origin. They span a parallelogram, and its (signed) area is the determinant: $4\\cdot 5 - 3\\cdot 2 = 14$. A big determinant means the matrix stretches space a lot; a determinant of $0$ means the arrows are squashed onto a line, collapsing all area.",
+    whatItIs: "The determinant of a $2\\times2$ matrix is the single number $ad - bc$. Geometrically it is the signed area-scaling factor of the linear transformation the matrix represents.",
+    whyItWorks: "Multiply the main diagonal ($ad$) and subtract the anti-diagonal ($bc$). That combination is exactly the signed area of the parallelogram spanned by the column vectors $(a, c)$ and $(b, d)$ — the same as their 2D cross product. When the columns point in independent directions the area is nonzero, so the transformation is invertible and a linear system $A\\mathbf{x} = \\mathbf{b}$ has a unique solution. When $ad - bc = 0$ the columns are parallel, the parallelogram flattens to zero area, and the matrix is singular (no unique inverse). So the formula's subtraction is what detects 'have the directions collapsed?'.",
+    whenToUse: "Testing whether a $2\\times2$ system has a unique solution, computing a matrix inverse, finding the signed area a transformation produces, evaluating cross products in 2D, and Cramer's rule.",
+    representations: [
+      { kind: "diagonal_cross", label: "Main minus anti", body: "$\\begin{pmatrix} 4 & 3 \\\\ 2 & 5 \\end{pmatrix}$: $\\underbrace{4\\cdot5}_{ad} - \\underbrace{3\\cdot2}_{bc} = 20 - 6 = 14$." },
+      { kind: "geometric", label: "Signed parallelogram area", body: "The columns $(a,c)$ and $(b,d)$ span a parallelogram whose signed area is $ad - bc$." },
+      { kind: "singularity_test", label: "Zero means collapse", body: "$\\det = 0 \\Rightarrow$ columns are parallel, the system has no unique solution, and no inverse exists." }
+    ],
+    commonMistakes: [
+      { label: "Adding the products instead of subtracting", why: "Writing $ad + bc$ ($20 + 6 = 26$) rather than $ad - bc$.", fix: "It is always a DIFFERENCE: main-diagonal product MINUS anti-diagonal product, $20 - 6 = 14$." },
+      { label: "Sign slips with negative entries", why: "Mishandling $-bc$ when $b$ or $c$ is negative, e.g. forgetting the double negative.", fix: "Compute $bc$ first WITH its sign, then subtract: if $bc = -6$, then $ad - bc = ad - (-6) = ad + 6$." }
+    ],
+    connections: [
+      { concept: "matrix_trace", note: "Determinant (product of eigenvalues) pairs with trace (their sum) as the two 2×2 invariants." },
+      { concept: "linear_system", note: "A nonzero determinant is exactly the condition for a 2×2 linear system to have one unique solution." }
+    ],
+    examples: [
+      { question: "Compute the determinant of $\\begin{pmatrix} 4 & 3 \\\\ 2 & 5 \\end{pmatrix}$.", answer: "14", explanation: "$ad - bc = (4)(5) - (3)(2) = 20 - 6 = 14$." },
+      { question: "Find the determinant of $\\begin{pmatrix} 6 & 2 \\\\ 1 & 3 \\end{pmatrix}$.", answer: "16", explanation: "$ad - bc = (6)(3) - (2)(1) = 18 - 2 = 16$." }
+    ]
+  },
+
   pigeonhole: {
     title: "The Pigeonhole Principle",
     formula: "\\text{draws to guarantee a pair} = (\\text{number of categories}) + 1",
@@ -1118,6 +1172,33 @@ const CONCEPT_LESSONS = {
     examples: [
       { question: "How many ways can $6$ distinct paintings be displayed side-by-side?", answer: "720", explanation: "$6! = 6\\times5\\times4\\times3\\times2\\times1 = 720$." },
       { question: "In how many orders can $4$ runners finish a race (no ties)?", answer: "24", explanation: "$4! = 4\\times3\\times2\\times1 = 24$." }
+    ]
+  },
+
+  combinations: {
+    title: "Combinations (Unordered Selections)",
+    formula: "\\binom{n}{k} = \\frac{n!}{k!\\,(n-k)!}",
+    oneLineSummary: "Count how many ways to CHOOSE $k$ items from $n$ when order doesn't matter — take the ordered count and divide out the rearrangements.",
+    intuitionHook: "Pick a committee of $2$ from $6$ people. If order mattered there'd be $6\\times5 = 30$ ways. But 'Ann then Bob' is the SAME committee as 'Bob then Ann' — each pair got counted twice — so the real answer is $30 / 2 = 15$. A combination is a permutation with the duplicate orderings removed.",
+    whatItIs: "A combination counts the number of ways to select a subset of $k$ items from $n$ distinct items where the ORDER of selection is irrelevant. It is written $\\binom{n}{k}$, read '$n$ choose $k$'.",
+    whyItWorks: "Start with the ordered count: there are $n\\times(n-1)\\times\\cdots$ ways to pick $k$ items in order, which is $\\frac{n!}{(n-k)!}$. But any chosen group of $k$ items can itself be arranged in $k!$ orders, and as an unordered selection all of those count as one and the same. So we divide the ordered count by $k!$ to collapse each group's rearrangements into a single combination: $\\binom{n}{k} = \\frac{n!}{k!\\,(n-k)!}$. For choosing $2$ this simplifies to $\\frac{n(n-1)}{2}$ — pick an ordered pair, then halve because the two orders are the same selection.",
+    whenToUse: "Committees and teams, lottery and card hands, handshake/round-robin counts, choosing toppings, and any 'how many groups' question where shuffling the chosen items changes nothing.",
+    representations: [
+      { kind: "divide_out_order", label: "Permutations ÷ k!", body: "Choose $2$ of $6$: ordered $6\\times5 = 30$, then divide by $2! = 2$ duplicate orders $\\to 15$." },
+      { kind: "symbolic", label: "The choose formula", body: "$\\binom{n}{2} = \\frac{n(n-1)}{2}$; e.g. $\\binom{6}{2} = \\frac{6\\cdot5}{2} = 15$." },
+      { kind: "handshake", label: "Pairs in a group", body: "$n$ people each shake hands once: every handshake is an unordered pair, $\\binom{n}{2}$ total." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting to divide out the order", why: "Reporting the permutation count $n(n-1)$ (e.g. $30$) and treating it as the number of groups.", fix: "Order doesn't matter for a SELECTION, so divide by $k!$: $30 / 2! = 15$ committees, not $30$." },
+      { label: "Confusing combinations with permutations", why: "Using $n!/(n-k)!$ because a line-up and a group feel similar.", fix: "Ask: does rearranging the chosen items make a NEW outcome? If no (a committee), it's a combination — divide by $k!$." }
+    ],
+    connections: [
+      { concept: "permutations", note: "A combination is a permutation with the $k!$ internal orderings divided out, since order is irrelevant." },
+      { concept: "pigeonhole", note: "Both are core counting tools; combinations enumerate the groups, pigeonhole reasons about guarantees over them." }
+    ],
+    examples: [
+      { question: "A committee of $2$ is chosen from $6$ people. How many different committees are possible?", answer: "15", explanation: "$\\binom{6}{2} = \\frac{6\\cdot5}{2} = 15$ (order within the pair doesn't matter)." },
+      { question: "At a meeting of $8$ people, everyone shakes hands once. How many handshakes occur?", answer: "28", explanation: "Each handshake is an unordered pair: $\\binom{8}{2} = \\frac{8\\cdot7}{2} = 28$." }
     ]
   },
 
@@ -1274,16 +1355,17 @@ function levelToConceptId(category, level) {
     if (lvl <= 12) return 'linear_one_step';
     if (lvl <= 14) return 'linear_two_step';
     if (lvl <= 15) return 'quadratic';
-    // L16 (matrix_trace concept) / L17 (matrix_determinant concept) are CONCEPT_TO_LEVEL ↔
-    // template misaligned (template L16 = linear_system, L17 = trace), so keep their legacy
-    // lessons until that mapping bug is fixed rather than serve a contradicting lesson.
-    return null;
+    // L16 template generates a linear_system (sum/difference) — keep legacy; the matrix concepts
+    // align with their templates: L17 = trace, L18/L19 = determinant.
+    if (lvl === 17) return 'matrix_trace';
+    if (lvl === 18 || lvl === 19) return 'matrix_determinant';
+    return null; // L16 linear_system + L20 Fermat milestone keep legacy
   }
   if (cat === 'combinatorics') {
     if (lvl <= 22) return 'pigeonhole';
-    if (lvl <= 23) return 'permutations';
-    // L24 (combinations concept) template actually generates a permutation problem — leave legacy.
-    return null;
+    if (lvl <= 24) return 'permutations'; // L23 n!, L24 multiset permutations
+    if (lvl <= 26) return 'combinations'; // L25 nC2, L26 handshakes (also a C(n,2) count)
+    return null; // L27+ keep legacy
   }
   if (cat === 'calculus') {
     if (lvl <= 34) return 'derivative';

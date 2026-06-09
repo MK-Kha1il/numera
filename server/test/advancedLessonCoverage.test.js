@@ -1,9 +1,10 @@
 // Advanced-concept lesson coverage (audit #1.1 — upgrading the ORIGINAL advanced concepts from the
 // generic legacy lessons to the rich, concept-first shape). Unlike the foundational strands, the
 // advanced catalog is only PARTLY concept-first: a concept earns a rich lesson only when its
-// canonical-level template actually generates that concept (some CONCEPT_TO_LEVEL ↔ template
-// mappings are off-by, tracked separately). This locks the concepts we HAVE upgraded so a future
-// edit can't silently drop them back to the legacy fallback.
+// canonical-level template actually generates that concept. (matrix_trace/matrix_determinant/
+// combinations were repointed to their matching template levels — 17/18/25 — so they now qualify.)
+// This locks the concepts we HAVE upgraded so a future edit can't silently drop them back to the
+// legacy fallback.
 const { test } = require('node:test');
 const assert = require('node:assert');
 const { getLessonAndExamples } = require('../mathEngine/lessons');
@@ -11,7 +12,8 @@ const { CONCEPT_TO_LEVEL } = require('../mathGenerator');
 
 // The advanced concepts upgraded to concept-first lessons (canonical-level template matches).
 const UPGRADED = [
-  'quadratic', 'pigeonhole', 'permutations', 'derivative',
+  'quadratic', 'matrix_trace', 'matrix_determinant', 'pigeonhole',
+  'permutations', 'combinations', 'derivative',
   'integral', 'gcd_lcm', 'modular_arithmetic', 'totient'
 ];
 
