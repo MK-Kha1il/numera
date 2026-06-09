@@ -10,9 +10,9 @@ let ctx;
 before(async () => { ctx = await bootServer(); });
 after(async () => { await shutdown(ctx); });
 
-test('buildDuelProblemSet returns well-formed, answer-stripped problems with a server-only key', () => {
+test('buildDuelProblemSet returns well-formed, answer-stripped problems with a server-only key', async () => {
   for (const target of [3, 8, 15, 24, 40, 49]) {
-    const set = ctx.mod.buildDuelProblemSet(target);
+    const set = await ctx.mod.buildDuelProblemSet(target);
     assert.equal(set.level, target, `level passes through for ${target}`);
     assert.equal(set.problems.length, 5);
     assert.equal(set.answers.length, 5);
@@ -25,10 +25,23 @@ test('buildDuelProblemSet returns well-formed, answer-stripped problems with a s
   }
 });
 
-test('out-of-range levels are clamped to 1..50', () => {
-  assert.equal(ctx.mod.buildDuelProblemSet(0).level, 1);
-  assert.equal(ctx.mod.buildDuelProblemSet(999).level, 50);
-  assert.equal(ctx.mod.buildDuelProblemSet(undefined).level, 5); // fallback DUEL_PROBLEM_LEVEL
+test('high-level duels use the SymPy CAS when available, else fall back to the catalog', async () => {
+  const available = await require('../mathEngine/cas/sympyClient').isAvailable();
+  const set = await ctx.mod.buildDuelProblemSet(45);
+  assert.equal(set.problems.length, 5);
+  assert.equal(set.answers.length, 5);
+  assert.equal(set.source, available ? 'cas' : 'catalog');
+  for (const p of set.problems) {
+    assert.ok(p.question && p.question.length > 0);
+    assert.ok(Array.isArray(p.options) && p.options.length >= 2);
+    assert.equal(p.correctAnswer, undefined);
+  }
+});
+
+test('out-of-range levels are clamped to 1..50', async () => {
+  assert.equal((await ctx.mod.buildDuelProblemSet(0)).level, 1);
+  assert.equal((await ctx.mod.buildDuelProblemSet(999)).level, 50);
+  assert.equal((await ctx.mod.buildDuelProblemSet(undefined)).level, 5); // fallback DUEL_PROBLEM_LEVEL
 });
 
 test('pickDuelConcepts clusters near the target level (beginner vs advanced get different problems)', () => {

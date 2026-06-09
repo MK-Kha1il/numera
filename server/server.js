@@ -9,6 +9,7 @@ const { db, initDb } = require('./db');
 const { runMigrations } = require('./migrations');
 const { generateProblem, CONCEPT_TO_LEVEL } = require('./mathGenerator'); // duel/bot socket problem generation
 const { areEquivalent } = require('./mathEngine/answerEquivalence'); // server-authoritative duel grading
+const sympyCas = require('./mathEngine/cas/sympyClient'); // optional SymPy CAS for high-level duel problems
 
 // Centralized config + extracted cross-cutting middleware (see config.js, middleware/).
 // NOTE: server.js is now just bootstrap (app/middleware wiring + router mounts) and the
@@ -584,18 +585,48 @@ function pickDuelConcepts(targetLevel, count) {
   return picked.slice(0, count);
 }
 
+// Calculus band and up: prefer the SymPy CAS, which generates UNBOUNDED, verified problems beyond the
+// hand-authored catalog's thin upper end (and resists farming). Below this, the catalog's curated
+// problems (with vetted distractors) are better.
+const CAS_MIN_LEVEL = 31;
+
 // Build a duel room's problem set AT a target level: the FULL problems minus their canonical answers
 // for the client to render, plus the answer key kept server-side. The server is the only authority on
 // correctness (CLAUDE.md: the client never computes rewards), so answers never leave the server.
-function buildDuelProblemSet(targetLevel = DUEL_PROBLEM_LEVEL, count = 5) {
+// Async because high-level sets come from the SymPy subprocess; it FAILS SOFT to the catalog if the
+// CAS is unavailable or returns anything malformed, so a duel always gets a valid set.
+async function buildDuelProblemSet(targetLevel = DUEL_PROBLEM_LEVEL, count = 5) {
   const level = clampLevel(targetLevel);
+
+  if (level >= CAS_MIN_LEVEL) {
+    try {
+      if (await sympyCas.isAvailable()) {
+        const r = await sympyCas.generate(level, count);
+        const ok = r && r.ok && Array.isArray(r.problems) && r.problems.length === count &&
+          r.problems.every((p) => p && typeof p.question === 'string' && p.question.length > 0 &&
+            Array.isArray(p.options) && p.options.length >= 2 && p.answer != null);
+        if (ok) {
+          return {
+            problems: r.problems.map((p) => ({ question: p.question, options: p.options })),
+            answers: r.problems.map((p) => String(p.answer)),
+            level,
+            source: 'cas'
+          };
+        }
+      }
+    } catch (e) {
+      logger.warn(`[CAS] duel generation failed at level ${level}, falling back to catalog: ${e.message}`);
+    }
+  }
+
+  // Catalog path (low/mid levels, or CAS fallback).
   const concepts = pickDuelConcepts(level, count);
   const elo = 800 + level * 20; // representative rating so template difficulty tracks the level band
   const full = concepts.map((c, idx) => generateProblem(c.category, c.level, idx, elo));
   // eslint-disable-next-line no-unused-vars
   const problems = full.map(({ correctAnswer, ...rest }) => rest); // sent to clients (answer stripped)
   const answers = full.map((p) => p.correctAnswer);                // server-only answer key
-  return { problems, answers, level };
+  return { problems, answers, level, source: 'catalog' };
 }
 
 // Grade + record one submitted duel answer SERVER-SIDE and advance the player. Exposed as a named
@@ -819,7 +850,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    db.get("SELECT elo, rank, level FROM users WHERE id = ?", [userId], (err, row) => {
+    db.get("SELECT elo, rank, level FROM users WHERE id = ?", [userId], async (err, row) => {
       const elo = row ? (row.elo || 1000) : 1000;
       const rank = row ? row.rank : 'Unranked (Placement: 0/5)';
       const level = row ? (row.level || DUEL_PROBLEM_LEVEL) : DUEL_PROBLEM_LEVEL;
@@ -829,7 +860,13 @@ io.on('connection', (socket) => {
 
       // Start friend duel immediately (treated as casual, no Elo cost), at the two friends' shared level.
       const duelLevel = clampLevel(((lobby.level || DUEL_PROBLEM_LEVEL) + level) / 2);
-      const { problems, answers } = buildDuelProblemSet(duelLevel);
+      let problems, answers;
+      try {
+        ({ problems, answers } = await buildDuelProblemSet(duelLevel));
+      } catch (e) {
+        logger.error(`friend duel: failed to build problem set: ${e.message}`);
+        return;
+      }
 
       const roomId = `friend_duel_${roomCode}_${Date.now()}`;
       rooms[roomId] = {
@@ -905,11 +942,17 @@ io.on('connection', (socket) => {
   });
 });
 
-function startDuel(p1, p2, isRanked) {
+async function startDuel(p1, p2, isRanked) {
   const roomId = `duel_${p1.userId}_${p2.userId}_${Date.now()}`;
   // The shared duel level: the average of the two (matchmaking-paired, so already close) levels.
   const duelLevel = clampLevel(((p1.level || DUEL_PROBLEM_LEVEL) + (p2.level || DUEL_PROBLEM_LEVEL)) / 2);
-  const { problems, answers } = buildDuelProblemSet(duelLevel);
+  let problems, answers;
+  try {
+    ({ problems, answers } = await buildDuelProblemSet(duelLevel));
+  } catch (e) {
+    logger.error(`startDuel: failed to build problem set: ${e.message}`);
+    return;
+  }
 
   rooms[roomId] = {
     roomId,
@@ -933,10 +976,16 @@ function startDuel(p1, p2, isRanked) {
   logger.info(`Duel started: ${p1.username} (L${p1.level}) vs ${p2.username} (L${p2.level}) at level ${duelLevel}. Ranked: ${isRanked}`);
 }
 
-function startDuelWithBot(player, isRanked) {
+async function startDuelWithBot(player, isRanked) {
   const roomId = `duel_bot_${player.userId}_${Date.now()}`;
   const duelLevel = clampLevel(player.level || DUEL_PROBLEM_LEVEL); // bot problems match the player's level
-  const { problems, answers } = buildDuelProblemSet(duelLevel);
+  let problems, answers;
+  try {
+    ({ problems, answers } = await buildDuelProblemSet(duelLevel));
+  } catch (e) {
+    logger.error(`startDuelWithBot: failed to build problem set: ${e.message}`);
+    return;
+  }
 
   // Create Bot with rating close to user
   const botElo = Math.max(100, player.elo - 50 + Math.floor(Math.random() * 100));

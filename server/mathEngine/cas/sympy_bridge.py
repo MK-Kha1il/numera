@@ -48,6 +48,88 @@ def _equivalent(req):
     return {"ok": True, "equivalent": bool(diff == 0)}
 
 
+# ── Verified problem generation ─────────────────────────────────────────────────────────────────
+# Generate UNBOUNDED, level-scaled problems whose answer is computed (and thus verified) by SymPy,
+# so a ranked duel can't serve a wrong-keyed problem. Answers are kept INTEGER by construction so the
+# duel's MCQ options are clean. Families are chosen by level band; we mix in nearby families so a set
+# isn't monotonous. Each problem carries 4 shuffled options (the verified answer + 3 distractors).
+import random
+
+
+def _int_options(answer, candidates):
+    opts = []
+    seen = {answer}
+    for c in candidates:
+        c = int(c)
+        if c not in seen:
+            seen.add(c)
+            opts.append(str(c))
+        if len(opts) >= 3:
+            break
+    bump = 1
+    while len(opts) < 3:  # guarantee 3 distinct distractors
+        for cand in (answer + bump, answer - bump):
+            if cand not in seen:
+                seen.add(cand)
+                opts.append(str(cand))
+            if len(opts) >= 3:
+                break
+        bump += 1
+    options = opts[:3] + [str(answer)]
+    random.shuffle(options)
+    return options
+
+
+def _gen_one(level, x):
+    from sympy import diff, integrate
+    fams = ["quadratic"]
+    if level >= 31:
+        fams.append("derivative")
+    if level >= 38:
+        fams.append("integral")
+    fam = random.choice(fams)
+
+    if fam == "quadratic":
+        spread = 2 + level // 6
+        r1 = random.randint(-spread, spread)
+        r2 = r1 + random.randint(1, spread + 1)          # distinct, r2 > r1
+        b, c = -(r1 + r2), r1 * r2
+        answer = int(max(r1, r2))
+        bt = ("+ %d" % b) if b >= 0 else ("- %d" % -b)
+        ct = ("+ %d" % c) if c >= 0 else ("- %d" % -c)
+        question = "Find the larger root of $x^2 %s x %s = 0$" % (bt, ct)
+        options = _int_options(answer, [r1, r1 + r2, -r2, answer + 1, answer - 2])
+        return {"question": question, "answer": str(answer), "options": options}
+
+    if fam == "derivative":
+        a = random.randint(2, 3 + level // 12)
+        n = random.randint(2, 4)
+        p = random.randint(1, 3)
+        f = a * x ** n
+        answer = int(diff(f, x).subs(x, p))             # SymPy computes f'(p)
+        question = "For $f(x) = %dx^{%d}$, find $f'(%d)$." % (a, n, p)
+        options = _int_options(answer, [int(f.subs(x, p)), a * n * p, answer + a, answer - a, answer * 2])
+        return {"question": question, "answer": str(answer), "options": options}
+
+    # integral: choose a divisible by (n+1) so the definite integral is an integer
+    n = random.randint(1, 3)
+    a = (n + 1) * random.randint(1, 2)
+    upper = random.randint(2, 3)
+    answer = int(integrate(a * x ** n, (x, 0, upper)))  # SymPy computes the definite integral
+    question = "Evaluate $\\int_0^{%d} %dx^{%d}\\,dx$." % (upper, a, n)
+    options = _int_options(answer, [answer + a, answer - a, answer // 2 if answer else 1, answer * 2])
+    return {"question": question, "answer": str(answer), "options": options}
+
+
+def _generate(req):
+    from sympy import symbols
+    level = max(1, min(120, int(req.get("level", 10))))
+    count = max(1, min(20, int(req.get("count", 5))))
+    x = symbols("x")
+    problems = [_gen_one(level, x) for _ in range(count)]
+    return {"ok": True, "level": level, "problems": problems}
+
+
 def main():
     try:
         req = json.loads(sys.stdin.read() or "{}")
@@ -59,6 +141,8 @@ def main():
             out = _solve(req)
         elif op == "equivalent":
             out = _equivalent(req)
+        elif op == "generate":
+            out = _generate(req)
         else:
             out = {"ok": False, "error": "unknown op"}
     except Exception as exc:  # never crash the bridge — report the error as JSON

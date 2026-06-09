@@ -58,4 +58,9 @@ function solve(equation) { return call({ op: 'solve', equation }); }
 // Symbolic equivalence by simplification (a - b == 0). Returns { ok, equivalent }.
 function equivalent(a, b) { return call({ op: 'equivalent', a, b }); }
 
-module.exports = { isAvailable, solve, equivalent, call };
+// Generate `count` verified, level-scaled problems in ONE subprocess call. Each problem is
+// { question, answer, options[4] } with an integer answer SymPy computed (so it's correct) and
+// MCQ-ready options. Returns { ok, level, problems[] }.
+function generate(level, count = 5) { return call({ op: 'generate', level, count }); }
+
+module.exports = { isAvailable, solve, equivalent, generate, call };
