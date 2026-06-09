@@ -148,8 +148,8 @@ router.post('/api/assessment/adaptive/start', authenticateToken, (req, res) => {
   const q = genAt(DIAG_START_LEVEL);
   db.run(
     `INSERT INTO diagnostic_sessions
-       (user_id, level, low, high, asked, correct, current_answer, current_category, current_level, status, created_at)
-     VALUES (?, ?, 1, ?, 0, 0, ?, ?, ?, 'active', ?)`,
+       (user_id, level, low, high, asked, correct, current_answer, current_category, current_level, status, created_at, category_log)
+     VALUES (?, ?, 1, ?, 0, 0, ?, ?, ?, 'active', ?, '[]')`,
     [userId, DIAG_START_LEVEL, DIAG_MAX_LEVEL, q.answer, q.category, DIAG_START_LEVEL, now],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
@@ -175,9 +175,15 @@ router.post('/api/assessment/adaptive/answer', authenticateToken, (req, res) => 
     const asked = s.asked + 1;
     const { low, high, level } = nextBounds(correct, s.low, s.high, s.level);
 
+    // Append this question's outcome to the per-category trail (powers the onboarding roadmap).
+    let categoryLog = [];
+    try { categoryLog = JSON.parse(s.category_log || '[]'); } catch { categoryLog = []; }
+    categoryLog.push({ category: s.current_category, level: s.current_level, correct });
+    const categoryLogJson = JSON.stringify(categoryLog);
+
     if (asked >= DIAG_QUESTIONS) {
       const placedLevel = level;
-      db.run("UPDATE diagnostic_sessions SET status = 'done', asked = ?, correct = ?, level = ? WHERE id = ?", [asked, correctCount, placedLevel, sessionId]);
+      db.run("UPDATE diagnostic_sessions SET status = 'done', asked = ?, correct = ?, level = ?, category_log = ? WHERE id = ?", [asked, correctCount, placedLevel, categoryLogJson, sessionId]);
       db.run('UPDATE users SET level = ?, assessment_taken = 1 WHERE id = ?', [placedLevel, userId], (uErr) => {
         if (uErr) return res.status(500).json({ error: uErr.message });
         res.json({ done: true, lastCorrect: correct, placedLevel, correct: correctCount, total: DIAG_QUESTIONS });
@@ -188,9 +194,9 @@ router.post('/api/assessment/adaptive/answer', authenticateToken, (req, res) => 
     const q = genAt(level);
     db.run(
       `UPDATE diagnostic_sessions
-         SET level = ?, low = ?, high = ?, asked = ?, correct = ?, current_answer = ?, current_category = ?, current_level = ?
+         SET level = ?, low = ?, high = ?, asked = ?, correct = ?, current_answer = ?, current_category = ?, current_level = ?, category_log = ?
        WHERE id = ?`,
-      [level, low, high, asked, correctCount, q.answer, q.category, level, sessionId],
+      [level, low, high, asked, correctCount, q.answer, q.category, level, categoryLogJson, sessionId],
       (uErr) => {
         if (uErr) return res.status(500).json({ error: uErr.message });
         res.json({ done: false, lastCorrect: correct, questionNumber: asked + 1, totalQuestions: DIAG_QUESTIONS, question: q.question, options: q.options });

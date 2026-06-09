@@ -98,6 +98,9 @@ data class User(
     val avatar: String? = null,
     val active_banner: String? = null,
     val assessment_taken: Int? = null,
+    val onboarding_complete: Int? = 0,
+    val display_name: String? = null,
+    val reminders_opt_in: Int? = 0,
     val league: String? = null,
     val league_points: Int? = null,
     val solved_count: Int? = null,
@@ -1382,4 +1385,92 @@ data class CalculatorLogRequest(
 data class CalculatorLogResponse(
     val success: Boolean,
     val easterEggUnlocked: Boolean? = null
+)
+
+// ---- Onboarding (first launch → habit). Field names match routes/onboarding.js JSON. ----
+@Serializable
+data class OnboardingCatalogItem(
+    val key: String,
+    val label: String = "",
+    val emoji: String = "",
+    val blurb: String? = null
+)
+
+@Serializable
+data class OnboardingAvatarItem(
+    val key: String,
+    val emoji: String = ""
+)
+
+@Serializable
+data class OnboardingCatalogs(
+    val motivations: List<OnboardingCatalogItem> = emptyList(),
+    val interests: List<OnboardingCatalogItem> = emptyList(),
+    val profileStyles: List<OnboardingCatalogItem> = emptyList(),
+    val avatars: List<OnboardingAvatarItem> = emptyList()
+)
+
+@Serializable
+data class OnboardingStateResponse(
+    val onboardingComplete: Boolean = false,
+    val catalogs: OnboardingCatalogs = OnboardingCatalogs()
+)
+
+@Serializable
+data class MotivationsRequest(val keys: List<String>)
+
+@Serializable
+data class OnboardingProfileRequest(
+    val displayName: String? = null,
+    val profileStyle: String? = null,
+    val avatar: String? = null,
+    val interests: List<String> = emptyList()
+)
+
+@Serializable
+data class RoadmapCategory(
+    val key: String,
+    val label: String = "",
+    val accuracy: Int? = null
+)
+
+@Serializable
+data class RoadmapMilestone(
+    val weeks: Int = 0,
+    val label: String = ""
+)
+
+@Serializable
+data class RoadmapResponse(
+    val placedLevel: Int = 1,
+    val rank: String = "",
+    val strengths: List<RoadmapCategory> = emptyList(),
+    val growth: List<RoadmapCategory> = emptyList(),
+    val milestones: List<RoadmapMilestone> = emptyList(),
+    val recommendedFocus: String = ""
+)
+
+@Serializable
+data class AhaStartResponse(
+    val question: String = "",
+    val options: List<String> = emptyList()
+)
+
+@Serializable
+data class AhaAnswerRequest(val answer: String)
+
+@Serializable
+data class AhaAnswerResponse(val correct: Boolean = false)
+
+@Serializable
+data class CommitmentRequest(val frequency: String, val days: List<Int> = emptyList())
+
+@Serializable
+data class NotificationOptInRequest(val optIn: Boolean)
+
+@Serializable
+data class OnboardingEventRequest(
+    val step: String,
+    val event: String,
+    val ms: Long? = null
 )

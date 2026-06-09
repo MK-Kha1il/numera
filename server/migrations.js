@@ -668,6 +668,53 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_club_war_entries_war ON club_war_entries(war_id, club_id)');
     },
   },
+  {
+    version: 25,
+    name: 'onboarding',
+    // First-launch → habit onboarding (the app dropped new users straight into MainTabs after
+    // signup; the adaptive diagnostic was orphaned). State is server-owned so it survives reinstall
+    // and gates navigation. `motivational` goals (multi-select, aspirational) are SEPARATE from the
+    // quantitative user_goals (reach_level/streak) — additive, not a replacement. category_log lets
+    // the diagnostic feed a per-strength/growth roadmap; onboarding_events instruments drop-off.
+    up: async (run) => {
+      await run('ALTER TABLE users ADD COLUMN onboarding_complete INTEGER NOT NULL DEFAULT 0');
+      await run('ALTER TABLE users ADD COLUMN display_name TEXT');
+      await run('ALTER TABLE users ADD COLUMN profile_style TEXT');
+      await run('ALTER TABLE users ADD COLUMN practice_schedule TEXT'); // JSON {frequency, days[]}
+      await run('ALTER TABLE users ADD COLUMN reminders_opt_in INTEGER NOT NULL DEFAULT 0');
+
+      await run(`
+        CREATE TABLE IF NOT EXISTS user_motivations (
+          user_id        INTEGER NOT NULL,
+          motivation_key TEXT NOT NULL,
+          PRIMARY KEY (user_id, motivation_key)
+        )
+      `);
+      await run(`
+        CREATE TABLE IF NOT EXISTS user_interests (
+          user_id      INTEGER NOT NULL,
+          interest_key TEXT NOT NULL,
+          PRIMARY KEY (user_id, interest_key)
+        )
+      `);
+
+      // Per-question diagnostic trail: JSON array of {category, level, correct}. Powers the roadmap's
+      // strengths/growth (the table otherwise only held the CURRENT question's category).
+      await run('ALTER TABLE diagnostic_sessions ADD COLUMN category_log TEXT');
+
+      await run(`
+        CREATE TABLE IF NOT EXISTS onboarding_events (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id    INTEGER NOT NULL,
+          step       TEXT NOT NULL,
+          event      TEXT NOT NULL,
+          ms         INTEGER,
+          created_at INTEGER NOT NULL
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_onboarding_events_user ON onboarding_events(user_id, step)');
+    },
+  },
 ];
 
 /**

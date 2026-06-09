@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const { db, initDb } = require('./db');
 const { runMigrations } = require('./migrations');
-const { generateProblem } = require('./mathGenerator'); // used by the duel/bot socket logic
+const { generateProblem, CONCEPT_TO_LEVEL } = require('./mathGenerator'); // duel/bot socket problem generation
 const { areEquivalent } = require('./mathEngine/answerEquivalence'); // server-authoritative duel grading
 
 // Centralized config + extracted cross-cutting middleware (see config.js, middleware/).
@@ -74,6 +74,7 @@ app.use(require('./routes/achievements'));
 const logger = require('./logger');
 app.use(require('./routes/engine'));
 app.use(require('./routes/assessment'));
+app.use(require('./routes/onboarding'));
 app.use(require('./routes/archive'));
 app.use(require('./routes/league'));
 app.use(require('./routes/commitment'));
@@ -555,20 +556,46 @@ const casualQueue = []; // casual matchmaking queue
 const rooms = {}; // active rooms: { roomId: { p1, p2, problems, isCasual, startTime, problemLevel } }
 const friendRooms = {}; // code lobby rooms: { code: { creatorSocketId, userId, username, rank, elo } }
 
-// Live duels serve a fixed difficulty (arithmetic, level 5); the integrity scorer's human-timing
-// floor scales with this level. Kept as a constant so submit_answer and the generators agree.
+// Live duels serve problems at the DUELLISTS' shared math level — beginners get beginner problems,
+// advanced players get advanced ones — so a duel is always level-fair. DUEL_PROBLEM_LEVEL is only the
+// fallback when a player's level is unknown; the integrity scorer's human-timing floor scales with the
+// room's level (room.problemLevel).
 const DUEL_PROBLEM_LEVEL = 5;
+const MIN_DUEL_LEVEL = 1;
+const MAX_DUEL_LEVEL = 50;
+const clampLevel = (l) => {
+  const n = Math.round(Number(l));
+  return Number.isFinite(n) ? Math.max(MIN_DUEL_LEVEL, Math.min(MAX_DUEL_LEVEL, n)) : DUEL_PROBLEM_LEVEL;
+};
 
-// Build a duel room's problem set: the FULL problems (with answers) for the client to render minus
-// their canonical answers, plus the answer key kept server-side. The server is the only authority
-// on correctness (CLAUDE.md: the client never computes rewards), so answers never leave the server.
-function buildDuelProblemSet(count = 5) {
-  const full = [];
-  for (let i = 0; i < count; i++) full.push(generateProblem('arithmetic', DUEL_PROBLEM_LEVEL));
+// Pick `count` concepts whose canonical level sits closest to `targetLevel`, favouring a spread of
+// categories so a duel isn't all one topic. Drawn from the live catalog (CONCEPT_TO_LEVEL), so every
+// strand added to the curriculum automatically widens the level-appropriate pool.
+function pickDuelConcepts(targetLevel, count) {
+  const all = Object.values(CONCEPT_TO_LEVEL).map((m) => ({ category: m.category, level: m.level }));
+  all.sort((a, b) => Math.abs(a.level - targetLevel) - Math.abs(b.level - targetLevel));
+  const pool = all.slice(0, Math.max(count + 3, 6)); // a tight band of the nearest concepts
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const picked = [];
+  const usedCats = new Set();
+  for (const c of pool) { if (picked.length >= count) break; if (!usedCats.has(c.category)) { picked.push(c); usedCats.add(c.category); } }
+  for (const c of pool) { if (picked.length >= count) break; picked.push(c); }
+  while (picked.length < count && all.length) picked.push(all[picked.length % all.length]);
+  return picked.slice(0, count);
+}
+
+// Build a duel room's problem set AT a target level: the FULL problems minus their canonical answers
+// for the client to render, plus the answer key kept server-side. The server is the only authority on
+// correctness (CLAUDE.md: the client never computes rewards), so answers never leave the server.
+function buildDuelProblemSet(targetLevel = DUEL_PROBLEM_LEVEL, count = 5) {
+  const level = clampLevel(targetLevel);
+  const concepts = pickDuelConcepts(level, count);
+  const elo = 800 + level * 20; // representative rating so template difficulty tracks the level band
+  const full = concepts.map((c, idx) => generateProblem(c.category, c.level, idx, elo));
   // eslint-disable-next-line no-unused-vars
   const problems = full.map(({ correctAnswer, ...rest }) => rest); // sent to clients (answer stripped)
   const answers = full.map((p) => p.correctAnswer);                // server-only answer key
-  return { problems, answers };
+  return { problems, answers, level };
 }
 
 // Grade + record one submitted duel answer SERVER-SIDE and advance the player. Exposed as a named
@@ -642,7 +669,13 @@ function matchmake(queueArray, isRanked) {
       const elapsed2 = (Date.now() - p2.joinTime) / 1000;
       const delta2 = 100 + Math.floor(elapsed2) * 15;
 
-      let isMatchOk = eloDiff <= delta && eloDiff <= delta2;
+      // Level-fair matchmaking (the core of the duel feature): only pair players whose MATH level is
+      // close, so middle-schoolers meet middle-schoolers and advanced students meet advanced ones. The
+      // window widens with wait time so a match still forms; the bot fallback is level-matched too.
+      const levelWindow = 3 + Math.floor(Math.min(elapsed, elapsed2) / 3) * 2;
+      const levelOk = Math.abs((p1.level || DUEL_PROBLEM_LEVEL) - (p2.level || DUEL_PROBLEM_LEVEL)) <= levelWindow;
+
+      let isMatchOk = eloDiff <= delta && eloDiff <= delta2 && levelOk;
 
       // Beginner protection logic: placement match beginners don't match with veterans unless wait is > 8s
       if (p1IsBeginner !== p2IsBeginner && elapsed < 8 && elapsed2 < 8) {
@@ -676,10 +709,11 @@ io.on('connection', (socket) => {
     const username = socket.username;
     const mode = (data && data.mode) === 'casual' ? 'casual' : 'ranked';
 
-    db.get("SELECT elo, rank, competitive_matches, telemetry_enabled FROM users WHERE id = ?", [userId], (err, row) => {
+    db.get("SELECT elo, rank, competitive_matches, telemetry_enabled, level FROM users WHERE id = ?", [userId], (err, row) => {
       const elo = row ? (row.elo || 1000) : 1000;
       const rank = row ? row.rank : 'Unranked (Placement: 0/5)';
       const competitiveMatches = row ? (row.competitive_matches || 0) : 0;
+      const level = row ? (row.level || DUEL_PROBLEM_LEVEL) : DUEL_PROBLEM_LEVEL;
 
       // Ranked requires fair-play consent so the integrity scorer may run (no opt-out cheating).
       if (mode === 'ranked') {
@@ -706,6 +740,7 @@ io.on('connection', (socket) => {
         rank,
         elo,
         competitiveMatches,
+        level,
         joinTime: Date.now()
       };
 
@@ -751,17 +786,19 @@ io.on('connection', (socket) => {
     const userId = socket.userId;
     const username = socket.username;
     
-    db.get("SELECT elo, rank FROM users WHERE id = ?", [userId], (err, row) => {
+    db.get("SELECT elo, rank, level FROM users WHERE id = ?", [userId], (err, row) => {
       const elo = row ? (row.elo || 1000) : 1000;
       const rank = row ? row.rank : 'Unranked (Placement: 0/5)';
-      
+      const level = row ? (row.level || DUEL_PROBLEM_LEVEL) : DUEL_PROBLEM_LEVEL;
+
       const code = Math.floor(1000 + Math.random() * 9000).toString();
       friendRooms[code] = {
         creatorSocketId: socket.id,
         userId,
         username,
         rank,
-        elo
+        elo,
+        level
       };
       
       socket.join(code);
@@ -782,15 +819,17 @@ io.on('connection', (socket) => {
       return;
     }
 
-    db.get("SELECT elo, rank FROM users WHERE id = ?", [userId], (err, row) => {
+    db.get("SELECT elo, rank, level FROM users WHERE id = ?", [userId], (err, row) => {
       const elo = row ? (row.elo || 1000) : 1000;
       const rank = row ? row.rank : 'Unranked (Placement: 0/5)';
+      const level = row ? (row.level || DUEL_PROBLEM_LEVEL) : DUEL_PROBLEM_LEVEL;
 
       socket.join(roomCode);
       logger.info(`Friend Room ${roomCode} joined by ${username}`);
 
-      // Start friend duel immediately (which is treated as casual, no Elo cost)
-      const { problems, answers } = buildDuelProblemSet();
+      // Start friend duel immediately (treated as casual, no Elo cost), at the two friends' shared level.
+      const duelLevel = clampLevel(((lobby.level || DUEL_PROBLEM_LEVEL) + level) / 2);
+      const { problems, answers } = buildDuelProblemSet(duelLevel);
 
       const roomId = `friend_duel_${roomCode}_${Date.now()}`;
       rooms[roomId] = {
@@ -801,7 +840,7 @@ io.on('connection', (socket) => {
         answers,
         isCasual: true,
         startTime: Date.now(),
-        problemLevel: DUEL_PROBLEM_LEVEL
+        problemLevel: duelLevel
       };
 
       // Join both sockets to the real gameplay roomId
@@ -868,7 +907,9 @@ io.on('connection', (socket) => {
 
 function startDuel(p1, p2, isRanked) {
   const roomId = `duel_${p1.userId}_${p2.userId}_${Date.now()}`;
-  const { problems, answers } = buildDuelProblemSet();
+  // The shared duel level: the average of the two (matchmaking-paired, so already close) levels.
+  const duelLevel = clampLevel(((p1.level || DUEL_PROBLEM_LEVEL) + (p2.level || DUEL_PROBLEM_LEVEL)) / 2);
+  const { problems, answers } = buildDuelProblemSet(duelLevel);
 
   rooms[roomId] = {
     roomId,
@@ -878,7 +919,7 @@ function startDuel(p1, p2, isRanked) {
     answers,
     isCasual: !isRanked,
     startTime: Date.now(),
-    problemLevel: DUEL_PROBLEM_LEVEL
+    problemLevel: duelLevel
   };
 
   io.sockets.sockets.get(p1.socketId)?.join(roomId);
@@ -889,12 +930,13 @@ function startDuel(p1, p2, isRanked) {
     opponent: { p1: rooms[roomId].p1, p2: rooms[roomId].p2 },
     problems
   });
-  logger.info(`Duel started between ${p1.username} and ${p2.username}. Ranked: ${isRanked}`);
+  logger.info(`Duel started: ${p1.username} (L${p1.level}) vs ${p2.username} (L${p2.level}) at level ${duelLevel}. Ranked: ${isRanked}`);
 }
 
 function startDuelWithBot(player, isRanked) {
   const roomId = `duel_bot_${player.userId}_${Date.now()}`;
-  const { problems, answers } = buildDuelProblemSet();
+  const duelLevel = clampLevel(player.level || DUEL_PROBLEM_LEVEL); // bot problems match the player's level
+  const { problems, answers } = buildDuelProblemSet(duelLevel);
 
   // Create Bot with rating close to user
   const botElo = Math.max(100, player.elo - 50 + Math.floor(Math.random() * 100));
@@ -907,7 +949,7 @@ function startDuelWithBot(player, isRanked) {
     answers,
     isCasual: !isRanked,
     startTime: Date.now(),
-    problemLevel: DUEL_PROBLEM_LEVEL
+    problemLevel: duelLevel
   };
 
   const socket = io.sockets.sockets.get(player.socketId);
@@ -1175,4 +1217,4 @@ if (require.main === module) {
 
 // `rooms` + `endDuel` are exported for the duel integration test (test/duelEndToEnd.test.js),
 // which drives a finished duel through the real rating/reward commit without a live socket.
-module.exports = { app, server, io, db, ready, rooms, endDuel, applyDuelAnswer, buildDuelProblemSet };
+module.exports = { app, server, io, db, ready, rooms, endDuel, applyDuelAnswer, buildDuelProblemSet, pickDuelConcepts };
