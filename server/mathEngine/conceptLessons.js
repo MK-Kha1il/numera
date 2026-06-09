@@ -504,6 +504,120 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // FRACTIONS STRAND
+  // ===========================================================================
+  fraction_simplify: {
+    title: "Simplifying Fractions",
+    formula: "\\frac{a}{b} = \\frac{a \\div g}{b \\div g}, \\quad g = \\gcd(a, b)",
+    oneLineSummary: "Divide the top and bottom by the same number — their greatest common factor — to write a fraction in lowest terms.",
+    intuitionHook: "Cut a pizza into $4$ slices and take $2$: you've taken $\\frac{2}{4}$. But that's the same amount as cutting into $2$ and taking $1$ — half the pizza. $\\frac{2}{4}$ and $\\frac{1}{2}$ name the SAME portion; the simplest name is $\\frac{1}{2}$.",
+    whatItIs: "Simplifying (reducing) a fraction rewrites it with the smallest possible whole-number top and bottom while keeping the same value, by removing the factor they share.",
+    whyItWorks: "A fraction's value is a ratio, and multiplying or dividing BOTH parts by the same nonzero number doesn't change a ratio — it just renames it. So $\\frac{2}{4}$, $\\frac{3}{6}$, and $\\frac{1}{2}$ are all equal. To reach the simplest name, divide top and bottom by their greatest common factor: $\\gcd(2,4) = 2$, so $\\frac{2}{4} = \\frac{2 \\div 2}{4 \\div 2} = \\frac{1}{2}$. Once the top and bottom share no factor bigger than $1$, the fraction can't be reduced further — that's 'lowest terms'.",
+    whenToUse: "Reporting a final fraction answer cleanly, comparing fractions, and as the last step of nearly every add/subtract/multiply with fractions.",
+    representations: [
+      { kind: "area", label: "Same portion, fewer pieces", body: "$\\frac{2}{4}$ of a pizza is the same shaded region as $\\frac{1}{2}$ — coarser slices, equal amount." },
+      { kind: "symbolic", label: "Divide by the GCF", body: "$\\frac{12}{16}$: $\\gcd(12,16)=4$, so $\\frac{12 \\div 4}{16 \\div 4} = \\frac{3}{4}$." },
+      { kind: "factor", label: "Cancel shared factors", body: "$\\frac{6}{9} = \\frac{2\\cdot 3}{3\\cdot 3} = \\frac{2}{3}$ after cancelling the common $3$." }
+    ],
+    commonMistakes: [
+      { label: "Dividing only the top or only the bottom", why: "Turning $\\frac{6}{9}$ into $\\frac{2}{9}$ by dividing just the numerator.", fix: "Whatever you divide the top by, divide the bottom by the SAME number: $\\frac{6\\div 3}{9 \\div 3} = \\frac{2}{3}$." },
+      { label: "Stopping before lowest terms", why: "Reducing $\\frac{12}{16}$ to $\\frac{6}{8}$ and stopping (still shares a factor of $2$).", fix: "Keep going until top and bottom share no factor but $1$: $\\frac{6}{8} = \\frac{3}{4}$." }
+    ],
+    connections: [
+      { concept: "gcd_lcm", note: "Reducing to lowest terms divides out exactly the greatest common divisor of top and bottom." },
+      { concept: "fraction_add", note: "Sums and differences of fractions are simplified with this same divide-by-the-GCF step." }
+    ],
+    examples: [
+      { question: "Simplify $\\frac{12}{16}$ to lowest terms.", answer: "3/4", explanation: "$\\gcd(12,16)=4$: $\\frac{12\\div4}{16\\div4} = \\frac{3}{4}$." },
+      { question: "Simplify $\\frac{6}{9}$ to lowest terms.", answer: "2/3", explanation: "$\\gcd(6,9)=3$: $\\frac{6\\div3}{9\\div3} = \\frac{2}{3}$." }
+    ]
+  },
+
+  fraction_add: {
+    title: "Adding Fractions",
+    formula: "\\frac{a}{b} + \\frac{c}{d} = \\frac{ad + cb}{bd}",
+    oneLineSummary: "Give the fractions a common denominator first, then add only the numerators — the denominator names the piece size and must match.",
+    intuitionHook: "Try adding $\\frac{1}{2} + \\frac{1}{3}$ by just adding across and you get $\\frac{2}{5}$ — but $\\frac{2}{5}$ is SMALLER than the $\\frac{1}{2}$ you started with, which is impossible. The fix: cut both into the same-size pieces (sixths) first, $\\frac{3}{6} + \\frac{2}{6} = \\frac{5}{6}$.",
+    whatItIs: "Adding fractions combines two parts of a whole. It only works directly when the parts are the same size — i.e. the denominators match — so the first job is to make them match.",
+    whyItWorks: "A denominator says how big each piece is; a numerator counts the pieces. You can only add counts when the pieces are identical, so you rewrite each fraction over a common denominator (their product $bd$ always works): $\\frac{a}{b} = \\frac{ad}{bd}$ and $\\frac{c}{d} = \\frac{cb}{bd}$. Now both are in $bd$-sized pieces, so you add the counts: $\\frac{ad + cb}{bd}$. The denominator does NOT add, because the piece size didn't change — only how many you have. Finally reduce. That's why adding straight across fails: it pretends $\\frac{1}{2}$ and $\\frac{1}{3}$ are the same-size pieces when they aren't.",
+    whenToUse: "Combining parts of a whole — portions of a recipe, fractions of an hour, lengths in mixed units — and as a step inside algebra with rational expressions.",
+    representations: [
+      { kind: "common_denominator", label: "Match the pieces, add the counts", body: "$\\frac{1}{2} + \\frac{1}{3} = \\frac{3}{6} + \\frac{2}{6} = \\frac{5}{6}$." },
+      { kind: "area", label: "Same-size slices", body: "Re-slice both pizzas into sixths so the shaded parts can be counted together." },
+      { kind: "symbolic", label: "Cross-multiply over $bd$", body: "$\\frac{a}{b} + \\frac{c}{d} = \\frac{ad + cb}{bd}$, then simplify." }
+    ],
+    commonMistakes: [
+      { label: "Adding straight across", why: "Writing $\\frac{1}{2} + \\frac{1}{3} = \\frac{2}{5}$ — adding both tops and both bottoms.", fix: "Denominators must MATCH first. Convert to sixths: $\\frac{3}{6} + \\frac{2}{6} = \\frac{5}{6}$; the denominator stays $6$." },
+      { label: "Forgetting to convert a numerator", why: "Using the common denominator but leaving a numerator unscaled.", fix: "When you scale the denominator by a factor, scale that fraction's numerator by the SAME factor." }
+    ],
+    connections: [
+      { concept: "fraction_simplify", note: "After adding, reduce the result to lowest terms with the GCF step." },
+      { concept: "fraction_sub", note: "Subtraction uses the identical common-denominator setup, then subtracts the counts." },
+      { concept: "decimal_add", note: "Like decimals, you must line up comparable units (here, equal-size pieces) before adding." }
+    ],
+    examples: [
+      { question: "Add $\\frac{1}{2} + \\frac{1}{3}$.", answer: "5/6", explanation: "Common denominator $6$: $\\frac{3}{6} + \\frac{2}{6} = \\frac{5}{6}$." },
+      { question: "Add $\\frac{2}{3} + \\frac{3}{5}$.", answer: "19/15", explanation: "Common denominator $15$: $\\frac{10}{15} + \\frac{9}{15} = \\frac{19}{15}$." }
+    ]
+  },
+
+  fraction_sub: {
+    title: "Subtracting Fractions",
+    formula: "\\frac{a}{b} - \\frac{c}{d} = \\frac{ad - cb}{bd}",
+    oneLineSummary: "Give the fractions a common denominator, then subtract the numerators — the denominator stays the same.",
+    intuitionHook: "You have $\\frac{3}{4}$ of a tank and use $\\frac{1}{2}$. To find what's left you can't subtract across; re-cut into quarters: $\\frac{3}{4} - \\frac{2}{4} = \\frac{1}{4}$ of a tank remains.",
+    whatItIs: "Subtracting fractions finds the difference between two parts of a whole. As with addition, it requires the pieces to be the same size, so you match denominators first.",
+    whyItWorks: "The denominator fixes the piece size and the numerator counts pieces; you can only take away counts of identical pieces. Rewrite both over the common denominator $bd$ — $\\frac{ad}{bd}$ and $\\frac{cb}{bd}$ — and subtract the counts: $\\frac{ad - cb}{bd}$. The denominator is unchanged because the piece size never changed, only how many remain. Reduce at the end. Subtracting straight across fails for the same reason it does in addition: it treats differently-sized pieces as if they were the same.",
+    whenToUse: "How much is left, how much more one amount is than another, change between two fractional readings, and rational-expression algebra.",
+    representations: [
+      { kind: "common_denominator", label: "Match, then take away", body: "$\\frac{3}{4} - \\frac{1}{2} = \\frac{3}{4} - \\frac{2}{4} = \\frac{1}{4}$." },
+      { kind: "area", label: "Remove same-size slices", body: "Re-slice both into quarters, then remove the used portion from the full one." },
+      { kind: "symbolic", label: "Difference over $bd$", body: "$\\frac{a}{b} - \\frac{c}{d} = \\frac{ad - cb}{bd}$, then simplify." }
+    ],
+    commonMistakes: [
+      { label: "Subtracting straight across", why: "Writing $\\frac{3}{4} - \\frac{1}{2} = \\frac{2}{2} = 1$ by subtracting tops and bottoms.", fix: "Match denominators first: $\\frac{3}{4} - \\frac{2}{4} = \\frac{1}{4}$; the denominator stays $4$." },
+      { label: "Subtracting in the wrong order", why: "Computing $\\frac{c}{d} - \\frac{a}{b}$ and getting the wrong sign.", fix: "Keep the order given: the first fraction minus the second. Convert both, then subtract the numerators in that order." }
+    ],
+    connections: [
+      { concept: "fraction_add", note: "Same common-denominator setup as addition; only the final combine step differs." },
+      { concept: "fraction_simplify", note: "Reduce the difference to lowest terms as the last step." },
+      { concept: "integer_sub", note: "If the second fraction is larger, the difference is negative — handled by signed arithmetic." }
+    ],
+    examples: [
+      { question: "Subtract $\\frac{3}{4} - \\frac{1}{2}$.", answer: "1/4", explanation: "Common denominator $4$: $\\frac{3}{4} - \\frac{2}{4} = \\frac{1}{4}$." },
+      { question: "Subtract $\\frac{4}{5} - \\frac{2}{3}$.", answer: "2/15", explanation: "Common denominator $15$: $\\frac{12}{15} - \\frac{10}{15} = \\frac{2}{15}$." }
+    ]
+  },
+
+  fraction_mult: {
+    title: "Multiplying Fractions",
+    formula: "\\frac{a}{b} \\times \\frac{c}{d} = \\frac{a\\,c}{b\\,d}",
+    oneLineSummary: "Multiply the tops together and the bottoms together — no common denominator needed — then reduce.",
+    intuitionHook: "What is $\\frac{1}{2}$ of $\\frac{1}{3}$? Take a third of a pizza and halve it: you get a sixth. 'Of' means multiply: $\\frac{1}{2} \\times \\frac{1}{3} = \\frac{1}{6}$. Multiplying fractions makes them SMALLER because you're taking a part of a part.",
+    whatItIs: "Multiplying fractions scales one fraction by another — taking a fraction OF a fraction. Unlike adding, it needs no common denominator: you multiply straight across.",
+    whyItWorks: "A fraction $\\frac{a}{b}$ means 'divide into $b$ parts, take $a$'. Applying that to $\\frac{c}{d}$ first splits the whole into $d$ parts (giving $\\frac{c}{d}$ of it), then into $b$ parts again, making $b \\times d$ equal pieces in total — that's the new denominator. The number of those tiny pieces you end up with is $a \\times c$ — the new numerator. So $\\frac{a}{b} \\times \\frac{c}{d} = \\frac{ac}{bd}$. No common denominator is needed because you're not combining same-size pieces, you're sub-dividing. Reduce the result at the end.",
+    whenToUse: "Taking a fraction OF a quantity, scaling recipes up or down, probability of independent events, areas with fractional side lengths, and repeated proportional discounts.",
+    representations: [
+      { kind: "area", label: "A part of a part", body: "$\\frac{1}{2}$ of $\\frac{1}{3}$ of a square shades $\\frac{1}{6}$ — the overlap of a half-strip and a third-strip." },
+      { kind: "symbolic", label: "Multiply across", body: "$\\frac{2}{3} \\times \\frac{4}{5} = \\frac{2\\cdot4}{3\\cdot5} = \\frac{8}{15}$." },
+      { kind: "real_world", label: "Scaling a recipe", body: "Half of a $\\frac{3}{4}$-cup measure is $\\frac{1}{2}\\times\\frac{3}{4} = \\frac{3}{8}$ cup." }
+    ],
+    commonMistakes: [
+      { label: "Looking for a common denominator", why: "Trying to match denominators as if adding, e.g. converting before multiplying.", fix: "Multiplication needs NO common denominator — just multiply tops and bottoms straight across." },
+      { label: "Cross-multiplying", why: "Computing $\\frac{a}{b}\\times\\frac{c}{d}$ as $\\frac{ad}{bc}$ (the division procedure).", fix: "Multiply across, top$\\times$top and bottom$\\times$bottom: $\\frac{ac}{bd}$. Cross-multiplying is for DIVIDING fractions." }
+    ],
+    connections: [
+      { concept: "fraction_simplify", note: "Reduce the product to lowest terms (you can also cancel common factors before multiplying)." },
+      { concept: "fraction_of", note: "'A fraction of a quantity' is exactly fraction multiplication — taking a part of a part." },
+      { concept: "decimal_mult", note: "Like decimal multiplication, the result shrinks when both factors are below $1$." }
+    ],
+    examples: [
+      { question: "Multiply $\\frac{1}{2} \\times \\frac{1}{3}$.", answer: "1/6", explanation: "Multiply across: $\\frac{1\\cdot1}{2\\cdot3} = \\frac{1}{6}$." },
+      { question: "Multiply $\\frac{2}{3} \\times \\frac{4}{5}$.", answer: "8/15", explanation: "Multiply across: $\\frac{2\\cdot4}{3\\cdot5} = \\frac{8}{15}$ (already in lowest terms)." }
+    ]
+  },
+
+  // ===========================================================================
   // GEOMETRY STRAND
   // ===========================================================================
   geo_perimeter_rect: {
@@ -1394,6 +1508,12 @@ function levelToConceptId(category, level) {
     if (lvl <= 5) return 'decimal_sub';
     if (lvl <= 7) return 'decimal_mult';
     return 'decimal_round';
+  }
+  if (cat === 'fractions') {
+    if (lvl <= 3) return 'fraction_simplify';
+    if (lvl <= 4) return 'fraction_add';
+    if (lvl <= 6) return 'fraction_sub';
+    return 'fraction_mult';
   }
   if (cat === 'geometry') {
     if (lvl <= 2) return 'geo_perimeter_rect';

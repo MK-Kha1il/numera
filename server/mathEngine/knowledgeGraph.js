@@ -245,6 +245,40 @@ const concepts = {
     ]
   },
 
+  // Fractions (audit #1.1 — fraction operations, the core middle-school topic)
+  "fraction_simplify": {
+    name: "Simplifying Fractions",
+    prereqs: ["arithmetic_div"],
+    baseElo: 540,
+    misconceptions: [
+      { id: "partial_reduce", label: "Divided only the top or only the bottom", rule: (ans) => ans }
+    ]
+  },
+  "fraction_add": {
+    name: "Adding Fractions",
+    prereqs: ["fraction_simplify", "arithmetic_add"],
+    baseElo: 680,
+    misconceptions: [
+      { id: "add_across", label: "Added numerators and denominators straight across", rule: (ans) => ans }
+    ]
+  },
+  "fraction_sub": {
+    name: "Subtracting Fractions",
+    prereqs: ["fraction_add"],
+    baseElo: 700,
+    misconceptions: [
+      { id: "sub_across", label: "Subtracted numerators and denominators straight across", rule: (ans) => ans }
+    ]
+  },
+  "fraction_mult": {
+    name: "Multiplying Fractions",
+    prereqs: ["fraction_simplify", "arithmetic_mult"],
+    baseElo: 640,
+    misconceptions: [
+      { id: "cross_multiply", label: "Cross-multiplied instead of multiplying across", rule: (ans) => ans }
+    ]
+  },
+
   // Geometry (audit #1.1 — a parallel strand broadening the catalog beyond the single number ladder)
   "geo_perimeter_rect": {
     name: "Perimeter of a Rectangle",
@@ -424,6 +458,10 @@ const STANDARDS = {
   decimal_sub: "5.NBT.B.7",
   decimal_mult: "5.NBT.B.7",
   decimal_round: "5.NBT.A.4",
+  fraction_simplify: "4.NF.A.1",
+  fraction_add: "5.NF.A.1",
+  fraction_sub: "5.NF.A.1",
+  fraction_mult: "5.NF.B.4",
   geo_perimeter_rect: "3.MD.D.8",
   geo_area_rect: "3.MD.C.7",
   geo_area_triangle: "6.G.A.1",

@@ -1636,6 +1636,138 @@ templates.decimals = {
   }
 };
 
+// -------------------------------------------------------------
+// FRACTIONS TEMPLATES (audit #1.1 — fraction operations, the core middle-school topic).
+// All work is exact integer arithmetic on numerators/denominators; reduceFrac() returns the
+// fully-reduced fraction as a STRING ("3/4", or a whole number "2" when it reduces to an integer).
+// fracDistractors() turns a pool of (num,den) misconception candidates into up to 3 DISTINCT
+// valid-fraction strings (the trailing near-miss pairs guarantee we always reach 3, so the
+// distractor engine's generic "0/1/x" fallbacks never fire for these string answers).
+// -------------------------------------------------------------
+function reduceFrac(n, d) {
+  if (d === 0) return String(n);
+  if (d < 0) { n = -n; d = -d; }
+  const g = gcd(Math.abs(n), Math.abs(d)) || 1;
+  n = n / g; d = d / g;
+  return d === 1 ? String(n) : `${n}/${d}`;
+}
+function fracDistractors(correctStr, candidatePairs) {
+  const out = [];
+  const seen = new Set([correctStr]);
+  for (const [n, d] of candidatePairs) {
+    if (d === 0) continue;
+    const s = reduceFrac(n, d);
+    if (!seen.has(s)) { seen.add(s); out.push(s); }
+    if (out.length >= 3) break;
+  }
+  return out;
+}
+// All numerators coprime to their denominator (1..den-1, gcd 1) — so every displayed fraction is
+// already in lowest terms. Picking two DISTINCT denominators then guarantees the operands are
+// unequal (a reduced fraction's value uniquely fixes its denominator), avoiding degenerate
+// problems like "1/2 + 2/4" or a difference of zero.
+const FRACTION_DENS = [2, 3, 4, 5, 6, 8];
+function coprimeNumerator(den, seed) {
+  const opts = [];
+  for (let k = 1; k < den; k++) if (gcd(k, den) === 1) opts.push(k);
+  return opts[seed % opts.length];
+}
+
+templates.fractions = {
+  // Simplify a fraction to lowest terms (divide by the greatest common factor).
+  3: (_diffFactor, idx) => {
+    const g = 2 + (idx % 6);                  // shared factor baked in: 2..7
+    const baseN = 1 + (idx % 5);              // 1..5
+    const baseD = baseN + 1;                  // consecutive ⇒ always coprime, so answer = baseN/baseD
+    const num = baseN * g, den = baseD * g;
+    const answer = reduceFrac(num, den);
+    return {
+      question: `Simplify the fraction to lowest terms: $\\frac{${num}}{${den}}$`,
+      answer,
+      distractors: fracDistractors(answer, [
+        [num, den - g],        // reduced the numerator's factor but slipped on the denominator
+        [baseN, den],          // only divided the numerator
+        [num, baseD],          // only divided the denominator
+        [baseN + 1, baseD],    // near miss
+        [baseN, baseD + 1]     // near miss
+      ]),
+      explanation: `Divide the top and bottom by their greatest common factor $${gcd(num, den)}$: $\\frac{${num}}{${den}} = ${answer}$.`,
+      type: "fraction_simplify"
+    };
+  },
+  // Add fractions with unlike denominators (find a common denominator first).
+  4: (_diffFactor, idx) => {
+    const b = FRACTION_DENS[idx % FRACTION_DENS.length];
+    const d = FRACTION_DENS[(idx + 1 + (idx % 2)) % FRACTION_DENS.length] === b
+      ? FRACTION_DENS[(idx + 2) % FRACTION_DENS.length]
+      : FRACTION_DENS[(idx + 1 + (idx % 2)) % FRACTION_DENS.length];
+    const a = coprimeNumerator(b, idx);
+    const c = coprimeNumerator(d, idx + 1);
+    const cn = a * d + c * b, cd = b * d;
+    const answer = reduceFrac(cn, cd);
+    return {
+      question: `Add the fractions: $\\frac{${a}}{${b}} + \\frac{${c}}{${d}}$`,
+      answer,
+      distractors: fracDistractors(answer, [
+        [a + c, b + d],        // added straight across (the classic error)
+        [a + c, b * d],        // added numerators but multiplied denominators
+        [a + c, b],            // added numerators, kept one denominator
+        [cn + 1, cd],          // near miss
+        [cn - 1, cd]           // near miss
+      ]),
+      explanation: `Rewrite over the common denominator $${cd}$: $\\frac{${a * d}}{${cd}} + \\frac{${c * b}}{${cd}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
+      type: "fraction_add"
+    };
+  },
+  // Subtract fractions with unlike denominators (kept positive — signs are the integers strand).
+  6: (_diffFactor, idx) => {
+    let b = FRACTION_DENS[idx % FRACTION_DENS.length];
+    let d = FRACTION_DENS[(idx + 2) % FRACTION_DENS.length];
+    if (d === b) d = FRACTION_DENS[(idx + 3) % FRACTION_DENS.length];
+    let a = coprimeNumerator(b, idx);
+    let c = coprimeNumerator(d, idx + 2);
+    let cn = a * d - c * b;
+    if (cn < 0) { [a, b, c, d] = [c, d, a, b]; cn = a * d - c * b; } // ensure the first fraction is larger
+    const cd = b * d;
+    const answer = reduceFrac(cn, cd);
+    return {
+      question: `Subtract the fractions: $\\frac{${a}}{${b}} - \\frac{${c}}{${d}}$`,
+      answer,
+      distractors: fracDistractors(answer, [
+        [a - c, b - d || 1],   // subtracted straight across
+        [a * d - c, cd],       // forgot to convert the second numerator
+        [Math.abs(a - c), b],  // subtracted numerators, kept one denominator
+        [cn + 1, cd],          // near miss
+        [cn + 2, cd]           // near miss
+      ]),
+      explanation: `Rewrite over the common denominator $${cd}$: $\\frac{${a * d}}{${cd}} - \\frac{${c * b}}{${cd}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
+      type: "fraction_sub"
+    };
+  },
+  // Multiply fractions (multiply across, then reduce).
+  8: (_diffFactor, idx) => {
+    const b = FRACTION_DENS[idx % FRACTION_DENS.length];
+    const d = FRACTION_DENS[(idx + 3) % FRACTION_DENS.length];
+    const a = coprimeNumerator(b, idx);
+    const c = coprimeNumerator(d, idx + 1);
+    const cn = a * c, cd = b * d;
+    const answer = reduceFrac(cn, cd);
+    return {
+      question: `Multiply the fractions: $\\frac{${a}}{${b}} \\times \\frac{${c}}{${d}}$`,
+      answer,
+      distractors: fracDistractors(answer, [
+        [a * c, b + d],        // multiplied numerators but added denominators
+        [a + c, b * d],        // added numerators but multiplied denominators
+        [a * d, b * c],        // cross-multiplied (the division procedure)
+        [cn + 1, cd],          // near miss
+        [cn - 1, cd]           // near miss
+      ]),
+      explanation: `Multiply straight across: $\\frac{${a} \\times ${c}}{${b} \\times ${d}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
+      type: "fraction_mult"
+    };
+  }
+};
+
 module.exports = {
   templates
 };
