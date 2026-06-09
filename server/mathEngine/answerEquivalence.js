@@ -33,12 +33,33 @@ function makeRat(n, d) {
   return { n: n / g, d: d / g };
 }
 
+// Normalize the SURFACE form of a typed answer before parsing: unicode operators, a leading unary
+// plus, and a leading "x =" / "=" the player may have typed (catalog answers are values, never
+// equations). NOT applied to the exact-match fast path, so the additive contract is preserved, and
+// it only ever cleans presentation — it never changes a value, so soundness is preserved too.
+function cleanInput(raw) {
+  let s = String(raw == null ? '' : raw).trim().toLowerCase();
+  s = s.replace(/−/g, '-').replace(/[×·]/g, '*').replace(/÷/g, '/'); // − × · ÷
+  s = s.replace(/^[a-z]\s*=\s*/, '').replace(/^=\s*/, '');                      // "x = 8" / "= 8" → "8"
+  s = s.replace(/^\+/, '');                                                     // unary plus: "+5" → "5"
+  return s.trim();
+}
+
 // Parse a scalar answer into an exact rational, or null if it isn't a plain number form.
 // Handles integers, a/b fractions, decimals, a trailing percent (kept on the percent's own scale,
 // matching how the catalog keys percent answers as a bare number), and \frac{a}{b}.
 function parseRational(raw) {
-  let s = String(raw == null ? '' : raw).trim().toLowerCase().replace(/\s+/g, '');
+  let s = cleanInput(raw);
   if (s === '') return null;
+  // Mixed number "a b/c" (a SPACE between the whole part and the fraction) — handled before spaces
+  // are collapsed, so "1 1/2" is 3/2, not the bare "11/2" (= eleven halves).
+  const mm = s.match(/^(-?)(\d+)\s+(\d+)\/(\d+)$/);
+  if (mm) {
+    const sign = mm[1] === '-' ? -1 : 1;
+    const d = parseInt(mm[4], 10);
+    return makeRat(sign * (parseInt(mm[2], 10) * d + parseInt(mm[3], 10)), d);
+  }
+  s = s.replace(/\s+/g, '');
   if (s.endsWith('%')) s = s.slice(0, -1);           // "25%" → 25 (the displayed percent value)
 
   let m = s.match(/^(-?)\\?frac\{(-?\d+)\}\{(-?\d+)\}$/); // \frac{a}{b}
@@ -63,7 +84,7 @@ function parseRational(raw) {
 // or null if no pi token is present. Returns the coefficient as a number (e.g. 2, 1, -1/3),
 // obtained by substituting pi→1 and evaluating — robust to pi in the numerator or denominator.
 function parsePiMultiple(raw) {
-  let s = String(raw == null ? '' : raw).toLowerCase().replace(/\s+/g, '');
+  let s = cleanInput(raw).replace(/\s+/g, '');
   s = s.replace(/\\/g, '').replace(/π/g, 'pi');
   if (!s.includes('pi')) return null;
   s = s.replace(/(\d)(pi|\()/g, '$1*$2').replace(/(pi|\))(pi|\()/g, '$1*$2'); // explicit mult
@@ -81,7 +102,7 @@ function parsePiMultiple(raw) {
 // outside the whitelist (variables x/y, digits, + - * / ( ) . ^). The hard whitelist is what makes
 // the later `new Function` safe — no identifiers, no property access, nothing but arithmetic.
 function toEvaluable(raw) {
-  let s = String(raw == null ? '' : raw).toLowerCase().replace(/\s+/g, '');
+  let s = cleanInput(raw).replace(/\s+/g, '');
   if (s === '' || !/[xy]/.test(s)) return null;       // must contain a variable to be "algebraic"
   if (!/^[0-9xy+\-*/().^]+$/.test(s)) return null;     // whitelist only
   s = s.replace(/(\d)([xy(])/g, '$1*$2');             // 4x → 4*x, 3( → 3*(

@@ -31,7 +31,18 @@ const EQUIVALENT = [
   ['\\pi', 'pi'],
   ['-pi/3', '-1/3 pi'],
   ['5', '5'],
-  ['  7 ', '7']
+  ['  7 ', '7'],
+  // Hardening for real typed input now that competitive modes accept free text:
+  ['1 1/2', '3/2'],        // mixed number (space-separated) — must NOT be read as "11/2"
+  ['1 1/2', '1.5'],
+  ['2 1/4', '9/4'],
+  ['-1 1/2', '-3/2'],
+  ['x=8', '8'],            // player typed the whole "x = 8"
+  ['x = 8', '8'],
+  ['= 12', '12'],
+  ['+5', '5'],             // leading unary plus
+  ['−7', '-7'],       // unicode minus sign
+  ['y = 2x', '2x']         // equation form of an expression answer
 ];
 
 // Pairs that MUST be judged different (no false positives).
@@ -50,7 +61,9 @@ const DIFFERENT = [
   ['', '5'],
   ['abc', '5'],
   ['x', 'x;return 1'],    // injection attempt is rejected, judged not-equal
-  ['1/0', '5']
+  ['1/0', '5'],
+  ['1 1/2', '11/2'],      // mixed 1½ (=3/2) must NOT equal eleven-halves (=5.5)
+  ['x=8', '9']            // a stripped prefix must still grade the value correctly
 ];
 
 for (const [a, b] of EQUIVALENT) {
