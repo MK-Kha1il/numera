@@ -55,6 +55,20 @@ test('a correct answer scores and advances; a wrong answer costs a life and reve
   assert.equal(userId > 0, true);
 });
 
+test('an equivalent answer form is accepted (equivalence grading, not exact-string match)', async () => {
+  const u = await registerUser(ctx.base);
+  const start = await api(ctx.base, 'POST', '/api/puzzle-rush/start', { token: u.token });
+  const runId = start.body.runId;
+  // Index 0 is arithmetic level 1 → an integer answer; submit its decimal form ("12" → "12.0").
+  const ans0 = await currentAnswer(runId);
+  assert.match(String(ans0), /^-?\d+$/, 'index 0 should have an integer answer');
+  const equivalentForm = `${ans0}.0`;
+  assert.notEqual(equivalentForm, String(ans0), 'the submitted string differs from the canonical one');
+  const s = await api(ctx.base, 'POST', '/api/puzzle-rush/submit', { token: u.token, body: { runId, index: 0, answer: equivalentForm } });
+  assert.equal(s.body.correct, true, `"${equivalentForm}" must grade as equal to "${ans0}"`);
+  assert.equal(s.body.score, 1);
+});
+
 test('three strikes ends the run and grants a transactional coin reward', async () => {
   const u = await registerUser(ctx.base);
   const userId = (await dbGet('SELECT id FROM users WHERE username = ?', [u.username])).id;

@@ -1,15 +1,17 @@
 package com.example.numera.ui.feature.arena
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.*
@@ -23,8 +25,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 // Puzzle Rush — solo time-attack ladder (server-authoritative; see routes/puzzleRush.js).
-// Idle → leaderboard + personal best + Start. Playing → escalating MCQ, 3 lives. Over → score,
-// coin reward, play again. The server scores every submission; this screen is display + input.
+// Idle → leaderboard + personal best + Start. Playing → escalating problems answered by FREE-TYPED
+// input (no multiple choice → no 25% guess floor), 3 lives. Over → score, coin reward, play again.
+// The server grades every submission by mathematical equivalence (areEquivalent), so "0.5" is
+// accepted for "1/2" etc; this screen is display + input.
 @Composable
 fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
     val scope = rememberCoroutineScope()
@@ -36,7 +40,8 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
     var score by remember { mutableIntStateOf(0) }
     var lives by remember { mutableIntStateOf(3) }
     var question by remember { mutableStateOf("") }
-    var options by remember { mutableStateOf(listOf<String>()) }
+    var typed by remember { mutableStateOf("") }                 // free-typed answer (graded by equivalence server-side)
+    var missedAnswer by remember { mutableStateOf<String?>(null) } // the canonical answer, revealed on a wrong submit
     var feedback by remember { mutableStateOf<String?>(null) } // null | "correct" | "wrong"
     var finalScore by remember { mutableIntStateOf(0) }
     var reward by remember { mutableIntStateOf(0) }
@@ -62,7 +67,7 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
             try {
                 val r = withContext(Dispatchers.IO) { RetrofitClient.apiService.startPuzzleRush(token) }
                 runId = r.runId; index = r.index; score = r.score; lives = r.lives
-                question = r.problem.question; options = r.problem.options
+                question = r.problem.question; typed = ""; missedAnswer = null
                 feedback = null; phase = "playing"
             } catch (_: Exception) { /* stay idle */ } finally { busy = false }
         }
@@ -77,6 +82,7 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
                     RetrofitClient.apiService.submitPuzzleRush(token, PuzzleRushSubmitRequest(runId, index, answer))
                 }
                 feedback = if (res.correct) "correct" else "wrong"
+                if (!res.correct) missedAnswer = res.correctAnswer
                 com.example.numera.haptic.HapticManager.playSoft()
                 delay(500) // let the feedback land
                 if (res.gameOver) {
@@ -90,7 +96,8 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
                     lives = res.lives
                     index = res.index
                     question = res.problem?.question ?: ""
-                    options = res.problem?.options ?: emptyList()
+                    typed = ""
+                    missedAnswer = null
                     feedback = null
                 }
             } catch (_: Exception) {
@@ -131,20 +138,25 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
                     }
                 }
 
-                options.forEach { opt ->
-                    val enabled = feedback == null && !busy
-                    Card(
-                        modifier = Modifier.fillMaxWidth().clickable(enabled = enabled) { submit(opt) },
-                        shape = RoundedCornerShape(CornerRadius.m),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        )
-                    ) {
-                        Box(modifier = Modifier.fillMaxWidth().padding(Spacing.m), contentAlignment = Alignment.Center) {
-                            MathText(text = opt, fontSizePx = 36)
-                        }
-                    }
-                }
+                val enabled = feedback == null && !busy
+                OutlinedTextField(
+                    value = typed,
+                    onValueChange = { typed = it },
+                    enabled = enabled,
+                    singleLine = true,
+                    label = { Text("Type your answer") },
+                    placeholder = { Text("e.g. 3/4, 0.5, -7, 8x") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { if (typed.isNotBlank()) submit(typed.trim()) }),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                DuoButton(
+                    text = "Submit",
+                    onClick = { if (typed.isNotBlank()) submit(typed.trim()) },
+                    enabled = enabled && typed.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 feedback?.let { fb ->
                     Text(
@@ -153,6 +165,14 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
                         fontSize = 18.sp,
                         color = if (fb == "correct") CorrectGreen else WrongRed
                     )
+                    if (fb == "wrong" && !missedAnswer.isNullOrBlank()) {
+                        Text(
+                            text = "Answer: $missedAnswer",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                        )
+                    }
                 }
             }
 
