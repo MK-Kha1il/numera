@@ -20,9 +20,6 @@ Report vulnerabilities privately through GitHub's
 1. Go to the **Security** tab of this repository.
 2. Click **Report a vulnerability** to open a private advisory.
 
-> Maintainer note: this requires *Private vulnerability reporting* to be enabled under
-> **Settings → Code security and analysis**.
-
 When reporting, please include:
 
 - A description of the vulnerability and its impact.
