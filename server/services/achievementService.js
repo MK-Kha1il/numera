@@ -15,6 +15,14 @@ function updateAchievements(userId, callback) {
       const masteryCalculus = mastery ? mastery.calculus_correct || 0 : 0;
       const masteryCombinatorics = mastery ? mastery.combinatorics_correct || 0 : 0;
       const masteryNumberTheory = mastery ? mastery.number_theory_correct || 0 : 0;
+      // Curriculum-strand counters (migration v27).
+      const masteryGeometry = mastery ? mastery.geometry_correct || 0 : 0;
+      const masteryIntegers = mastery ? mastery.integers_correct || 0 : 0;
+      const masteryDecimals = mastery ? mastery.decimals_correct || 0 : 0;
+      const masteryFractions = mastery ? mastery.fractions_correct || 0 : 0;
+      const masteryNumberSense = mastery ? mastery.number_sense_correct || 0 : 0;
+      const masteryStatistics = mastery ? mastery.statistics_correct || 0 : 0;
+      const masteryExpressions = mastery ? mastery.expressions_correct || 0 : 0;
 
       db.get(
         "SELECT COUNT(*) AS count FROM friends WHERE (user_id = ? OR friend_id = ?) AND status = 'accepted'",
@@ -48,6 +56,13 @@ function updateAchievements(userId, callback) {
                 else if (type === 'mastery_calculus') progress = masteryCalculus;
                 else if (type === 'mastery_combinatorics') progress = masteryCombinatorics;
                 else if (type === 'mastery_number_theory') progress = masteryNumberTheory;
+                else if (type === 'mastery_geometry') progress = masteryGeometry;
+                else if (type === 'mastery_integers') progress = masteryIntegers;
+                else if (type === 'mastery_decimals') progress = masteryDecimals;
+                else if (type === 'mastery_fractions') progress = masteryFractions;
+                else if (type === 'mastery_number_sense') progress = masteryNumberSense;
+                else if (type === 'mastery_statistics') progress = masteryStatistics;
+                else if (type === 'mastery_expressions') progress = masteryExpressions;
                 else if (type === 'friends_count') progress = friendsCount;
                 else if (type === 'daily_puzzles_solved') progress = user.daily_puzzles_solved || 0;
                 else if (type === 'archive_solved') progress = user.archive_solved || 0;

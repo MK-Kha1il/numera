@@ -39,6 +39,13 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
           calculus_correct: 0,
           combinatorics_correct: 0,
           number_theory_correct: 0,
+          geometry_correct: 0,
+          integers_correct: 0,
+          decimals_correct: 0,
+          fractions_correct: 0,
+          number_sense_correct: 0,
+          statistics_correct: 0,
+          expressions_correct: 0,
         };
         res.json({
           id: user.id,
@@ -62,6 +69,13 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
             calculus_correct: mast.calculus_correct || 0,
             combinatorics_correct: mast.combinatorics_correct || 0,
             number_theory_correct: mast.number_theory_correct || 0,
+            geometry_correct: mast.geometry_correct || 0,
+            integers_correct: mast.integers_correct || 0,
+            decimals_correct: mast.decimals_correct || 0,
+            fractions_correct: mast.fractions_correct || 0,
+            number_sense_correct: mast.number_sense_correct || 0,
+            statistics_correct: mast.statistics_correct || 0,
+            expressions_correct: mast.expressions_correct || 0,
           },
         });
       });

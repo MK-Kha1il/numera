@@ -715,6 +715,45 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_onboarding_events_user ON onboarding_events(user_id, step)');
     },
   },
+  {
+    version: 26,
+    name: 'progressive_disclosure',
+    // One-time feature spotlights (Phase 11): record which feature intros a user has already seen,
+    // so the gradual reveal persists across devices/relaunch and never re-shows.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS user_feature_spotlights (
+          user_id     INTEGER NOT NULL,
+          feature_key TEXT NOT NULL,
+          seen_at     INTEGER NOT NULL,
+          PRIMARY KEY (user_id, feature_key)
+        )
+      `);
+    },
+  },
+  {
+    version: 27,
+    name: 'strand_mastery_columns',
+    // Curriculum strands (audit #1.1) shipped 7 new problem categories, but user_mastery only
+    // counted the 6 original ones — strand solves were never tracked, so their achievement
+    // chains couldn't exist. One counter column per strand, mirroring the original layout.
+    up: async (run) => {
+      const addColumn = async (sql) => {
+        try {
+          await run(sql);
+        } catch (e) {
+          if (!/duplicate column name/i.test(e.message)) throw e;
+        }
+      };
+      await addColumn('ALTER TABLE user_mastery ADD COLUMN geometry_correct INTEGER DEFAULT 0');
+      await addColumn('ALTER TABLE user_mastery ADD COLUMN integers_correct INTEGER DEFAULT 0');
+      await addColumn('ALTER TABLE user_mastery ADD COLUMN decimals_correct INTEGER DEFAULT 0');
+      await addColumn('ALTER TABLE user_mastery ADD COLUMN fractions_correct INTEGER DEFAULT 0');
+      await addColumn('ALTER TABLE user_mastery ADD COLUMN number_sense_correct INTEGER DEFAULT 0');
+      await addColumn('ALTER TABLE user_mastery ADD COLUMN statistics_correct INTEGER DEFAULT 0');
+      await addColumn('ALTER TABLE user_mastery ADD COLUMN expressions_correct INTEGER DEFAULT 0');
+    },
+  },
 ];
 
 /**

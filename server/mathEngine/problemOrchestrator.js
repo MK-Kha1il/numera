@@ -229,7 +229,18 @@ function getCategoryConceptIds(category, level) {
     calculus:      ['derivative', 'integral'],
     number_theory: ['gcd_lcm', 'modular_arithmetic', 'totient'],
     mental:        ['arithmetic_add', 'arithmetic_sub', 'arithmetic_mult'],
-    milestone:     ['pythagorean', 'binomial', 'integral', 'totient']
+    milestone:     ['pythagorean', 'binomial', 'integral', 'totient'],
+    // Curriculum strands (audit #1.1). Must stay in sync with CONCEPT_TO_LEVEL in
+    // mathGenerator.js — strandCoherence.test.js enforces it. Without these entries the
+    // category falls back to arithmetic and the orchestrator's misconception/SRS/weak-concept
+    // targeting silently stops working for the strand.
+    geometry:      ['geo_perimeter_rect', 'geo_area_rect', 'geo_area_triangle', 'geo_angles_triangle', 'geo_circle_area'],
+    integers:      ['absolute_value', 'integer_add', 'integer_sub', 'integer_mult'],
+    decimals:      ['decimal_add', 'decimal_sub', 'decimal_mult', 'decimal_round', 'decimal_div'],
+    fractions:     ['fraction_simplify', 'fraction_add', 'fraction_sub', 'fraction_mult', 'fraction_div'],
+    number_sense:  ['percentage_of', 'fraction_of', 'ratio_solve', 'percent_change', 'exponent_power'],
+    statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'stat_probability'],
+    expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'distribute']
   };
   const key = (category || 'arithmetic').toLowerCase();
   return map[key] || map.arithmetic;

@@ -16,6 +16,13 @@ function getUserWithMastery(userId, callback) {
         calculus_correct: mastery ? mastery.calculus_correct : 0,
         combinatorics_correct: mastery ? mastery.combinatorics_correct : 0,
         number_theory_correct: mastery ? mastery.number_theory_correct : 0,
+        geometry_correct: mastery ? mastery.geometry_correct || 0 : 0,
+        integers_correct: mastery ? mastery.integers_correct || 0 : 0,
+        decimals_correct: mastery ? mastery.decimals_correct || 0 : 0,
+        fractions_correct: mastery ? mastery.fractions_correct || 0 : 0,
+        number_sense_correct: mastery ? mastery.number_sense_correct || 0 : 0,
+        statistics_correct: mastery ? mastery.statistics_correct || 0 : 0,
+        expressions_correct: mastery ? mastery.expressions_correct || 0 : 0,
       };
 
       const fullUser = {

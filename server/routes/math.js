@@ -477,6 +477,15 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
             else if (normCat === 'calculus') masteryCol = 'calculus_correct';
             else if (normCat === 'combinatorics') masteryCol = 'combinatorics_correct';
             else if (normCat === 'number theory' || normCat === 'number_theory') masteryCol = 'number_theory_correct';
+            // Curriculum strands (migration v27 columns) — without these, strand solves
+            // were silently dropped from mastery tracking and their achievement chains.
+            else if (normCat === 'geometry') masteryCol = 'geometry_correct';
+            else if (normCat === 'integers') masteryCol = 'integers_correct';
+            else if (normCat === 'decimals') masteryCol = 'decimals_correct';
+            else if (normCat === 'fractions') masteryCol = 'fractions_correct';
+            else if (normCat === 'number sense' || normCat === 'number_sense') masteryCol = 'number_sense_correct';
+            else if (normCat === 'statistics') masteryCol = 'statistics_correct';
+            else if (normCat === 'expressions') masteryCol = 'expressions_correct';
 
             const finalizeResponse = () => {
               // Fire-and-forget: update competitive skill profile for the concepts practised this level

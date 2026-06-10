@@ -216,6 +216,48 @@ fun UserProfileDialog(
                                 maxCount = 100,
                                 color = Color(0xFFFF9F29)
                             )
+                            MasteryBar(
+                                topicName = "Geometry",
+                                correctCount = profile.mastery.geometry_correct,
+                                maxCount = 100,
+                                color = Color(0xFF4FC3F7)
+                            )
+                            MasteryBar(
+                                topicName = "Integers",
+                                correctCount = profile.mastery.integers_correct,
+                                maxCount = 100,
+                                color = Color(0xFF81C784)
+                            )
+                            MasteryBar(
+                                topicName = "Decimals",
+                                correctCount = profile.mastery.decimals_correct,
+                                maxCount = 100,
+                                color = Color(0xFFFFB74D)
+                            )
+                            MasteryBar(
+                                topicName = "Fractions",
+                                correctCount = profile.mastery.fractions_correct,
+                                maxCount = 100,
+                                color = Color(0xFFBA68C8)
+                            )
+                            MasteryBar(
+                                topicName = "Number Sense",
+                                correctCount = profile.mastery.number_sense_correct,
+                                maxCount = 100,
+                                color = Color(0xFF4DB6AC)
+                            )
+                            MasteryBar(
+                                topicName = "Statistics",
+                                correctCount = profile.mastery.statistics_correct,
+                                maxCount = 100,
+                                color = Color(0xFF7986CB)
+                            )
+                            MasteryBar(
+                                topicName = "Expressions",
+                                correctCount = profile.mastery.expressions_correct,
+                                maxCount = 100,
+                                color = Color(0xFFF06292)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(Spacing.l))
