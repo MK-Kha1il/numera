@@ -1,6 +1,7 @@
 package com.example.numera.ui.feature.profile
 
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -212,6 +213,81 @@ fun ProfileScreen(
             color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.padding(horizontal = Spacing.xl)
         )
+
+        // Identity strip — who this player is, at a glance (rank, streak, coins) before
+        // any tab is opened. The profile is the player's identity hub, so the headline
+        // facts shouldn't hide behind the Stats tab.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.xl, vertical = Spacing.s)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+        ) {
+            @Composable
+            fun IdentityChip(content: @Composable RowScope.() -> Unit) {
+                Surface(
+                    shape = RoundedCornerShape(CornerRadius.full),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = Spacing.m, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                        content = content
+                    )
+                }
+            }
+            IdentityChip {
+                RankBadge(rankName = user?.rank ?: "Bronze III", modifier = Modifier.size(IconSize.s))
+                Text(user?.rank ?: "Bronze III", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+            IdentityChip {
+                Text("🔥", fontSize = 12.sp)
+                Text("${user?.streak ?: 0}-day streak", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+            IdentityChip {
+                Text("🪙", fontSize = 12.sp)
+                Text("${user?.coins ?: 0}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+            val earnedCount = achievementsList.count { it.progress >= it.target_value }
+            if (earnedCount > 0) {
+                IdentityChip {
+                    Text("🏅", fontSize = 12.sp)
+                    Text("$earnedCount earned", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        // Achievement showcase — the most recent trophies, worn on the profile itself.
+        // Tapping jumps to the full Achievements tab.
+        val showcase = achievementsList
+            .filter { it.progress >= it.target_value }
+            .sortedByDescending { it.completed_at }
+            .take(6)
+        if (showcase.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.xl)
+                    .clip(RoundedCornerShape(CornerRadius.m))
+                    .clickable { selectedSubTab = 1 }
+                    .padding(vertical = Spacing.xs),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                showcase.forEach { ach ->
+                    AchievementBadge(achievementId = ach.id, modifier = Modifier.size(40.dp))
+                }
+                Text(
+                    text = "View all ›",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(Spacing.m))
 
@@ -949,6 +1025,13 @@ fun ProfileScreen(
                                                     "mastery_combinatorics" -> "Combinatorics Mastery"
                                                     "mastery_number_theory" -> "Number Theory Mastery"
                                                     "mastery_mental" -> "Mental Math Mastery"
+                                                    "mastery_geometry" -> "Geometry Mastery"
+                                                    "mastery_integers" -> "Integers Mastery"
+                                                    "mastery_decimals" -> "Decimals Mastery"
+                                                    "mastery_fractions" -> "Fractions Mastery"
+                                                    "mastery_number_sense" -> "Number Sense Mastery"
+                                                    "mastery_statistics" -> "Statistics Mastery"
+                                                    "mastery_expressions" -> "Expressions Mastery"
                                                     "social_path" -> "Social Connections"
                                                     "gladiator_path" -> "Arena Victor Milestones"
                                                     "exploration_path" -> "Explorer Milestones"

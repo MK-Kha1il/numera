@@ -107,7 +107,7 @@ fun TournamentScreen(user: User?, onExit: () -> Unit) {
 
         val cur = current
         if (cur == null) {
-            CircularProgressIndicator()
+            com.example.numera.ui.components.NumeraPremiumLoader(modifier = Modifier.fillMaxWidth())
             return@Column
         }
 

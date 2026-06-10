@@ -20,18 +20,13 @@ const EXPIRY_MS = 24 * 60 * 60 * 1000;
 const FIXED_ELO = 1200;
 
 const { areEquivalent } = require('../mathEngine/answerEquivalence');
+const { personalLadder } = require('../lib/arenaDifficulty');
 
-// A fixed, varied difficulty spread so the shared set is fair and not all one concept.
-const LADDER = [
-  ['arithmetic', 5],
-  ['algebra', 11],
-  ['arithmetic', 9],
-  ['algebra', 13],
-  ['combinatorics', 21],
-];
-
-function buildProblemSet() {
-  return LADDER.slice(0, PROBLEM_COUNT).map(([category, level]) => {
+// Both players race the SAME set (fair), but its difficulty centres on the average of their
+// two levels instead of the old fixed level-5 spread that bored anyone past beginner.
+function buildProblemSet(challengerLevel, opponentLevel) {
+  const mid = Math.round(((challengerLevel || 1) + (opponentLevel || 1)) / 2);
+  return personalLadder(mid, PROBLEM_COUNT).map(([category, level]) => {
     const p = generateProblem(category, level, Math.floor(Math.random() * 100), FIXED_ELO);
     return { question: p.question, options: p.options, answer: p.correctAnswer };
   });
@@ -72,7 +67,16 @@ router.post('/api/duel/async/challenge', authenticateToken, idempotency, async (
   }
 
   const now = Date.now();
-  const problems = buildProblemSet();
+  const levels = await new Promise((resolve) => {
+    db.all('SELECT id, level FROM users WHERE id IN (?, ?)', [challengerId, opponentId], (err, rows) =>
+      resolve(err ? [] : rows || [])
+    );
+  });
+  const levelOf = (id) => {
+    const row = levels.find((r) => r.id === id);
+    return (row && row.level) || 1;
+  };
+  const problems = buildProblemSet(levelOf(challengerId), levelOf(opponentId));
   db.run(
     `INSERT INTO async_matches (challenger_id, opponent_id, problems_json, problem_count, status, created_at, expires_at)
      VALUES (?, ?, ?, ?, 'pending', ?, ?)`,

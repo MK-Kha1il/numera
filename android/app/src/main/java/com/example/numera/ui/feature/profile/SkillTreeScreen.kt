@@ -60,7 +60,7 @@ fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit, onD
         }
 
         when {
-            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.example.numera.ui.components.NumeraPremiumLoader() }
             error != null -> Box(Modifier.fillMaxSize().padding(Spacing.xl), contentAlignment = Alignment.Center) {
                 Text(error!!, color = MaterialTheme.colorScheme.error)
             }

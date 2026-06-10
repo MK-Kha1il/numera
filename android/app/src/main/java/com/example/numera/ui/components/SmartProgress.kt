@@ -1,7 +1,6 @@
 package com.example.numera.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +13,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.numera.theme.AnimDuration
 import com.example.numera.theme.CornerRadius
+import com.example.numera.theme.Motion
 import kotlinx.coroutines.delay
 
 /**
@@ -49,7 +49,7 @@ fun rememberSmartProgress(loading: Boolean): Float {
 
     val animated by animateFloatAsState(
         targetValue = target,
-        animationSpec = tween(AnimDuration.normal),
+        animationSpec = Motion.standard(),
         label = "smartProgress"
     )
     return animated

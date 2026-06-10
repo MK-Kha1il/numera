@@ -135,12 +135,12 @@ fun AsyncDuelScreen(user: User?, onExit: () -> Unit) {
                     }
                 }
             } else {
-                CircularProgressIndicator()
+                com.example.numera.ui.components.MathIconSpinner()
             }
         } else {
             // LIST
             if (loading) {
-                CircularProgressIndicator()
+                com.example.numera.ui.components.NumeraPremiumLoader(modifier = Modifier.fillMaxWidth())
             } else {
                 // Challenge a friend
                 DuoCard(modifier = Modifier.fillMaxWidth()) {

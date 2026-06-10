@@ -7,10 +7,12 @@
 // routes/account.js — these are aspirational ("why are you here"), multi-select, additive.
 const express = require('express');
 const { db } = require('../db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { generateProblem } = require('../mathGenerator');
 const { areEquivalent } = require('../mathEngine/answerEquivalence');
 const { calculateRank } = require('../lib/progression');
+const { getPrefs, DEFAULT_PREFS } = require('../services/notificationService');
+const { isPushConfigured } = require('../services/pushSender');
 
 const router = express.Router();
 
@@ -58,6 +60,19 @@ const AVATARS = [
   { key: 'avatar_axolotl', emoji: '🦎' }, { key: 'avatar_tiger', emoji: '🐯' },
   { key: 'avatar_dolphin', emoji: '🐬' }, { key: 'avatar_unicorn', emoji: '🦄' },
 ];
+
+// Phase 11 — progressive disclosure. One-time intros for major surfaces, revealed the first time a
+// learner reaches each (not all dumped at signup). The client shows these by key; the server only
+// records which have been seen.
+// Keyed 1:1 with the app's main tabs, shown the first time the learner opens each.
+const SPOTLIGHTS = [
+  { key: 'archive', title: 'The Learning Map', body: 'Every concept you can master, mapped as a path. Jump in wherever you\'re ready.', emoji: '🗺️' },
+  { key: 'arena', title: 'The Arena', body: 'Race real people (or a friendly bot) in live math duels, and climb the ranks.', emoji: '⚔️' },
+  { key: 'dashboard', title: 'Your home base', body: 'Your daily plan, streak, and what to practice next all live here.', emoji: '🏠' },
+  { key: 'shop', title: 'The Shop', body: 'Spend the coins you earn on themes, avatars, and helpful boosts.', emoji: '🛍️' },
+  { key: 'profile', title: 'Your Profile', body: 'Your stats, badges, collections, and skill mastery — all in one place.', emoji: '🧑‍🚀' },
+];
+const VALID_SPOTLIGHTS = new Set(SPOTLIGHTS.map((s) => s.key));
 
 const VALID_MOTIVATIONS = new Set(MOTIVATIONS.map((m) => m.key));
 const VALID_INTERESTS = new Set(INTERESTS.map((i) => i.key));
@@ -148,12 +163,15 @@ const ahaPending = new Map(); // userId -> { answer, level, category }
 
 // ── Routes ──────────────────────────────────────────────────────────────────────────────────────
 
-// State + catalogs the client needs to render the whole flow.
+// State + catalogs the client needs to render the whole flow. `pushAvailable` lets the client
+// hide the notification opt-in step entirely while FCM isn't credentialed — asking a brand-new
+// user to opt into notifications the server cannot deliver is a first-session broken promise.
 router.get('/api/onboarding/state', authenticateToken, (req, res) => {
   db.get('SELECT onboarding_complete FROM users WHERE id = ?', [req.user.id], (err, u) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({
       onboardingComplete: u ? !!u.onboarding_complete : false,
+      pushAvailable: isPushConfigured(),
       catalogs: { motivations: MOTIVATIONS, interests: INTERESTS, profileStyles: PROFILE_STYLES, avatars: AVATARS },
     });
   });
@@ -255,12 +273,33 @@ router.post('/api/onboarding/commitment', authenticateToken, (req, res) => {
   });
 });
 
-// Phase 9 — record the value-first notification opt-in (the OS permission itself is handled client-side).
-router.post('/api/onboarding/notifications', authenticateToken, (req, res) => {
+// Phase 9 — record the value-first notification opt-in (the OS permission itself is handled
+// client-side). Opting in ALSO enables push delivery: the lifecycle funnel gates on
+// notification_preferences.push_enabled, which defaults OFF — so without this the granted OS
+// permission would never actually deliver. "Maybe later" only records the coarse flag and never
+// clobbers existing prefs (e.g. the legitimate adult email-lifecycle default); granular control
+// lives in Settings.
+router.post('/api/onboarding/notifications', authenticateToken, async (req, res) => {
   const optIn = req.body && req.body.optIn ? 1 : 0;
-  db.run('UPDATE users SET reminders_opt_in = ? WHERE id = ?', [optIn, req.user.id], (err) => {
+  db.run('UPDATE users SET reminders_opt_in = ? WHERE id = ?', [optIn, req.user.id], async (err) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true, optIn: !!optIn });
+    if (!optIn) return res.json({ success: true, optIn: false });
+
+    try {
+      const current = await getPrefs(req.user.id);
+      const merged = { ...DEFAULT_PREFS, ...current, push_enabled: 1 };
+      db.run(
+        `INSERT INTO notification_preferences
+           (user_id, email_enabled, email_lifecycle, push_enabled, quiet_hours_start, quiet_hours_end, tz_offset_minutes, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(user_id) DO UPDATE SET push_enabled = 1, updated_at = excluded.updated_at`,
+        [req.user.id, merged.email_enabled, merged.email_lifecycle, merged.push_enabled, merged.quiet_hours_start, merged.quiet_hours_end, merged.tz_offset_minutes, Math.floor(Date.now() / 1000)],
+        () => res.json({ success: true, optIn: true })
+      );
+    } catch {
+      // The coarse opt-in flag is saved regardless; the pref upsert is best-effort.
+      res.json({ success: true, optIn: true });
+    }
   });
 });
 
@@ -285,6 +324,119 @@ router.post('/api/onboarding/event', authenticateToken, (req, res) => {
       res.json({ success: true });
     }
   );
+});
+
+// Phase 11 — which feature intros the learner has already seen (+ the catalog to render them).
+router.get('/api/onboarding/spotlights', authenticateToken, (req, res) => {
+  db.all('SELECT feature_key FROM user_feature_spotlights WHERE user_id = ?', [req.user.id], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ seen: (rows || []).map((r) => r.feature_key), catalog: SPOTLIGHTS });
+  });
+});
+
+// Mark a feature spotlight as seen (idempotent). Unknown keys are rejected so the table stays clean.
+router.post('/api/onboarding/spotlights/seen', authenticateToken, (req, res) => {
+  const key = req.body && req.body.key;
+  if (!VALID_SPOTLIGHTS.has(key)) return res.status(400).json({ error: 'Unknown spotlight key' });
+  db.run(
+    'INSERT OR IGNORE INTO user_feature_spotlights (user_id, feature_key, seen_at) VALUES (?, ?, ?)',
+    [req.user.id, key, Math.floor(Date.now() / 1000)],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+// Phase 14 — onboarding funnel analytics (admin only). Aggregates onboarding_events into a per-step
+// funnel: how many entered/completed each step, where people drop off, and median time per step
+// (derived from the gap between consecutive step-enter timestamps).
+const ONB_STEP_ORDER = ['welcome', 'goals', 'profile', 'diagnostic', 'roadmap', 'aha', 'celebrate', 'habit', 'notifications'];
+
+router.get('/api/onboarding/analytics', authenticateToken, requireAdmin, (req, res) => {
+  db.all('SELECT user_id, step, event, created_at FROM onboarding_events ORDER BY user_id, created_at', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    const enterUsers = {};
+    const completeUsers = {};
+    ONB_STEP_ORDER.forEach((s) => { enterUsers[s] = new Set(); completeUsers[s] = new Set(); });
+    const enterTimeByUser = {}; // userId -> { step: created_at }
+
+    for (const r of rows) {
+      if (!ONB_STEP_ORDER.includes(r.step)) continue;
+      if (r.event === 'enter') {
+        enterUsers[r.step].add(r.user_id);
+        (enterTimeByUser[r.user_id] = enterTimeByUser[r.user_id] || {})[r.step] = r.created_at;
+      } else if (r.event === 'complete') {
+        completeUsers[r.step].add(r.user_id);
+      }
+    }
+
+    // Per-step durations: time from entering this step to entering the next one.
+    const durations = {};
+    ONB_STEP_ORDER.forEach((s) => { durations[s] = []; });
+    for (const times of Object.values(enterTimeByUser)) {
+      for (let i = 0; i < ONB_STEP_ORDER.length - 1; i++) {
+        const a = times[ONB_STEP_ORDER[i]];
+        const b = times[ONB_STEP_ORDER[i + 1]];
+        if (a != null && b != null && b >= a) durations[ONB_STEP_ORDER[i]].push(b - a);
+      }
+    }
+    const median = (arr) => {
+      if (!arr.length) return null;
+      const s = [...arr].sort((x, y) => x - y);
+      const mid = Math.floor(s.length / 2);
+      return s.length % 2 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2);
+    };
+
+    const totalStarted = enterUsers.welcome.size;
+    const totalCompleted = completeUsers.notifications.size;
+    const steps = ONB_STEP_ORDER.map((s, i) => {
+      const entered = enterUsers[s].size;
+      const nextEntered =
+        i < ONB_STEP_ORDER.length - 1 ? enterUsers[ONB_STEP_ORDER[i + 1]].size : completeUsers.notifications.size;
+      return {
+        step: s,
+        entered,
+        completed: completeUsers[s].size,
+        droppedAfter: Math.max(0, entered - nextEntered),
+        medianSeconds: median(durations[s]),
+      };
+    });
+
+    const result = {
+      totalStarted,
+      totalCompleted,
+      completionRate: totalStarted ? Math.round((totalCompleted / totalStarted) * 100) : 0,
+      steps,
+    };
+
+    // A compact human-readable funnel view (?format=html) for eyeballing drop-off; still
+    // admin-gated (this handler runs behind requireAdmin), so fetch it with the admin bearer token.
+    if (req.query.format === 'html') {
+      const rowsHtml = result.steps
+        .map((s) => {
+          const pct = totalStarted ? Math.round((s.entered / totalStarted) * 100) : 0;
+          return `<tr><td>${s.step}</td><td>${s.entered}</td><td>${pct}%</td><td>${s.completed}</td><td>${s.droppedAfter}</td><td>${s.medianSeconds == null ? '—' : s.medianSeconds + 's'}</td></tr>`;
+        })
+        .join('');
+      return res
+        .set('Content-Type', 'text/html')
+        .send(
+          `<!doctype html><html><head><meta charset="utf-8"><title>Onboarding Funnel</title>` +
+            `<style>body{font-family:system-ui,sans-serif;background:#0f1020;color:#eee;padding:2rem}h1{margin:0 0 .25rem}` +
+            `.sub{color:#9aa;margin-bottom:1.5rem}table{border-collapse:collapse;width:100%;max-width:760px}` +
+            `th,td{padding:.6rem .8rem;text-align:left;border-bottom:1px solid #2a2c44}th{color:#9aa;font-weight:600}` +
+            `td:first-child{text-transform:capitalize;font-weight:600}.big{font-size:2rem;font-weight:800;color:#7c4dff}</style></head><body>` +
+            `<h1>Onboarding Funnel</h1><div class="sub">${totalStarted} started · ${totalCompleted} completed · ` +
+            `<span class="big">${result.completionRate}%</span> completion</div>` +
+            `<table><thead><tr><th>Step</th><th>Entered</th><th>of starters</th><th>Completed</th><th>Dropped after</th><th>Median time</th></tr></thead>` +
+            `<tbody>${rowsHtml}</tbody></table></body></html>`
+        );
+    }
+
+    res.json(result);
+  });
 });
 
 module.exports = router;

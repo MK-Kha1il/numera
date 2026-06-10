@@ -23,21 +23,15 @@ const TIERS = {
   hard: { rating: 1500, accuracy: 0.85, reward: 28 },
 };
 
-// A fixed, varied spread so a match isn't all one concept (difficulty comes from the bot, not the
-// problems).
-const LADDER = [
-  ['arithmetic', 5],
-  ['algebra', 11],
-  ['arithmetic', 9],
-  ['algebra', 13],
-  ['combinatorics', 21],
-];
-
 const { areEquivalent } = require('../mathEngine/answerEquivalence');
+const { personalLadder } = require('../lib/arenaDifficulty');
 const dayStart = () => Math.floor(Date.now() / 86400000) * 86400000;
 
-function buildProblemSet() {
-  return LADDER.slice(0, PROBLEM_COUNT).map(([category, level]) => {
+// The set ramps around the PLAYER's level (warm-up below it, stretch past it) — the bot's
+// tier accuracy supplies the opponent difficulty, but the problems must still respect the
+// player (a fixed level-5 spread served "10 × 8" to advanced players).
+function buildProblemSet(playerLevel) {
+  return personalLadder(playerLevel, PROBLEM_COUNT).map(([category, level]) => {
     const p = generateProblem(category, level, Math.floor(Math.random() * 100), FIXED_ELO);
     return { question: p.question, options: p.options, answer: p.correctAnswer };
   });
@@ -57,7 +51,9 @@ router.post('/api/duel/bot/start', authenticateToken, (req, res) => {
   const tier = TIERS[tierKey];
   if (!tier) return res.status(400).json({ error: 'tier must be easy, medium, or hard' });
 
-  const problems = buildProblemSet();
+  db.get('SELECT level FROM users WHERE id = ?', [req.user.id], (uErr, userRow) => {
+  if (uErr) return res.status(500).json({ error: uErr.message });
+  const problems = buildProblemSet((userRow && userRow.level) || 1);
   const botScore = rollBotScore(tier.accuracy, problems.length);
   const now = Date.now();
   db.run(
@@ -75,6 +71,7 @@ router.post('/api/duel/bot/start', authenticateToken, (req, res) => {
       });
     }
   );
+  });
 });
 
 // Submit answers, score against the pre-rolled bot, resolve, and award coins (capped per day).

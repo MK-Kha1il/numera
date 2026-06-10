@@ -54,7 +54,7 @@ fun LearningPlanScreen(onBack: () -> Unit, onPractice: (String, Int) -> Unit) {
 
         val p = plan
         when {
-            loading -> CircularProgressIndicator()
+            loading -> com.example.numera.ui.components.NumeraPremiumLoader(modifier = Modifier.fillMaxWidth())
             p == null -> Text("Couldn't load your plan.", color = WrongRed, fontSize = 13.sp)
             else -> {
                 // Progress summary

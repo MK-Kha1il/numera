@@ -57,7 +57,7 @@ fun SeasonScreen(user: User?, onExit: () -> Unit) {
 
         val d = data
         when {
-            loading -> CircularProgressIndicator()
+            loading -> com.example.numera.ui.components.NumeraPremiumLoader(modifier = Modifier.fillMaxWidth())
             d == null -> Text("Couldn't load the season.", color = WrongRed, fontSize = 13.sp)
             else -> {
                 DuoCard(modifier = Modifier.fillMaxWidth()) {

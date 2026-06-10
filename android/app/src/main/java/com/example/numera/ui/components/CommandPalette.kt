@@ -3,7 +3,6 @@ package com.example.numera.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -33,7 +32,9 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.numera.haptic.HapticManager
 import com.example.numera.sound.SoundManager
 import com.example.numera.theme.Alpha
+import com.example.numera.theme.AnimDuration
 import com.example.numera.theme.CornerRadius
+import com.example.numera.theme.Motion
 import com.example.numera.theme.Spacing
 
 /**
@@ -154,10 +155,10 @@ fun CommandPaletteHost(
         ) {
             AnimatedVisibility(
                 visible = shown,
-                enter = fadeIn(tween(180)) + slideInVertically(
+                enter = fadeIn(Motion.enter(AnimDuration.fast)) + slideInVertically(
                     spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)
                 ) { -it / 3 } + scaleIn(initialScale = 0.96f),
-                exit = fadeOut(tween(120)) + slideOutVertically { -it / 3 }
+                exit = fadeOut(Motion.exit(AnimDuration.instant)) + slideOutVertically { -it / 3 }
             ) {
                 Column(
                     modifier = Modifier

@@ -1,15 +1,27 @@
 package com.example.numera.ui.feature.arena
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.*
@@ -401,341 +413,256 @@ fun ArenaScreen(
                     }
                 }
 
-                // Battle Modes Section Title
+                // ── LIVE DUEL — the headline of the arena. Ranked and Casual are the same
+                // realtime experience with different stakes, so they share one hero card
+                // instead of two identical full-weight ones.
+                item {
+                    DuoCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                    ) {
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            // Accent wash — the hero reads as the arena's marquee, not a gray box.
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .background(
+                                        Brush.linearGradient(
+                                            listOf(
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.06f),
+                                                Color.Transparent
+                                            )
+                                        )
+                                    )
+                            )
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(Spacing.l),
+                                verticalArrangement = Arrangement.spacedBy(Spacing.m)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.m)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(52.dp)
+                                            .background(
+                                                Brush.radialGradient(
+                                                    listOf(
+                                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
+                                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+                                                    )
+                                                ),
+                                                RoundedCornerShape(CornerRadius.l)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("⚔️", fontSize = 26.sp)
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+                                        ) {
+                                            Text(
+                                                text = "Live Duel",
+                                                fontWeight = FontWeight.Black,
+                                                fontSize = 19.sp,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            val livePulse by rememberInfiniteTransition(label = "livePulse")
+                                                .animateFloat(
+                                                    initialValue = 0.45f,
+                                                    targetValue = 1f,
+                                                    animationSpec = infiniteRepeatable(
+                                                        animation = tween(900),
+                                                        repeatMode = RepeatMode.Reverse
+                                                    ),
+                                                    label = "liveAlpha"
+                                                )
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(7.dp)
+                                                        .background(
+                                                            CorrectGreen.copy(alpha = livePulse),
+                                                            RoundedCornerShape(CornerRadius.full)
+                                                        )
+                                                )
+                                                Text(
+                                                    text = "LIVE",
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Black,
+                                                    letterSpacing = 1.sp,
+                                                    color = CorrectGreen
+                                                )
+                                            }
+                                        }
+                                        Text(
+                                            text = "Face a real opponent in realtime — five problems, fastest correct answers take the match.",
+                                            fontSize = 12.sp,
+                                            lineHeight = 16.sp,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.m)
+                                ) {
+                                    DuoButton(
+                                        text = "Ranked",
+                                        onClick = {
+                                            if (hasFairplayConsent) matchmakingMode = "ranked"
+                                            else showRankedConsent = true
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    DuoButton(
+                                        text = "Casual",
+                                        onClick = { matchmakingMode = "casual" },
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ── Secondary modes: a compact tappable grid — one glance, no scrolling marathon.
                 item {
                     Text(
-                        text = "BATTLE ARENAS",
+                        text = "MORE WAYS TO PLAY",
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 16.sp,
+                        fontSize = 13.sp,
+                        letterSpacing = 1.sp,
                         color = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.padding(top = Spacing.s)
                     )
                 }
 
-                // Ranked Battle
                 item {
-                    DuoCard(
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(Spacing.l),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text(
-                                        text = "⚔️ Ranked Match",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 17.sp,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(
-                                        text = "Compete for rating and rank up.",
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                    )
-                                }
-                            }
-                            DuoButton(
-                                text = "Find Ranked Duel",
-                                onClick = {
-                                    if (hasFairplayConsent) matchmakingMode = "ranked"
-                                    else showRankedConsent = true
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                        ArenaModeTile(
+                            emoji = "⚡", title = "Puzzle Rush",
+                            subtitle = "Time-attack ladder starting at your level — every point climbs the difficulty. Three strikes ends the run.",
+                            accent = MaterialTheme.colorScheme.tertiary,
+                            cta = "PLAY",
+                            modifier = Modifier.weight(1f)
+                        ) { showPuzzleRush = true }
+                        ArenaModeTile(
+                            emoji = "🤖", title = "Bot Duel",
+                            subtitle = "Instant match against a calibrated AI. Pick a tier, beat its score, win coins — no waiting.",
+                            accent = MaterialTheme.colorScheme.primary,
+                            cta = "PLAY",
+                            modifier = Modifier.weight(1f)
+                        ) { showBotDuel = true }
                     }
                 }
 
-                // Casual Practice
                 item {
-                    DuoCard(
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        borderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(Spacing.l),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text(
-                                        text = "🛡️ Casual Practice",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 17.sp,
-                                        color = MaterialTheme.colorScheme.secondary
-                                    )
-                                    Text(
-                                        text = "Play without rating loss risk.",
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                    )
-                                }
-                            }
-                            DuoButton(
-                                text = "Solve Casual Duel",
-                                onClick = { matchmakingMode = "casual" },
-                                color = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                        ArenaModeTile(
+                            emoji = "🏆", title = "Tournament",
+                            subtitle = "One global event each week — everyone races the same set, once. Top 3 take the coin prizes.",
+                            accent = MilestoneGold,
+                            cta = "COMPETE",
+                            modifier = Modifier.weight(1f)
+                        ) { showTournament = true }
+                        ArenaModeTile(
+                            emoji = "🏅", title = "Season",
+                            subtitle = "The long game: climb the season ladder by peak rating. Prizes paid when it ends.",
+                            accent = MaterialTheme.colorScheme.secondary,
+                            cta = "STANDINGS",
+                            modifier = Modifier.weight(1f)
+                        ) { showSeason = true }
                     }
                 }
 
-                // Puzzle Rush (solo time-attack ladder)
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.m)
+                    ) {
+                        ArenaModeTile(
+                            emoji = "🎯", title = "Challenges",
+                            subtitle = "Author your own problem set, share its code, and defend the top of its leaderboard.",
+                            accent = MaterialTheme.colorScheme.tertiary,
+                            cta = "CREATE",
+                            modifier = Modifier.weight(1f)
+                        ) { showChallenges = true }
+                        ArenaModeTile(
+                            emoji = "📨", title = "Async Duels",
+                            subtitle = "Challenge a friend to the same set and answer whenever you like — 24h to settle it.",
+                            accent = MaterialTheme.colorScheme.secondary,
+                            cta = "CHALLENGE",
+                            modifier = Modifier.weight(1f)
+                        ) { showAsyncDuel = true }
+                    }
+                }
+
+                // Friend lobby — slim row; it's the only mode needing two distinct actions.
                 item {
                     DuoCard(
                         modifier = Modifier.fillMaxWidth(),
                         borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(Spacing.l),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(Spacing.l),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                         ) {
-                            Column {
-                                Text(
-                                    text = "⚡ Puzzle Rush",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 17.sp,
-                                    color = MaterialTheme.colorScheme.tertiary
-                                )
-                                Text(
-                                    text = "Solo time-attack: how far can you climb before 3 strikes?",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                            }
-                            DuoButton(
-                                text = "Start Puzzle Rush",
-                                onClick = { showPuzzleRush = true },
-                                color = MaterialTheme.colorScheme.tertiary,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-
-                // Ranked Season standings (peak-rating leaderboard with end-of-season prizes)
-                item {
-                    DuoCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        borderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(Spacing.l),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
-                        ) {
-                            Column {
-                                Text(
-                                    text = "🏅 Ranked Season",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 17.sp,
-                                    color = MaterialTheme.colorScheme.secondary
-                                )
-                                Text(
-                                    text = "Climb the season standings by peak rating — top 3 win coins when it ends.",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                            }
-                            DuoButton(
-                                text = "View Standings",
-                                onClick = { showSeason = true },
-                                color = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-
-                // Weekly Tournament (the headline async event — everyone races the same set)
-                item {
-                    DuoCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        borderColor = MilestoneGold.copy(alpha = 0.6f)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(Spacing.l),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
-                        ) {
-                            Column {
-                                Text(
-                                    text = "🏆 Weekly Tournament",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 17.sp,
-                                    color = MilestoneGold
-                                )
-                                Text(
-                                    text = "One global event a week — everyone races the same set. Top 3 win coins.",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                            }
-                            DuoButton(
-                                text = "Enter Tournament",
-                                onClick = { showTournament = true },
-                                color = MilestoneGold,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-
-                // Bot Duels (practice vs a calibrated AI — no matchmaking wait)
-                item {
-                    DuoCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(Spacing.l),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
-                        ) {
-                            Column {
-                                Text(
-                                    text = "🤖 Bot Duel",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 17.sp,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "Practice against a calibrated AI opponent — instant match, win coins.",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                            }
-                            DuoButton(
-                                text = "Play a Bot",
-                                onClick = { showBotDuel = true },
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-
-                // Custom Challenges (author a shared problem set; friends race its leaderboard)
-                item {
-                    DuoCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(Spacing.l),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
-                        ) {
-                            Column {
-                                Text(
-                                    text = "🎯 Challenges",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 17.sp,
-                                    color = MaterialTheme.colorScheme.tertiary
-                                )
-                                Text(
-                                    text = "Build a problem set, share the code, and top its leaderboard with friends.",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                            }
-                            DuoButton(
-                                text = "Create or Play",
-                                onClick = { showChallenges = true },
-                                color = MaterialTheme.colorScheme.tertiary,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-
-                // Async Duels (correspondence)
-                item {
-                    DuoCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        borderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(Spacing.l),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
-                        ) {
-                            Column {
-                                Text(
-                                    text = "📨 Async Duels",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 17.sp,
-                                    color = MaterialTheme.colorScheme.secondary
-                                )
-                                Text(
-                                    text = "Challenge a friend to the same problem set — play on your own time.",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                            }
-                            DuoButton(
-                                text = "Open Async Duels",
-                                onClick = { showAsyncDuel = true },
-                                color = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-
-                // Friend Battles
-                item {
-                    DuoCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(Spacing.l),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.m)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .background(
+                                        Brush.radialGradient(
+                                            listOf(
+                                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.38f),
+                                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.10f)
+                                            )
+                                        ),
+                                        RoundedCornerShape(CornerRadius.m)
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Column {
-                                    Text(
-                                        text = "👥 Friend Arena",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 17.sp,
-                                        color = MaterialTheme.colorScheme.tertiary
-                                    )
-                                    Text(
-                                        text = "Duel direct friends using lobby codes.",
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                    )
-                                }
+                                Text("👥", fontSize = 22.sp)
                             }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.m)
-                            ) {
-                                DuoButton(
-                                    text = "Create Room",
-                                    onClick = { friendLobbyState = "create" },
-                                    color = MaterialTheme.colorScheme.tertiary,
-                                    modifier = Modifier.weight(1f)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Friend Arena",
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 15.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
-                                DuoButton(
-                                    text = "Join Room",
-                                    onClick = { friendLobbyState = "join_input" },
-                                    color = MaterialTheme.colorScheme.tertiary,
-                                    modifier = Modifier.weight(1f)
+                                Text(
+                                    text = "Live duel with a lobby code — share it, they join, you race.",
+                                    fontSize = 11.sp,
+                                    lineHeight = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                 )
                             }
+                            DuoButton(
+                                text = "Create",
+                                onClick = { friendLobbyState = "create" },
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+                            DuoButton(
+                                text = "Join",
+                                onClick = { friendLobbyState = "join_input" },
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
                         }
                     }
                 }
@@ -791,5 +718,86 @@ fun ArenaScreen(
                 }
             }
         )
+    }
+}
+
+/**
+ * Premium tappable mode tile for the arena grid. The whole card is the touch target.
+ * Each mode owns a colored identity: an accent gradient wash, a glowing emoji medallion,
+ * a real description, and an accent CTA — alive, not a flat gray box.
+ */
+@Composable
+private fun ArenaModeTile(
+    emoji: String,
+    title: String,
+    subtitle: String,
+    accent: Color,
+    cta: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    DuoCard(
+        modifier = modifier
+            .height(180.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .clickable {
+                com.example.numera.haptic.HapticManager.playSoft()
+                onClick()
+            },
+        borderColor = accent.copy(alpha = 0.5f)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.linearGradient(
+                            listOf(accent.copy(alpha = 0.16f), Color.Transparent)
+                        )
+                    )
+            )
+            Column(
+                modifier = Modifier.fillMaxSize().padding(Spacing.m),
+                verticalArrangement = Arrangement.spacedBy(Spacing.s)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(accent.copy(alpha = 0.38f), accent.copy(alpha = 0.10f))
+                            ),
+                            RoundedCornerShape(CornerRadius.m)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(emoji, fontSize = 22.sp)
+                }
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = subtitle,
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "$cta →",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp,
+                    color = accent
+                )
+            }
+        }
     }
 }

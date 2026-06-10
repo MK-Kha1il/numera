@@ -126,7 +126,7 @@ fun BotDuelScreen(onExit: () -> Unit) {
                     }
                 }
             } else {
-                CircularProgressIndicator()
+                com.example.numera.ui.components.MathIconSpinner()
             }
         }
     }

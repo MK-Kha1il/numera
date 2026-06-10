@@ -131,6 +131,20 @@ test('habit schedule and notification opt-in persist', async () => {
   assert.equal(n.body.optIn, true);
   const after = await dbGet('SELECT reminders_opt_in FROM users WHERE id = ?', [userId]);
   assert.equal(after.reminders_opt_in, 1);
+  // Opting in actually enables push delivery (the lifecycle funnel gates on this; it defaults OFF).
+  const prefs = await dbGet('SELECT push_enabled FROM notification_preferences WHERE user_id = ?', [userId]);
+  assert.ok(prefs && prefs.push_enabled === 1, 'opt-in enables push in notification_preferences');
+});
+
+test('declining notifications never clobbers existing reminder preferences', async () => {
+  const u = await registerUser(ctx.base);
+  const userId = await idOf(u.username);
+  const declined = await api(ctx.base, 'POST', '/api/onboarding/notifications', { token: u.token, body: { optIn: false } });
+  assert.equal(declined.body.optIn, false);
+  assert.equal((await dbGet('SELECT reminders_opt_in FROM users WHERE id = ?', [userId])).reminders_opt_in, 0);
+  // "Maybe later" must not force-write a prefs row that could disable the adult email-lifecycle default.
+  const prefs = await dbGet('SELECT user_id FROM notification_preferences WHERE user_id = ?', [userId]);
+  assert.ok(!prefs, 'declining leaves preferences at their (Settings-managed) defaults');
 });
 
 test('completing onboarding flips the gate everywhere it is read', async () => {
@@ -156,4 +170,49 @@ test('analytics events are recorded and require step + event', async () => {
   assert.equal(rows.length, 1);
   assert.equal(rows[0].step, 'goals');
   assert.equal(rows[0].ms, 1200);
+});
+
+test('feature spotlights (progressive disclosure) are tracked once and idempotently', async () => {
+  const u = await registerUser(ctx.base);
+  let r = await api(ctx.base, 'GET', '/api/onboarding/spotlights', { token: u.token });
+  assert.equal(r.status, 200);
+  assert.ok(r.body.catalog.length >= 4, 'a spotlight catalog is offered');
+  assert.deepEqual(r.body.seen, [], 'a fresh user has seen none');
+
+  const bad = await api(ctx.base, 'POST', '/api/onboarding/spotlights/seen', { token: u.token, body: { key: 'not_a_feature' } });
+  assert.equal(bad.status, 400, 'unknown spotlight keys are rejected');
+
+  await api(ctx.base, 'POST', '/api/onboarding/spotlights/seen', { token: u.token, body: { key: 'arena' } });
+  await api(ctx.base, 'POST', '/api/onboarding/spotlights/seen', { token: u.token, body: { key: 'arena' } }); // idempotent
+  r = await api(ctx.base, 'GET', '/api/onboarding/spotlights', { token: u.token });
+  assert.deepEqual(r.body.seen, ['arena'], 'seen once, recorded once');
+});
+
+test('onboarding analytics is admin-only and builds a per-step funnel', async () => {
+  const normal = await registerUser(ctx.base);
+  const denied = await api(ctx.base, 'GET', '/api/onboarding/analytics', { token: normal.token });
+  assert.equal(denied.status, 403, 'non-admins are denied');
+
+  // Deterministic funnel: clear events, then seed 2 starters where only 1 finishes.
+  await dbRun('DELETE FROM onboarding_events');
+  const admin = await registerUser(ctx.base);
+  const adminId = await idOf(admin.username);
+  await dbRun("UPDATE users SET role = 'admin' WHERE id = ?", [adminId]);
+  const uid1 = await idOf(normal.username);
+  const ins = (uid, step, event, at) =>
+    dbRun('INSERT INTO onboarding_events (user_id, step, event, ms, created_at) VALUES (?,?,?,?,?)', [uid, step, event, null, at]);
+  await ins(uid1, 'welcome', 'enter', 1000);
+  await ins(uid1, 'goals', 'enter', 1030); // 30s on welcome, then dropped
+  await ins(adminId, 'welcome', 'enter', 2000);
+  await ins(adminId, 'notifications', 'complete', 2500);
+
+  const r = await api(ctx.base, 'GET', '/api/onboarding/analytics', { token: admin.token });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.totalStarted, 2);
+  assert.equal(r.body.totalCompleted, 1);
+  assert.equal(r.body.completionRate, 50);
+  const welcome = r.body.steps.find((s) => s.step === 'welcome');
+  assert.equal(welcome.entered, 2);
+  assert.equal(welcome.droppedAfter, 1, 'one of two who entered welcome did not reach goals');
+  assert.equal(welcome.medianSeconds, 30, 'median time on welcome derived from enter timestamps');
 });

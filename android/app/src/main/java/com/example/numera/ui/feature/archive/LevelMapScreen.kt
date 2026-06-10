@@ -575,9 +575,8 @@ fun LevelMapScreen(
                                             },
                                             modifier = Modifier.size(IconSize.m)
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Close,
-                                                contentDescription = "Dismiss",
+                                            NumeraIcon(
+                                                type = NumeraIconType.Close,
                                                 modifier = Modifier.size(IconSize.s),
                                                 tint = MaterialTheme.colorScheme.onSecondaryContainer
                                             )

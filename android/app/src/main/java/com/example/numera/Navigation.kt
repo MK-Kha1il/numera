@@ -20,7 +20,10 @@ import com.example.numera.data.network.RetrofitClient
 import com.example.numera.theme.AnimDuration
 import com.example.numera.ui.screens.*
 import com.example.numera.ui.feature.game.SoloGameScreen
+import com.example.numera.ui.feature.onboarding.OnboardingFlow
+import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
@@ -31,20 +34,27 @@ fun MainNavigation() {
   val backStack = rememberNavBackStack(Login)
 
   // On app launch: if a token is stored, validate it with the server.
-  // If valid → navigate to MainTabs. If invalid/expired → clear and stay on Login.
+  // If valid → navigate to MainTabs. If rejected (401/403) → clear and stay on Login.
+  // If the server is unreachable, keep the token and proceed — never log out on a network blip.
   LaunchedEffect(Unit) {
     if (RetrofitClient.isUserLoggedIn) {
       try {
-        withContext(Dispatchers.IO) {
+        val user = withContext(Dispatchers.IO) {
           RetrofitClient.apiService.getProfile(RetrofitClient.authToken ?: "")
         }
-        // Token is valid — go to main app
-        backStack.add(MainTabs)
+        // Token is valid — resume onboarding if it wasn't finished, else go to the main app.
+        backStack.add(if ((user.onboarding_complete ?: 0) == 1) MainTabs else Onboarding)
       } catch (e: Exception) {
-        // Token is invalid/expired/session deleted — clear it silently
-        android.util.Log.w("Navigation", "Stored token invalid (${e.message}), clearing and staying on Login")
-        RetrofitClient.clearToken(context)
-        // Stay on Login (already there)
+        if (isAuthRejection(e)) {
+          // Token is invalid/expired/session deleted — clear it silently and stay on Login.
+          android.util.Log.w("Navigation", "Stored token rejected (${e.message}), clearing and staying on Login")
+          RetrofitClient.clearToken(context)
+        } else {
+          // Network failure / server hiccup — NOT an auth failure. Keep the token and proceed
+          // optimistically; the global 401 logout listener below handles true expiry later.
+          android.util.Log.w("Navigation", "Token check failed (${e.message}), keeping token and proceeding")
+          backStack.add(MainTabs)
+        }
       }
     }
   }
@@ -111,15 +121,36 @@ fun MainNavigation() {
     entryProvider =
       entryProvider {
         entry<Login> {
+          val loginScope = rememberCoroutineScope()
           LoginScreen(
             onNavigateToRegister = { backStack.add(Register) },
-            onLoginSuccess = { backStack.add(MainTabs) }
+            onLoginSuccess = {
+              // Returning users skip onboarding; anyone who never finished it resumes there.
+              loginScope.launch {
+                val complete = try {
+                  (withContext(Dispatchers.IO) {
+                    RetrofitClient.apiService.getProfile(RetrofitClient.authToken ?: "")
+                  }.onboarding_complete ?: 0) == 1
+                } catch (e: Exception) { true } // never trap a user in onboarding on a fetch error
+                backStack.add(if (complete) MainTabs else Onboarding)
+              }
+            }
           )
         }
         entry<Register> {
           RegisterScreen(
             onNavigateToLogin = { backStack.removeLastOrNull() },
-            onRegisterSuccess = { backStack.add(MainTabs) }
+            // New accounts always go through onboarding before the app.
+            onRegisterSuccess = { backStack.add(Onboarding) }
+          )
+        }
+        entry<Onboarding> {
+          OnboardingFlow(
+            onComplete = {
+              backStack.add(MainTabs)
+              // Drop the auth + onboarding entries so Back from the app doesn't re-enter onboarding.
+              backStack.removeAll { it is Onboarding || it is Login || it is Register }
+            }
           )
         }
         entry<MainTabs> {
@@ -176,3 +207,9 @@ fun MainNavigation() {
       modifier = Modifier.fillMaxSize()
   )
 }
+
+// Only a definite server rejection of the credentials (401/403) justifies dropping the stored
+// token. IOExceptions, timeouts, and 5xx responses mean the server couldn't be asked — the
+// session may be perfectly valid, so the token must survive.
+internal fun isAuthRejection(e: Exception): Boolean =
+  e is retrofit2.HttpException && (e.code() == 401 || e.code() == 403)

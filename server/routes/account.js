@@ -61,6 +61,7 @@ const USER_SCOPED_TABLES = [
   'user_motivations',
   'user_interests',
   'onboarding_events',
+  'user_feature_spotlights',
   'concept_posts',
   'concept_post_votes',
   'bot_matches',

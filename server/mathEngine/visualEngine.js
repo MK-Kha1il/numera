@@ -81,11 +81,7 @@ function buildLinearScale(question) {
     type: 'balance_scale',
     mode: twoStep ? 'two_step' : 'one_step',
     params: { a, b, c, solution },
-    prompt: twoStep
-      ? 'Keep the scale balanced: remove the same amount from both pans, then split each pan into equal groups.'
-      : (b !== 0
-          ? 'Remove the same amount from both pans to leave x alone.'
-          : 'Split both pans into equal groups to find one x.'),
+    prompt: 'Choose your moves — only moves applied to BOTH pans keep the scale true. Get x alone, then count what it equals.',
     goal: 'Discover why doing the same thing to both sides keeps the equation true.'
   };
 }
@@ -112,7 +108,7 @@ function buildParabola(question) {
     type: 'parabola',
     mode: 'roots',
     params: { a, b, c },
-    prompt: 'Drag the a, b, c sliders. Watch where the curve crosses the x-axis — those are the roots.',
+    prompt: 'Predict where the curve crosses the x-axis, then drag a slider and check yourself against the grid.',
     goal: 'See how each coefficient reshapes the parabola and moves its roots.'
   };
 }
@@ -132,7 +128,7 @@ function buildRightTriangle(question, conceptId) {
     type: 'right_triangle',
     mode: 'explore',
     params: { a, b },
-    prompt: 'Drag a leg. The squares on each side update live — watch a² + b² stay equal to c².',
+    prompt: 'Drag a leg, then count the grid cells in the two squares — their total is c². What must c be?',
     goal: 'Feel why the square on the hypotenuse equals the sum of the squares on the legs.'
   };
 }
@@ -155,9 +151,9 @@ function buildFractionBar(question) {
     mode: adding ? 'add' : (fracs.length === 2 ? 'compare' : 'build'),
     params: { fractions: fracs },
     prompt: adding
-      ? 'Drag the slices together. Notice you can only add them once the pieces are the same size.'
+      ? 'Resplit the bars yourself (drag ⇕) until the pieces match — only same-size pieces can be counted together.'
       : (fracs.length === 2
-          ? 'Resize the bars to compare. Equal shaded area means equal fractions.'
+          ? 'Predict which fraction is bigger FIRST — then check your call against the bars.'
           : 'Tap segments to shade. Build the fraction and see the part-of-whole.'),
     goal: adding
       ? 'Discover why fractions need a common denominator before they can be added.'
@@ -214,6 +210,45 @@ function buildNumberLine(question, conceptId) {
   return null;
 }
 
+// Percentages → ten-cell percent bar.  Parses  p% of N  (LaTeX \% tolerated).
+function buildPercentBar(question) {
+  const q = normalize(question).replace(/\\%/g, '%');
+  const m = q.match(/(\d+(?:\.\d+)?)\s*%\s*(?:of)\s*(\d+(?:\.\d+)?)/i);
+  if (!m) return null;
+  const percent = parseFloat(m[1]);
+  const base = parseFloat(m[2]);
+  if (!(percent > 0 && percent <= 100)) return null;     // the bar models parts of one whole
+  if (!(base > 0 && base <= 1000) || !isInt(base)) return null;
+  return {
+    type: 'percent_bar',
+    mode: 'percent_of',
+    params: { percent, base },
+    prompt: 'Slide to the mark. Each cell is a tenth of the whole — build the part by counting cells.',
+    goal: 'See a percentage as a count of equal cells, not a magic formula.'
+  };
+}
+
+// Ratios → double number line.  Parses  a : b  or "ratio of a to b".
+function buildRatioLine(question, conceptId) {
+  const q = normalize(question);
+  const looksLikeRatio = /\bratio\b|\bproportion\b/i.test(q) ||
+    conceptId === 'ratios' || conceptId === 'proportions';
+  if (!looksLikeRatio) return null;
+  let a = null, b = null;
+  const colon = q.match(/(\d+)\s*:\s*(\d+)/);
+  const words = q.match(/ratio\s+of\s+(\d+)\s+to\s+(\d+)/i);
+  if (colon) { a = parseInt(colon[1], 10); b = parseInt(colon[2], 10); }
+  else if (words) { a = parseInt(words[1], 10); b = parseInt(words[2], 10); }
+  if (!a || !b || a > 12 || b > 12) return null;
+  return {
+    type: 'ratio_line',
+    mode: 'equivalent',
+    params: { a, b },
+    prompt: 'Drag to scale BOTH lines together. Every aligned pair you make is the same ratio — find the one you need.',
+    goal: 'Feel equivalent ratios as two quantities growing in lockstep.'
+  };
+}
+
 // ----------------------------------------------------------------------------
 // Master dispatcher
 // ----------------------------------------------------------------------------
@@ -221,6 +256,8 @@ const BUILDERS = [
   (problem, conceptId) => buildLinearScale(problem.question),
   (problem, conceptId) => buildParabola(problem.question),
   (problem, conceptId) => buildRightTriangle(problem.question, conceptId),
+  (problem, conceptId) => buildPercentBar(problem.question),
+  (problem, conceptId) => buildRatioLine(problem.question, conceptId),
   (problem, conceptId) => buildFractionBar(problem.question),
   (problem, conceptId) => buildDiceSim(problem.question),
   (problem, conceptId) => buildNumberLine(problem.question, conceptId)

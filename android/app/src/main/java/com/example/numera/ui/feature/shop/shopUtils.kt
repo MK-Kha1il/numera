@@ -38,25 +38,11 @@ fun getRankValue(rankStr: String?): Int {
     return tierVal + divVal
 }
 
-fun getRarityColor(rarity: String): Color {
-    return when (rarity.lowercase()) {
-        "mythic" -> MedalGold
-        "legendary" -> Color(0xFFFDB813)
-        "epic" -> Color(0xFF8A2BE2)
-        "rare" -> Color(0xFF00CED1)
-        else -> Color(0xFF708090)
-    }
-}
+// Rarity visuals are owned by theme/Rarity.kt (one collectible language across shop,
+// reveals, and profile). These remain as thin string-based adapters for call sites.
+fun getRarityColor(rarity: String): Color = Rarity.from(rarity).color
 
-fun getRarityBorderBrush(rarity: String): Brush {
-    return when (rarity.lowercase()) {
-        "mythic" -> Brush.linearGradient(listOf(Color(0xFF6A0DAD), MedalGold, MilestoneGold))
-        "legendary" -> Brush.linearGradient(listOf(Color(0xFFB76E79), Color(0xFFFDB813)))
-        "epic" -> Brush.linearGradient(listOf(Color(0xFF8A2BE2), Color(0xFF4B0082)))
-        "rare" -> Brush.linearGradient(listOf(Color(0xFF00CED1), Color(0xFF1E90FF)))
-        else -> Brush.linearGradient(listOf(Color(0xFF708090), Color(0xFF708090)))
-    }
-}
+fun getRarityBorderBrush(rarity: String): Brush = Rarity.from(rarity).borderBrush
 
 fun formatDuration(seconds: Long): String {
     val days = seconds / 86400

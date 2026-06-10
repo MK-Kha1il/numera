@@ -55,6 +55,10 @@ async function isAvailable() {
 // Solve an equation/expression for its single variable. Returns { ok, variable, solutions[] }.
 function solve(equation) { return call({ op: 'solve', equation }); }
 
+// Solve WITH a worked, LaTeX step-by-step derivation (factoring / quadratic formula / isolate).
+// Returns { ok, variable, solutions[], steps[] }. Powers the "show me how" / hint surface.
+function solveSteps(equation) { return call({ op: 'solve_steps', equation }); }
+
 // Symbolic equivalence by simplification (a - b == 0). Returns { ok, equivalent }.
 function equivalent(a, b) { return call({ op: 'equivalent', a, b }); }
 
@@ -63,4 +67,4 @@ function equivalent(a, b) { return call({ op: 'equivalent', a, b }); }
 // MCQ-ready options. Returns { ok, level, problems[] }.
 function generate(level, count = 5) { return call({ op: 'generate', level, count }); }
 
-module.exports = { isAvailable, solve, equivalent, generate, call };
+module.exports = { isAvailable, solve, solveSteps, equivalent, generate, call };

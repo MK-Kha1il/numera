@@ -16,6 +16,33 @@ Single source for non-color design values:
 (wired in `Theme.kt`) and is consumed via `MaterialTheme.typography.*`. A duplicate
 `AppTypography` object was removed so there is one source of truth for type.
 
+## Motion — `theme/Motion.kt`
+The app-wide animation language. `AnimDuration` supplies durations; `MotionEasing` supplies
+the curve shapes and `Motion` the canned specs/transitions:
+- **Entrances decelerate** (`Motion.enter` / `Motion.contentEnter()`),
+- **exits accelerate** (`Motion.exit` / `Motion.contentExit()`),
+- **on-screen moves use standard** (`Motion.standard`),
+- **only rewards overshoot** (`Motion.rewardSpring` / `Motion.rewardEnter()`) — celebration
+  pops are springy; informational motion stays calm.
+New animation code should take its spec from here instead of `tween(300)` with default easing.
+
+## Rarity — `theme/Rarity.kt`
+The cross-feature collectible language. The `Rarity` enum (Common→Mythic) owns each tier's
+accent `color`, `borderBrush`, `glow` strength, and the `isPrestige` threshold (Epic+) so an
+item's tier reads identically in the shop, the purchase reveal, and the profile collection.
+Parse server strings with `Rarity.from(...)` (tolerant; unknown → Common — covered by
+`RarityTest`). `ui/feature/shop/shopUtils.kt` keeps thin string adapters for old call sites.
+
+## Achievement families — `ui/components/Avatar.kt` (`AchievementBadge`)
+Every achievement badge derives a **family** (streak/learning/precision/mastery/social/
+duels/exploration/collection/seasonal/elite) from its id or display value, and a **tier**
+from its trailing arabic/roman number. The family owns the hue pair + motif ladder; the
+tier escalates the frame (ring color/width + pips). So color answers "which family?" and
+the frame answers "how far?" — and newly seeded chain rungs inherit their look automatically.
+The dark shop surfaces (`ShopBackground` + rarity cards + the purchase-reveal dialog) are
+intentionally theme-independent dark; text on them uses `Color.White.copy(...)`, never
+`onSurface`, so they stay legible in light themes.
+
 ## Color — `theme/Color.kt` + `theme/Theme.kt`
 Named color tokens (brand greens, rarity colors, milestone golds, etc.) feed the Material3
 color scheme. Prefer `MaterialTheme.colorScheme.*` / named tokens over raw `Color(0x…)` so

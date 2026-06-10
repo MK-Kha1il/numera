@@ -117,6 +117,8 @@ private fun heightForSpec(specJson: String): Dp {
         "parabola" -> 340.dp
         "dice_sim" -> 320.dp
         "number_line" -> 230.dp
+        "percent_bar" -> 250.dp
+        "ratio_line" -> 270.dp
         else -> 300.dp
     }
 }

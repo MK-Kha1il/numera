@@ -3,7 +3,6 @@ package com.example.numera.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -28,7 +27,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.numera.theme.Alpha
+import com.example.numera.theme.AnimDuration
 import com.example.numera.theme.CornerRadius
+import com.example.numera.theme.Motion
 import com.example.numera.theme.Spacing
 
 /**
@@ -65,11 +66,11 @@ fun NumeraQuickPreview(
         ) {
             AnimatedVisibility(
                 visible = shown,
-                enter = fadeIn(tween(180)) + scaleIn(
+                enter = fadeIn(Motion.enter(AnimDuration.fast)) + scaleIn(
                     initialScale = 0.85f,
                     animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
                 ),
-                exit = fadeOut(tween(120)) + scaleOut(targetScale = 0.9f)
+                exit = fadeOut(Motion.exit(AnimDuration.instant)) + scaleOut(targetScale = 0.9f)
             ) {
                 Column(
                     modifier = modifier

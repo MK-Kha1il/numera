@@ -59,6 +59,11 @@ const SMTP = {
 const MAIL_FROM = process.env.MAIL_FROM || 'Numera <no-reply@numera.app>';
 const APP_BASE_URL = process.env.APP_BASE_URL || '';
 
+// Firebase Cloud Messaging (push). Provide a service-account credential to enable real delivery;
+// when unset, the push channel degrades to a logged no-op so the app, dev, and CI run without
+// Firebase. The value may be the service-account JSON itself or a path to the .json file.
+const FCM_SERVICE_ACCOUNT = process.env.FCM_SERVICE_ACCOUNT || '';
+
 module.exports = {
   NODE_ENV,
   isProduction,
@@ -69,4 +74,5 @@ module.exports = {
   SMTP,
   MAIL_FROM,
   APP_BASE_URL,
+  FCM_SERVICE_ACCOUNT,
 };

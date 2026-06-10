@@ -12,11 +12,13 @@ before(async () => { ctx = await bootServer(); });
 after(async () => { await shutdown(ctx); });
 
 // A room whose answer key is `answers`; problems are answer-stripped like buildDuelProblemSet emits.
-function makeRoom(answers) {
+// `explanations` is the parallel server-only worked-solution key (revealed only in the submit ack).
+function makeRoom(answers, explanations) {
   return {
     roomId: 'grade_test',
     problems: answers.map(() => ({ question: 'q', options: [] })),
     answers,
+    explanations: explanations || answers.map((_, i) => `worked solution ${i}`),
     p1: { id: 1, username: 'a', score: 0, progress: 0 },
     p2: { id: 2, username: 'b', score: 0, progress: 0 },
     startTime: Date.now() - 60000, // old start ⇒ generous elapsed, no superhuman-speed flag
@@ -57,6 +59,17 @@ test('cannot farm points by replaying problem 0 — the server owns the index', 
   // differ, then submissions past the set are ignored. Score is bounded to a single problem.
   assert.equal(room.p1.score, 20, 'only one problem is ever scored — no farming');
   assert.equal(room.p1.progress, 3, 'index advances to the end of the set and stops');
+});
+
+test('the worked solution is disclosed only in the post-answer ack, per problem', () => {
+  const room = makeRoom(['1/2', '5'], ['half is 0.5', 'the answer is 5']);
+  // The live problem set the client received carries NO worked solution (anti-leak invariant)...
+  for (const p of room.problems) assert.equal(p.explanation, undefined);
+  // ...it is returned only after the irreversible submission, matched to the answered problem.
+  const r0 = ctx.mod.applyDuelAnswer(room, 'p1', { answer: '0.5' });
+  assert.equal(r0.explanation, 'half is 0.5', 'ack carries problem 0\'s worked solution');
+  const r1 = ctx.mod.applyDuelAnswer(room, 'p1', { answer: '5' });
+  assert.equal(r1.explanation, 'the answer is 5', 'ack carries problem 1\'s worked solution');
 });
 
 test('submissions after the set is finished are ignored (no extra scoring)', () => {

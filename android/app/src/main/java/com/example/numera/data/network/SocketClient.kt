@@ -91,14 +91,15 @@ object SocketClient {
     // the server is authoritative and grades it against the canonical answer it kept (which it never
     // sent us). This closes the last client-trusted scoring path in ranked duels.
     //
-    // The server replies via an ack with its verdict + the canonical answer (disclosed only AFTER
-    // this irreversible submission), which the caller uses to drive the answer-reveal animation.
+    // The server replies via an ack with its verdict + the canonical answer + the worked solution
+    // (all disclosed only AFTER this irreversible submission, never bundled with the live problem),
+    // which the caller uses to drive the answer-reveal animation and the favorite/archive payload.
     fun submitAnswer(
         roomId: String,
         userId: Int,
         answer: String,
         nextIndex: Int,
-        onResult: ((correct: Boolean, correctAnswer: String) -> Unit)? = null
+        onResult: ((correct: Boolean, correctAnswer: String, explanation: String) -> Unit)? = null
     ) {
         val data = JSONObject().apply {
             put("roomId", roomId)
@@ -111,7 +112,8 @@ object SocketClient {
                 val res = ackArgs.getOrNull(0) as? JSONObject
                 val correct = res?.optBoolean("correct", false) ?: false
                 val correctAnswer = res?.optString("correctAnswer", "") ?: ""
-                onResult(correct, correctAnswer)
+                val explanation = res?.optString("explanation", "") ?: ""
+                onResult(correct, correctAnswer, explanation)
             })
         } else {
             mSocket?.emit("submit_answer", data)

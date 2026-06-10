@@ -51,6 +51,18 @@ try {
 
 function postEvent(o){ try { o.type = o.type || SPEC.type; if (window.AndroidBridge && AndroidBridge.onEvent) AndroidBridge.onEvent(JSON.stringify(o)); } catch(e){} }
 
+// ---------------------------------------------------------------------------
+// Adaptive scaffolding level (Adaptive Visual Intelligence, inside the canvas).
+//   guided  — full captions, hints, labeled supports
+//   explore — trimmed captions; hints only after a wrong move
+//   ondemand— minimal labels, no hints
+// The golden rule for every module: present structure the learner must READ and
+// moves the learner must CHOOSE — never print the exercise's answer.
+// ---------------------------------------------------------------------------
+var GUIDE = SPEC.complexity || "guided";
+function guided(){ return GUIDE === "guided"; }
+function minimal(){ return GUIDE === "ondemand"; }
+
 // Opaque bg matching the host card keeps the canvas layer compositing reliably.
 try { document.documentElement.style.background = THEME.surface; document.body.style.background = THEME.surface; } catch(e){}
 // Drive layout from the host height (CSS px == dp here) — WebView viewport height is unreliable.
@@ -210,37 +222,57 @@ function celebrate(x,y){ burst(x,y,[THEME.primary,THEME.secondary,THEME.tertiary
 var MODULES={}; var active=null;
 
 // =================== BALANCE SCALE =========================================
+// Redesigned: the learner CHOOSES each move from a palette of legal moves and
+// tempting decoys. Wrong moves tilt the beam (visible consequence) and undo.
+// The final state shows x alone vs a pan of unit blocks — the module NEVER
+// prints "x = N"; the learner counts the blocks themselves.
 MODULES.balance_scale = (function(){
-  var a,b,c,sol,step,solved;
-  var beam, tiltErr, popT, glowT, pans, hintA;
+  var a,b,c,sol,solved;
+  var beam, tiltErr, popT, glowT, hintA, hintMsg, busyT;
   function init(s){ a=s.params.a; b=s.params.b||0; c=s.params.c; sol=s.params.solution;
-    step=0; solved=false; tiltErr=0; popT=0; glowT=0; hintA=new Spring(0,0.18);
-    beam=new Spring(0,0.14); rebuild(); }
+    solved=false; tiltErr=0; popT=0; glowT=0; busyT=0; hintMsg="";
+    hintA=new Spring(0,0.18); beam=new Spring(0,0.14);
+    ax=a; lb=b; rb=c; }
   var ax,lb,rb;
-  function rebuild(){ ax=a; lb=b; rb=c; popT=0; }
   function weight(){ return (ax*sol+lb)-rb; }
-  function setBalanced(){ if(step===0){ax=a;lb=b;rb=c;} else if(step===1){ax=a;lb=0;rb=c-b;} else {ax=1;lb=0;rb=Math.round((c-b)/a);} tiltErr=0; }
-  function doStep(){
-    if(step===0 && b!==0){ lb=0; rb=c-b; step=1; popT=0; postEvent({event:"manipulate",detail:"subtract_both"}); }
-    else if(step<=1 && a>1){ ax=1; rb=Math.round((c-b)/a); step=2; popT=0; postEvent({event:"manipulate",detail:"divide_both"}); }
-    else { step=3; solved=true; glowT=1; postEvent({event:"solve",detail:"x="+sol});
-      var p=pans?pans.cx:W/2; celebrate(W/2, H*0.42); }
-    requestRender();
+  function isolated(){ return ax===1 && lb===0; }
+  function finishIfIsolated(){
+    if(isolated() && !solved){ solved=true; glowT=1;
+      postEvent({event:"solve",detail:"isolated"}); celebrate(W/2, H*0.40); }
   }
-  function bumpOneSide(side){ if(solved) return;
-    if(side==="L"&&lb>0) lb--; else if(side==="R"&&rb>0) rb--; else return;
-    tiltErr=weight(); hintA.to(1); postEvent({event:"discover",detail:"imbalance"});
-    setTimeout(function(){ setBalanced(); hintA.to(0); requestRender(); }, 1150); requestRender();
-  }
+  // -- the move palette ------------------------------------------------------
+  // Legal: subtract m from BOTH sides; divide BOTH sides by d (only if clean).
+  // Decoys: subtract from one side only (tilts), divide when pieces don't split.
+  function subBoth(m){ if(busyT>0||solved) return;
+    if(lb-m < 0 && lb >= 0){ wobble("Not that many unit blocks on the left."); return; }
+    lb-=m; rb-=m; popT=0; postEvent({event:"manipulate",detail:"sub_both:"+m});
+    if(rb<0){ wobble("The right pan went below zero — undo."); lb+=m; rb+=m; return; }
+    finishIfIsolated(); requestRender(); }
+  function addBoth(m){ if(busyT>0||solved) return;
+    if(lb+m > 0 && lb <= 0){ wobble("That adds more than you owe on the left."); return; }
+    lb+=m; rb+=m; popT=0; postEvent({event:"manipulate",detail:"add_both:"+m});
+    finishIfIsolated(); requestRender(); }
+  function subLeftOnly(m){ if(busyT>0||solved) return;
+    var oldLb=lb; lb=lb>0?Math.max(0,lb-m):Math.min(0,lb+m); tiltErr=weight()||3; busyT=1.2; hintA.to(1);
+    hintMsg = guided() ? "⚖ Unbalanced! What you do to one side, do to the other." : "⚖ Unbalanced!";
+    postEvent({event:"discover",detail:"one_side_decoy"});
+    setTimeout(function(){ lb=oldLb; tiltErr=0; hintA.to(0); busyT=0; requestRender(); }, 1200);
+    requestRender(); }
+  function divBoth(d){ if(busyT>0||solved) return;
+    if(lb!==0){ wobble(guided() ? "Clear the loose blocks first — then split into groups." : "Loose blocks in the way."); return; }
+    if(ax%d!==0 || rb%d!==0){ wobble("Those pieces don't split evenly into "+d+" groups."); return; }
+    ax/=d; rb/=d; popT=0; postEvent({event:"manipulate",detail:"div_both:"+d});
+    finishIfIsolated(); requestRender(); }
+  function wobble(msg){ tiltErr=3; busyT=0.9; hintA.to(1); hintMsg=msg;
+    setTimeout(function(){ tiltErr=0; hintA.to(0); busyT=0; requestRender(); }, 950); requestRender(); }
+
   function layout(){}
   function update(dt){ beam.to(clamp(-tiltErr*0.05,-0.20,0.20)); beam.step();
     popT=Math.min(1,popT+dt/0.45); glowT=Math.max(0,glowT-dt*0.4); hintA.step(); }
   function animating(){ return beam.moving() || popT<1 || glowT>0 || hintA.moving(); }
 
   function draw(){
-    var cx=W/2, top=H*0.16, beamY=top+8, halfW=Math.min(150, W*0.34);
-    pans={cx:cx};
-    // solved glow halo
+    var cx=W/2, top=H*0.12, beamY=top+8, halfW=Math.min(150, W*0.34);
     if(glowT>0) glow(cx, beamY+70, 150, THEME.correct, 0.35*glowT);
     // central post
     ctx.strokeStyle=rgba(THEME.subtext,0.5); ctx.lineWidth=5; ctx.lineCap="round";
@@ -259,34 +291,53 @@ MODULES.balance_scale = (function(){
     function anchor(sign){ return { x:cx+sign*halfW*Math.cos(ang), y:beamY+sign*halfW*Math.sin(ang) }; }
     var L=anchor(-1), R=anchor(1);
     drawPan(L.x, beamY, "L"); drawPan(R.x, beamY, "R");
-    // equation
-    var eq = step>=3 ? ("x = "+sol)
+    // equation — the final state stays a QUESTION; the learner counts the pan.
+    var eq = solved ? "x = ?"
       : ((ax>1?ax:(ax===1?"":ax))+"x"+(lb>0?" + "+lb:(lb<0?" − "+(-lb):""))+" = "+rb);
-    text(eq, cx, beamY+128, step>=3?22:18, step>=3?THEME.correct:THEME.onSurface, "center","800");
+    text(eq, cx, beamY+126, solved?20:17, solved?THEME.correct:THEME.onSurface, "center","800");
+    if(solved) text("x alone — count the blocks on the right pan", cx, beamY+148, 12, THEME.correct,"center","700");
     // hint
     if(hintA.cur>0.02){ ctx.globalAlpha=hintA.cur;
-      text("⚖ Keep it balanced — do the same to BOTH sides", cx, H-58, 12, THEME.wrong,"center","700");
+      text(hintMsg, cx, beamY+150, 11.5, THEME.wrong,"center","700");
       ctx.globalAlpha=1; }
-    // action button
-    var label = (step===0&&b!==0)?("Subtract "+b+" from both")
-      : (a>1&&step<2)?("Divide both by "+a) : (step>=3?"Solved ✓":"Reveal x");
-    var bw=Math.min(250,W-44), bh=44, bx=cx-bw/2, by=H-bh-12;
-    button("act",bx,by,bw,bh,label, step>=3?THEME.correct:THEME.primary, step>=3, doStep);
+    // ---- move palette (the learner decides; decoys included) --------------
+    if(!solved){
+      var chips=[];
+      if(lb>0){
+        chips.push({label:"− 1 both", col:THEME.primary, tap:function(){ subBoth(1); }});
+        if(lb>1) chips.push({label:"− "+lb+" both", col:THEME.primary, tap:function(){ subBoth(lb); }});
+        chips.push({label:"− "+lb+" left only", col:THEME.tertiary, tap:function(){ subLeftOnly(lb); }});
+      } else if(lb<0){
+        var owe=-lb;
+        chips.push({label:"+ 1 both", col:THEME.primary, tap:function(){ addBoth(1); }});
+        if(owe>1) chips.push({label:"+ "+owe+" both", col:THEME.primary, tap:function(){ addBoth(owe); }});
+        chips.push({label:"+ "+owe+" left only", col:THEME.tertiary, tap:function(){ subLeftOnly(owe); }});
+      } else if(ax>1){
+        var d1=2, dA=ax;
+        chips.push({label:"split in "+dA, col:THEME.primary, tap:function(){ divBoth(dA); }});
+        if(dA!==d1) chips.push({label:"split in "+d1, col:THEME.secondary, tap:function(){ divBoth(d1); }});
+        var bad=dA+1; chips.push({label:"split in "+bad, col:THEME.tertiary, tap:function(){ divBoth(bad); }});
+      }
+      var bh=38, gap=8, totW=0, widths=[];
+      for(var i=0;i<chips.length;i++){ var w=Math.max(86, chips[i].label.length*8+26); widths.push(w); totW+=w; }
+      totW+=gap*(chips.length-1);
+      var scaleF = totW > W-24 ? (W-24)/totW : 1;
+      var x=cx-(totW*scaleF)/2, by=H-bh-10;
+      for(var j=0;j<chips.length;j++){ var cw=widths[j]*scaleF;
+        button("chip"+j, x, by, cw, bh, chips[j].label, chips[j].col, false, chips[j].tap);
+        x+=cw+gap*scaleF; }
+      if(guided()) text("Pick a move — only equal moves keep it balanced", cx, by-14, 11, THEME.subtext,"center","600");
+    }
   }
-  var panRects={};
   function drawPan(px, beamY, side){
     var hangTop=beamY, py=beamY+92, pw=128;
-    // hang lines
     ctx.strokeStyle=rgba(THEME.subtext,0.4); ctx.lineWidth=1.5;
     ctx.beginPath(); ctx.moveTo(px,hangTop); ctx.lineTo(px-pw/2+8,py); ctx.moveTo(px,hangTop); ctx.lineTo(px+pw/2-8,py); ctx.stroke();
-    // tray
     shadowOn(10, rgba(0,0,0,0.12), 4);
     rr(px-pw/2, py, pw, 14, 7); var tg=ctx.createLinearGradient(0,py,0,py+14);
     tg.addColorStop(0,shade(THEME.surface,-0.04)); tg.addColorStop(1,shade(THEME.surface,-0.14));
     ctx.fillStyle=tg; ctx.fill(); shadowOff();
     strokeRR(px-pw/2,py,pw,14,7, rgba(THEME.subtext,0.25),1);
-    panRects[side]={x:px-pw/2,y:py-58,w:pw,h:70,side:side};
-    // tiles
     var tiles=[];
     if(side==="L"){ for(var i=0;i<ax;i++) tiles.push("x"); for(var j=0;j<Math.abs(lb);j++) tiles.push(lb<0?"-1":"1"); }
     else { for(var k=0;k<Math.abs(rb);k++) tiles.push(rb<0?"-1":"1"); }
@@ -295,7 +346,6 @@ MODULES.balance_scale = (function(){
       var row=Math.floor(t/perRow), colu=t%perRow, rowN=Math.min(perRow,n-row*perRow);
       var startX=px-(rowN*(tw+gap)-gap)/2;
       var tx=startX+colu*(tw+gap), ty=py-10-tw-row*(tw+gap);
-      // staggered pop
       var appear=clamp(popT*(n+2)-t,0,1), sc=easeOutBack(appear); if(sc<=0.01) continue;
       var isX=tiles[t]==="x", neg=tiles[t]==="-1";
       var col=isX?THEME.primary:(neg?THEME.wrong:THEME.tertiary);
@@ -305,92 +355,130 @@ MODULES.balance_scale = (function(){
       ctx.restore();
     }
   }
-  function down(x,y){ for(var i=0;i<buttons.length;i++) if(hit(buttons[i],x,y)){ pressBtn(buttons[i]); buttons[i].onTap(); return; }
-    if(panRects.L&&hit(panRects.L,x,y)) bumpOneSide("L"); else if(panRects.R&&hit(panRects.R,x,y)) bumpOneSide("R"); }
+  function down(x,y){ for(var i=0;i<buttons.length;i++) if(hit(buttons[i],x,y)){ pressBtn(buttons[i]); buttons[i].onTap(); return; } }
   return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down };
 })();
 
 // =================== FRACTION BAR ==========================================
+// Redesigned: no decimal readouts, no verdicts, no auto-LCD button.
+//  compare — the learner COMMITS a prediction first; only then does an alignment
+//            guide drop through both bars so they can verify with their own eyes.
+//  add     — the learner resplits the bars themselves (drag ⇕) until the pieces
+//            match; the visual confirms the pieces now align but never prints the sum.
 MODULES.fraction_bar = (function(){
-  var bars, mode, eq;
-  function init(s){ mode=s.mode||"compare"; eq=new Spring(0,0.15);
+  var bars, mode, predicted, verifyA;
+  function init(s){ mode=s.mode||"compare"; predicted=null; verifyA=new Spring(0,0.12);
     bars=(s.params.fractions||[{n:1,d:2}]).map(function(f){ return {n:f.n,d:f.d, fill:new Spring(f.n,0.2)}; });
     if(!bars.length) bars=[{n:1,d:2,fill:new Spring(1,0.2)}]; }
   var geo=[];
   function layout(){ geo=[]; var pad=22, top=H*0.20, bw=W-pad*2-26, bh=Math.min(54,H*0.18), gap=bh+34;
     for(var i=0;i<bars.length;i++) geo.push({x:pad,y:top+i*gap,w:bw,h:bh}); }
-  function update(dt){ for(var i=0;i<bars.length;i++) bars[i].fill.step(); eq.step(); }
-  function animating(){ for(var i=0;i<bars.length;i++) if(bars[i].fill.moving()) return true; return false; }
+  function update(dt){ for(var i=0;i<bars.length;i++) bars[i].fill.step(); verifyA.step(); }
+  function animating(){ if(verifyA.moving()) return true;
+    for(var i=0;i<bars.length;i++) if(bars[i].fill.moving()) return true; return false; }
   function draw(){
     if(!geo.length) layout();
     for(var i=0;i<bars.length;i++){ var g=geo[i], f=bars[i], col=(i===0?THEME.primary:THEME.secondary);
       f.fill.to(f.n);
       var segW=g.w/f.d;
-      // track
       fillRR(g.x,g.y,g.w,g.h,10, rgba(THEME.subtext,0.10));
-      // animated fill
       var fillW=clamp(f.fill.cur,0,f.d)*segW;
       if(fillW>0.5){ ctx.save(); rr(g.x,g.y,g.w,g.h,10); ctx.clip();
         var fg=ctx.createLinearGradient(0,g.y,0,g.y+g.h); fg.addColorStop(0,shade(col,0.18)); fg.addColorStop(1,shade(col,-0.08));
         ctx.fillStyle=fg; ctx.fillRect(g.x,g.y,fillW,g.h); ctx.restore(); }
-      // segment dividers
       ctx.strokeStyle=rgba(THEME.surface,0.9); ctx.lineWidth=2;
       for(var s=1;s<f.d;s++){ var sx=g.x+s*segW; ctx.beginPath(); ctx.moveTo(sx,g.y+2); ctx.lineTo(sx,g.y+g.h-2); ctx.stroke(); }
       strokeRR(g.x,g.y,g.w,g.h,10, rgba(THEME.subtext,0.2),1.5);
-      // denominator handle
+      // denominator handle (resplitting is the learner's tool, not a button's)
       var hx=g.x+g.w+16, hy=g.y+g.h/2;
       shadowOn(8, rgba(THEME.tertiary,0.5),3); ctx.fillStyle=THEME.tertiary; ctx.beginPath(); ctx.arc(hx,hy,12,0,TAU); ctx.fill(); shadowOff();
       ctx.fillStyle="#FFF"; text("⇕",hx,hy,12,"#FFF","center","800"); g.handle={x:hx,y:hy,r:24};
-      // label
       text(f.n+"/"+f.d, g.x+2, g.y-15, 15, col,"left","800");
-      text("= "+(Math.round(f.n/f.d*100)/100), g.x+62, g.y-15, 12.5, THEME.subtext,"left","600");
     }
     var msgY=geo[geo.length-1].y+geo[geo.length-1].h+30;
-    if(mode==="compare" && bars.length===2){ var a=bars[0].n/bars[0].d, b=bars[1].n/bars[1].d;
-      var rel=Math.abs(a-b)<1e-9?"These fractions are EQUAL":(a>b?bars[0].n+"/"+bars[0].d+" is greater":bars[1].n+"/"+bars[1].d+" is greater");
-      text(rel, W/2, msgY, 14.5, Math.abs(a-b)<1e-9?THEME.correct:THEME.onSurface,"center","800");
-    } else if(mode==="add" && bars.length===2){
-      if(bars[0].d===bars[1].d){ var sumN=bars[0].n+bars[1].n;
-        text(bars[0].n+"/"+bars[0].d+" + "+bars[1].n+"/"+bars[1].d+" = "+sumN+"/"+bars[0].d, W/2, msgY, 15, THEME.correct,"center","800");
+    if(mode==="compare" && bars.length===2){
+      // Predict → verify: chips first; the drop-guide only appears after a commitment.
+      if(predicted===null){
+        var labels=["left ⬆","equal","right ⬆"], bw2=(Math.min(330,W-44)-16)/3, x2=W/2-(bw2*3+16)/2;
+        for(var p=0;p<3;p++)(function(idx){
+          button("pr"+idx, x2+idx*(bw2+8), msgY-6, bw2, 36, labels[idx], THEME.tertiary, false, function(){
+            predicted=idx; verifyA.to(1); postEvent({event:"predict",detail:"compare:"+idx}); });
+        })(p);
+        if(guided()) text("Predict first — which fraction is bigger?", W/2, msgY-22, 11.5, THEME.subtext,"center","600");
       } else {
-        text("Different-sized pieces — line them up first", W/2, msgY, 12.5, THEME.subtext,"center","600");
-        var bw=Math.min(240,W-44); button("common", W/2-bw/2, msgY+12, bw, 40, "Make pieces the same size", THEME.tertiary, false, makeCommon);
+        // Alignment guide: a vertical line at each bar's fill edge, so the eye compares lengths.
+        var a=verifyA.cur;
+        for(var q=0;q<2;q++){ var gq=geo[q], fq=bars[q], ex=gq.x+(fq.n/fq.d)*gq.w;
+          ctx.save(); ctx.globalAlpha=a; ctx.setLineDash([5,4]);
+          ctx.strokeStyle=q===0?THEME.primary:THEME.secondary; ctx.lineWidth=2;
+          ctx.beginPath(); ctx.moveTo(ex, geo[0].y-8); ctx.lineTo(ex, geo[1].y+geo[1].h+8); ctx.stroke();
+          ctx.setLineDash([]); ctx.restore(); }
+        ctx.globalAlpha=a;
+        text("Follow the dashed edges — was your prediction right?", W/2, msgY, 12.5, THEME.onSurface,"center","700");
+        ctx.globalAlpha=1;
       }
-    } else text("Tap to shade • drag ⇕ to split", W/2, msgY, 12.5, THEME.subtext,"center","600");
+    } else if(mode==="add" && bars.length===2){
+      if(bars[0].d===bars[1].d){
+        text("Same-size pieces — now count the shaded pieces across BOTH bars", W/2, msgY, 12.5, THEME.correct,"center","700");
+        if(!addAligned){ addAligned=true; postEvent({event:"discover",detail:"common_denominator:"+bars[0].d}); }
+      } else {
+        addAligned=false;
+        text(guided() ? "Different-sized pieces can't be counted together — drag ⇕ to resplit" : "Pieces don't match yet", W/2, msgY, 12.5, THEME.subtext,"center","600");
+      }
+    } else if(guided()) text("Tap to shade • drag ⇕ to split", W/2, msgY, 12.5, THEME.subtext,"center","600");
   }
-  function gcd(x,y){ return y===0?x:gcd(y,x%y); }
-  function makeCommon(){ var L=bars[0].d,R=bars[1].d,lcd=L*R/gcd(L,R);
-    bars[0].n*=lcd/L; bars[0].d=lcd; bars[1].n*=lcd/R; bars[1].d=lcd;
-    postEvent({event:"discover",detail:"common_denominator:"+lcd}); layout(); requestRender(); }
-  var drag=null;
+  var addAligned=false, drag=null;
   function down(x,y){ for(var i=0;i<buttons.length;i++) if(hit(buttons[i],x,y)){ pressBtn(buttons[i]); buttons[i].onTap(); return; }
     for(var b=0;b<bars.length;b++){ var g=geo[b];
-      if(g.handle && Math.hypot(x-g.handle.x,y-g.handle.y)<g.handle.r){ drag={bar:b,startY:y,startD:bars[b].d}; return; }
+      if(g.handle && Math.hypot(x-g.handle.x,y-g.handle.y)<g.handle.r){ drag={bar:b,startY:y,startD:bars[b].d,startN:bars[b].n}; return; }
       if(x>=g.x&&x<=g.x+g.w&&y>=g.y-6&&y<=g.y+g.h+6){ var seg=Math.floor((x-g.x)/(g.w/bars[b].d))+1;
         bars[b].n=(bars[b].n===seg)?seg-1:seg; postEvent({event:"manipulate",detail:"shade:"+bars[b].n+"/"+bars[b].d}); requestRender(); return; } } }
   function move(x,y){ if(!drag) return; var dd=Math.round((drag.startY-y)/24);
-    var nd=clamp(drag.startD+dd,1,12); if(nd!==bars[drag.bar].d){ bars[drag.bar].d=nd; if(bars[drag.bar].n>nd) bars[drag.bar].n=nd; requestRender(); } }
+    var nd=clamp(drag.startD+dd,1,12);
+    if(nd!==bars[drag.bar].d){
+      bars[drag.bar].d=nd;
+      // Resplitting preserves the AMOUNT where it divides cleanly (2/3 → 4/6),
+      // so the learner sees equivalence; otherwise clamp the count.
+      var ratio=nd/drag.startD, scaled=drag.startN*ratio;
+      bars[drag.bar].n = Math.abs(scaled-Math.round(scaled))<1e-9 ? Math.round(scaled) : Math.min(bars[drag.bar].n, nd);
+      requestRender(); } }
   function up(){ if(drag){ postEvent({event:"manipulate",detail:"denominator:"+bars[drag.bar].d}); drag=null; } }
   return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
 })();
 
 // =================== RIGHT TRIANGLE ========================================
 MODULES.right_triangle = (function(){
-  var a,b,as,bs,ox,oy,unit,pulse;
-  function init(s){ a=s.params.a||3; b=s.params.b||4; as=new Spring(a,0.25); bs=new Spring(b,0.25); pulse=0; }
-  function layout(){ unit=Math.min((W*0.46)/12,(H*0.42)/12); if(unit<7) unit=7; ox=W*0.34; oy=H*0.66; }
-  function update(dt){ as.to(a).step(); bs.to(b).step(); pulse+=dt; }
-  function animating(){ return as.moving()||bs.moving(); }
+  var a,b,as,bs,ox,oy,unit,us,pulse;
+  function init(s){ a=s.params.a||3; b=s.params.b||4; as=new Spring(a,0.25); bs=new Spring(b,0.25);
+    us=new Spring(0,0.18); pulse=0; }
+  // The unit scale FITS the current legs (with headroom) instead of always sizing
+  // for the 12×12 maximum — small triangles no longer render as a thumbnail.
+  function targetUnit(){
+    var av=Math.max(a,1), bv=Math.max(b,1);
+    var u=Math.min((W*0.34-8)/bv, (W*0.62-10)/av, (H*0.58-12)/bv, (H*0.36-30)/av);
+    return clamp(u, 7, 34);
+  }
+  function layout(){ ox=W*0.36; oy=H*0.60; if(us){ if(us.cur<=0) us.set(targetUnit()); } unit=us?us.cur:14; }
+  function update(dt){ as.to(a).step(); bs.to(b).step(); us.to(targetUnit()).step(); unit=us.cur; pulse+=dt; }
+  function animating(){ return as.moving()||bs.moving()||us.moving(); }
   function draw(){
     if(!unit) layout();
-    var av=as.cur, bv=bs.cur, c=Math.sqrt(av*av+bv*bv);
+    var av=as.cur, bv=bs.cur;
     var O={x:ox,y:oy}, A={x:ox+av*unit,y:oy}, B={x:ox,y:oy-bv*unit};
-    // squares (areas)
-    ctx.fillStyle=rgba(THEME.primary,0.16); ctx.fillRect(O.x,O.y,av*unit,av*unit);
-    ctx.fillStyle=rgba(THEME.secondary,0.16); ctx.fillRect(O.x-bv*unit,O.y-bv*unit,bv*unit,bv*unit);
-    ctx.strokeStyle=rgba(THEME.primary,0.4); ctx.lineWidth=1; ctx.strokeRect(O.x,O.y,av*unit,av*unit);
-    ctx.strokeStyle=rgba(THEME.secondary,0.4); ctx.strokeRect(O.x-bv*unit,O.y-bv*unit,bv*unit,bv*unit);
-    // hypotenuse square hint (rotated) — light
+    // squares on the legs — drawn as COUNTABLE unit grids: the learner can count
+    // the cells (a² and b²) instead of being told the totals.
+    function gridSquare(x0,y0,n,col){
+      ctx.fillStyle=rgba(col,0.16); ctx.fillRect(x0,y0,n*unit,n*unit);
+      ctx.strokeStyle=rgba(col,0.35); ctx.lineWidth=1;
+      var ni=Math.round(n);
+      for(var i=0;i<=ni;i++){
+        ctx.beginPath(); ctx.moveTo(x0+i*unit,y0); ctx.lineTo(x0+i*unit,y0+ni*unit); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x0,y0+i*unit); ctx.lineTo(x0+ni*unit,y0+i*unit); ctx.stroke();
+      }
+      ctx.strokeStyle=rgba(col,0.55); ctx.strokeRect(x0,y0,ni*unit,ni*unit);
+    }
+    gridSquare(O.x,O.y,av,THEME.primary);
+    gridSquare(O.x-bv*unit,O.y-bv*unit,bv,THEME.secondary);
     // triangle
     shadowOn(14, rgba(THEME.tertiary,0.25), 4);
     ctx.beginPath(); ctx.moveTo(O.x,O.y); ctx.lineTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.closePath();
@@ -398,21 +486,21 @@ MODULES.right_triangle = (function(){
     ctx.fillStyle=tg; ctx.fill(); shadowOff();
     ctx.strokeStyle=THEME.onSurface; ctx.lineWidth=2.5; ctx.lineJoin="round"; ctx.stroke();
     ctx.strokeStyle=rgba(THEME.onSurface,0.55); ctx.lineWidth=1.5; ctx.strokeRect(O.x,O.y-11,11,11);
-    // labels
+    // labels — the legs are known; the hypotenuse stays the learner's question.
     text("a = "+Math.round(av), (O.x+A.x)/2, O.y+18, 13, THEME.primary,"center","800");
     text("b = "+Math.round(bv), O.x-18, (O.y+B.y)/2, 13, THEME.secondary,"center","800");
-    // push c label outward from the triangle, clear of the handles
     var mx=(A.x+B.x)/2, my=(A.y+B.y)/2, ddx=mx-O.x, ddy=my-O.y, dl=Math.hypot(ddx,ddy)||1;
-    text("c = "+(Math.round(c*100)/100), mx+ddx/dl*22, my+ddy/dl*22, 13, shade(THEME.tertiary,-0.15),"center","800");
+    text("c = ?", mx+ddx/dl*22, my+ddy/dl*22, 13, shade(THEME.tertiary,-0.15),"center","800");
     // handles (pulsing glow)
     var ph=0.5+0.5*Math.sin(pulse*2.4);
     [A,B].forEach(function(h){ glow(h.x,h.y,16+4*ph,THEME.tertiary,0.4);
       ctx.fillStyle=THEME.tertiary; ctx.beginPath(); ctx.arc(h.x,h.y,9,0,TAU); ctx.fill();
       ctx.strokeStyle="#FFF"; ctx.lineWidth=2.5; ctx.stroke(); });
     HA=A; HB=B;
-    // identity bar
-    var ia=Math.round(av), ib=Math.round(bv);
-    text(ia+"² + "+ib+"² = "+(ia*ia)+" + "+(ib*ib)+" = "+(ia*ia+ib*ib)+" = c²", W/2, H-20, 13.5, THEME.onSurface,"center","800");
+    // identity bar — the RELATIONSHIP, never the computed result.
+    text(guided()
+      ? "count the green cells + the blue cells — that total is c²"
+      : "a² + b² = c²", W/2, H-20, 13, THEME.onSurface,"center","800");
   }
   var HA,HB,drag=null;
   function down(x,y){ if(HA&&Math.hypot(x-HA.x,y-HA.y)<30) drag="A"; else if(HB&&Math.hypot(x-HB.x,y-HB.y)<30) drag="B"; }
@@ -422,9 +510,14 @@ MODULES.right_triangle = (function(){
 })();
 
 // =================== PARABOLA ==============================================
+// Redesigned: numeric roots are never printed. Root markers appear only AFTER
+// the learner has moved a slider (engagement first), and they are unlabeled —
+// the axis carries tick numerals so positions are READ off the graph, which is
+// the actual skill. Structural messages (how many crossings, sign of the
+// discriminant) stay: they teach structure, not the answer.
 MODULES.parabola = (function(){
-  var a,b,c,sliders,pulse;
-  function init(s){ a=s.params.a; b=s.params.b||0; c=s.params.c||0; pulse=0; }
+  var a,b,c,sliders,pulse,touched;
+  function init(s){ a=s.params.a; b=s.params.b||0; c=s.params.c||0; pulse=0; touched=false; }
   function layout(){ var y0=H-66,sp=24,x0=22;
     sliders=[ {key:"a",min:-4,max:4,y:y0,get:function(){return a;},set:function(v){a=v;},col:THEME.primary},
       {key:"b",min:-8,max:8,y:y0+sp,get:function(){return b;},set:function(v){b=v;},col:THEME.secondary},
@@ -441,6 +534,9 @@ MODULES.parabola = (function(){
     for(var gyn=gy%sy; gyn<plotH; gyn+=sy){ ctx.beginPath(); ctx.moveTo(0,gyn); ctx.lineTo(W,gyn); ctx.stroke(); }
     ctx.strokeStyle=rgba(THEME.subtext,0.45); ctx.lineWidth=1.5;
     ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.moveTo(gx,4); ctx.lineTo(gx,plotH); ctx.stroke();
+    // axis numerals — so crossing positions can be READ from the graph
+    for(var tv=-8;tv<=8;tv++){ if(tv===0) continue; var tx=gx+tv*sx;
+      if(tx>6&&tx<W-6) text(""+tv, tx, gy+11, 9, rgba(THEME.subtext,0.8),"center","600"); }
     // fill under curve
     ctx.beginPath(); var started=false;
     for(var px=0;px<=W;px+=2){ var xv=(px-gx)/sx, yv=a*xv*xv+b*xv+c, py=gy-yv*sy;
@@ -452,16 +548,19 @@ MODULES.parabola = (function(){
     for(var px2=0;px2<=W;px2+=2){ var xv2=(px2-gx)/sx, yv2=a*xv2*xv2+b*xv2+c, py2=gy-yv2*sy;
       if(py2<-40||py2>plotH+40){ started=false; continue; } if(!started){ctx.moveTo(px2,py2);started=true;} else ctx.lineTo(px2,py2); }
     shadowOn(8,rgba(THEME.primary,0.4),0); ctx.stroke(); shadowOff();
-    // roots
+    // crossings — marked (after first manipulation) but NEVER labeled; the
+    // learner reads positions from the axis numerals themselves.
     var disc=b*b-4*a*c, msg, ph=0.5+0.5*Math.sin(pulse*3);
     if(a!==0&&disc>=0){ var r1=(-b-Math.sqrt(disc))/(2*a), r2=(-b+Math.sqrt(disc))/(2*a);
-      [r1,r2].forEach(function(r){ var rxp=gx+r*sx; glow(rxp,gy,10+3*ph,THEME.wrong,0.5);
+      if(touched){ [r1,r2].forEach(function(r){ var rxp=gx+r*sx; glow(rxp,gy,10+3*ph,THEME.wrong,0.5);
         ctx.fillStyle=THEME.wrong; ctx.beginPath(); ctx.arc(rxp,gy,5.5,0,TAU); ctx.fill();
-        ctx.strokeStyle="#FFF"; ctx.lineWidth=2; ctx.stroke(); });
-      msg=disc===0?"one root: x = "+rnd(r1):"roots: x = "+rnd(r1)+", "+rnd(r2);
-    } else msg=a===0?"a = 0 → not a parabola":"no real roots (b² − 4ac < 0)";
-    fillRR(W/2-110, 8, 220, 24, 12, rgba(THEME.surface,0.85));
-    text(msg, W/2, 20, 12.5, THEME.onSurface,"center","700");
+        ctx.strokeStyle="#FFF"; ctx.lineWidth=2; ctx.stroke(); }); }
+      msg = !touched ? (guided() ? "move a slider — watch where the curve meets the axis" : "where does it cross the axis?")
+        : (disc===0 ? "touches the axis at ONE point — read it off the grid"
+                    : "crosses the axis at TWO points — read them off the grid");
+    } else msg=a===0?"a = 0 → not a parabola":"never crosses: no real roots (b² − 4ac < 0)";
+    fillRR(W/2-128, 8, 256, 24, 12, rgba(THEME.surface,0.85));
+    text(msg, W/2, 20, 11.5, THEME.onSurface,"center","700");
     // sliders
     sliders.forEach(function(s){ ctx.strokeStyle=rgba(THEME.subtext,0.25); ctx.lineWidth=5; ctx.lineCap="round";
       ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(s.x+s.w,s.y); ctx.stroke();
@@ -471,10 +570,9 @@ MODULES.parabola = (function(){
       ctx.fillStyle=s.col; ctx.beginPath(); ctx.arc(hx,s.y,6,0,TAU); ctx.fill();
       text(s.key+" = "+s.get(), s.x-26, s.y, 13, s.col,"center","800"); });
   }
-  function rnd(v){ return Math.round(v*100)/100; }
   var drag=null;
   function down(x,y){ for(var i=0;i<sliders.length;i++){ var s=sliders[i];
-    if(Math.abs(y-s.y)<24 && x>=s.x-22 && x<=s.x+s.w+22){ drag=s; setFrom(x); return; } } }
+    if(Math.abs(y-s.y)<24 && x>=s.x-22 && x<=s.x+s.w+22){ drag=s; touched=true; setFrom(x); return; } } }
   function move(x){ if(drag) setFrom(x); }
   function setFrom(x){ var t=clamp((x-drag.x)/drag.w,0,1), v=Math.round(drag.min+t*(drag.max-drag.min)); drag.set(v); requestRender(); }
   function up(){ if(drag){ postEvent({event:"manipulate",detail:drag.key+"="+drag.get()}); drag=null; } }
@@ -504,7 +602,8 @@ MODULES.dice_sim = (function(){
     var sx=dx+ds+20;
     text("rolls", sx, dy+8, 11, THEME.subtext,"left","600"); text(""+rolls, sx+44, dy+8, 13, THEME.onSurface,"left","800");
     text("average", sx, dy+30, 11, THEME.subtext,"left","600"); text(""+(rolls?Math.round(meanS.cur*100)/100:"—"), sx+58, dy+30, 16, THEME.primary,"left","800");
-    text("expected 3.5", sx, dy+52, 11.5, THEME.subtext,"left","600");
+    // No "expected = …" label: watching the average SETTLE is the discovery.
+    if(guided()) text("keep rolling — where does it settle?", sx, dy+52, 11.5, THEME.subtext,"left","600");
     // histogram
     var hx=22, hy=H-128, hw=W-44, hh=64, bw=hw/6, mx=Math.max(1,Math.max.apply(null,counts));
     // expected line
@@ -553,15 +652,22 @@ MODULES.number_line = (function(){
     glow(mx,y,16,THEME.primary,0.4);
     shadowOn(8,rgba(THEME.primary,0.5),3); ctx.fillStyle=THEME.primary; ctx.beginPath(); ctx.arc(mx,y,11,0,TAU); ctx.fill(); shadowOff();
     ctx.strokeStyle="#FFF"; ctx.lineWidth=2.5; ctx.stroke();
-    // titles + action
+    // titles + action — the question stays a question; the learner reads the
+    // line where THEY landed (they performed every jump themselves).
     if(mode==="modulo"){ var done2=pos+mod>val;
-      text(val+" mod "+mod, W/2, H*0.18, 16, THEME.onSurface,"center","800");
-      text(done2?("remainder = "+pos):("at "+pos+" — keep jumping"), W/2, H-66, 13, done2?THEME.correct:THEME.subtext,"center","700");
-      button("jmp", W/2-115, H-48, 230, 40, done2?("Remainder is "+pos):("Jump + "+mod), done2?THEME.correct:THEME.primary, done2, jumpMod);
+      text(val+" mod "+mod+" = ?", W/2, H*0.18, 16, THEME.onSurface,"center","800");
+      text(done2
+          ? (guided() ? "no full jump fits — the leftover distance is your remainder" : "no more full jumps — read the marker")
+          : (guided() ? "keep jumping in equal steps of "+mod : "keep jumping"),
+        W/2, H-66, 12.5, done2?THEME.correct:THEME.subtext,"center","700");
+      button("jmp", W/2-115, H-48, 230, 40, done2?"Where did you land?":("Jump + "+mod), done2?THEME.correct:THEME.primary, done2, jumpMod);
     } else { var done3=hops>=Math.abs(delta);
-      text(start+(delta<0?" − "+(-delta):" + "+delta)+" = "+(start+delta), W/2, H*0.18, 16, THEME.onSurface,"center","800");
-      text(done3?("landed on "+pos):("at "+pos), W/2, H-66, 13, done3?THEME.correct:THEME.subtext,"center","700");
-      button("hop", W/2-115, H-48, 230, 40, done3?"Done ✓":(delta<0?"Hop left":"Hop right"), done3?THEME.correct:THEME.primary, done3, hop);
+      text(start+(delta<0?" − "+(-delta):" + "+delta)+" = ?", W/2, H*0.18, 16, THEME.onSurface,"center","800");
+      text(done3
+          ? "all hops done — read the marker off the line"
+          : (guided() ? (Math.abs(delta)-hops)+" hop"+((Math.abs(delta)-hops)===1?"":"s")+" to go" : ""),
+        W/2, H-66, 12.5, done3?THEME.correct:THEME.subtext,"center","700");
+      button("hop", W/2-115, H-48, 230, 40, done3?"Where did you land?":(delta<0?"Hop left":"Hop right"), done3?THEME.correct:THEME.primary, done3, hop);
     }
   }
   function drawHop(xa,xb,alpha){ var r=(xb-xa)/2, cx=(xa+xb)/2;
@@ -573,6 +679,116 @@ MODULES.number_line = (function(){
     if(hops>=Math.abs(delta)){ postEvent({event:"solve",detail:"result:"+pos}); celebrate(W/2,H*0.4); } } }
   function down(x,y){ for(var i=0;i<buttons.length;i++) if(hit(buttons[i],x,y)){ pressBtn(buttons[i]); buttons[i].onTap(); return; } }
   return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down };
+})();
+
+// =================== PERCENT BAR ===========================================
+// Percentages as structure: a quantity bar split into ten 10% cells. The
+// learner SLIDES to the target percent themselves; each cell is worth a tenth
+// of the whole, so they assemble the part by counting cells — the visual never
+// prints the part's value.
+MODULES.percent_bar = (function(){
+  var pct,base,handle,reached;
+  function init(s){ pct=s.params.percent; base=s.params.base; handle=new Spring(0,0.2); cur=0; reached=false; }
+  var cur, gx,gy,gw,gh;
+  function layout(){ gx=26; gw=W-52; gh=Math.min(58,H*0.22); gy=H*0.34; handle.set(gx); }
+  function X(p){ return gx + clamp(p,0,100)/100*gw; }
+  function update(dt){ handle.to(X(cur)).step(); }
+  function animating(){ return handle.moving(); }
+  function draw(){
+    if(!gw) layout();
+    text(pct+"% of "+base+" = ?", W/2, H*0.14, 16, THEME.onSurface,"center","800");
+    // track
+    fillRR(gx,gy,gw,gh,10, rgba(THEME.subtext,0.10));
+    // shaded part up to the handle
+    var hx=handle.cur, fw=hx-gx;
+    if(fw>1){ ctx.save(); rr(gx,gy,gw,gh,10); ctx.clip();
+      var fg=ctx.createLinearGradient(0,gy,0,gy+gh); fg.addColorStop(0,shade(THEME.primary,0.18)); fg.addColorStop(1,shade(THEME.primary,-0.08));
+      ctx.fillStyle=fg; ctx.fillRect(gx,gy,fw,gh); ctx.restore(); }
+    // ten 10% cells — the countable structure
+    ctx.strokeStyle=rgba(THEME.surface,0.9); ctx.lineWidth=2;
+    for(var i=1;i<10;i++){ var sx=gx+i*gw/10; ctx.beginPath(); ctx.moveTo(sx,gy+2); ctx.lineTo(sx,gy+gh-2); ctx.stroke(); }
+    strokeRR(gx,gy,gw,gh,10, rgba(THEME.subtext,0.2),1.5);
+    // endpoints + cell worth (structure, not the answer)
+    text("0", gx, gy+gh+16, 11, THEME.subtext,"center","600");
+    text(""+base, gx+gw, gy+gh+16, 11, THEME.subtext,"center","600");
+    if(guided()) text("each cell = "+(base%10===0?(base/10):("a tenth of "+base)), W/2, gy+gh+16, 11, THEME.subtext,"center","600");
+    // target tick (where the learner must reach)
+    var txp=X(pct);
+    ctx.setLineDash([4,4]); ctx.strokeStyle=rgba(THEME.tertiary,0.8); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(txp,gy-14); ctx.lineTo(txp,gy+gh+6); ctx.stroke(); ctx.setLineDash([]);
+    text(pct+"%", txp, gy-24, 11.5, THEME.tertiary,"center","800");
+    // handle
+    glow(hx,gy+gh/2,16,THEME.primary,0.4);
+    shadowOn(8,rgba(THEME.primary,0.5),3); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(hx,gy+gh/2,12,0,TAU); ctx.fill(); shadowOff();
+    ctx.fillStyle=THEME.primary; ctx.beginPath(); ctx.arc(hx,gy+gh/2,7,0,TAU); ctx.fill();
+    text(Math.round(cur)+"%", hx, gy-8, 11.5, THEME.primary,"center","800");
+    // status — never the part's value
+    var on = Math.abs(cur-pct)<=1;
+    if(on && !reached){ reached=true; postEvent({event:"discover",detail:"reached_percent"}); celebrate(txp, gy); }
+    if(!on) reached=false;
+    text(on ? "you're at "+pct+"% — count the shaded cells to build the part"
+            : (guided() ? "slide the handle to the dashed "+pct+"% mark" : "slide to the mark"),
+      W/2, H-24, 12.5, on?THEME.correct:THEME.subtext,"center","700");
+  }
+  var drag=false;
+  function down(x,y){ if(Math.abs(y-(gy+gh/2))<44){ drag=true; setFrom(x); } }
+  function move(x){ if(drag) setFrom(x); }
+  function setFrom(x){ cur=clamp((x-gx)/gw*100,0,100); requestRender(); }
+  function up(){ if(drag){ postEvent({event:"manipulate",detail:"percent:"+Math.round(cur)}); drag=false; } }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
+})();
+
+// =================== RATIO DOUBLE NUMBER LINE ==============================
+// Ratios as two quantities scaling in LOCKSTEP: a double number line. The
+// learner drags the multiplier; the top line marks k·a, the bottom k·b, always
+// vertically aligned. Equivalent pairs are found by the learner's own scaling —
+// the module never solves a proportion for them.
+MODULES.ratio_line = (function(){
+  var a,b,k,ks;
+  function init(s){ a=s.params.a; b=s.params.b; k=1; ks=new Spring(1,0.2); }
+  var x0,x1,yT,yB,maxK,scale;
+  function layout(){ x0=30; x1=W-30; yT=H*0.32; yB=H*0.58;
+    maxK=Math.max(2, Math.min(12, Math.floor(60/Math.max(a,b))));
+    scale=(x1-x0)/(maxK*Math.max(a,b)); }
+  function X(v){ return x0+v*scale; }
+  function update(dt){ ks.to(k).step(); }
+  function animating(){ return ks.moving(); }
+  function drawLine(y,unit,col,name){
+    ctx.strokeStyle=rgba(THEME.subtext,0.35); ctx.lineWidth=3; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x1,y); ctx.stroke();
+    for(var i=0;i<=maxK;i++){ var px=X(i*unit); if(px>x1+1) break;
+      ctx.strokeStyle=rgba(col,0.55); ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(px,y-6); ctx.lineTo(px,y+6); ctx.stroke();
+      text(""+(i*unit), px, y+18, 9.5, THEME.subtext,"center","600"); }
+    text(name, x0-4, y-18, 11, col,"left","800");
+  }
+  function draw(){
+    if(!scale) layout();
+    var kv=ks.cur;
+    text("ratio "+a+" : "+b, W/2, H*0.12, 15, THEME.onSurface,"center","800");
+    drawLine(yT, a, THEME.primary, "×"+a);
+    drawLine(yB, b, THEME.secondary, "×"+b);
+    // lockstep markers + connector
+    var pxT=X(kv*a), pxB=X(kv*b);
+    ctx.setLineDash([4,4]); ctx.strokeStyle=rgba(THEME.tertiary,0.6); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(pxT,yT); ctx.lineTo(pxB,yB); ctx.stroke(); ctx.setLineDash([]);
+    [{x:pxT,y:yT,c:THEME.primary},{x:pxB,y:yB,c:THEME.secondary}].forEach(function(m){
+      glow(m.x,m.y,14,m.c,0.4);
+      shadowOn(6,rgba(m.c,0.5),2); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(m.x,m.y,10,0,TAU); ctx.fill(); shadowOff();
+      ctx.fillStyle=m.c; ctx.beginPath(); ctx.arc(m.x,m.y,6,0,TAU); ctx.fill(); });
+    // the pair the learner has built — equivalent ratio, read off the lines
+    text("×"+k+"  →  "+(k*a)+" : "+(k*b), W/2, yB+44, 14, THEME.onSurface,"center","800");
+    text(guided()
+      ? "drag sideways — both quantities scale together, so every pair you make is the SAME ratio"
+      : "drag to scale both lines together", W/2, H-22, 11.5, THEME.subtext,"center","600");
+  }
+  var drag=false;
+  function down(x,y){ if(y>yT-34 && y<yB+34){ drag=true; setFrom(x); } }
+  function move(x){ if(drag) setFrom(x); }
+  function setFrom(x){ var kk=clamp(Math.round((x-x0)/(scale*a)),1,maxK);
+    if(kk!==k){ k=kk; requestRender(); } }
+  function up(){ if(drag){ postEvent({event:"manipulate",detail:"k:"+k+" pair:"+(k*a)+":"+(k*b)}); drag=false; } }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
 })();
 
 // ===========================================================================

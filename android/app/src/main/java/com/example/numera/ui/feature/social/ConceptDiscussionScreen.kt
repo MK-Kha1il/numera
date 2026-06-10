@@ -63,10 +63,12 @@ fun ConceptDiscussionScreen(conceptId: String, conceptName: String, onBack: () -
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when {
-                loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                posts.isEmpty() -> Box(Modifier.fillMaxSize().padding(Spacing.xl), contentAlignment = Alignment.Center) {
-                    Text("No posts yet. Start the conversation — ask a question or share a tip.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                }
+                loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.example.numera.ui.components.NumeraPremiumLoader() }
+                posts.isEmpty() -> com.example.numera.ui.components.NumeraEmptyState(
+                    illustration = com.example.numera.ui.components.EmptyIllustration.Friends,
+                    title = "No posts yet",
+                    message = "Start the conversation — ask a question or share a tip with other learners."
+                )
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(horizontal = Spacing.l),
                     verticalArrangement = Arrangement.spacedBy(Spacing.s)

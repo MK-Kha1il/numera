@@ -347,6 +347,82 @@ interface ApiService {
         @Header("Authorization") token: String
     ): SimpleResponse
 
+    // ---- Onboarding (first launch → habit) ----
+    @GET("api/onboarding/state")
+    suspend fun getOnboardingState(
+        @Header("Authorization") token: String
+    ): OnboardingStateResponse
+
+    @POST("api/onboarding/motivations")
+    suspend fun saveMotivations(
+        @Header("Authorization") token: String,
+        @Body request: MotivationsRequest
+    ): SimpleResponse
+
+    @POST("api/onboarding/profile")
+    suspend fun saveOnboardingProfile(
+        @Header("Authorization") token: String,
+        @Body request: OnboardingProfileRequest
+    ): SimpleResponse
+
+    @GET("api/onboarding/roadmap")
+    suspend fun getOnboardingRoadmap(
+        @Header("Authorization") token: String
+    ): RoadmapResponse
+
+    @POST("api/onboarding/aha/start")
+    suspend fun startOnboardingAha(
+        @Header("Authorization") token: String
+    ): AhaStartResponse
+
+    @POST("api/onboarding/aha/answer")
+    suspend fun answerOnboardingAha(
+        @Header("Authorization") token: String,
+        @Body request: AhaAnswerRequest
+    ): AhaAnswerResponse
+
+    @POST("api/onboarding/commitment")
+    suspend fun saveOnboardingCommitment(
+        @Header("Authorization") token: String,
+        @Body request: CommitmentRequest
+    ): SimpleResponse
+
+    @POST("api/onboarding/notifications")
+    suspend fun saveOnboardingNotificationOptIn(
+        @Header("Authorization") token: String,
+        @Body request: NotificationOptInRequest
+    ): SimpleResponse
+
+    @POST("api/onboarding/complete")
+    suspend fun completeOnboarding(
+        @Header("Authorization") token: String
+    ): SimpleResponse
+
+    @POST("api/onboarding/event")
+    suspend fun logOnboardingEvent(
+        @Header("Authorization") token: String,
+        @Body request: OnboardingEventRequest
+    ): SimpleResponse
+
+    // ---- Progressive disclosure (Phase 11) ----
+    @GET("api/onboarding/spotlights")
+    suspend fun getSpotlights(
+        @Header("Authorization") token: String
+    ): SpotlightsResponse
+
+    @POST("api/onboarding/spotlights/seen")
+    suspend fun markSpotlightSeen(
+        @Header("Authorization") token: String,
+        @Body request: SpotlightSeenRequest
+    ): SimpleResponse
+
+    // ---- Push registration (FCM) ----
+    @POST("api/notifications/push-token")
+    suspend fun registerPushToken(
+        @Header("Authorization") token: String,
+        @Body request: PushTokenRequest
+    ): SimpleResponse
+
     @GET("api/archive/search")
     suspend fun searchArchive(
         @Header("Authorization") token: String,
@@ -670,4 +746,12 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("userId") userId: Int
     ): List<PublicCollectionDto>
+
+    // CAS — solve an equation and return a worked, step-by-step solution (exact JS for linear,
+    // SymPy for quadratics and beyond). Powers the "Show me how" solver tool.
+    @POST("api/cas/solve")
+    suspend fun casSolve(
+        @Header("Authorization") token: String,
+        @Body request: CasSolveRequest
+    ): CasSolveResponse
 }

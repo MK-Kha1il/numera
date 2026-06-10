@@ -57,7 +57,7 @@ fun WeeklyRecapScreen(onBack: () -> Unit) {
         }
 
         when {
-            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.example.numera.ui.components.NumeraPremiumLoader() }
             error != null -> Box(Modifier.fillMaxSize().padding(Spacing.xl), contentAlignment = Alignment.Center) {
                 Text(error!!, color = MaterialTheme.colorScheme.error)
             }

@@ -84,6 +84,7 @@ fun MainTabsScreen(
     var showChallenges by remember { mutableStateOf(false) }
     var showTournament by remember { mutableStateOf(false) }
     var showSeason by remember { mutableStateOf(false) }
+    var showSolver by remember { mutableStateOf(false) }
     var discussConceptId by remember { mutableStateOf<String?>(null) }
     var discussConceptName by remember { mutableStateOf("") }
     var showMapTooltip by remember { mutableStateOf(false) }
@@ -270,6 +271,20 @@ fun MainTabsScreen(
     val toastController = rememberToastController()
     val commandPalette = rememberCommandPaletteController()
 
+    // Progressive disclosure (Phase 11): one-time feature intros, revealed as each surface is opened.
+    val spotlight = com.example.numera.ui.components.rememberSpotlightController()
+    LaunchedEffect(selectedTab, spotlight.loaded) {
+        val key = when (selectedTab) {
+            0 -> "archive"
+            1 -> "arena"
+            2 -> "dashboard"
+            3 -> "shop"
+            4 -> "profile"
+            else -> null // Settings (5) has no spotlight
+        }
+        if (key != null) spotlight.maybeShow(key)
+    }
+
     // Switch top-level tab, remembering where we came from so the Settings back-arrow returns there.
     val goTab: (Int) -> Unit = { target ->
         if (selectedTab != 5) previousTab = selectedTab
@@ -295,6 +310,9 @@ fun MainTabsScreen(
             },
             CommandItem("Transfer Challenge", CommandCategory.QuickAction, NumeraIconType.Learn, "Apply a concept in a new context", "transfer apply depth understanding novel") {
                 onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "transfer_challenge"))
+            },
+            CommandItem("Show me how", CommandCategory.QuickAction, NumeraIconType.Calculator, "Solve any equation step by step", "solve solver cas equation steps worked solution how help quadratic linear") {
+                showSolver = true
             },
             CommandItem("Skill Tree", CommandCategory.QuickAction, NumeraIconType.Learn, "Your mastery map across every concept", "mastery skills tree progress map dimensions accuracy fluency") {
                 showSkillTree = true
@@ -683,6 +701,11 @@ fun MainTabsScreen(
                     onRefreshProfile = { refreshProfile() }
                 )
             }
+            if (showSolver) {
+                com.example.numera.ui.dialogs.CasSolverDialog(
+                    onDismissRequest = { showSolver = false }
+                )
+            }
             if (showNotificationsDialog) {
                 NotificationsDialog(
                     notifications = notificationsList,
@@ -732,6 +755,8 @@ fun MainTabsScreen(
                     }
                 )
             }
+            // Progressive-disclosure overlay — shows the current tab's one-time intro, if any.
+            com.example.numera.ui.components.FeatureSpotlightHost(spotlight)
         }
     }
         NumeraToastHost(toastController)

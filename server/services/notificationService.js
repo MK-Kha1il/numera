@@ -5,7 +5,8 @@
 //   - in-app  : always available (writes the existing user_notifications row).
 //   - email   : gated by prefs + a non-empty address + adult + (for analytics-bearing
 //               categories) telemetry_enabled. Sent via services/mailer.js.
-//   - push    : no-op interface for now; the push phase fills pushChannel.send().
+//   - push    : delivered via FCM (services/pushSender.js) to the user's registered device
+//               tokens; gated by prefs.push_enabled + quiet hours. No-op when FCM is unconfigured.
 //
 // Idempotency: when a caller passes `dedupKey`, every channel send is recorded in
 // notification_log under UNIQUE(user_id, dedup_key); a second attempt in the same window is
@@ -19,6 +20,7 @@ const crypto = require('crypto');
 const { db } = require('../db');
 const logger = require('../logger');
 const { sendMail } = require('./mailer');
+const pushSender = require('./pushSender');
 const { JWT_SECRET, APP_BASE_URL } = require('../config');
 
 const nowSec = () => Math.floor(Date.now() / 1000);
@@ -164,7 +166,7 @@ async function notify(userId, opts) {
 
       if (channel === 'inapp') await writeInApp(userId, { title, message, type });
       else if (channel === 'email') await emailSend(user, { title, message, category });
-      // 'push' is intentionally a no-op until the push phase wires pushChannel.send().
+      else if (channel === 'push') await pushSender.sendPushToUser(userId, { title, body: message, data: { type, category } });
     } catch (err) {
       logger.warn(`[notify] channel=${channel} user=${userId} failed: ${err.message}`);
     }

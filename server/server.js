@@ -87,6 +87,7 @@ app.use(require('./routes/asyncDuel'));
 app.use(require('./routes/botDuel'));
 app.use(require('./routes/challenges'));
 app.use(require('./routes/tournaments'));
+app.use(require('./routes/cas'));
 // publicProfile owns /api/user/:userId — mount LAST so it doesn't shadow account.js routes.
 app.use(require('./routes/publicProfile'));
 
@@ -607,8 +608,14 @@ async function buildDuelProblemSet(targetLevel = DUEL_PROBLEM_LEVEL, count = 5) 
             Array.isArray(p.options) && p.options.length >= 2 && p.answer != null);
         if (ok) {
           return {
+            // Client-facing problems carry ONLY what's needed to render the question — never the
+            // worked solution. The SymPy `explanation` spells the answer in plaintext ("The larger
+            // root is -1"), so shipping it with the live problem would defeat the server-authoritative
+            // grading a ranked CAS duel exists to enforce. It's kept server-side here and disclosed
+            // post-answer (see applyDuelAnswer + the submit_answer ack).
             problems: r.problems.map((p) => ({ question: p.question, options: p.options })),
             answers: r.problems.map((p) => String(p.answer)),
+            explanations: r.problems.map((p) => p.explanation || ''),
             level,
             source: 'cas'
           };
@@ -623,10 +630,15 @@ async function buildDuelProblemSet(targetLevel = DUEL_PROBLEM_LEVEL, count = 5) 
   const concepts = pickDuelConcepts(level, count);
   const elo = 800 + level * 20; // representative rating so template difficulty tracks the level band
   const full = concepts.map((c, idx) => generateProblem(c.category, c.level, idx, elo));
+  // Sent to clients with EVERY answer-leaking field stripped: not just `correctAnswer`, but also
+  // `explanation` and `socraticJson` — both contain the answer in plaintext ("= 32", probe text),
+  // so leaving them in the live payload would let a tampering client read the answer before
+  // submitting. The worked solution is delivered post-answer instead (via the submit_answer ack).
   // eslint-disable-next-line no-unused-vars
-  const problems = full.map(({ correctAnswer, ...rest }) => rest); // sent to clients (answer stripped)
-  const answers = full.map((p) => p.correctAnswer);                // server-only answer key
-  return { problems, answers, level, source: 'catalog' };
+  const problems = full.map(({ correctAnswer, explanation, socraticJson, ...rest }) => rest);
+  const answers = full.map((p) => p.correctAnswer);       // server-only answer key
+  const explanations = full.map((p) => p.explanation || ''); // server-only; revealed post-answer
+  return { problems, answers, explanations, level, source: 'catalog' };
 }
 
 // Grade + record one submitted duel answer SERVER-SIDE and advance the player. Exposed as a named
@@ -647,9 +659,11 @@ function applyDuelAnswer(room, playerKey, { answer }) {
   if (currentIndex >= maxProblems) {
     // This player already finished; ignore any further/duplicate submissions (no extra scoring).
     const done = room.p1.progress >= maxProblems && room.p2.progress >= maxProblems;
-    return { isCorrect: false, ended: done, correctAnswer: null };
+    return { isCorrect: false, ended: done, correctAnswer: null, explanation: '' };
   }
   const canonical = room.answers ? room.answers[currentIndex] : undefined;
+  // The worked solution for THIS problem, kept server-side (never shipped with the live problem).
+  const explanation = (room.explanations && room.explanations[currentIndex]) || '';
   const isCorrect = canonical != null && areEquivalent(answer, canonical);
 
   // Anti-cheat: the SHARED integrityEngine scorer (the same one Puzzle Rush uses) flags a correct
@@ -668,10 +682,11 @@ function applyDuelAnswer(room, playerKey, { answer }) {
   if (isCorrect) room[playerKey].score += 20;
 
   const ended = room.p1.progress >= maxProblems && room.p2.progress >= maxProblems;
-  // correctAnswer is returned for the submitting client's post-answer reveal ONLY — it is sent back
-  // after the (now-irreversible) submission, never bundled with the unanswered problem, so it can't
-  // be used to cheat the grade.
-  return { isCorrect, ended, correctAnswer: canonical == null ? null : canonical };
+  // correctAnswer AND the worked `explanation` are returned for the submitting client's post-answer
+  // reveal ONLY — sent back after the (now-irreversible) submission, never bundled with the
+  // unanswered problem, so neither can be used to cheat the grade. The client uses `explanation`
+  // for the reveal + the favorite/archive payload.
+  return { isCorrect, ended, correctAnswer: canonical == null ? null : canonical, explanation };
 }
 
 function matchmake(queueArray, isRanked) {
@@ -860,9 +875,9 @@ io.on('connection', (socket) => {
 
       // Start friend duel immediately (treated as casual, no Elo cost), at the two friends' shared level.
       const duelLevel = clampLevel(((lobby.level || DUEL_PROBLEM_LEVEL) + level) / 2);
-      let problems, answers;
+      let problems, answers, explanations;
       try {
-        ({ problems, answers } = await buildDuelProblemSet(duelLevel));
+        ({ problems, answers, explanations } = await buildDuelProblemSet(duelLevel));
       } catch (e) {
         logger.error(`friend duel: failed to build problem set: ${e.message}`);
         return;
@@ -875,6 +890,7 @@ io.on('connection', (socket) => {
         p2: { id: userId, username: username, score: 0, progress: 0, elo: elo },
         problems,
         answers,
+        explanations,
         isCasual: true,
         startTime: Date.now(),
         problemLevel: duelLevel
@@ -909,11 +925,12 @@ io.on('connection', (socket) => {
     else if (room.p2.id === userId) playerKey = 'p2';
     if (!playerKey) { if (typeof ack === 'function') ack({ error: 'not_a_player' }); return; }
 
-    const { isCorrect, ended, correctAnswer } = applyDuelAnswer(room, playerKey, { answer });
+    const { isCorrect, ended, correctAnswer, explanation } = applyDuelAnswer(room, playerKey, { answer });
 
-    // Tell the submitting client the server's verdict + the canonical answer so it can drive its
-    // reveal animation (safe: the answer is disclosed only AFTER the irreversible submission).
-    if (typeof ack === 'function') ack({ correct: isCorrect, correctAnswer });
+    // Tell the submitting client the server's verdict + the canonical answer + the worked solution
+    // so it can drive its reveal animation and its favorite/archive payload (safe: all disclosed
+    // only AFTER the irreversible submission, never bundled with the unanswered problem).
+    if (typeof ack === 'function') ack({ correct: isCorrect, correctAnswer, explanation });
 
     // Broadcast update
     io.to(roomId).emit('room_status', {
@@ -946,9 +963,9 @@ async function startDuel(p1, p2, isRanked) {
   const roomId = `duel_${p1.userId}_${p2.userId}_${Date.now()}`;
   // The shared duel level: the average of the two (matchmaking-paired, so already close) levels.
   const duelLevel = clampLevel(((p1.level || DUEL_PROBLEM_LEVEL) + (p2.level || DUEL_PROBLEM_LEVEL)) / 2);
-  let problems, answers;
+  let problems, answers, explanations;
   try {
-    ({ problems, answers } = await buildDuelProblemSet(duelLevel));
+    ({ problems, answers, explanations } = await buildDuelProblemSet(duelLevel));
   } catch (e) {
     logger.error(`startDuel: failed to build problem set: ${e.message}`);
     return;
@@ -960,6 +977,7 @@ async function startDuel(p1, p2, isRanked) {
     p2: { id: p2.userId, username: p2.username, score: 0, progress: 0, elo: p2.elo },
     problems,
     answers,
+    explanations,
     isCasual: !isRanked,
     startTime: Date.now(),
     problemLevel: duelLevel
@@ -979,9 +997,9 @@ async function startDuel(p1, p2, isRanked) {
 async function startDuelWithBot(player, isRanked) {
   const roomId = `duel_bot_${player.userId}_${Date.now()}`;
   const duelLevel = clampLevel(player.level || DUEL_PROBLEM_LEVEL); // bot problems match the player's level
-  let problems, answers;
+  let problems, answers, explanations;
   try {
-    ({ problems, answers } = await buildDuelProblemSet(duelLevel));
+    ({ problems, answers, explanations } = await buildDuelProblemSet(duelLevel));
   } catch (e) {
     logger.error(`startDuelWithBot: failed to build problem set: ${e.message}`);
     return;
@@ -996,6 +1014,7 @@ async function startDuelWithBot(player, isRanked) {
     p2: { id: 9999, username: 'MathBot', score: 0, progress: 0, elo: botElo, isBot: true },
     problems,
     answers,
+    explanations,
     isCasual: !isRanked,
     startTime: Date.now(),
     problemLevel: duelLevel

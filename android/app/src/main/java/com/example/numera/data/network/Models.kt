@@ -9,7 +9,15 @@ data class CategoryMastery(
     val algebra_correct: Int,
     val calculus_correct: Int,
     val combinatorics_correct: Int,
-    val number_theory_correct: Int
+    val number_theory_correct: Int,
+    // Curriculum strands (server migration v27). Defaults keep old payloads parseable.
+    val geometry_correct: Int = 0,
+    val integers_correct: Int = 0,
+    val decimals_correct: Int = 0,
+    val fractions_correct: Int = 0,
+    val number_sense_correct: Int = 0,
+    val statistics_correct: Int = 0,
+    val expressions_correct: Int = 0
 )
 
 // Multi-dimensional mastery (server mathEngine/masteryEngine.js). Each dimension is 0..1.
@@ -1413,6 +1421,9 @@ data class OnboardingCatalogs(
 @Serializable
 data class OnboardingStateResponse(
     val onboardingComplete: Boolean = false,
+    // False while the server has no FCM credential — the client then hides the
+    // notification opt-in step instead of asking for a promise it can't keep.
+    val pushAvailable: Boolean = false,
     val catalogs: OnboardingCatalogs = OnboardingCatalogs()
 )
 
@@ -1473,4 +1484,45 @@ data class OnboardingEventRequest(
     val step: String,
     val event: String,
     val ms: Long? = null
+)
+
+// ---- Progressive disclosure (Phase 11) ----
+@Serializable
+data class SpotlightItem(
+    val key: String,
+    val title: String = "",
+    val body: String = "",
+    val emoji: String = ""
+)
+
+@Serializable
+data class SpotlightsResponse(
+    val seen: List<String> = emptyList(),
+    val catalog: List<SpotlightItem> = emptyList()
+)
+
+@Serializable
+data class SpotlightSeenRequest(val key: String)
+
+// ---- Push registration (FCM) ----
+@Serializable
+data class PushTokenRequest(val token: String, val platform: String = "android")
+
+// CAS solver (POST /api/cas/solve). `ok=false` carries an `error` ("unsolved", "no_unique_solution",
+// "invalid_input"); on success, `steps` is the worked LaTeX derivation and `source` is js-linear|sympy.
+@Serializable
+data class CasSolveRequest(
+    val equation: String
+)
+
+@Serializable
+data class CasSolveResponse(
+    val ok: Boolean = false,
+    val equation: String? = null,
+    val variable: String? = null,
+    val solutions: List<String> = emptyList(),
+    val steps: List<String> = emptyList(),
+    val source: String? = null,
+    val error: String? = null,
+    val detail: String? = null
 )

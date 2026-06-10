@@ -120,7 +120,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                 Text(
                     text = "Exchange your Math Coins earned from levels and duels for visual upgrades and utilities.",
                     fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                    color = Color.White.copy(alpha = 0.6f),
                     modifier = Modifier.padding(vertical = Spacing.xs)
                 )
             }
@@ -201,7 +201,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                                 text = "YOUR BALANCE",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                color = Color.White.copy(alpha = 0.65f)
                             )
                             Text(
                                 text = "🪙 ${user?.coins ?: 0}",
@@ -281,7 +281,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                             Text(
                                 text = "Refreshes in: ${formatDuration(sec)}",
                                 fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                color = Color.White.copy(alpha = 0.65f)
                             )
                         }
                     }
@@ -315,7 +315,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                             Text(
                                 text = "Refreshes in: ${formatDuration(sec)}",
                                 fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                color = Color.White.copy(alpha = 0.65f)
                             )
                         }
                     }
@@ -374,9 +374,9 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                             fontSize = 14.sp,
                             color = Color.White
                         )
-                        Icon(
-                            imageVector = if (showFullCatalog) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Toggle catalog",
+                        com.example.numera.ui.components.NumeraIcon(
+                            type = if (showFullCatalog) com.example.numera.ui.components.NumeraIconType.ChevronUp
+                                else com.example.numera.ui.components.NumeraIconType.ChevronDown,
                             tint = Color.White
                         )
                     }
@@ -387,7 +387,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                         Text(
                             text = "Browse and buy any cosmetic directly — no waiting for the rotation.",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                            color = Color.White.copy(alpha = 0.6f),
                             modifier = Modifier.padding(bottom = Spacing.xs)
                         )
                     }
@@ -434,12 +434,28 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
             }
         }
 
-        // Cinematic Reveal Overlay Dialog
+        // Cinematic Reveal Overlay Dialog — staged reward moment: the medallion pops in
+        // with the reward spring, and prestige tiers (Epic+) earn a confetti burst behind
+        // the dialog so the unlock feels earned, not transactional.
         purchasedItemForReveal?.let { item ->
-            val rarityColor = getRarityColor(item.rarity ?: "Common")
-            
+            val tier = Rarity.from(item.rarity)
+            val rarityColor = tier.color
+            var revealStarted by remember(item.id) { mutableStateOf(false) }
+            var burstActive by remember(item.id) { mutableStateOf(tier.isPrestige) }
+            LaunchedEffect(item.id) { revealStarted = true }
+
+            if (burstActive) {
+                com.example.numera.ui.components.VictoryParticles(
+                    trigger = true,
+                    onFinished = { burstActive = false }
+                )
+            }
+
             AlertDialog(
                 onDismissRequest = { purchasedItemForReveal = null },
+                // Deliberately dark across all themes — the reveal shares the shop's
+                // showcase-case aesthetic, and its white/rarity text depends on it.
+                containerColor = Color(0xFF1E1E2E),
                 confirmButton = {},
                 dismissButton = {
                     DuoButton(
@@ -487,6 +503,10 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(Spacing.l)
                     ) {
+                        AnimatedVisibility(
+                            visible = revealStarted,
+                            enter = Motion.rewardEnter()
+                        ) {
                         Box(
                             modifier = Modifier
                                 .size(110.dp)
@@ -512,7 +532,8 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                                 }
                             }
                         }
-                        
+                        }
+
                         Text(
                             text = item.name,
                             fontWeight = FontWeight.Black,

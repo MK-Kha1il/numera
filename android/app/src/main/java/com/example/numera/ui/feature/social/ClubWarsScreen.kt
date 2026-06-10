@@ -151,7 +151,7 @@ fun ClubWarsScreen(onBack: () -> Unit) {
 
             "war" -> {
                 val w = war
-                if (w == null) { CircularProgressIndicator() } else {
+                if (w == null) { com.example.numera.ui.components.NumeraPremiumLoader(modifier = Modifier.fillMaxWidth()) } else {
                     WarStandings(w)
                     val amInThisWar = w.myClubId == w.challenger.clubId || w.myClubId == w.opponent.clubId
                     when {
@@ -171,7 +171,7 @@ fun ClubWarsScreen(onBack: () -> Unit) {
 
             "playing" -> {
                 val w = war
-                if (w == null || qIndex >= w.problems.size) { CircularProgressIndicator() } else {
+                if (w == null || qIndex >= w.problems.size) { com.example.numera.ui.components.MathIconSpinner() } else {
                     Text("Question ${qIndex + 1} of ${w.problems.size}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
                     DuoCard(modifier = Modifier.fillMaxWidth()) {
                         Box(modifier = Modifier.fillMaxWidth().padding(Spacing.xl), contentAlignment = Alignment.Center) {

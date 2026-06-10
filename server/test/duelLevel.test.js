@@ -16,10 +16,15 @@ test('buildDuelProblemSet returns well-formed, answer-stripped problems with a s
     assert.equal(set.level, target, `level passes through for ${target}`);
     assert.equal(set.problems.length, 5);
     assert.equal(set.answers.length, 5);
+    assert.ok(Array.isArray(set.explanations) && set.explanations.length === 5, 'worked solutions kept server-side');
     for (const p of set.problems) {
       assert.ok(p.question && p.question.length > 0, 'has a question');
       assert.ok(Array.isArray(p.options) && p.options.length >= 2, 'has options');
       assert.equal(p.correctAnswer, undefined, 'the answer is stripped from client problems');
+      // The worked solution and Socratic feedback both spell the answer in plaintext, so neither
+      // may ride along with the live problem — that would defeat server-authoritative grading.
+      assert.equal(p.explanation, undefined, 'the explanation is NOT shipped with the live problem');
+      assert.equal(p.socraticJson, undefined, 'the socratic feedback is NOT shipped with the live problem');
     }
     for (const a of set.answers) assert.ok(a != null && String(a).trim().length > 0, 'server keeps the answer');
   }
@@ -35,7 +40,11 @@ test('high-level duels use the SymPy CAS when available, else fall back to the c
     assert.ok(p.question && p.question.length > 0);
     assert.ok(Array.isArray(p.options) && p.options.length >= 2);
     assert.equal(p.correctAnswer, undefined);
+    // Same anti-leak guarantee on the CAS path: the SymPy worked solution is held back, not shipped.
+    assert.equal(p.explanation, undefined, 'CAS duel problems do not ship the worked solution');
+    assert.equal(p.socraticJson, undefined);
   }
+  assert.ok(Array.isArray(set.explanations) && set.explanations.length === 5, 'worked solutions kept server-side');
 });
 
 test('out-of-range levels are clamped to 1..50', async () => {

@@ -225,9 +225,8 @@ fun PlacementTestScreen(
                 } else {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = if (lastCorrect) Icons.Default.Check else Icons.Default.Close,
-                                contentDescription = if (lastCorrect) "Correct" else "Wrong",
+                            com.example.numera.ui.components.NumeraIcon(
+                                type = if (lastCorrect) com.example.numera.ui.components.NumeraIconType.Check else com.example.numera.ui.components.NumeraIconType.Close,
                                 tint = if (lastCorrect) CorrectGreen else WrongRed,
                                 modifier = Modifier.size(28.dp)
                             )

@@ -2,6 +2,7 @@ package com.example.numera.ui.screens
 
 import android.util.Log
 import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +27,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.MathProblem
@@ -69,9 +71,17 @@ fun DuelGameScreen(
     // The canonical answer is no longer shipped with the problem (server-authoritative grading);
     // the server discloses it in its submit_answer ack, and we hold it here to drive the reveal.
     var revealedCorrectAnswer by remember { mutableStateOf("") }
+    // The worked solution is likewise withheld from the live problem (it spells the answer) and
+    // disclosed only in the post-answer ack; held here for the favorite/archive payload.
+    var revealedExplanation by remember { mutableStateOf("") }
     
     var showParticles by remember { mutableStateOf(false) }
-    
+    var myUsername by remember { mutableStateOf("You") }
+    // Consecutive correct answers this duel — fuels the 🔥 streak chip in the race header.
+    var streakCount by remember { mutableIntStateOf(0) }
+    // One beat of anticipation (names square off) before the first problem appears.
+    var showVsIntro by remember { mutableStateOf(true) }
+
     var isDuelOver by remember { mutableStateOf(false) }
     var duelWinnerId by remember { mutableIntStateOf(-1) }
     var myUserId by remember { mutableIntStateOf(0) }
@@ -102,6 +112,7 @@ fun DuelGameScreen(
                 val profile = profileDeferred.await()
                 val favs = favsDeferred.await()
                 myUserId = profile.id
+                myUsername = profile.username
                 favoritedQuestions = favs.map { it.question }.toSet()
             }
         } catch (e: Exception) {
@@ -172,15 +183,64 @@ fun DuelGameScreen(
         }
     }
 
-    VictoryParticles(trigger = showParticles) {
-        showParticles = false
-    }
-
     if (problemsList.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 NumeraPremiumLoader()
                 Text("Waiting for Duel Arena grid setup...", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
+            }
+        }
+        return
+    }
+
+    // VS intro — one beat of anticipation: the matchup squares off, then the race begins.
+    if (showVsIntro && !isDuelOver) {
+        var introShown by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            introShown = true
+            com.example.numera.haptic.HapticManager.playMedium()
+            kotlinx.coroutines.delay(1800)
+            showVsIntro = false
+        }
+        Box(
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(visible = introShown, enter = Motion.rewardEnter()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Spacing.m)
+                ) {
+                    Text(
+                        text = myUsername,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(text = "⚔️", fontSize = 54.sp)
+                    Text(
+                        text = "VS",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 6.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = opponentName,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.secondary,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(Spacing.s))
+                    Text(
+                        text = "${problemsList.size} problems · fastest correct answers win",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
             }
         }
         return
@@ -213,6 +273,10 @@ fun DuelGameScreen(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
+            // Result pops in with the reward spring; a win earns a confetti burst on top.
+            var endRevealed by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) { endRevealed = true }
+            AnimatedVisibility(visible = endRevealed, enter = Motion.rewardEnter()) {
             DuoCard(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
@@ -230,6 +294,13 @@ fun DuelGameScreen(
                         fontWeight = FontWeight.ExtraBold,
                         color = if (didIWin) CorrectGreen else WrongRed,
                         textAlign = TextAlign.Center
+                    )
+
+                    Text(
+                        text = "$myPoints — $oppPoints vs $opponentName",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -303,65 +374,120 @@ fun DuelGameScreen(
                     )
                 }
             }
+            }
+
+            if (didIWin) {
+                var winBurst by remember { mutableStateOf(true) }
+                VictoryParticles(trigger = winBurst) { winBurst = false }
+            }
         }
         return
     }
 
     val currentProblem = problemsList.getOrNull(currentProblemIdx) ?: problemsList.last()
 
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Racer Progress Display (Modern, clean, Duo-like panels)
+        // Score race header — the duel's heartbeat: live score front and center,
+        // animated tracks underneath, plus lead callout, streak fire and Q counter.
+        val total = problemsList.size.coerceAtLeast(1)
+        val myBar by animateFloatAsState(myProgress / total.toFloat(), Motion.standard(), label = "myBar")
+        val oppBar by animateFloatAsState(oppProgress / total.toFloat(), Motion.standard(), label = "oppBar")
         DuoCard(
             modifier = Modifier.fillMaxWidth(),
             backgroundColor = MaterialTheme.colorScheme.surfaceVariant
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.fillMaxWidth().padding(Spacing.m),
+                verticalArrangement = Arrangement.spacedBy(Spacing.s)
             ) {
-                // Player progress
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("YOU (Progress)", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                        Text("$myPoints pts ($myProgress/5)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
-                    }
-                    LinearProgressIndicator(
-                        progress = { myProgress / 5f },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = myUsername,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.outline
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = "$myPoints — $oppPoints",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(horizontal = Spacing.s)
+                    )
+                    Text(
+                        text = opponentName,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.secondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.weight(1f)
                     )
                 }
-
-                // Opponent progress
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(opponentName.uppercase() + " (Opponent)", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
-                        Text("$oppPoints pts ($oppProgress/5)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
+                LinearProgressIndicator(
+                    progress = { myBar },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.outline
+                )
+                LinearProgressIndicator(
+                    progress = { oppBar },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.outline
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+                ) {
+                    Text(
+                        text = when {
+                            myPoints > oppPoints -> "You lead — keep pushing!"
+                            myPoints < oppPoints -> "$opponentName leads — catch up!"
+                            else -> "Neck and neck"
+                        },
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = when {
+                            myPoints > oppPoints -> CorrectGreen
+                            myPoints < oppPoints -> WrongRed
+                            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (streakCount >= 2) {
+                        Text(
+                            text = "🔥 ×$streakCount",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
                     }
-                    LinearProgressIndicator(
-                        progress = { oppProgress / 5f },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = MaterialTheme.colorScheme.secondary,
-                        trackColor = MaterialTheme.colorScheme.outline
+                    Text(
+                        text = "Q ${(currentProblemIdx + 1).coerceAtMost(total)}/$total",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
             }
@@ -421,11 +547,12 @@ fun DuelGameScreen(
                                         title = "Arena Duel Exercise",
                                         category = "Arena",
                                         question = currentProblem.question,
-                                        // Answer isn't shipped with the problem anymore; use the
-                                        // server-revealed one if the player has already answered.
+                                        // Neither the answer NOR the worked solution is shipped with
+                                        // the problem anymore; use the server-revealed ones, available
+                                        // once the player has answered.
                                         correct_answer = revealedCorrectAnswer,
                                         options = currentProblem.options,
-                                        explanation = currentProblem.explanation
+                                        explanation = revealedExplanation
                                     )
                                 )
                             } catch (e: Exception) {
@@ -514,14 +641,17 @@ fun DuelGameScreen(
                                         // Send the actual answer; the SERVER grades it and acks back
                                         // its verdict + the canonical answer, which drives the reveal
                                         // (sound/particles/highlight). The client no longer self-judges.
-                                        SocketClient.submitAnswer(roomId, myUserId, option, nextIdx) { correct, correctAnswer ->
+                                        SocketClient.submitAnswer(roomId, myUserId, option, nextIdx) { correct, correctAnswer, explanation ->
                                             scope.launch(Dispatchers.Main) {
                                                 revealedCorrectAnswer = correctAnswer
+                                                revealedExplanation = explanation
                                                 if (correct) {
+                                                    streakCount++
                                                     SoundManager.playCorrect()
                                                     com.example.numera.haptic.HapticManager.playSuccess()
                                                     showParticles = true
                                                 } else {
+                                                    streakCount = 0
                                                     SoundManager.playWrong()
                                                     com.example.numera.haptic.HapticManager.playError()
                                                 }
@@ -538,6 +668,7 @@ fun DuelGameScreen(
                                                 hasAnswered = false
                                                 selectedAnswer = ""
                                                 revealedCorrectAnswer = ""
+                                                revealedExplanation = ""
                                             }
                                         }
                                     }
@@ -612,5 +743,10 @@ fun DuelGameScreen(
                 }
             }
         }
+    }
+
+    // Confetti overlays the board. (It used to be composed *before* the opaque game
+    // column, so the correct-answer burst was painted underneath and never visible.)
+    VictoryParticles(trigger = showParticles) { showParticles = false }
     }
 }

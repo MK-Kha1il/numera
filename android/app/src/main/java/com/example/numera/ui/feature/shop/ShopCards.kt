@@ -125,8 +125,9 @@ fun RarityCardFrame(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val rarityColor = getRarityColor(rarity)
-    
+    val tier = Rarity.from(rarity)
+    val rarityColor = tier.color
+
     val infiniteTransition = rememberInfiniteTransition(label = "cardShimmer")
     val translateAnim by infiniteTransition.animateFloat(
         initialValue = -500f,
@@ -137,29 +138,30 @@ fun RarityCardFrame(
         ),
         label = "translate"
     )
-    
-    val borderBrush = getRarityBorderBrush(rarity)
+
+    val borderBrush = tier.borderBrush
 
     // Stable per-card glow — hoisted so the infinite shimmer animation above doesn't
     // reallocate it every frame (the shimmer brush itself genuinely varies per frame).
-    val glowBrush = remember(rarityColor) {
+    // Glow strength scales with the tier so rarity has a felt hierarchy, not just a hue.
+    val glowBrush = remember(tier) {
         Brush.radialGradient(
-            colors = listOf(rarityColor.copy(alpha = 0.08f), Color.Transparent),
+            colors = listOf(rarityColor.copy(alpha = 0.06f + 0.06f * tier.glow), Color.Transparent),
             radius = 300f
         )
     }
 
-    val elevation = when (rarity.lowercase()) {
-        "mythic" -> Spacing.m
-        "legendary" -> Spacing.s
-        "epic" -> 6.dp
-        else -> 2.dp
+    val elevation = when (tier) {
+        Rarity.Mythic -> Elevation.modal
+        Rarity.Legendary -> Spacing.s
+        Rarity.Epic -> Elevation.raised
+        else -> Elevation.card
     }
-    
+
     Card(
         modifier = modifier
             .border(
-                width = if (rarity.lowercase() in listOf("mythic", "legendary")) 2.dp else 1.dp,
+                width = if (tier >= Rarity.Legendary) 2.dp else 1.dp,
                 brush = borderBrush,
                 shape = RoundedCornerShape(CornerRadius.l)
             ),
@@ -180,7 +182,7 @@ fun RarityCardFrame(
                 content()
             }
             
-            if (rarity.lowercase() in listOf("mythic", "legendary", "epic")) {
+            if (tier.isPrestige) {
                 val shimmerBrush = Brush.linearGradient(
                     colors = listOf(
                         Color.White.copy(alpha = 0f),
@@ -289,7 +291,7 @@ fun HeroShowcasePanel(
                     ) {
                         com.example.numera.ui.components.NumeraIcon(
                             type = com.example.numera.ui.components.NumeraIconType.Close,
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            tint = Color.White.copy(alpha = 0.7f)
                         )
                     }
                 }
@@ -302,7 +304,7 @@ fun HeroShowcasePanel(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    if (item.rarity?.lowercase() in listOf("legendary", "mythic")) {
+                    if (Rarity.from(item.rarity) >= Rarity.Legendary) {
                         Canvas(modifier = Modifier.size(130.dp)) {
                             drawCircle(
                                 color = rarityColor.copy(alpha = 0.25f),
@@ -370,14 +372,14 @@ fun HeroShowcasePanel(
                         )
                         Text(
                             text = "·",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            color = Color.White.copy(alpha = 0.7f),
                             fontSize = 11.sp
                         )
                         Text(
                             text = item.type.uppercase(),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = Color.White.copy(alpha = 0.7f)
                         )
                     }
                 }
@@ -386,7 +388,7 @@ fun HeroShowcasePanel(
                     text = item.description ?: "",
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                    color = Color.White.copy(alpha = 0.75f),
                     modifier = Modifier.padding(horizontal = Spacing.s)
                 )
                 
@@ -411,7 +413,7 @@ fun HeroShowcasePanel(
                         text = "Current Stock: $utilityQty owned",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = Color.White.copy(alpha = 0.7f)
                     )
                 }
                 
@@ -459,7 +461,7 @@ fun HeroShowcasePanel(
                                 Text(
                                     text = "🪙 ${item.originalCost}",
                                     style = TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough),
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                    color = Color.White.copy(alpha = 0.7f),
                                     fontSize = 13.sp
                                 )
                                 Box(
@@ -497,7 +499,7 @@ fun HeroShowcasePanel(
                                 }
                             },
                             enabled = canBuy,
-                            color = if (canBuy) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            color = if (canBuy) MaterialTheme.colorScheme.tertiary else Color.White.copy(alpha = 0.25f),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -537,7 +539,7 @@ fun FeaturedShopItemCard(
         label = "pulse"
     )
 
-    val scaleValue = if (item.rarity?.lowercase() in listOf("legendary", "mythic")) pulseScale else 1f
+    val scaleValue = if (Rarity.from(item.rarity) >= Rarity.Legendary) pulseScale else 1f
 
     RarityCardFrame(
         rarity = item.rarity ?: "Common",
@@ -595,7 +597,7 @@ fun FeaturedShopItemCard(
                 Text(
                     text = item.description ?: "",
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    color = Color.White.copy(alpha = 0.7f),
                     maxLines = 2
                 )
             }
@@ -605,7 +607,7 @@ fun FeaturedShopItemCard(
                     Text(
                         text = "🪙 ${item.originalCost}",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = Color.White.copy(alpha = 0.7f),
                         style = TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
                     )
                     Box(
@@ -634,7 +636,7 @@ fun FeaturedShopItemCard(
                 } else if (hasPurchased) {
                     Text(
                         text = "Owned",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = Color.White.copy(alpha = 0.7f),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
@@ -681,7 +683,7 @@ fun ShopHeroCard(
         label = "pulse"
     )
 
-    val scaleValue = if (item.rarity?.lowercase() in listOf("legendary", "mythic")) pulseScale else 1f
+    val scaleValue = if (Rarity.from(item.rarity) >= Rarity.Legendary) pulseScale else 1f
 
     RarityCardFrame(
         rarity = item.rarity ?: "Common",
@@ -763,7 +765,7 @@ fun ShopHeroCard(
                     Text(
                         text = item.description,
                         fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = Color.White.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = Spacing.m)
                     )
@@ -779,7 +781,7 @@ fun ShopHeroCard(
                     Text(
                         text = "🪙 ${item.originalCost}",
                         fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = Color.White.copy(alpha = 0.7f),
                         style = TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
                     )
                     Spacer(modifier = Modifier.width(Spacing.s))
@@ -795,7 +797,7 @@ fun ShopHeroCard(
                 } else if (hasPurchased) {
                     Text(
                         text = "Owned",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = Color.White.copy(alpha = 0.7f),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
@@ -884,12 +886,12 @@ fun DailyShopItemCard(
                     Text(
                         text = "·",
                         fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = Color.White.copy(alpha = 0.7f)
                     )
                     Text(
                         text = item.type.uppercase(),
                         fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = Color.White.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -899,7 +901,7 @@ fun DailyShopItemCard(
                     Text(
                         text = "🪙 ${item.originalCost}",
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = Color.White.copy(alpha = 0.7f),
                         style = TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
                     )
                 }
@@ -913,7 +915,7 @@ fun DailyShopItemCard(
                 } else if (hasPurchased) {
                     Text(
                         text = "Owned",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = Color.White.copy(alpha = 0.7f),
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
@@ -967,10 +969,18 @@ fun UtilityShopItemCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = item.name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+                if (!item.description.isNullOrEmpty()) {
+                    Text(
+                        text = item.description,
+                        fontSize = 11.sp,
+                        color = Color.White.copy(alpha = 0.65f),
+                        maxLines = 2
+                    )
+                }
                 Text(
                     text = "Owned: $ownedQuantity",
                     fontSize = 12.sp,
-                    color = if (ownedQuantity > 0) CorrectGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    color = if (ownedQuantity > 0) CorrectGreen else Color.White.copy(alpha = 0.7f),
                     fontWeight = FontWeight.Bold
                 )
             }

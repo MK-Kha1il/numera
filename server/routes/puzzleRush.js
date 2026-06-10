@@ -19,46 +19,43 @@ const FIXED_ELO = 1200;          // standardized so the ladder is fair (difficul
 const MAX_COIN_REWARD = 50;
 
 const { areEquivalent } = require('../mathEngine/answerEquivalence');
+const { categoryForLevel, rushLevel } = require('../lib/arenaDifficulty');
 
-// The difficulty ladder: level rises with score; category follows the level band (mirrors the
-// generator's CONCEPT_TO_LEVEL bands so every rung has real templates).
-function ladderFor(score) {
-  const level = Math.min(49, 1 + score);
-  let category = 'arithmetic';
-  if (level > 40) category = 'number_theory';
-  else if (level > 30) category = 'calculus';
-  else if (level > 17) category = 'combinatorics';
-  else if (level > 10) category = 'algebra';
-  return { category, level };
-}
-
-function nextProblem(score) {
-  const { category, level } = ladderFor(score);
+// The difficulty ladder: one level per point, STARTING AT THE PLAYER'S OWN LEVEL (a level-30
+// player no longer opens on "10 × 8"); the category follows the level band. Elo stays fixed
+// so within a rung the problem flavor is standardized.
+function nextProblem(baseLevel, score) {
+  const level = rushLevel(baseLevel, score);
+  const category = categoryForLevel(level);
   const prob = generateProblem(category, level, Math.floor(Math.random() * 100), FIXED_ELO);
   return { category, level, prob };
 }
 
-// Start a fresh run: create the row, serve the first problem (without its answer).
+// Start a fresh run: create the row, serve the first problem (without its answer). The run's
+// starting rung is the player's current level.
 router.post('/api/puzzle-rush/start', authenticateToken, idempotency, (req, res) => {
   const userId = req.user.id;
   const now = Date.now();
-  const { category, level, prob } = nextProblem(0);
-  db.run(
-    `INSERT INTO puzzle_rush_runs
-       (user_id, score, strikes, current_index, current_answer, current_category, current_level, status, started_at, last_action_at)
-     VALUES (?, 0, 0, 0, ?, ?, ?, 'active', ?, ?)`,
-    [userId, prob.correctAnswer, category, level, now, now],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({
-        runId: this.lastID,
-        index: 0,
-        lives: STARTING_LIVES,
-        score: 0,
-        problem: { question: prob.question, options: prob.options },
-      });
-    }
-  );
+  db.get('SELECT level FROM users WHERE id = ?', [userId], (uErr, userRow) => {
+    if (uErr) return res.status(500).json({ error: uErr.message });
+    const { category, level, prob } = nextProblem((userRow && userRow.level) || 1, 0);
+    db.run(
+      `INSERT INTO puzzle_rush_runs
+         (user_id, score, strikes, current_index, current_answer, current_category, current_level, status, started_at, last_action_at)
+       VALUES (?, 0, 0, 0, ?, ?, ?, 'active', ?, ?)`,
+      [userId, prob.correctAnswer, category, level, now, now],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({
+          runId: this.lastID,
+          index: 0,
+          lives: STARTING_LIVES,
+          score: 0,
+          problem: { question: prob.question, options: prob.options },
+        });
+      }
+    );
+  });
 });
 
 // Submit an answer for the current problem. Advances the ladder, or ends the run on the 3rd
@@ -107,7 +104,10 @@ router.post('/api/puzzle-rush/submit', authenticateToken, idempotency, (req, res
     }
 
     const nextIndex = run.current_index + 1;
-    const { category, level, prob } = nextProblem(score);
+    // Recover the run's starting rung from the stored state (level = base + score while below
+    // the cap; once capped both stay capped), so no schema change is needed.
+    const baseLevel = Math.max(1, run.current_level - run.score);
+    const { category, level, prob } = nextProblem(baseLevel, score);
     await tx.run(
       `UPDATE puzzle_rush_runs
          SET score = ?, strikes = ?, current_index = ?, current_answer = ?, current_category = ?, current_level = ?, integrity_flag = ?, last_action_at = ?

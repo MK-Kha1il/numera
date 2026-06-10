@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.numera.theme.MedalGold
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -369,51 +370,14 @@ fun AchievementBadge(achievementId: String?, modifier: Modifier = Modifier) {
             modifier = modifier
         )
     } else {
-        // Determine emoji, tier, and accent colors from achievement id
-        data class AchInfo(val emoji: String, val tier: Int, val startColor: Color, val endColor: Color)
-        val info = when (achievementId) {
-            "persist_streak_3", "streak_1"        -> AchInfo("🌱", 1, Color(0xFF4ADE80), Color(0xFF16A34A))
-            "persist_streak_10", "streak_2"       -> AchInfo("🔥", 2, Color(0xFFFB923C), Color(0xFFEA580C))
-            "persist_streak_30", "streak_3", "streak_expert" -> AchInfo("⚡", 3, Color(0xFFFDE047), Color(0xFFCA8A04))
-            "streak_4"                            -> AchInfo("☀️", 4, Color(0xFFF9A8D4), Color(0xFFDB2777))
-
-            "learn_exercises_10", "solver_1", "math_novice" -> AchInfo("📚", 1, Color(0xFF818CF8), Color(0xFF4F46E5))
-            "learn_exercises_50", "solver_2"      -> AchInfo("📝", 2, Color(0xFF7DD3FC), Color(0xFF0284C7))
-            "learn_exercises_200", "solver_3", "math_expert" -> AchInfo("🎓", 3, Color(0xFFA78BFA), Color(0xFF7C3AED))
-            "solver_4"                            -> AchInfo("🧙", 4, Color(0xFFF9A8D4), Color(0xFFDB2777))
-
-            "accuracy_perfect_5"                  -> AchInfo("🎯", 1, Color(0xFF6EE7B7), Color(0xFF059669))
-            "accuracy_perfect_25"                 -> AchInfo("🏹", 2, Color(0xFF86EFAC), Color(0xFF16A34A))
-            "accuracy_perfect_100"                -> AchInfo("🔮", 3, Color(0xFFC084FC), Color(0xFF9333EA))
-
-            "mastery_level_10"                    -> AchInfo("📈", 1, Color(0xFF67E8F9), Color(0xFF0891B2))
-            "mastery_level_30"                    -> AchInfo("🌟", 2, Color(0xFFFDE68A), Color(0xFFD97706))
-            "mastery_level_60"                    -> AchInfo("👑", 3, Color(0xFFFDE047), Color(0xFFCA8A04))
-
-            "social_friends_1"                    -> AchInfo("🤝", 1, Color(0xFF86EFAC), Color(0xFF15803D))
-            "social_friends_5"                    -> AchInfo("👥", 2, Color(0xFF6EE7B7), Color(0xFF0F766E))
-            "social_friends_15"                   -> AchInfo("🌐", 3, Color(0xFF7DD3FC), Color(0xFF1D4ED8))
-
-            "comp_arena_wins_3", "arena_1"        -> AchInfo("⚔️", 1, Color(0xFFFCA5A5), Color(0xFFDC2626))
-            "comp_arena_wins_15", "arena_2", "arena_challenger" -> AchInfo("🛡️", 2, Color(0xFF93C5FD), Color(0xFF2563EB))
-            "comp_arena_wins_50", "arena_3"       -> AchInfo("🏆", 3, Color(0xFFFDE68A), Color(0xFFD97706))
-            "arena_4", "arena_champion"           -> AchInfo("👑", 4, Color(0xFFF9A8D4), Color(0xFFBE185D))
-
-            "explore_archive_5"                   -> AchInfo("🗺️", 1, Color(0xFF6EE7B7), Color(0xFF065F46))
-            "explore_archive_25"                  -> AchInfo("🧭", 2, Color(0xFF67E8F9), Color(0xFF0891B2))
-            "explore_archive_100"                 -> AchInfo("🛸", 3, Color(0xFFC084FC), Color(0xFF6D28D9))
-
-            "collect_items_3", "shop_1", "shop_customer" -> AchInfo("🪙", 1, Color(0xFFFDE68A), Color(0xFFB45309))
-            "collect_items_10", "shop_2"          -> AchInfo("💼", 2, Color(0xFF93C5FD), Color(0xFF1D4ED8))
-            "collect_items_25", "shop_3"          -> AchInfo("💎", 3, Color(0xFFA5F3FC), Color(0xFF0891B2))
-            "shop_4"                              -> AchInfo("✨", 4, Color(0xFFF9A8D4), Color(0xFFBE185D))
-
-            "seasonal_spring_5"                   -> AchInfo("🌸", 2, Color(0xFFFDA4AF), Color(0xFFE11D48))
-            "seasonal_summer_5"                   -> AchInfo("☀️", 2, Color(0xFFFDE68A), Color(0xFFD97706))
-            "hidden_ultimate"                     -> AchInfo("🛸", 4, Color(0xFFC084FC), Color(0xFF6D28D9))
-            "hidden_speed"                        -> AchInfo("⚡", 3, Color(0xFFFDE047), Color(0xFFCA8A04))
-            else                                  -> AchInfo("🏆", 1, Color(0xFFFDE68A), Color(0xFFD97706))
-        }
+        val family = achievementFamily(achievementId ?: "")
+        val tier = achievementTier(achievementId ?: "", family.motifs.size)
+        val info = AchievementVisual(
+            emoji = family.motifs[tier - 1],
+            tier = tier,
+            startColor = family.startColor,
+            endColor = family.endColor
+        )
 
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
             Canvas(modifier = Modifier.fillMaxSize()) {
@@ -433,18 +397,19 @@ fun AchievementBadge(achievementId: String?, modifier: Modifier = Modifier) {
                     center = Offset(cx, cy)
                 )
 
-                // Tier ring (thicker for higher tiers)
+                // Tier ring (thicker + warmer for higher tiers — the frame escalation
+                // is what signals prestige; the hue stays owned by the family)
                 val ringWidth = when (info.tier) {
                     1 -> 2.dp.toPx()
                     2 -> 2.5.dp.toPx()
                     3 -> 3.dp.toPx()
                     else -> 3.5.dp.toPx()
                 }
-                val ringColor = when (info.tier) {
-                    1 -> Color.White.copy(alpha = 0.5f)
-                    2 -> Color(0xFFFDE68A)
-                    3 -> Color(0xFFFBBF24)
-                    else -> Color(0xFFF59E0B)
+                val ringColor = when {
+                    info.tier <= 1 -> Color.White.copy(alpha = 0.5f)
+                    info.tier == 2 -> Color(0xFFFDE68A)
+                    info.tier == 3 -> Color(0xFFFBBF24)
+                    else -> MedalGold
                 }
                 drawCircle(
                     color = ringColor,
@@ -453,13 +418,14 @@ fun AchievementBadge(achievementId: String?, modifier: Modifier = Modifier) {
                     style = Stroke(width = ringWidth)
                 )
 
-                // Tier stars at bottom (1–4 small dots)
+                // Tier pips at bottom (capped at 5 so deep ladders don't overflow the medallion)
+                val dotCount = minOf(info.tier, 5)
                 val dotR = 2.5.dp.toPx()
                 val dotSpacing = 7.dp.toPx()
-                val totalDotsWidth = (info.tier - 1) * dotSpacing
+                val totalDotsWidth = (dotCount - 1) * dotSpacing
                 val startX = cx - totalDotsWidth / 2f
                 val dotY = cy + r * 0.62f
-                repeat(info.tier) { i ->
+                repeat(dotCount) { i ->
                     drawCircle(
                         color = Color.White.copy(alpha = 0.9f),
                         radius = dotR,
@@ -474,5 +440,87 @@ fun AchievementBadge(achievementId: String?, modifier: Modifier = Modifier) {
             )
         }
     }
+}
+
+/** Per-badge resolved visual: family hue pair + the tier's motif glyph. */
+private data class AchievementVisual(
+    val emoji: String,
+    val tier: Int,
+    val startColor: Color,
+    val endColor: Color
+)
+
+/**
+ * Achievement families — each progression family owns one hue pair and a motif ladder,
+ * so a badge's *color says which family it is* and its *frame/motif say how far you got*.
+ * This replaces a per-id lookup that silently fell back to a generic trophy for most
+ * seeded achievements (streak_5+, learn_*, accuracy_*, every mastery_* chain, …).
+ */
+private enum class AchievementFamily(
+    val startColor: Color,
+    val endColor: Color,
+    /** Motif ladder, lowest tier first. Tier N renders motifs[N-1]. */
+    val motifs: List<String>
+) {
+    /** Daily-habit fire: ember orange. */
+    Streak(Color(0xFFFDBA74), Color(0xFFEA580C), listOf("🌱", "🔥", "⚡", "☀️", "🌋", "💫", "👑")),
+    /** Problems solved / lessons: scholar indigo. */
+    Learning(Color(0xFF818CF8), Color(0xFF4F46E5), listOf("📖", "📚", "📝", "🎓", "🧙")),
+    /** Perfect runs: surgical emerald. */
+    Precision(Color(0xFF6EE7B7), Color(0xFF059669), listOf("🎯", "🏹", "🔮", "💠")),
+    /** Per-topic mastery chains: deep violet. */
+    Mastery(Color(0xFFA78BFA), Color(0xFF6D28D9), listOf("📈", "🌟", "🏵️", "👑")),
+    /** Friends & community: open sky blue. */
+    Social(Color(0xFF7DD3FC), Color(0xFF1D4ED8), listOf("🤝", "👥", "🌐")),
+    /** Arena duels: battle crimson. */
+    Duels(Color(0xFFF87171), Color(0xFFB91C1C), listOf("⚔️", "🛡️", "🏆", "👑", "🐉")),
+    /** Archive & daily puzzles: voyager teal. */
+    Exploration(Color(0xFF67E8F9), Color(0xFF0E7490), listOf("🗺️", "🧭", "🛸")),
+    /** Shop collecting: treasury gold. */
+    Collection(Color(0xFFFDE68A), Color(0xFFB45309), listOf("🪙", "💼", "💎", "✨")),
+    /** Event chains: festival rose. */
+    Seasonal(Color(0xFFFDA4AF), Color(0xFFE11D48), listOf("🌸", "☀️")),
+    /** Hidden / elite accomplishments: cosmic violet. */
+    Elite(Color(0xFFC084FC), Color(0xFF6D28D9), listOf("🌀", "⚡", "🛸", "💎")),
+    /** Fallback for unrecognized ids (incl. purchased badge values): laurel gold. */
+    Laurels(Color(0xFFFDE68A), Color(0xFFD97706), listOf("🏆"))
+}
+
+/**
+ * Maps an achievement id (or a shop-badge value like "Gladiator II") onto its family.
+ * Prefix/keyword based so newly seeded chain rungs inherit their family automatically.
+ */
+private fun achievementFamily(id: String): AchievementFamily {
+    val key = id.trim().lowercase()
+    return when {
+        key.startsWith("hidden") -> AchievementFamily.Elite
+        key.startsWith("streak") || key.startsWith("persist") || key.contains("daily habit") -> AchievementFamily.Streak
+        key.startsWith("mastery") -> AchievementFamily.Mastery
+        key.startsWith("learn") || key.startsWith("solver") || key.startsWith("math") -> AchievementFamily.Learning
+        key.startsWith("accuracy") || key.contains("perfect") || key.contains("speed") -> AchievementFamily.Precision
+        key.startsWith("social") || key.contains("friend") -> AchievementFamily.Social
+        key.startsWith("arena") || key.startsWith("comp") || key.startsWith("gladiator") -> AchievementFamily.Duels
+        key.startsWith("explore") || key.contains("archive") -> AchievementFamily.Exploration
+        key.startsWith("shop") || key.startsWith("collect") -> AchievementFamily.Collection
+        key.startsWith("seasonal") || key.contains("spring") || key.contains("summer") -> AchievementFamily.Seasonal
+        else -> AchievementFamily.Laurels
+    }
+}
+
+/**
+ * Resolves the rung on the family's motif ladder. Ids encode either a chain order
+ * ("streak_5"), a raw target ("accuracy_perfect_100" — clamps to the top rung), or a
+ * roman numeral ("Gladiator II"); anything unparseable lands on rung 1.
+ */
+private fun achievementTier(id: String, ladderSize: Int): Int {
+    val key = id.trim().lowercase()
+    Regex("(\\d+)$").find(key)?.groupValues?.get(1)?.toIntOrNull()?.let { n ->
+        return n.coerceIn(1, ladderSize)
+    }
+    val romanValues = mapOf("i" to 1, "ii" to 2, "iii" to 3, "iv" to 4, "v" to 5)
+    Regex("\\b(iv|v|i{1,3})$").find(key)?.groupValues?.get(1)?.let { numeral ->
+        romanValues[numeral]?.let { return it.coerceIn(1, ladderSize) }
+    }
+    return 1
 }
 

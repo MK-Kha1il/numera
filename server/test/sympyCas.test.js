@@ -51,3 +51,18 @@ test('malformed input fails soft (no crash)', async (t) => {
   const r = await cas.solve('@@@ not math @@@');
   assert.equal(r.ok, false, 'reports an error rather than throwing');
 });
+
+test('generates verified problems that each ship a worked solution', async (t) => {
+  if (!available) return t.skip('SymPy/Python not installed');
+  const r = await cas.generate(40, 6); // level 40 spans quadratic / derivative / integral families
+  assert.equal(r.ok, true);
+  assert.equal(r.problems.length, 6);
+  for (const p of r.problems) {
+    assert.ok(p.question && p.options.length === 4, 'well-formed MCQ');
+    assert.ok(p.options.includes(String(p.answer)), 'the verified answer is among the options');
+    // The CAS-derived worked solution exists and is self-consistent: it ends by stating the answer.
+    assert.equal(typeof p.explanation, 'string');
+    assert.ok(p.explanation.length > 0, 'explanation is non-empty');
+    assert.ok(p.explanation.includes(String(p.answer)), 'worked solution arrives at the keyed answer');
+  }
+});

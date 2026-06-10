@@ -265,7 +265,7 @@ fun ScratchPad(
                     )
                 }
                 IconButton(onClick = { HapticManager.playSoft(); onClose() }) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close Board", tint = MaterialTheme.colorScheme.onBackground)
+                    NumeraIcon(type = NumeraIconType.Close, tint = MaterialTheme.colorScheme.onBackground)
                 }
             }
         }

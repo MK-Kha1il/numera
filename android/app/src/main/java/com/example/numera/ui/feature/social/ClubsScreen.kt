@@ -81,7 +81,7 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
         }
 
         if (loading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.example.numera.ui.components.NumeraPremiumLoader() }
             return@Column
         }
 

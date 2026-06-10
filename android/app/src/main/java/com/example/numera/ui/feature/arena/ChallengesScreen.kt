@@ -241,7 +241,7 @@ fun ChallengesScreen(onBack: () -> Unit) {
             "detail" -> {
                 val d = detail
                 if (d == null) {
-                    CircularProgressIndicator()
+                    com.example.numera.ui.components.NumeraPremiumLoader(modifier = Modifier.fillMaxWidth())
                 } else {
                     DuoCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {

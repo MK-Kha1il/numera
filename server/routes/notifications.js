@@ -87,6 +87,34 @@ router.post('/api/notifications/preferences', authenticateToken, async (req, res
   );
 });
 
+// Register (or refresh) an FCM device token for push. Idempotent per (user, token).
+router.post('/api/notifications/push-token', authenticateToken, (req, res) => {
+  const { token, platform } = req.body || {};
+  if (!token || typeof token !== 'string') return res.status(400).json({ error: 'token required' });
+  db.run(
+    `INSERT INTO push_tokens (user_id, token, platform, created_at) VALUES (?, ?, ?, ?)
+     ON CONFLICT(user_id, token) DO UPDATE SET platform = excluded.platform`,
+    [req.user.id, token.slice(0, 4096), String(platform || 'android').slice(0, 16), nowSec()],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+// Unregister a device token (logout / disable). Omitting `token` clears all of the user's tokens.
+router.delete('/api/notifications/push-token', authenticateToken, (req, res) => {
+  const { token } = req.body || {};
+  const sql = token
+    ? 'DELETE FROM push_tokens WHERE user_id = ? AND token = ?'
+    : 'DELETE FROM push_tokens WHERE user_id = ?';
+  const params = token ? [req.user.id, token] : [req.user.id];
+  db.run(sql, params, (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
 // One-click email unsubscribe. No auth: authorization is the signed token in the link. Turns off
 // lifecycle email only (transactional mail is unaffected). Returns a tiny HTML confirmation.
 router.get('/api/notifications/unsubscribe', (req, res) => {

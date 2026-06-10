@@ -1,5 +1,7 @@
 package com.example.numera.ui.components
 
+import android.annotation.SuppressLint
+import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -48,7 +50,17 @@ fun MathText(
 
     AndroidView(
         factory = { context ->
-            WebView(context).apply {
+            // A WebView's onTouchEvent claims gestures even with isClickable=false (its content
+            // is scrollable), which swallowed taps on answer cards rendered with MathText — only
+            // the card's padding around the WebView registered. The math is static and purely
+            // decorative for input purposes, so this subclass never claims a touch: the DOWN goes
+            // unconsumed and Compose's clickable/pointerInput on the surrounding card gets the
+            // full gesture wherever the user taps.
+            @SuppressLint("ClickableViewAccessibility")
+            class PassThroughWebView(ctx: android.content.Context) : WebView(ctx) {
+                override fun onTouchEvent(event: MotionEvent?): Boolean = false
+            }
+            PassThroughWebView(context).apply {
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                 // Software layer: the hardware (GPU) WebView render path crashes with a native
                 // SIGSEGV in libhwui's Skia-GL pipeline on emulated GPUs (e.g. BlueStacks). KaTeX
@@ -63,14 +75,9 @@ fun MathText(
                 }
                 setBackgroundColor(0)
                 webViewClient = WebViewClient()
-                // Prevent the WebView from consuming touch events so Compose's pointerInput
-                // handlers (answer tap, scroll, etc.) receive them. setOnTouchListener returning
-                // false is not enough — the WebView's own onTouchEvent still consumes events.
-                // Making it non-clickable/non-focusable blocks that path entirely.
                 isClickable = false
                 isFocusable = false
                 isFocusableInTouchMode = false
-                setOnTouchListener { _, _ -> false }
             }
         },
         update = { webView ->

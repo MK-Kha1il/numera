@@ -398,7 +398,7 @@ fun SettingsScreen(
                         Text("Change Username", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Text("Current: ${user?.username ?: "Not set"}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
-                    Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                 }
             },
             SearchableSettingItem("Email Management", "Configure registered recovery email address", "account recovery security email details") {
@@ -411,7 +411,7 @@ fun SettingsScreen(
                         Text("Email Management", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Text("Linked: ${if (user?.email.isNullOrBlank()) "None" else user?.email}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
-                    Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                 }
             },
             SearchableSettingItem("Active Sessions", "Audit devices connected to your credentials", "security logs logins active sessions device list") {
@@ -424,7 +424,7 @@ fun SettingsScreen(
                         Text("Active Sessions", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Text("Audit and revoke connected devices", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
-                    Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                 }
             },
             SearchableSettingItem("Security Activity Log", "Review login logs and credential events", "audit telemetry logins history security list") {
@@ -437,7 +437,7 @@ fun SettingsScreen(
                         Text("Security Activity Log", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Text("Glance audit list of account actions", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
-                    Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                 }
             },
             SearchableSettingItem("Private Profile Settings", "Toggle statistics privacy filters", "privacy visibility friends public search rankings") {
@@ -826,9 +826,8 @@ fun SettingsScreen(
                             Text("Password Management", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             Text("Update your account credentials", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         }
-                        Icon(
-                            imageVector = if (showPasswordSection) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = null,
+                        NumeraIcon(
+                            type = if (showPasswordSection) NumeraIconType.ChevronUp else NumeraIconType.ChevronDown,
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -1304,7 +1303,7 @@ fun SettingsScreen(
                             Text("Frequently Asked Questions", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             Text("Find answers to common problem queries", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         }
-                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
@@ -1318,7 +1317,7 @@ fun SettingsScreen(
                             Text("Contact Customer Support", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             Text("Submit feedback direct to creators", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         }
-                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
@@ -1332,7 +1331,7 @@ fun SettingsScreen(
                             Text("Report a System Bug", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             Text("Log mathematical template formatting errors", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         }
-                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
@@ -1346,7 +1345,7 @@ fun SettingsScreen(
                             Text("Request New Feature", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             Text("Suggest topics, avatars, or banner options", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         }
-                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
@@ -1360,7 +1359,7 @@ fun SettingsScreen(
                             Text("Community Guidelines", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             Text("Code of conduct for duels and social chats", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         }
-                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -1395,7 +1394,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Privacy Policy", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        NumeraIcon(type = NumeraIconType.ChevronRight, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
 
@@ -1404,7 +1403,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Terms of Service", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        NumeraIcon(type = NumeraIconType.ChevronRight, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
 
@@ -1413,7 +1412,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Credits & Contributors", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        NumeraIcon(type = NumeraIconType.ChevronRight, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
                 }
             }

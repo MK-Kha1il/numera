@@ -10,6 +10,9 @@ data object Login : NavKey
 data object Register : NavKey
 
 @Serializable
+data object Onboarding : NavKey
+
+@Serializable
 data object MainTabs : NavKey
 
 @Serializable

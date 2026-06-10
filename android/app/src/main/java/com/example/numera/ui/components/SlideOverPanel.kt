@@ -1,7 +1,6 @@
 package com.example.numera.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -26,7 +25,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.numera.theme.Alpha
+import com.example.numera.theme.AnimDuration
 import com.example.numera.theme.CornerRadius
+import com.example.numera.theme.Motion
 import com.example.numera.theme.Spacing
 
 /**
@@ -52,7 +53,11 @@ fun NumeraSlideOver(
 
         Box(modifier = Modifier.fillMaxSize()) {
             // Scrim — tap to dismiss.
-            AnimatedVisibility(visible = shown, enter = fadeIn(tween(200)), exit = fadeOut(tween(150))) {
+            AnimatedVisibility(
+                visible = shown,
+                enter = fadeIn(Motion.enter(AnimDuration.fast)),
+                exit = fadeOut(Motion.exit(AnimDuration.instant))
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -67,8 +72,8 @@ fun NumeraSlideOver(
             AnimatedVisibility(
                 visible = shown,
                 modifier = Modifier.align(Alignment.CenterEnd),
-                enter = slideInHorizontally(tween(280)) { it } + fadeIn(tween(280)),
-                exit = slideOutHorizontally(tween(200)) { it } + fadeOut(tween(150))
+                enter = slideInHorizontally(Motion.enter()) { it } + fadeIn(Motion.enter()),
+                exit = slideOutHorizontally(Motion.exit()) { it } + fadeOut(Motion.exit(AnimDuration.instant))
             ) {
                 Column(
                     modifier = modifier
