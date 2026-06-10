@@ -31,3 +31,20 @@ test('normalizeLevelForGenerator passes milestones through and bands by category
   assert.strictEqual(P.normalizeLevelForGenerator('algebra', 1), 11); // algebra band base
   assert.strictEqual(P.normalizeLevelForGenerator('calculus', 1), 31); // calculus band base
 });
+
+test('strand categories band into their own template key ranges', () => {
+  // Each strand's templates define keys only inside [min, max] (CONCEPT_TO_LEVEL); the band
+  // must start there and climb with UI level, never escaping the range.
+  assert.strictEqual(P.normalizeLevelForGenerator('fractions', 1), 3);   // band base
+  assert.strictEqual(P.normalizeLevelForGenerator('fractions', 13), 5);  // climbs with UI level
+  assert.strictEqual(P.normalizeLevelForGenerator('fractions', 59), 9);  // capped at band max
+  assert.strictEqual(P.normalizeLevelForGenerator('expressions', 1), 11); // starts at 11, not 1
+  assert.strictEqual(P.normalizeLevelForGenerator('expressions', 59), 15);
+  assert.strictEqual(P.normalizeLevelForGenerator('geometry', 7), 3);
+  assert.strictEqual(P.normalizeLevelForGenerator('number_sense', 1), 6);
+  assert.strictEqual(P.normalizeLevelForGenerator('number sense', 1), 6); // space form too
+  assert.strictEqual(P.normalizeLevelForGenerator('statistics', 25), 11);
+  assert.strictEqual(P.normalizeLevelForGenerator('integers', 59), 8);
+  // Milestones still pass through untouched for strands.
+  assert.strictEqual(P.normalizeLevelForGenerator('fractions', 20), 20);
+});

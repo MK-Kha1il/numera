@@ -131,8 +131,8 @@ fun LevelMapScreen(
                 itemsList.add(
                     LearnMapItem.StageHeader(
                         stageNum = 1,
-                        title = "Stage 1: Initiate Valley",
-                        description = "Master the fundamentals of basic numerical systems.",
+                        title = "Stage 1: Number Foundations",
+                        description = "Whole numbers, mental math, negatives and decimals — the bedrock of everything.",
                         startColor = Color(0xFF10B981),
                         endColor = Color(0xFF059669)
                     )
@@ -141,8 +141,8 @@ fun LevelMapScreen(
                 itemsList.add(
                     LearnMapItem.StageHeader(
                         stageNum = 2,
-                        title = "Stage 2: Alge-Bridges",
-                        description = "Cross the gap between arithmetic operations and algebraic formulas.",
+                        title = "Stage 2: Proportion Plains",
+                        description = "Fractions, percentages, ratios and shapes — the heart of middle-school math.",
                         startColor = Color(0xFF6366F1),
                         endColor = Color(0xFF4F46E5)
                     )
@@ -151,8 +151,8 @@ fun LevelMapScreen(
                 itemsList.add(
                     LearnMapItem.StageHeader(
                         stageNum = 3,
-                        title = "Stage 3: Combinatoric Peaks",
-                        description = "Climb the heights of counting principles and permutations.",
+                        title = "Stage 3: Alge-Bridges",
+                        description = "Expressions, equations and data — cross from arithmetic into algebra.",
                         startColor = Color(0xFFEC4899),
                         endColor = Color(0xFFDB2777)
                     )
@@ -161,8 +161,8 @@ fun LevelMapScreen(
                 itemsList.add(
                     LearnMapItem.StageHeader(
                         stageNum = 4,
-                        title = "Stage 4: The Calculus Abyss",
-                        description = "Dive deep into the continuous limits of derivative mechanics.",
+                        title = "Stage 4: Combinatoric Peaks",
+                        description = "Climb the heights of counting principles, permutations and deeper algebra.",
                         startColor = Color(0xFF3B82F6),
                         endColor = Color(0xFF1D4ED8)
                     )
@@ -171,8 +171,8 @@ fun LevelMapScreen(
                 itemsList.add(
                     LearnMapItem.StageHeader(
                         stageNum = 5,
-                        title = "Stage 5: Number Theory Nexus",
-                        description = "Connect the patterns of prime structures and modular arithmetic.",
+                        title = "Stage 5: The Calculus Abyss",
+                        description = "Dive into the continuous world of derivatives and integrals.",
                         startColor = Color(0xFFFBBF24),
                         endColor = Color(0xFFD97706)
                     )
@@ -181,8 +181,8 @@ fun LevelMapScreen(
                 itemsList.add(
                     LearnMapItem.StageHeader(
                         stageNum = 6,
-                        title = "Stage 6: Infinity Void",
-                        description = "Confront transfinite concepts and complex analysis vectors.",
+                        title = "Stage 6: Number Theory Nexus",
+                        description = "Primes, modular arithmetic and the deep patterns beneath it all.",
                         startColor = Color(0xFF8B5CF6),
                         endColor = Color(0xFF6D28D9)
                     )
@@ -190,14 +190,22 @@ fun LevelMapScreen(
             }
 
             val isUnlocked = levelNum <= currentMaxLevel
-            val category = when (levelNum % 6) {
-                0 -> "number_theory"
-                1 -> "arithmetic"
-                2 -> "mental"
-                3 -> "algebra"
-                4 -> "calculus"
-                else -> "combinatorics"
+            // Stage-coherent curriculum: each stage cycles the categories that belong to its
+            // band, so the hero path now traverses ALL strands (fractions/decimals/integers/
+            // geometry/number_sense/statistics/expressions were previously reachable only via
+            // the buried Skill Tree). Milestone levels (10/20/30/40/50/60) are boss levels —
+            // the server forces their category, so the cycle value there is cosmetic.
+            // Difficulty within a category is normalized server-side
+            // (normalizeLevelForGenerator), so any category is servable at any UI level.
+            val stageCycle = when ((levelNum - 1) / 10) {
+                0 -> listOf("arithmetic", "mental", "integers", "decimals")              // Stage 1: number foundations
+                1 -> listOf("fractions", "number_sense", "decimals", "geometry")        // Stage 2: proportional reasoning
+                2 -> listOf("expressions", "powers", "algebra", "statistics")           // Stage 3: algebraic thinking
+                3 -> listOf("combinatorics", "algebra", "powers", "expressions")        // Stage 4: discrete structures
+                4 -> listOf("calculus", "algebra", "combinatorics", "number_sense")     // Stage 5: continuous math
+                else -> listOf("number_theory", "calculus", "combinatorics", "mental")  // Stage 6: the deep end
             }
+            val category = stageCycle[(levelNum - 1) % stageCycle.size]
 
             itemsList.add(
                 LearnMapItem.LevelNodeItem(

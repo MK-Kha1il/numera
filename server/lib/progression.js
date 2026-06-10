@@ -75,6 +75,21 @@ function getRankValue(rankStr) {
   return tierVal + divVal;
 }
 
+// Per-strand internal template bands [min, max] — the level keys each strand's templates
+// actually define (see CONCEPT_TO_LEVEL in mathGenerator.js). Without these, every strand
+// fell through the generic 1+(level-1)/6 band, which lands BELOW some strands' key ranges
+// (expressions starts at 11), collapsing them onto their easiest concept forever.
+const STRAND_BANDS = {
+  geometry: [2, 12],
+  integers: [4, 8],
+  decimals: [3, 11],
+  fractions: [3, 9],
+  number_sense: [6, 14],
+  statistics: [7, 13],
+  expressions: [11, 15],
+  powers: [4, 13],
+};
+
 // Map a UI level + category to the generator's internal level band (milestones pass through).
 function normalizeLevelForGenerator(category, level) {
   const parsedLevel = parseInt(level, 10);
@@ -82,7 +97,7 @@ function normalizeLevelForGenerator(category, level) {
   if (parsedLevel === 10 || parsedLevel === 20 || parsedLevel === 30 || parsedLevel === 40 || parsedLevel === 50 || parsedLevel === 60) {
     return parsedLevel;
   }
-  const cat = (category || 'arithmetic').toLowerCase();
+  const cat = (category || 'arithmetic').toLowerCase().replace(' ', '_');
   const index = Math.floor((parsedLevel - 1) / 6);
   if (cat === 'algebra') {
     return index >= 8 ? 19 : 11 + index;
@@ -90,10 +105,11 @@ function normalizeLevelForGenerator(category, level) {
     return index >= 8 ? 29 : 21 + index;
   } else if (cat === 'calculus') {
     return index >= 8 ? 39 : 31 + index;
-  } else if (cat === 'number theory' || cat === 'number_theory') {
+  } else if (cat === 'number_theory') {
     return 41 + Math.min(8, index);
-  } else if (cat === 'mental') {
-    return 1 + index;
+  } else if (STRAND_BANDS[cat]) {
+    const [min, max] = STRAND_BANDS[cat];
+    return Math.min(min + index, max);
   } else {
     return 1 + index;
   }

@@ -62,6 +62,15 @@ fun LevelNode(
         category == "number_theory" -> Triple(Color(0xFF2DD4BF), Color(0xFF0D9488), Color(0xFF115E59))
         category == "calculus" -> Triple(Color(0xFF3B82F6), Color(0xFF2563EB), Color(0xFF1E3A8A))
         category == "combinatorics" -> Triple(Color(0xFFEC4899), Color(0xFFDB2777), Color(0xFF881337))
+        // Curriculum strands (now on the main map — each gets its own node identity).
+        category == "fractions" -> Triple(Color(0xFFFB7185), Color(0xFFE11D48), Color(0xFF9F1239))
+        category == "decimals" -> Triple(Color(0xFFFB923C), Color(0xFFEA580C), Color(0xFF9A3412))
+        category == "integers" -> Triple(Color(0xFFA3E635), Color(0xFF65A30D), Color(0xFF3F6212))
+        category == "geometry" -> Triple(Color(0xFF38BDF8), Color(0xFF0284C7), Color(0xFF075985))
+        category == "number_sense" -> Triple(Color(0xFFE879F9), Color(0xFFC026D3), Color(0xFF86198F))
+        category == "statistics" -> Triple(Color(0xFFA78BFA), Color(0xFF7C3AED), Color(0xFF5B21B6))
+        category == "expressions" -> Triple(Color(0xFF22D3EE), Color(0xFF0891B2), Color(0xFF155E75))
+        category == "powers" -> Triple(Color(0xFF64B5F6), Color(0xFF1976D2), Color(0xFF0D47A1))
         else -> Triple(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFF92400E))
     }
 
