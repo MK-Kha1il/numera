@@ -27,7 +27,7 @@ const ITEM_COPY = {
 router.get('/api/today', authenticateToken, (req, res) => {
   // The reset pass first, so a stale user_quests row from yesterday never leaks into the plan.
   checkAndResetQuestsAndLeagues(req.user.id, () => {
-    db.get('SELECT streak FROM users WHERE id = ?', [req.user.id], (errU, user) => {
+    db.get('SELECT streak, last_active FROM users WHERE id = ?', [req.user.id], (errU, user) => {
       if (errU || !user) return res.status(500).json({ error: 'User not found' });
 
       db.get('SELECT * FROM user_quests WHERE user_id = ?', [req.user.id], (errQ, q) => {
@@ -67,10 +67,19 @@ router.get('/api/today', authenticateToken, (req, res) => {
             // Streak safety: solving anything today is what keeps the flame alive.
             const streakSafeToday = (q.solved_today || 0) > 0;
 
+            // Comeback framing (ultra review #22): a learner returning after a week away
+            // should be welcomed back with an achievable re-entry, not greeted by the same
+            // home screen (and the review cap above already shrinks any decay mountain).
+            const daysAway = user.last_active
+              ? Math.floor((now - user.last_active) / 86400)
+              : 0;
+            const comeback = daysAway >= 7 ? { daysAway, dueReviews: dueCount } : null;
+
             res.json({
               streak: user.streak || 0,
               streakSafeToday,
               claimableQuests,
+              comeback,
               items,
             });
           }

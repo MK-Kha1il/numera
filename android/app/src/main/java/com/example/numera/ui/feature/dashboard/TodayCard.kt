@@ -52,7 +52,7 @@ fun TodayCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Today",
+                text = if (today.comeback != null) "Welcome back 👋" else "Today",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary,
@@ -66,9 +66,12 @@ fun TodayCard(
             )
         }
 
-        // Streak framing: a concrete, honest line — never a countdown timer.
+        // Comeback framing beats streak framing: a learner back after a week away gets a
+        // warm, achievable re-entry — never guilt about what lapsed while they were gone.
         Text(
             text = when {
+                today.comeback != null ->
+                    "It's been ${today.comeback.daysAway} days — one easy step below restarts the momentum. No catch-up needed."
                 allDone -> "All done — see you tomorrow! 🎉"
                 today.streakSafeToday -> "🔥 Streak safe for today" + if (today.streak > 1) " · ${today.streak} days" else ""
                 today.streak > 0 -> "Solve one problem to keep your ${today.streak}-day streak"

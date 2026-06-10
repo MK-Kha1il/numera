@@ -82,3 +82,18 @@ test('a review mountain is capped to an achievable daily ask', async () => {
   assert.strictEqual(review.target, 5, 'daily review ask is capped at 5');
   assert.match(review.subtitle, /8 due in total/);
 });
+
+test('a learner returning after a week away gets the comeback flag', async () => {
+  const { token, user } = await registerUser(ctx.base);
+  const tenDaysAgo = Math.floor(Date.now() / 1000) - 10 * 86400;
+  await run('UPDATE users SET last_active = ? WHERE id = ?', [tenDaysAgo, user.id]);
+
+  const { body } = await api(ctx.base, 'GET', '/api/today', { token });
+  assert.ok(body.comeback, 'comeback object expected after 10 days away');
+  assert.strictEqual(body.comeback.daysAway, 10);
+
+  // An active user gets no comeback framing.
+  const fresh = await registerUser(ctx.base);
+  const active = await api(ctx.base, 'GET', '/api/today', { token: fresh.token });
+  assert.strictEqual(active.body.comeback, null);
+});
