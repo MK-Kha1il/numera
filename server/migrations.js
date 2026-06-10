@@ -754,6 +754,26 @@ const migrations = [
       await addColumn('ALTER TABLE user_mastery ADD COLUMN expressions_correct INTEGER DEFAULT 0');
     },
   },
+  {
+    version: 28,
+    name: 'crash_reports',
+    // Self-hosted, privacy-first crash reporting (ultra review #12): no third-party SDK, and
+    // deliberately NO user id / device id — a crash report is a stack trace + app version +
+    // Android API level, nothing else. `fingerprint` groups identical crashes for triage.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS crash_reports (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          fingerprint TEXT NOT NULL,
+          app_version TEXT,
+          sdk_int INTEGER,
+          stack TEXT NOT NULL,
+          created_at INTEGER NOT NULL
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_crash_fingerprint ON crash_reports(fingerprint)');
+    },
+  },
 ];
 
 /**

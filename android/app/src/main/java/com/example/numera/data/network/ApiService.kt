@@ -484,6 +484,12 @@ interface ApiService {
         @Header("Authorization") token: String
     ): TodayResponse
 
+    // Anonymous by contract — no Authorization header, ever (see CrashReporter).
+    @POST("api/crash")
+    suspend fun reportCrash(
+        @Body request: CrashReportRequest
+    ): SimpleResponse
+
     @POST("api/quests/claim")
     suspend fun claimQuest(
         @Header("Authorization") token: String,

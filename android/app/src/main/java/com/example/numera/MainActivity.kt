@@ -19,6 +19,9 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     RetrofitClient.init(applicationContext)
+    // Crash visibility: record uncaught exceptions locally, upload last run's (if any).
+    CrashReporter.install(applicationContext)
+    CrashReporter.flushPending(applicationContext)
     ThemeManager.init(applicationContext)
     SoundManager.init(applicationContext)
     HapticManager.init(applicationContext)

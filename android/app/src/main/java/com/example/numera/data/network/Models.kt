@@ -1418,6 +1418,15 @@ data class OnboardingCatalogs(
     val avatars: List<OnboardingAvatarItem> = emptyList()
 )
 
+// Anonymous crash report (CrashReporter → /api/crash): stack + app version + API level,
+// deliberately nothing that could identify a user or device.
+@Serializable
+data class CrashReportRequest(
+    val stack: String,
+    val appVersion: String,
+    val sdkInt: Int
+)
+
 // One ordered "do this now" plan composed server-side (/api/today) from the SRS queue +
 // the four daily quests — review → learn → puzzle → duel → growth.
 @Serializable
@@ -1431,10 +1440,19 @@ data class TodayItem(
 )
 
 @Serializable
+data class TodayComeback(
+    val daysAway: Int = 0,
+    val dueReviews: Int = 0
+)
+
+@Serializable
 data class TodayResponse(
     val streak: Int = 0,
     val streakSafeToday: Boolean = false,
     val claimableQuests: Int = 0,
+    // Present when the learner returns after >=7 days away — swaps the card's framing
+    // to a warm re-entry instead of the everyday plan header.
+    val comeback: TodayComeback? = null,
     val items: List<TodayItem> = emptyList()
 )
 
