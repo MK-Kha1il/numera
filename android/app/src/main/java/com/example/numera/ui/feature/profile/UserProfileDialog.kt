@@ -258,6 +258,12 @@ fun UserProfileDialog(
                                 maxCount = 100,
                                 color = Color(0xFFF06292)
                             )
+                            MasteryBar(
+                                topicName = "Exponents & Roots",
+                                correctCount = profile.mastery.powers_correct,
+                                maxCount = 100,
+                                color = Color(0xFF64B5F6)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(Spacing.l))

@@ -46,6 +46,7 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
           number_sense_correct: 0,
           statistics_correct: 0,
           expressions_correct: 0,
+          powers_correct: 0,
         };
         res.json({
           id: user.id,
@@ -76,6 +77,7 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
             number_sense_correct: mast.number_sense_correct || 0,
             statistics_correct: mast.statistics_correct || 0,
             expressions_correct: mast.expressions_correct || 0,
+            powers_correct: mast.powers_correct || 0,
           },
         });
       });

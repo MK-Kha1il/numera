@@ -240,7 +240,8 @@ function getCategoryConceptIds(category, level) {
     fractions:     ['fraction_simplify', 'fraction_add', 'fraction_sub', 'fraction_mult', 'fraction_div'],
     number_sense:  ['percentage_of', 'fraction_of', 'ratio_solve', 'percent_change', 'exponent_power'],
     statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'stat_probability'],
-    expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'distribute']
+    expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'distribute'],
+    powers:        ['square_root', 'exponent_product_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation']
   };
   const key = (category || 'arithmetic').toLowerCase();
   return map[key] || map.arithmetic;

@@ -234,6 +234,7 @@ function initDb() {
           number_sense_correct INTEGER DEFAULT 0,
           statistics_correct INTEGER DEFAULT 0,
           expressions_correct INTEGER DEFAULT 0,
+          powers_correct INTEGER DEFAULT 0,
           FOREIGN KEY(user_id) REFERENCES users(id)
         )
       `);
@@ -902,6 +903,11 @@ function initDb() {
         { id: 'mastery_expressions_2', name: 'Expressions Adept', description: 'Solve 20 Algebraic Expressions problems', icon: 'school', target_type: 'mastery_expressions', target_value: 20, reward_coins: 150, category: 'Mastery', chain_id: 'mastery_expressions', chain_order: 2, is_hidden: 0 },
         { id: 'mastery_expressions_3', name: 'Expressions Expert', description: 'Solve 50 Algebraic Expressions problems', icon: 'school', target_type: 'mastery_expressions', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_expressions', chain_order: 3, is_hidden: 0 },
         { id: 'mastery_expressions_4', name: 'Expressions Master', description: 'Solve 150 Algebraic Expressions problems', icon: 'school', target_type: 'mastery_expressions', target_value: 150, reward_coins: 800, category: 'Mastery', chain_id: 'mastery_expressions', chain_order: 4, is_hidden: 0 },
+
+        { id: 'mastery_powers_1', name: 'Powers Apprentice', description: 'Solve 5 Exponents & Roots problems', icon: 'school', target_type: 'mastery_powers', target_value: 5, reward_coins: 50, category: 'Mastery', chain_id: 'mastery_powers', chain_order: 1, is_hidden: 0 },
+        { id: 'mastery_powers_2', name: 'Powers Adept', description: 'Solve 20 Exponents & Roots problems', icon: 'school', target_type: 'mastery_powers', target_value: 20, reward_coins: 150, category: 'Mastery', chain_id: 'mastery_powers', chain_order: 2, is_hidden: 0 },
+        { id: 'mastery_powers_3', name: 'Powers Expert', description: 'Solve 50 Exponents & Roots problems', icon: 'school', target_type: 'mastery_powers', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_powers', chain_order: 3, is_hidden: 0 },
+        { id: 'mastery_powers_4', name: 'Powers Master', description: 'Solve 150 Exponents & Roots problems', icon: 'school', target_type: 'mastery_powers', target_value: 150, reward_coins: 800, category: 'Mastery', chain_id: 'mastery_powers', chain_order: 4, is_hidden: 0 },
 
         // 5. Social Chain
         { id: 'social_1', name: 'Friendly Greeting', description: 'Add your first friend', icon: 'group', target_type: 'friends_count', target_value: 1, reward_coins: 30, category: 'Social', chain_id: 'social_path', chain_order: 1, is_hidden: 0 },

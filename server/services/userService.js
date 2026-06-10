@@ -23,6 +23,7 @@ function getUserWithMastery(userId, callback) {
         number_sense_correct: mastery ? mastery.number_sense_correct || 0 : 0,
         statistics_correct: mastery ? mastery.statistics_correct || 0 : 0,
         expressions_correct: mastery ? mastery.expressions_correct || 0 : 0,
+        powers_correct: mastery ? mastery.powers_correct || 0 : 0,
       };
 
       const fullUser = {

@@ -71,6 +71,12 @@ const CONCEPT_TO_LEVEL = {
   eval_two_var:         { category: 'expressions',   level: 12 },
   combine_like_terms:   { category: 'expressions',   level: 13 },
   distribute:           { category: 'expressions',   level: 15 },
+  // Powers strand (exponents & roots — the 8.EE band).
+  square_root:            { category: 'powers',      level: 4  },
+  exponent_product_rule:  { category: 'powers',      level: 7  },
+  exponent_quotient_rule: { category: 'powers',      level: 9  },
+  exponent_zero_negative: { category: 'powers',      level: 11 },
+  scientific_notation:    { category: 'powers',      level: 13 },
   linear_one_step:      { category: 'algebra',       level: 11 },
   linear_two_step:      { category: 'algebra',       level: 13 },
   quadratic:            { category: 'algebra',       level: 15 },
@@ -227,6 +233,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'decimals';
   } else if (normalizedCat === 'fractions') {
     catKey = 'fractions';
+  } else if (normalizedCat === 'powers') {
+    catKey = 'powers';
   } else {
     catKey = 'arithmetic';
   }

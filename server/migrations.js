@@ -774,6 +774,18 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_crash_fingerprint ON crash_reports(fingerprint)');
     },
   },
+  {
+    version: 29,
+    name: 'powers_strand_mastery',
+    // Powers strand (exponents & roots, 8.EE band) — its mastery counter, mirroring v27.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE user_mastery ADD COLUMN powers_correct INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**

@@ -1032,6 +1032,7 @@ fun ProfileScreen(
                                                     "mastery_number_sense" -> "Number Sense Mastery"
                                                     "mastery_statistics" -> "Statistics Mastery"
                                                     "mastery_expressions" -> "Expressions Mastery"
+                                                    "mastery_powers" -> "Exponents & Roots Mastery"
                                                     "social_path" -> "Social Connections"
                                                     "gladiator_path" -> "Arena Victor Milestones"
                                                     "exploration_path" -> "Explorer Milestones"

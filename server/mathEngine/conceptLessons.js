@@ -1206,6 +1206,149 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // POWERS STRAND (exponents & roots — the 8.EE band).
+  // ===========================================================================
+  square_root: {
+    title: "Square Roots",
+    formula: "\\sqrt{n} = r \\iff r \\times r = n",
+    oneLineSummary: "The square root asks: which number, multiplied by itself, makes this? It undoes squaring.",
+    intuitionHook: "A square garden covers $64$ square meters. How long is one side? You need the number that times itself gives $64$ — that's $8$. The root of a square is literally the SIDE of a square.",
+    whatItIs: "The square root of $n$ is the non-negative number $r$ with $r \\times r = n$. Numbers like $25$, $49$ and $144$ are perfect squares because their roots are whole numbers.",
+    whyItWorks: "Squaring and rooting are inverse operations, like adding and subtracting. $7^2$ takes you from $7$ to $49$; $\\sqrt{49}$ walks the exact same step backwards. That's why $\\sqrt{n}$ is found by asking which times-table entry lands on $n$ — not by any operation on $n$ itself. Halving feels tempting because it also 'shrinks' the number, but halving undoes doubling, not squaring: $\\sqrt{36} = 6$, while $36 \\div 2 = 18$ — and $18 \\times 18$ is nowhere near $36$.",
+    whenToUse: "Finding a side from an area, distance calculations (the Pythagorean theorem ends with a root), standard deviation in statistics, and solving $x^2 = n$ equations.",
+    representations: [
+      { kind: "area", label: "Side of a square", body: "$\\sqrt{64}$ is the side length of a square with area $64$: an $8 \\times 8$ grid of unit squares." },
+      { kind: "inverse", label: "Squaring, reversed", body: "$3 \\to 9 \\to 3$: squaring goes right, rooting goes left along the same arrow." },
+      { kind: "number_line", label: "Between the squares", body: "$\\sqrt{50}$ sits just past $7$, because $49 = 7^2$ is just below $50$ — perfect squares are the landmarks." }
+    ],
+    commonMistakes: [
+      { label: "Halving instead of rooting", why: "Writing $\\sqrt{36} = 18$ — dividing by $2$ because the root 'makes it smaller'.", fix: "Check by multiplying back: $18 \\times 18 = 324$, not $36$. Ask 'what times itself?' — $6 \\times 6 = 36$." },
+      { label: "Neighboring square slip", why: "Recalling $\\sqrt{49}$ as $8$ because $49$ sits near $64$ in the times tables.", fix: "Anchor the perfect squares as facts: $7^2 = 49$, $8^2 = 64$. Verify by squaring your answer." }
+    ],
+    connections: [
+      { concept: "arithmetic_mult", note: "Roots are reverse multiplication — fluency with times tables is fluency with roots." },
+      { concept: "pythagorean", note: "The Pythagorean theorem's last step is always a square root." },
+      { concept: "quadratic", note: "Solving $x^2 = n$ — the simplest quadratic — is exactly taking a root." }
+    ],
+    examples: [
+      { question: "Compute $\\sqrt{81}$.", answer: "9", explanation: "$9 \\times 9 = 81$, so $\\sqrt{81} = 9$." },
+      { question: "Compute $\\sqrt{144}$.", answer: "12", explanation: "$12 \\times 12 = 144$, so $\\sqrt{144} = 12$." }
+    ]
+  },
+
+  exponent_product_rule: {
+    title: "Product Rule for Exponents",
+    formula: "x^{a} \\cdot x^{b} = x^{a+b}",
+    oneLineSummary: "Multiplying powers of the same base ADDS the exponents — you're pooling copies of the same factor.",
+    intuitionHook: "$x^{3} \\cdot x^{4}$ is $(x \\cdot x \\cdot x)$ times $(x \\cdot x \\cdot x \\cdot x)$. Pour both piles together and count: $3 + 4 = 7$ copies of $x$. Nothing was multiplied except the $x$'s themselves.",
+    whatItIs: "The product rule simplifies a product of two powers that share a base: keep the base, add the exponents. It only applies when the bases match.",
+    whyItWorks: "An exponent is a COUNT of repeated factors. $x^{a}$ contributes $a$ copies of $x$ and $x^{b}$ contributes $b$ more, so the product holds $a + b$ copies: $x^{a+b}$. Multiplying the exponents instead answers a different question — $(x^{a})^{b}$ makes $b$ copies of the whole pile, which is $a \\times b$ copies (the power rule). Try it small: $2^{2} \\cdot 2^{3} = 4 \\cdot 8 = 32 = 2^{5}$, and $5 = 2 + 3$, not $2 \\times 3$.",
+    whenToUse: "Simplifying algebraic products, scientific-notation multiplication, exponential growth (combining growth periods), and polynomial multiplication.",
+    representations: [
+      { kind: "expansion", label: "Count the copies", body: "$x^{2} \\cdot x^{3} = (x \\cdot x)(x \\cdot x \\cdot x) = x^{5}$ — write it out once and the rule is obvious." },
+      { kind: "numeric", label: "Check with numbers", body: "$2^{2} \\cdot 2^{3} = 4 \\times 8 = 32 = 2^{5}$. The exponents added: $2 + 3 = 5$." },
+      { kind: "symbolic", label: "The rule", body: "$x^{a} \\cdot x^{b} = x^{a+b}$ — same base, exponents add." }
+    ],
+    commonMistakes: [
+      { label: "Multiplying the exponents", why: "Writing $x^{3} \\cdot x^{4} = x^{12}$ — confusing the product rule with the power rule $(x^{3})^{4}$.", fix: "Expand a small case: $x^{1} \\cdot x^{1} = x^{2}$, not $x^{1}$. Multiplying powers pools copies, so the counts ADD." },
+      { label: "Applying it to different bases", why: "Simplifying $x^{2} \\cdot y^{3}$ to $(xy)^{5}$.", fix: "The rule needs ONE shared base. $x^{2} y^{3}$ is already as simple as it gets." }
+    ],
+    connections: [
+      { concept: "exponent_power", note: "Evaluating single powers is the prerequisite skill — the rule organizes products of them." },
+      { concept: "exponent_quotient_rule", note: "Division is the mirror image: exponents subtract instead of add." },
+      { concept: "scientific_notation", note: "Multiplying numbers in scientific notation adds the powers of 10 by this exact rule." }
+    ],
+    examples: [
+      { question: "Simplify $x^{2} \\cdot x^{5}$.", answer: "x^7", explanation: "Same base, add the exponents: $2 + 5 = 7$, so $x^{7}$." },
+      { question: "Simplify $x^{4} \\cdot x^{4}$.", answer: "x^8", explanation: "$4 + 4 = 8$, so $x^{8}$." }
+    ]
+  },
+
+  exponent_quotient_rule: {
+    title: "Quotient Rule for Exponents",
+    formula: "\\frac{x^{a}}{x^{b}} = x^{a-b}",
+    oneLineSummary: "Dividing powers of the same base SUBTRACTS the exponents — each factor below cancels one above.",
+    intuitionHook: "$\\frac{x^{5}}{x^{2}}$ is five $x$'s stacked over two $x$'s. Each bottom $x$ cancels one top $x$ — strike out two pairs and $3$ survive: $x^{3}$. Cancellation IS subtraction.",
+    whatItIs: "The quotient rule simplifies a power divided by a power of the same base: keep the base, subtract the bottom exponent from the top one.",
+    whyItWorks: "Write the division as a fraction of repeated factors: $\\frac{x \\cdot x \\cdot x \\cdot x \\cdot x}{x \\cdot x}$. Every $\\frac{x}{x}$ pair equals $1$ and disappears, removing one factor from the top per factor on the bottom — that's $a - b$ survivors. Dividing the exponents instead answers nothing meaningful: $\\frac{2^{6}}{2^{2}} = \\frac{64}{4} = 16 = 2^{4}$, and $4 = 6 - 2$, while $6 \\div 2 = 3$ gives the wrong answer $8$.",
+    whenToUse: "Simplifying algebraic fractions, scientific-notation division, unit conversions with powers of 10, and deriving the zero/negative exponent meanings.",
+    representations: [
+      { kind: "cancellation", label: "Strike out pairs", body: "$\\frac{x^{5}}{x^{2}} = \\frac{x \\cdot x \\cdot x \\cdot x \\cdot x}{x \\cdot x}$ — each bottom $x$ cancels one top $x$, leaving $x^{3}$." },
+      { kind: "numeric", label: "Check with numbers", body: "$\\frac{2^{6}}{2^{2}} = \\frac{64}{4} = 16 = 2^{4}$, and $6 - 2 = 4$." },
+      { kind: "symbolic", label: "The rule", body: "$\\frac{x^{a}}{x^{b}} = x^{a-b}$ — same base, exponents subtract, top minus bottom." }
+    ],
+    commonMistakes: [
+      { label: "Dividing the exponents", why: "Writing $\\frac{x^{8}}{x^{4}} = x^{2}$ because $8 \\div 4 = 2$.", fix: "Cancellation removes one bottom factor per top factor — that's subtraction: $8 - 4 = 4$, so $x^{4}$." },
+      { label: "Subtracting in the wrong order", why: "Computing $b - a$ and getting $x^{-4}$ where $x^{4}$ was expected.", fix: "Always top exponent minus bottom exponent. (When the bottom is bigger, the negative result is real — see negative exponents.)" }
+    ],
+    connections: [
+      { concept: "exponent_product_rule", note: "The mirror rule: multiplying adds exponents, dividing subtracts them." },
+      { concept: "exponent_zero_negative", note: "Push this rule past zero and negative exponents fall out naturally." },
+      { concept: "fraction_simplify", note: "The same cancel-common-factors instinct, applied to repeated identical factors." }
+    ],
+    examples: [
+      { question: "Simplify $\\frac{x^{7}}{x^{3}}$.", answer: "x^4", explanation: "Subtract the exponents: $7 - 3 = 4$, so $x^{4}$." },
+      { question: "Simplify $\\frac{x^{9}}{x^{4}}$.", answer: "x^5", explanation: "$9 - 4 = 5$, so $x^{5}$." }
+    ]
+  },
+
+  exponent_zero_negative: {
+    title: "Zero & Negative Exponents",
+    formula: "x^{0} = 1, \\quad x^{-k} = \\frac{1}{x^{k}}",
+    oneLineSummary: "Anything (nonzero) to the power zero is 1, and a negative exponent flips the value into a fraction — it never makes it negative.",
+    intuitionHook: "Walk down the powers of 2: $2^{3} = 8$, $2^{2} = 4$, $2^{1} = 2$ — each step divides by 2. Keep walking: $2^{0} = 1$, then $2^{-1} = \\frac{1}{2}$, $2^{-2} = \\frac{1}{4}$. The pattern never breaks, and it never goes negative.",
+    whatItIs: "Zero and negative exponents extend the exponent staircase below 1. $x^{0} = 1$ for any nonzero $x$, and $x^{-k}$ means the reciprocal of $x^{k}$.",
+    whyItWorks: "The quotient rule forces both facts. $\\frac{x^{3}}{x^{3}} = x^{3-3} = x^{0}$, but anything divided by itself is $1$ — so $x^{0} = 1$. Likewise $\\frac{x^{2}}{x^{5}} = x^{-3}$, and writing the same fraction out gives $\\frac{1}{x^{3}}$ after cancelling — so $x^{-3} = \\frac{1}{x^{3}}$. The minus sign in the exponent records 'one division step past zero', not 'a negative number': $2^{-3} = \\frac{1}{8}$, which is small and positive.",
+    whenToUse: "Scientific notation for small numbers ($10^{-6}$ = a millionth), unit prefixes (milli, micro, nano), algebraic simplification, and decay models.",
+    representations: [
+      { kind: "staircase", label: "Walk the staircase", body: "$2^{2} = 4$, $2^{1} = 2$, $2^{0} = 1$, $2^{-1} = \\frac{1}{2}$, $2^{-2} = \\frac{1}{4}$: each step down divides by the base." },
+      { kind: "quotient", label: "Forced by division", body: "$\\frac{x^{3}}{x^{3}} = x^{0}$ and also $= 1$, so $x^{0} = 1$ — the rules leave no other choice." },
+      { kind: "symbolic", label: "The rules", body: "$x^{0} = 1$; $x^{-k} = \\frac{1}{x^{k}}$ — the negative exponent is a flip below the fraction bar." }
+    ],
+    commonMistakes: [
+      { label: "Deciding $x^{0} = 0$", why: "Zero in the exponent 'feels like nothing', so the answer feels like zero.", fix: "Walk the staircase: $2^{1} = 2$, divide by 2 once more → $2^{0} = 1$. Or: $\\frac{2^{5}}{2^{5}} = 1$ and its exponent is $0$." },
+      { label: "Reading $x^{-k}$ as negative", why: "Writing $2^{-3} = -8$ — moving the minus sign onto the value.", fix: "The minus lives in the EXPONENT and means reciprocal: $2^{-3} = \\frac{1}{2^{3}} = \\frac{1}{8}$, positive and small." }
+    ],
+    connections: [
+      { concept: "exponent_quotient_rule", note: "Both facts are the quotient rule pushed past equal exponents." },
+      { concept: "fraction_simplify", note: "Negative exponents produce unit fractions — comfort with $\\frac{1}{n}$ pays off here." },
+      { concept: "scientific_notation", note: "Small numbers in scientific notation run on negative powers of 10." }
+    ],
+    examples: [
+      { question: "Evaluate $7^{0}$.", answer: "1", explanation: "Any nonzero number to the power $0$ is $1$." },
+      { question: "Write $3^{-2}$ as a fraction.", answer: "1/9", explanation: "$3^{-2} = \\frac{1}{3^{2}} = \\frac{1}{9}$." }
+    ]
+  },
+
+  scientific_notation: {
+    title: "Scientific Notation",
+    formula: "n = m \\times 10^{e}, \\quad 1 \\le m < 10",
+    oneLineSummary: "Write a number as (something between 1 and 10) times a power of 10 — the exponent counts how far the decimal point moved.",
+    intuitionHook: "Earth is about $150000000$ km from the Sun. Count zeros, lose your place, try again… or slide the decimal point until one digit remains in front — $1.5$ — and record the $8$ hops: $1.5 \\times 10^{8}$. The size lives in the exponent now, where you can actually read it.",
+    whatItIs: "Scientific notation expresses any number as $m \\times 10^{e}$ where the mantissa $m$ is at least $1$ and less than $10$. Big numbers get positive exponents; numbers below 1 get negative ones.",
+    whyItWorks: "Multiplying by $10$ shifts every digit one place left — so multiplying by $10^{e}$ shifts $e$ places. Writing $34000 = 3.4 \\times 10^{4}$ just factors the size (four shifts) out of the digits ($3.4$). The $1 \\le m < 10$ rule makes the form UNIQUE: $34 \\times 10^{3}$ and $0.34 \\times 10^{5}$ equal the same number, but only $3.4 \\times 10^{4}$ has exactly one digit before the point, so everyone writes the same thing and exponents can be compared at a glance.",
+    whenToUse: "Astronomy and atomic scales, calculator and computer output (the E notation), comparing magnitudes instantly, and keeping track of zeros in any huge or tiny measurement.",
+    representations: [
+      { kind: "decimal_shift", label: "Slide and count", body: "$34000 \\rightarrow 3.4$ took $4$ left-hops, so $34000 = 3.4 \\times 10^{4}$. Reverse the hops to expand it back." },
+      { kind: "magnitude", label: "Compare by exponent", body: "$9.9 \\times 10^{5} < 1.1 \\times 10^{6}$: the exponent outranks the mantissa, like comparing word lengths before letters." },
+      { kind: "symbolic", label: "The form", body: "$m \\times 10^{e}$ with $1 \\le m < 10$ — one nonzero digit before the decimal point, always." }
+    ],
+    commonMistakes: [
+      { label: "Off-by-one exponent", why: "Counting the digits instead of the decimal SHIFTS: $34000$ has 5 digits but needs only $4$ hops.", fix: "Slide the point one hop at a time and count aloud, or expand your answer back out to check." },
+      { label: "Mantissa outside 1–10", why: "Writing $34 \\times 10^{3}$ — correct in value, wrong in form.", fix: "Exactly ONE nonzero digit may sit before the decimal point. Keep sliding until $1 \\le m < 10$." }
+    ],
+    connections: [
+      { concept: "decimal_mult", note: "Shifting the decimal point is multiplication by powers of 10 — the same mechanics." },
+      { concept: "exponent_zero_negative", note: "Tiny numbers ($0.00052 = 5.2 \\times 10^{-4}$) use negative exponents." },
+      { concept: "exponent_product_rule", note: "Multiplying scientific-notation numbers adds the powers of 10 by the product rule." }
+    ],
+    examples: [
+      { question: "Write $52000$ in scientific notation.", answer: "5.2 × 10^4", explanation: "Slide the decimal $4$ places: $52000 = 5.2 \\times 10^{4}$." },
+      { question: "Write $7300000$ in scientific notation.", answer: "7.3 × 10^6", explanation: "Six hops: $7300000 = 7.3 \\times 10^{6}$." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -1592,6 +1735,13 @@ function levelToConceptId(category, level) {
     if (lvl <= 9) return 'stat_median';
     if (lvl <= 11) return 'stat_range';
     return 'stat_probability';
+  }
+  if (cat === 'powers') {
+    if (lvl <= 4) return 'square_root';
+    if (lvl <= 7) return 'exponent_product_rule';
+    if (lvl <= 9) return 'exponent_quotient_rule';
+    if (lvl <= 11) return 'exponent_zero_negative';
+    return 'scientific_notation';
   }
   if (cat === 'expressions') {
     if (lvl <= 11) return 'eval_expression';

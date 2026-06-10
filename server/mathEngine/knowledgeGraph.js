@@ -453,6 +453,52 @@ const concepts = {
     misconceptions: [
       { id: "partial_distribute", label: "Distributed to only the first term inside the parentheses", rule: (ans) => ans }
     ]
+  },
+
+  // ---- Powers strand (exponents & roots — the 8th-grade bridge into algebra II) ----
+  "square_root": {
+    name: "Square Roots",
+    prereqs: ["arithmetic_mult"],
+    baseElo: 750,
+    misconceptions: [
+      { id: "halved_instead", label: "Halved the number instead of finding its root", rule: (ans, p) => p.n / 2 },
+      { id: "root_off_by_one", label: "Recalled the neighboring perfect square's root", rule: (ans) => ans + 1 }
+    ]
+  },
+  "exponent_product_rule": {
+    name: "Product Rule for Exponents",
+    prereqs: ["exponent_power"],
+    baseElo: 920,
+    misconceptions: [
+      { id: "multiplied_exponents", label: "Multiplied the exponents instead of adding them", rule: (ans) => ans }
+    ]
+  },
+  "exponent_quotient_rule": {
+    name: "Quotient Rule for Exponents",
+    prereqs: ["exponent_product_rule"],
+    baseElo: 960,
+    misconceptions: [
+      { id: "divided_exponents", label: "Divided the exponents instead of subtracting them", rule: (ans) => ans },
+      { id: "subtracted_backwards", label: "Subtracted the exponents in the wrong order", rule: (ans) => ans }
+    ]
+  },
+  "exponent_zero_negative": {
+    name: "Zero & Negative Exponents",
+    prereqs: ["exponent_quotient_rule"],
+    baseElo: 1000,
+    misconceptions: [
+      { id: "zero_power_zero", label: "Decided anything to the power zero is zero", rule: () => 0 },
+      { id: "negative_means_negative", label: "Treated a negative exponent as a negative number", rule: (ans) => -ans }
+    ]
+  },
+  "scientific_notation": {
+    name: "Scientific Notation",
+    prereqs: ["exponent_zero_negative", "decimal_mult"],
+    baseElo: 1040,
+    misconceptions: [
+      { id: "exponent_miscount", label: "Counted the decimal shift off by one", rule: (ans) => ans },
+      { id: "mantissa_out_of_range", label: "Left the leading number outside 1–10", rule: (ans) => ans }
+    ]
   }
 };
 
@@ -513,6 +559,11 @@ const STANDARDS = {
   gcd_lcm: "6.NS.B.4",
   modular_arithmetic: "Number Theory — Modular Arithmetic",
   totient: "Number Theory — Euler's Totient",
+  square_root: "8.EE.A.2",
+  exponent_product_rule: "8.EE.A.1",
+  exponent_quotient_rule: "8.EE.A.1",
+  exponent_zero_negative: "8.EE.A.1",
+  scientific_notation: "8.EE.A.3",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

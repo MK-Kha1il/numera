@@ -1810,6 +1810,94 @@ templates.fractions = {
   }
 };
 
+// -------------------------------------------------------------
+// POWERS TEMPLATES — exponents & roots (the 8.EE band): square roots of perfect squares, the
+// product/quotient exponent rules, zero & negative exponents, and scientific notation. Routed by
+// the 'powers' category. Rule answers use plain "x^n" text (no LaTeX in options) so MCQ string
+// comparison stays exact; questions render the LaTeX form.
+// -------------------------------------------------------------
+templates.powers = {
+  // Square roots of perfect squares.
+  4: (_diffFactor, idx) => {
+    const r = 3 + (idx % 11); // roots 3..13
+    const n = r * r;
+    return {
+      question: `Compute $\\sqrt{${n}}$`,
+      answer: r,
+      distractors: [n / 2, r + 1, r - 1], // halved instead of rooting; neighboring roots
+      explanation: `$\\sqrt{${n}}$ asks: which number times itself makes $${n}$? Since $${r} \\times ${r} = ${n}$, the root is $${r}$. (Halving gives $${n / 2}$ — a different operation entirely.)`,
+      type: "square_root"
+    };
+  },
+  // Product rule: x^a · x^b = x^(a+b).
+  7: (_diffFactor, idx) => {
+    const a = 2 + (idx % 5); // 2..6
+    const b = 2 + ((idx + 2) % 5);
+    const sum = a + b;
+    return {
+      question: `Simplify: $x^{${a}} \\cdot x^{${b}}$`,
+      answer: `x^${sum}`,
+      distractors: [`x^${a * b}`, `2x^${sum}`, `x^${Math.abs(a - b) || 1}`], // multiplied exponents; invented a coefficient; subtracted
+      explanation: `$x^{${a}}$ means ${a} copies of $x$ multiplied, and $x^{${b}}$ means ${b} more — so together there are $${a} + ${b} = ${sum}$ copies: $x^{${sum}}$. Multiplying the exponents (getting $x^{${a * b}}$) counts copies of copies, which is the POWER rule, not the product rule.`,
+      type: "exponent_product_rule"
+    };
+  },
+  // Quotient rule: x^a / x^b = x^(a−b).
+  9: (_diffFactor, idx) => {
+    const b = 2 + (idx % 4);       // 2..5
+    const a = b + 2 + (idx % 4);   // keeps a > b, difference 2..5
+    const diff = a - b;
+    return {
+      question: `Simplify: $\\frac{x^{${a}}}{x^{${b}}}$`,
+      answer: `x^${diff}`,
+      distractors: [`x^${a + b}`, a % b === 0 ? `x^${a / b}` : `x^${b - a}`, `x^${diff + 1}`], // added; divided (or reversed); near miss
+      explanation: `Each $x$ below cancels one $x$ above: $${b}$ of the $${a}$ copies cancel, leaving $${a} - ${b} = ${diff}$ copies — $x^{${diff}}$. Subtract the exponents; never divide them.`,
+      type: "exponent_quotient_rule"
+    };
+  },
+  // Zero & negative exponents, alternating variants.
+  11: (_diffFactor, idx) => {
+    const base = [2, 3, 5, 10][idx % 4];
+    if (idx % 2 === 0) {
+      return {
+        question: `Evaluate $${base}^{0}$`,
+        answer: 1,
+        distractors: [0, base, -base], // "zero power is zero"; "leaves the base"; sign confusion
+        explanation: `Follow the quotient rule downwards: $\\frac{${base}^{1}}{${base}^{1}} = ${base}^{0}$, and any number divided by itself is $1$. Anything (nonzero) to the power $0$ is $1$ — not $0$.`,
+        type: "exponent_zero_negative"
+      };
+    }
+    const k = 1 + (idx % 3); // 1..3
+    const pow = Math.pow(base, k);
+    return {
+      question: `Write $${base}^{-${k}}$ as a fraction.`,
+      answer: `1/${pow}`,
+      distractors: [`-${pow}`, `1/${base * k}`, `-1/${pow}`], // negative number; multiplied base·k; stray sign
+      explanation: `A negative exponent means the reciprocal: $${base}^{-${k}} = \\frac{1}{${base}^{${k}}} = \\frac{1}{${pow}}$. It flips the value below the fraction bar — it never makes it negative.`,
+      type: "exponent_zero_negative"
+    };
+  },
+  // Scientific notation: integer → a.b × 10^e.
+  13: (_diffFactor, idx) => {
+    const lead = 1 + (idx % 9);          // 1..9 — keeps the mantissa inside [1, 10)
+    const dec = (idx + 3) % 10;          // 0..9
+    const e = 3 + (idx % 4);             // 10^3..10^6
+    const mantissa = dec === 0 ? `${lead}` : `${lead}.${dec}`;
+    const value = (lead * 10 + dec) * Math.pow(10, e - 1); // exact integer, no float error
+    return {
+      question: `Write $${value}$ in scientific notation.`,
+      answer: `${mantissa} × 10^${e}`,
+      distractors: [
+        `${mantissa} × 10^${e - 1}`,            // counted the shift off by one
+        `${lead}${dec} × 10^${e - 1}`,          // mantissa left outside 1–10
+        `0.${lead}${dec} × 10^${e + 1}`         // mantissa below 1
+      ],
+      explanation: `Move the decimal point until exactly one nonzero digit is left of it: $${value} \\rightarrow ${mantissa}$, a shift of $${e}$ places, so $${value} = ${mantissa} \\times 10^{${e}}$. The leading number must be at least $1$ and less than $10$.`,
+      type: "scientific_notation"
+    };
+  }
+};
+
 module.exports = {
   templates
 };
