@@ -79,6 +79,8 @@ sound/, haptic/                  Feedback managers.
   `ApiService` via `RetrofitClient.setApiServiceForTest(...)` for network-driven screens
   (see `ui/feature/social/SocialScreenTest.kt`). First run downloads the Robolectric SDK jar.
 - **End-to-end:** start the server bat + launch the app in BlueStacks.
+- **CI:** `.github/workflows/ci.yml` runs both suites on every push to `main` and on PRs
+  (server: lint + node:test with SymPy installed; Android: assembleDebug + Robolectric).
 
 ## Conventions & invariants (do not regress)
 

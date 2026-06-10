@@ -1418,6 +1418,26 @@ data class OnboardingCatalogs(
     val avatars: List<OnboardingAvatarItem> = emptyList()
 )
 
+// One ordered "do this now" plan composed server-side (/api/today) from the SRS queue +
+// the four daily quests — review → learn → puzzle → duel → growth.
+@Serializable
+data class TodayItem(
+    val key: String,
+    val title: String,
+    val subtitle: String? = null,
+    val progress: Int = 0,
+    val target: Int = 1,
+    val done: Boolean = false
+)
+
+@Serializable
+data class TodayResponse(
+    val streak: Int = 0,
+    val streakSafeToday: Boolean = false,
+    val claimableQuests: Int = 0,
+    val items: List<TodayItem> = emptyList()
+)
+
 @Serializable
 data class OnboardingStateResponse(
     val onboardingComplete: Boolean = false,

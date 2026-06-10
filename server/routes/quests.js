@@ -6,6 +6,7 @@ const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { idempotency } = require('../idempotency');
 const { checkAndResetQuestsAndLeagues } = require('../services/userService');
+const { QUEST_DEFS } = require('../lib/questDefs');
 
 const router = express.Router();
 
@@ -14,48 +15,16 @@ router.get('/api/quests', authenticateToken, (req, res) => {
     db.get('SELECT * FROM user_quests WHERE user_id = ?', [req.user.id], (err, q) => {
       if (err || !q) return res.status(500).json({ error: 'Quest data not found' });
 
-      const quests = [
-        {
-          type: 'solved',
-          name: 'Daily Solver',
-          description: 'Solve 5 math problems to warm up.',
-          target: 5,
-          current: Math.min(5, q.solved_today || 0),
-          claimed: q.solved_claimed,
-          rewardCoins: 20,
-          rewardXp: 30,
-        },
-        {
-          type: 'duels',
-          name: 'Arena Duelist',
-          description: 'Win or play 2 Arena duels.',
-          target: 2,
-          current: Math.min(2, q.duels_today || 0),
-          claimed: q.duels_claimed,
-          rewardCoins: 30,
-          rewardXp: 50,
-        },
-        {
-          type: 'mistakes',
-          name: 'Focus Practice',
-          description: 'Solve or review 3 growth equations.',
-          target: 3,
-          current: Math.min(3, q.mistakes_today || 0),
-          claimed: q.mistakes_claimed,
-          rewardCoins: 25,
-          rewardXp: 40,
-        },
-        {
-          type: 'daily_puzzle',
-          name: 'Daily Puzzle Master',
-          description: 'Solve the rotating Daily Puzzle.',
-          target: 1,
-          current: Math.min(1, q.daily_puzzle_today || 0),
-          claimed: q.daily_puzzle_claimed,
-          rewardCoins: 40,
-          rewardXp: 60,
-        },
-      ];
+      const quests = QUEST_DEFS.map((d) => ({
+        type: d.type,
+        name: d.name,
+        description: d.description,
+        target: d.target,
+        current: Math.min(d.target, q[d.progressCol] || 0),
+        claimed: q[d.claimCol],
+        rewardCoins: d.rewardCoins,
+        rewardXp: d.rewardXp,
+      }));
 
       res.json(quests);
     });
@@ -70,44 +39,15 @@ router.post('/api/quests/claim', authenticateToken, idempotency, (req, res) => {
   db.get('SELECT * FROM user_quests WHERE user_id = ?', [req.user.id], (err, q) => {
     if (err || !q) return res.status(404).json({ error: 'Quest data not found' });
 
-    let current = 0;
-    let target = 0;
-    let claimed = 0;
-    let rewardCoins = 0;
-    let rewardXp = 0;
-    let claimColumn = '';
+    const def = QUEST_DEFS.find((d) => d.type === questType);
+    if (!def) return res.status(400).json({ error: 'Invalid quest type' });
 
-    if (questType === 'solved') {
-      current = q.solved_today;
-      target = 5;
-      claimed = q.solved_claimed;
-      rewardCoins = 20;
-      rewardXp = 30;
-      claimColumn = 'solved_claimed';
-    } else if (questType === 'duels') {
-      current = q.duels_today;
-      target = 2;
-      claimed = q.duels_claimed;
-      rewardCoins = 30;
-      rewardXp = 50;
-      claimColumn = 'duels_claimed';
-    } else if (questType === 'mistakes') {
-      current = q.mistakes_today;
-      target = 3;
-      claimed = q.mistakes_claimed;
-      rewardCoins = 25;
-      rewardXp = 40;
-      claimColumn = 'mistakes_claimed';
-    } else if (questType === 'daily_puzzle') {
-      current = q.daily_puzzle_today;
-      target = 1;
-      claimed = q.daily_puzzle_claimed;
-      rewardCoins = 40;
-      rewardXp = 60;
-      claimColumn = 'daily_puzzle_claimed';
-    } else {
-      return res.status(400).json({ error: 'Invalid quest type' });
-    }
+    const current = q[def.progressCol];
+    const target = def.target;
+    const claimed = q[def.claimCol];
+    const rewardCoins = def.rewardCoins;
+    const rewardXp = def.rewardXp;
+    const claimColumn = def.claimCol;
 
     if (current < target) return res.status(400).json({ error: 'Quest target not met yet' });
     if (claimed === 1) return res.status(400).json({ error: 'Quest reward already claimed' });

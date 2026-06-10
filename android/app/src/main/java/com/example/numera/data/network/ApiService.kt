@@ -479,6 +479,11 @@ interface ApiService {
         @Header("Authorization") token: String
     ): List<Quest>
 
+    @GET("api/today")
+    suspend fun getToday(
+        @Header("Authorization") token: String
+    ): TodayResponse
+
     @POST("api/quests/claim")
     suspend fun claimQuest(
         @Header("Authorization") token: String,

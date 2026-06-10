@@ -85,6 +85,9 @@ fun DashboardScreen(
         })
     }
 
+    // The server-composed "Today" plan (review → learn → puzzle → duel → growth).
+    var today by remember { mutableStateOf<TodayResponse?>(null) }
+
     val fetchQuests = {
         scope.launch(Dispatchers.IO) {
             try {
@@ -95,6 +98,12 @@ fun DashboardScreen(
                 }
             } catch (e: Exception) {
                 Log.e("Dashboard", "Quests fetch err: ${e.message}")
+            }
+            try {
+                val plan = RetrofitClient.apiService.getToday(RetrofitClient.authToken ?: "")
+                withContext(Dispatchers.Main) { today = plan }
+            } catch (e: Exception) {
+                Log.e("Dashboard", "Today fetch err: ${e.message}")
             }
         }
     }
@@ -212,6 +221,27 @@ fun DashboardScreen(
                         .padding(horizontal = Spacing.l, vertical = Spacing.m),
                     verticalArrangement = Arrangement.spacedBy(Spacing.m)
                 ) {
+                // The "Today" composer: one ordered session plan, above everything else —
+                // this card (not quests, SRS, plan or commitment separately) answers
+                // "what should I do now?". Rows route into each step's existing flow.
+                today?.let { plan ->
+                    item(key = "today") {
+                        TodayCard(
+                            today = plan,
+                            onItemClick = { key ->
+                                when (key) {
+                                    "review" -> onReviewNow()
+                                    "solved" -> onNavigateTab(0)        // Learn tab → level map
+                                    "daily_puzzle" -> onNavigateTab(0)  // puzzle card lives on the level map
+                                    "duels" -> onNavigateTab(1)         // Arena tab
+                                    "mistakes" -> onReviewNow()         // growth equations live in the review surface
+                                }
+                            },
+                            modifier = Modifier.padding(bottom = Spacing.xs)
+                        )
+                    }
+                }
+
                 // Engine-driven nudge inside the scroll so it disappears when scrolled past.
                 // Only shown when there is actionable guidance — low-signal reasons return null.
                 recommendation?.let { rec ->
