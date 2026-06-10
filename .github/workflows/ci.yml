@@ -1,0 +1,66 @@
+# Numera CI — the green-ness that used to depend on remembering to run tests locally.
+# Server: node:test suite (throwaway SQLite DB) + ESLint. Android: assembleDebug + the
+# Robolectric JVM Compose test net (no emulator needed).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  server:
+    name: Server tests + lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      # SymPy powers the heavy end of the CAS bridge; its tests fail soft without it,
+      # but CI should exercise the real path.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install sympy
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+        env:
+          NUMERA_PYTHON: python
+
+  android:
+    name: Android build + Robolectric tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --console=plain
+
+      - name: Run Robolectric unit tests
+        working-directory: android
+        run: ./gradlew testDebugUnitTest --console=plain
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-reports
+          path: android/app/build/reports/tests/
