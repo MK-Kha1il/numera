@@ -154,6 +154,13 @@ router.post('/api/shop/purchase', authenticateToken, idempotency, (req, res) => 
     const item = await tx.get(`SELECT * FROM shop_items WHERE id = ?`, [itemId]);
     if (!item) throw httpError(404, 'Item not found');
 
+    // Earn-only trophies (achievement/rank/commitment badges and relics) are seeded with
+    // cost 0 and are excluded from the catalog — but without this guard a direct API call
+    // could "buy" them for 0 coins. They are granted by their reward services, never sold.
+    if (!item.cost || item.cost <= 0) {
+      throw httpError(400, 'This item is earned through play, not purchased');
+    }
+
     const user = await tx.get(`SELECT * FROM users WHERE id = ?`, [userId]);
     if (!user) throw httpError(404, 'User not found');
 
