@@ -221,6 +221,28 @@ fun ArenaScreen(
 
                         Spacer(modifier = Modifier.height(Spacing.l))
 
+                        // Guaranteed match: at current population the queue can sit empty
+                        // forever — after 20s offer a clearly-labeled bot duel instead of
+                        // an unbounded spinner. Leaving matchmaking happens via the same
+                        // state reset the Cancel button uses (the effect calls leaveQueue).
+                        if (queueSecondsElapsed >= 20) {
+                            Text(
+                                text = "Quiet out there right now — sharpen up against a training bot while you wait?",
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                textAlign = TextAlign.Center
+                            )
+                            DuoButton(
+                                text = "🤖 Duel a Bot Instead",
+                                onClick = {
+                                    matchmakingMode = null
+                                    showBotDuel = true
+                                },
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
                         DuoButton(
                             text = "Cancel Search",
                             onClick = {
