@@ -141,10 +141,31 @@ function probeEquivalent(aJs, bJs) {
   return agreements >= 4;                               // need enough corroborating points
 }
 
+// Locale-aware numeric punctuation for the SUBMITTED side only. European players type "0,5"
+// for one half and "1.234,5" for 1234.5; US players type "1,000" for a thousand — all were
+// rejected verbatim. Only rewrites strings that are a single numeric token, and callers skip
+// it when the canonical answer itself contains a comma (multi-part answers like "1, 3"), so
+// it can never corrupt list-style answers. Additive + sound: punctuation only, never value.
+function normalizeLocaleNumber(raw) {
+  const t = String(raw == null ? '' : raw).trim();
+  // US thousands grouping: 1,234 / 12,345,678 / 1,234.5
+  if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) return t.replace(/,/g, '');
+  // European full format: 1.234,5 (dots group thousands, comma is the decimal mark)
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) return t.replace(/\./g, '').replace(',', '.');
+  // European decimal comma: 0,5 / 12,75 (single comma, digits both sides, no dot)
+  if (/^-?\d+,\d+$/.test(t)) return t.replace(',', '.');
+  return raw;
+}
+
 // The public check: does `submitted` mean the same value as `canonical`?
 function areEquivalent(submitted, canonical) {
   // 1. Exact normalized match — preserves the existing grader's behaviour exactly.
   if (normalizeAnswer(submitted) === normalizeAnswer(canonical)) return true;
+
+  // 1b. Locale punctuation: only when the canonical answer has no comma of its own.
+  if (!String(canonical == null ? '' : canonical).includes(',')) {
+    submitted = normalizeLocaleNumber(submitted);
+  }
 
   // 2. Rational equality: integers / fractions / decimals / percents / mixed numbers (parseRational),
   //    OR a full numeric arithmetic expression the player typed, e.g. "1/2 + 1/4" (evaluateRational —
@@ -173,6 +194,7 @@ function areEquivalent(submitted, canonical) {
 module.exports = {
   areEquivalent,
   normalizeAnswer,
+  normalizeLocaleNumber, // exported for targeted tests
   parseRational,   // exported for targeted tests
   parsePiMultiple,
   toEvaluable

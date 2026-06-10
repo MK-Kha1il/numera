@@ -97,3 +97,25 @@ test('additive contract: every exact normalized match is still accepted', () => 
     assert.equal(areEquivalent(` ${s} `, s.toUpperCase()), true, `trim+case match must hold for ${s}`);
   }
 });
+
+// Locale-aware numeric punctuation (submitted side only — directed, not symmetric):
+// European decimal commas and US thousands grouping must grade as the value they mean.
+test('locale punctuation: decimal commas and thousands grouping are accepted', () => {
+  assert.equal(areEquivalent('0,5', '0.5'), true, 'European decimal comma');
+  assert.equal(areEquivalent('0,5', '1/2'), true, 'decimal comma vs fraction');
+  assert.equal(areEquivalent('12,75', '12.75'), true, 'multi-digit decimal comma');
+  assert.equal(areEquivalent('-3,5', '-3.5'), true, 'negative decimal comma');
+  assert.equal(areEquivalent('1,000', '1000'), true, 'US thousands grouping');
+  assert.equal(areEquivalent('12,345,678', '12345678'), true, 'multi-group thousands');
+  assert.equal(areEquivalent('1,234.5', '1234.5'), true, 'thousands + decimal point');
+  assert.equal(areEquivalent('1.234,5', '1234.5'), true, 'European full format');
+});
+
+test('locale punctuation: never touches multi-part canonical answers or wrong values', () => {
+  // Canonical contains a comma → submitted commas are list separators, left alone.
+  assert.equal(areEquivalent('1, 3', '1, 3'), true, 'list answers still exact-match');
+  assert.equal(areEquivalent('1,3', '1.3'), true, 'single-number canonical: comma is decimal');
+  // Soundness: a locale rewrite must never make a wrong value right.
+  assert.equal(areEquivalent('0,6', '0.5'), false);
+  assert.equal(areEquivalent('2,000', '2'), false, 'thousands grouping reads as 2000, not 2.0');
+});
