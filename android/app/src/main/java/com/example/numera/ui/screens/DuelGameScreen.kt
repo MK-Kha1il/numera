@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.numera.data.network.AddMistakeRequest
 import com.example.numera.data.network.MathProblem
 import com.example.numera.data.network.RetrofitClient
 import com.example.numera.sound.SoundManager
@@ -638,6 +639,9 @@ fun DuelGameScreen(
                                         com.example.numera.haptic.HapticManager.playSoft()
 
                                         val nextIdx = currentProblemIdx + 1
+                                        // Captured at tap time: the advance timer below moves
+                                        // currentProblemIdx before the ack may arrive.
+                                        val answeredProblem = problemsList.getOrNull(currentProblemIdx)
                                         // Send the actual answer; the SERVER grades it and acks back
                                         // its verdict + the canonical answer, which drives the reveal
                                         // (sound/particles/highlight). The client no longer self-judges.
@@ -654,6 +658,26 @@ fun DuelGameScreen(
                                                     streakCount = 0
                                                     SoundManager.playWrong()
                                                     com.example.numera.haptic.HapticManager.playError()
+                                                    // Close the compete→learn loop: a duel miss lands in
+                                                    // the Mistakes Bank (same flow solo uses), so it
+                                                    // resurfaces in growth practice instead of vanishing
+                                                    // when the match ends. Fire-and-forget.
+                                                    if (answeredProblem != null && correctAnswer.isNotBlank()) {
+                                                        scope.launch(Dispatchers.IO) {
+                                                            runCatching {
+                                                                RetrofitClient.apiService.addMistake(
+                                                                    RetrofitClient.authToken ?: "",
+                                                                    AddMistakeRequest(
+                                                                        category = "Duel",
+                                                                        question = answeredProblem.question,
+                                                                        correct_answer = correctAnswer,
+                                                                        options = answeredProblem.options,
+                                                                        explanation = explanation
+                                                                    )
+                                                                )
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }

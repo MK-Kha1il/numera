@@ -44,10 +44,13 @@ router.get('/api/today', authenticateToken, (req, res) => {
             for (const key of PLAN_ORDER) {
               if (key === 'review') {
                 // Only present when something is actually due — an empty review queue is
-                // not a task.
+                // not a task. The daily ask is CAPPED at 5: a lapsed user returning to a
+                // 200-review mountain gets an achievable step, not a guilt wall.
                 if (dueCount > 0) {
-                  const copy = ITEM_COPY.review(dueCount);
-                  items.push({ key, ...copy, progress: 0, target: dueCount, done: false });
+                  const ask = Math.min(dueCount, 5);
+                  const copy = ITEM_COPY.review(ask);
+                  if (dueCount > ask) copy.subtitle = `${dueCount} due in total — start with ${ask}`;
+                  items.push({ key, ...copy, progress: 0, target: ask, done: false });
                 }
                 continue;
               }

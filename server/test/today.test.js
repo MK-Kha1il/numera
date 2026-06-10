@@ -67,3 +67,18 @@ test('due SRS reviews lead the plan', async () => {
   assert.strictEqual(body.items[0].target, 2);
   assert.match(body.items[0].title, /2 fading concepts/);
 });
+
+test('a review mountain is capped to an achievable daily ask', async () => {
+  const { token, user } = await registerUser(ctx.base);
+  const past = Math.floor(Date.now() / 1000) - 60;
+  for (let i = 0; i < 8; i++) {
+    await run(
+      'INSERT INTO srs_reviews (user_id, topic, ease_factor, interval, repetitions, next_review) VALUES (?, ?, 2.5, 1, 1, ?)',
+      [user.id, `concept_${i}`, past]
+    );
+  }
+  const { body } = await api(ctx.base, 'GET', '/api/today', { token });
+  const review = body.items.find((i) => i.key === 'review');
+  assert.strictEqual(review.target, 5, 'daily review ask is capped at 5');
+  assert.match(review.subtitle, /8 due in total/);
+});
