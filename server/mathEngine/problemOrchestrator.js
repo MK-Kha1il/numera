@@ -47,7 +47,14 @@ const TYPE_TO_CONCEPT = {
   integral:             'integral',
   gcd_lcm:              'gcd_lcm',
   modular_arithmetic:   'modular_arithmetic',
-  totient:              'totient'
+  totient:              'totient',
+  // Graphing strand — template types equal conceptIds; mapping them routes the Socratic
+  // engine to the concept-specific misconception rules instead of the generic fallback.
+  point_on_line:        'point_on_line',
+  slope_from_points:    'slope_from_points',
+  slope_intercept_id:   'slope_intercept_id',
+  midpoint:             'midpoint',
+  distance_formula:     'distance_formula'
 };
 
 // Resolve a concept from a template type string
@@ -241,7 +248,8 @@ function getCategoryConceptIds(category, level) {
     number_sense:  ['percentage_of', 'fraction_of', 'ratio_solve', 'percent_change', 'exponent_power'],
     statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'stat_probability'],
     expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'distribute'],
-    powers:        ['square_root', 'exponent_product_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation']
+    powers:        ['square_root', 'exponent_product_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation'],
+    graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula']
   };
   const key = (category || 'arithmetic').toLowerCase();
   return map[key] || map.arithmetic;

@@ -106,6 +106,7 @@ test('every seeded achievement target_type is one achievementService computes', 
     'mastery_combinatorics', 'mastery_number_theory',
     'mastery_geometry', 'mastery_integers', 'mastery_decimals', 'mastery_fractions',
     'mastery_number_sense', 'mastery_statistics', 'mastery_expressions', 'mastery_powers',
+    'mastery_graphing',
     'friends_count', 'daily_puzzles_solved', 'archive_solved',
     'seasonal_spring', 'seasonal_summer', 'calculator_sixseven', 'speed_demon',
   ]);

@@ -1898,6 +1898,116 @@ templates.powers = {
   }
 };
 
+// -------------------------------------------------------------
+// GRAPHING TEMPLATES — linear graphing & the coordinate plane (the 8.EE/8.F/8.G bridge):
+// evaluating a line at a point, slope between two points, reading slope–intercept form, the
+// midpoint formula, and the distance formula (Pythagorean triples keep distances integer).
+// Routed by the 'graphing' category. NOTE: template keys must skip multiples of 10 — those are
+// milestone boss keys that generateProblemInstance force-routes to other categories.
+// Extra fields (m/b/x, coordinates, legs) ride along as the params bag for the misconception
+// classifier (knowledgeGraph rules read them).
+// -------------------------------------------------------------
+templates.graphing = {
+  // Evaluate y = mx + b at a given x.
+  8: (_diffFactor, idx) => {
+    const m = 2 + (idx % 4);              // 2..5
+    const bMag = 1 + ((idx + 1) % 5);     // 1..5
+    const b = idx % 2 === 0 ? bMag : -bMag;
+    const x = 2 + (idx % 5);              // 2..6
+    const y = m * x + b;
+    const bTxt = b >= 0 ? `+ ${b}` : `- ${bMag}`;
+    return {
+      question: `The line $y = ${m}x ${bTxt}$ — what is $y$ when $x = ${x}$?`,
+      answer: y,
+      distractors: [m * x, m * (x + b), m * x - b], // forgot the intercept; added before multiplying; flipped its sign
+      explanation: `Substitute $x = ${x}$ and multiply FIRST: $y = ${m} \\cdot ${x} ${bTxt} = ${m * x} ${bTxt} = ${y}$. The intercept shifts the result ${b >= 0 ? 'up' : 'down'} by $${bMag}$ at the very end — it never joins $x$ before the slope multiplies it.`,
+      type: "point_on_line",
+      m, b, x
+    };
+  },
+  // Slope through two points (integer slopes, positive and negative).
+  9: (_diffFactor, idx) => {
+    const slopes = [2, 3, -2, 4, -3];
+    const m = slopes[idx % 5];
+    const x1 = 1 + (idx % 4);            // 1..4
+    const dx = 2 + (idx % 3);            // 2..4
+    const x2 = x1 + dx;
+    const y1 = 2 + (idx % 5);            // 2..6
+    const y2 = y1 + m * dx;
+    const inverted = m < 0 ? `-1/${-m}` : `1/${m}`; // run over rise
+    return {
+      question: `What is the slope of the line through $(${x1}, ${y1})$ and $(${x2}, ${y2})$?`,
+      answer: m,
+      distractors: [-m, inverted, m * dx], // mixed the subtraction order; inverted rise/run; used the rise alone
+      explanation: `Slope is rise over run: $\\frac{${y2} - ${y1}}{${x2} - ${x1}} = \\frac{${m * dx}}{${dx}} = ${m}$. Keep the points in the SAME order on top and bottom — mixing the orders flips the sign, and the rise alone is not a slope until the run divides it.`,
+      type: "slope_from_points",
+      x1, y1, x2, y2
+    };
+  },
+  // Read m or b straight off slope–intercept form.
+  11: (_diffFactor, idx) => {
+    const mMag = 2 + (idx % 5);                 // 2..6
+    const mVal = idx % 4 === 1 ? -mMag : mMag;
+    const bMag = mMag + 2 + (idx % 3);          // strictly bigger than |m|, so they never collide
+    const bVal = mVal > 0 ? -bMag : bMag;       // opposite sign from the slope
+    const eq = `y = ${mVal}x ${bVal >= 0 ? '+' : '-'} ${bMag}`;
+    if (idx % 2 === 0) {
+      return {
+        question: `What is the slope of $${eq}$?`,
+        answer: mVal,
+        distractors: [bVal, -mVal, -bVal], // picked the intercept; dropped the sign; intercept, sign flipped
+        explanation: `In slope–intercept form $y = mx + b$, the slope is the coefficient MULTIPLYING $x$: here $m = ${mVal}$. The lone constant $${bVal}$ is the $y$-intercept — where the line crosses the $y$-axis, not how steep it is.`,
+        type: "slope_intercept_id",
+        m: mVal, b: bVal
+      };
+    }
+    return {
+      question: `What is the $y$-intercept of $${eq}$?`,
+      answer: bVal,
+      distractors: [mVal, -bVal, -mVal], // picked the slope; dropped the sign; slope, sign flipped
+      explanation: `The $y$-intercept is the constant term — the value of $y$ when $x = 0$: $y = ${mVal} \\cdot 0 ${bVal >= 0 ? '+' : '-'} ${bMag} = ${bVal}$. The number attached to $x$ ($${mVal}$) is the slope, not the crossing point.`,
+      type: "slope_intercept_id",
+      m: mVal, b: bVal
+    };
+  },
+  // Midpoint of a segment (even differences keep the midpoint integer).
+  13: (_diffFactor, idx) => {
+    const x1 = 1 + (idx % 5);                 // 1..5
+    const y1 = 3 + (idx % 4);                 // 3..6 (offset chosen so no distractor tuple can collide)
+    const dx = 2 * (1 + (idx % 4));           // 2,4,6,8
+    const dy = 2 * (1 + ((idx + 1) % 4));     // 2,4,6,8
+    const x2 = x1 + dx, y2 = y1 + dy;
+    const mx = x1 + dx / 2, my = y1 + dy / 2;
+    return {
+      question: `What is the midpoint of the segment from $(${x1}, ${y1})$ to $(${x2}, ${y2})$?`,
+      answer: `(${mx}, ${my})`,
+      distractors: [
+        `(${dx / 2}, ${dy / 2})`,             // halved the differences but forgot the start
+        `(${x1 + x2}, ${y1 + y2})`,           // summed without halving
+        `(${dx}, ${dy})`                      // subtracted instead of averaging
+      ],
+      explanation: `Average each coordinate: $x = \\frac{${x1} + ${x2}}{2} = ${mx}$ and $y = \\frac{${y1} + ${y2}}{2} = ${my}$. The midpoint is the AVERAGE of the endpoints — adding without halving lands past the far end, and halving only the difference forgets where the segment starts.`,
+      type: "midpoint",
+      x1, y1, x2, y2
+    };
+  },
+  // Distance between two points — Pythagorean triples keep every answer a whole number.
+  15: (_diffFactor, idx) => {
+    const triples = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [9, 12, 15], [8, 15, 17]];
+    const [a, b, c] = triples[idx % 5];
+    const x1 = 1 + (idx % 4), y1 = 1 + ((idx + 2) % 4);
+    const x2 = x1 + a, y2 = y1 + b;
+    return {
+      question: `What is the distance between $(${x1}, ${y1})$ and $(${x2}, ${y2})$?`,
+      answer: c,
+      distractors: [a + b, c * c, b], // added the legs; forgot the root; one leg only
+      explanation: `The horizontal leg is $${x2} - ${x1} = ${a}$ and the vertical leg is $${y2} - ${y1} = ${b}$; the distance is the hypotenuse: $\\sqrt{${a}^2 + ${b}^2} = \\sqrt{${a * a} + ${b * b}} = \\sqrt{${c * c}} = ${c}$. Legs combine as SQUARES under a root — adding them directly measures the walk around the corner, not the straight line.`,
+      type: "distance_formula",
+      legA: a, legB: b
+    };
+  }
+};
+
 module.exports = {
   templates
 };

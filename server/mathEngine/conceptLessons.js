@@ -1349,6 +1349,149 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // GRAPHING STRAND (linear graphing & the coordinate plane — 8.EE/8.F/8.G).
+  // ===========================================================================
+  point_on_line: {
+    title: "Points on a Line",
+    formula: "y = mx + b",
+    oneLineSummary: "A line's equation is a rule: feed in any x, multiply by the slope, add the intercept — out comes the y that sits on the line.",
+    intuitionHook: "A taxi charges $3$ per kilometer plus a $\\$2$ flat fee: $y = 3x + 2$. Ride $4$ km and the fare is $3 \\cdot 4 + 2 = 14$. Every point on the line $(4, 14)$ is one possible ride — the equation IS the price list, written as geometry.",
+    whatItIs: "The equation $y = mx + b$ pairs every $x$ with exactly one $y$. A point $(x, y)$ lies on the line precisely when its coordinates make the equation true — so evaluating the right side at $x$ produces the partner $y$.",
+    whyItWorks: "The equation encodes two separate actions, in a fixed order: the slope $m$ scales $x$ (every unit of $x$ contributes $m$ to $y$), and only THEN the intercept $b$ shifts the whole result up or down once. Order matters because multiplication distributes: $3(x + 2)$ would charge the flat fee per kilometer — $3x + 6$, a different line entirely. Multiply first, shift last, and you trace the exact same line the graph draws.",
+    whenToUse: "Any constant-rate-plus-starting-value situation: fares and fees, temperature conversion, checking whether a data point sits on a trend line, and reading predictions off a linear model.",
+    representations: [
+      { kind: "table", label: "An input–output machine", body: "$y = 2x + 1$: feed $x = 0, 1, 2, 3$ and out come $1, 3, 5, 7$ — each step right adds the slope once." },
+      { kind: "graphical", label: "A point ON the line", body: "$(4, 14)$ sits on $y = 3x + 2$ because climbing from the intercept $2$ by four slope-steps of $3$ lands exactly at height $14$." },
+      { kind: "story", label: "Rate plus starting value", body: "Slope = price per unit, intercept = flat fee. The line is every possible total, drawn at once." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting the intercept", why: "Computing $y = 3 \\cdot 4 = 12$ and stopping — the flat fee never gets added.", fix: "The equation has TWO parts. After multiplying by the slope, always apply the constant: $12 + 2 = 14$." },
+      { label: "Adding before multiplying", why: "Computing $3(4 + 2) = 18$ — letting the intercept sneak inside the multiplication.", fix: "Order of operations: the slope multiplies $x$ alone. The intercept joins by addition afterwards, exactly once." }
+    ],
+    connections: [
+      { concept: "eval_expression", note: "Evaluating $mx + b$ at a value IS expression evaluation — the same substitute-then-simplify skill." },
+      { concept: "slope_from_points", note: "Walk between two points the machine produced and you recover the slope." },
+      { concept: "slope_intercept_id", note: "Next step: read $m$ and $b$ straight off the equation without evaluating anything." }
+    ],
+    examples: [
+      { question: "The line $y = 2x + 3$ — what is $y$ when $x = 5$?", answer: "13", explanation: "Multiply first: $2 \\cdot 5 = 10$, then add the intercept: $10 + 3 = 13$." },
+      { question: "The line $y = 4x - 1$ — what is $y$ when $x = 3$?", answer: "11", explanation: "$4 \\cdot 3 = 12$, then $12 - 1 = 11$." }
+    ]
+  },
+
+  slope_from_points: {
+    title: "Slope Between Two Points",
+    formula: "m = \\frac{y_2 - y_1}{x_2 - x_1}",
+    oneLineSummary: "Slope is rise over run — how much the line climbs for every one step it moves right.",
+    intuitionHook: "Two signposts on a hiking trail: at kilometer $2$ you're at $100$ m altitude, at kilometer $5$ you're at $160$ m. You climbed $60$ m over $3$ km — that's $20$ m of climb per km. You just computed a slope, and no triangle in math class is steeper than this trail made it feel.",
+    whatItIs: "The slope of the line through $(x_1, y_1)$ and $(x_2, y_2)$ is the change in $y$ divided by the change in $x$. Positive slopes climb left-to-right, negative slopes fall, and the size says how fast.",
+    whyItWorks: "A line is the shape with a CONSTANT rate: between any two of its points, the ratio rise/run comes out identical — that's what makes it straight. Dividing $y_2 - y_1$ by $x_2 - x_1$ measures that rate. The order rule exists because both differences must be walked in the SAME direction: swap only one of them and you've measured the climb walking east but the distance walking west, so the sign flips. Swap both and the minus signs cancel — $\\frac{y_1 - y_2}{x_1 - x_2}$ gives the same slope.",
+    whenToUse: "Rates of change everywhere: speed from two timestamps, price trends from two data points, gradients of ramps and roofs, and as the $m$ you need before writing a line's equation.",
+    representations: [
+      { kind: "graphical", label: "The slope triangle", body: "Connect $(1, 2)$ and $(4, 11)$: the horizontal leg runs $3$, the vertical leg rises $9$, so $m = \\frac{9}{3} = 3$." },
+      { kind: "numeric", label: "Same line, any two points", body: "On $y = 2x$: from $(1,2)$ to $(3,6)$, $m = \\frac{4}{2} = 2$; from $(0,0)$ to $(5,10)$, $m = \\frac{10}{5} = 2$. The ratio never changes." },
+      { kind: "story", label: "Climb per step", body: "Slope $-3$ means: every step right, the line drops $3$. The sign is the direction, the size is the steepness." }
+    ],
+    commonMistakes: [
+      { label: "Mixing the subtraction order", why: "Computing $\\frac{y_2 - y_1}{x_1 - x_2}$ — walking the rise one way and the run the other — flips the sign.", fix: "Pick an order and use it in BOTH the top and the bottom: second point minus first point, twice." },
+      { label: "Run over rise", why: "Dividing $\\Delta x$ by $\\Delta y$ — the fraction upside down.", fix: "RISE over RUN: the climb goes on top. A steep line should give a BIG number — sanity-check against the picture." }
+    ],
+    connections: [
+      { concept: "integer_sub", note: "The differences are signed subtractions — negative coordinates make sign care essential." },
+      { concept: "point_on_line", note: "The slope you measure here is the $m$ that equation multiplies by." },
+      { concept: "distance_formula", note: "The same two legs (rise and run) give distance when squared under a root instead of divided." }
+    ],
+    examples: [
+      { question: "What is the slope of the line through $(2, 3)$ and $(5, 12)$?", answer: "3", explanation: "$m = \\frac{12 - 3}{5 - 2} = \\frac{9}{3} = 3$." },
+      { question: "What is the slope of the line through $(1, 8)$ and $(4, 2)$?", answer: "-2", explanation: "$m = \\frac{2 - 8}{4 - 1} = \\frac{-6}{3} = -2$ — the line falls left-to-right." }
+    ]
+  },
+
+  slope_intercept_id: {
+    title: "Slope–Intercept Form",
+    formula: "y = mx + b \\quad (m = \\text{slope}, \\; b = \\text{y-intercept})",
+    oneLineSummary: "In y = mx + b the two numbers have fixed jobs: m (glued to x) is the steepness, b (standing alone) is where the line crosses the y-axis.",
+    intuitionHook: "$y = 2x + 30$ describes a phone plan: $\\$30$ base fee, $\\$2$ per GB. The $30$ is where you START (use nothing, pay $30$) and the $2$ is how fast the bill GROWS. Two numbers, two completely different jobs — and the equation wears them on its sleeve.",
+    whatItIs: "Slope–intercept form writes a line so its two defining numbers are visible at a glance: the coefficient on $x$ is the slope $m$, and the lone constant is the $y$-intercept $b$ — the height where the line crosses the $y$-axis.",
+    whyItWorks: "Set $x = 0$ and the slope term vanishes: $y = m \\cdot 0 + b = b$ — so the constant is literally the line's height at the $y$-axis, no computation needed. Now step $x$ up by $1$: $y$ changes from $mx + b$ to $m(x+1) + b$, a difference of exactly $m$ — so the coefficient is literally the climb per step. Each number controls one thing and cannot touch the other: changing $b$ slides the line up or down without tilting it; changing $m$ tilts it around the crossing point.",
+    whenToUse: "Reading any linear model at a glance (start value + rate), sketching a line in seconds (dot at $b$, climb by $m$), comparing steepness of two lines, and setting up equations from word problems.",
+    representations: [
+      { kind: "graphical", label: "Dot, then climb", body: "$y = 2x - 1$: put a dot at $(0, -1)$, then go right $1$, up $2$, repeat. The whole line from two numbers." },
+      { kind: "story", label: "Base fee + rate", body: "$b$ is what you pay before consuming anything; $m$ is the price per unit. Every linear bill reads this way." },
+      { kind: "symbolic", label: "Each number, one job", body: "In $y = -3x + 5$: slope $-3$ (falls 3 per step), intercept $5$ (crosses the axis at height 5). Swap them and you describe a different line." }
+    ],
+    commonMistakes: [
+      { label: "Swapping slope and intercept", why: "In $y = 4x - 7$, reporting the slope as $-7$ — grabbing the wrong number.", fix: "The slope is GLUED to $x$ by multiplication; the intercept stands alone. Ask: which number multiplies $x$? That's $m$, always." },
+      { label: "Dropping the sign", why: "Reading the intercept of $y = 4x - 7$ as $7$ — the minus belongs to the constant.", fix: "Rewrite mentally as $y = 4x + (-7)$: the intercept is $-7$. The sign travels with its number." }
+    ],
+    connections: [
+      { concept: "slope_from_points", note: "The $m$ here is exactly the rise-over-run you compute from two points." },
+      { concept: "point_on_line", note: "Evaluating $mx + b$ at $x = 0$ is how the intercept earns its name." },
+      { concept: "linear_two_step", note: "Solving $mx + b = c$ runs this form backwards — undo the add, then the multiply." }
+    ],
+    examples: [
+      { question: "What is the slope of $y = 5x - 3$?", answer: "5", explanation: "The slope is the coefficient multiplying $x$: $m = 5$. The $-3$ is the $y$-intercept." },
+      { question: "What is the $y$-intercept of $y = -2x + 6$?", answer: "6", explanation: "Set $x = 0$: $y = -2 \\cdot 0 + 6 = 6$. The lone constant is the crossing height." }
+    ]
+  },
+
+  midpoint: {
+    title: "Midpoint of a Segment",
+    formula: "M = \\left( \\frac{x_1 + x_2}{2}, \\; \\frac{y_1 + y_2}{2} \\right)",
+    oneLineSummary: "The midpoint is the average of the endpoints — average the x's, average the y's, and you're standing exactly halfway.",
+    intuitionHook: "You live at house number $30$, your friend at number $80$. Where do you meet halfway? At $\\frac{30 + 80}{2} = 55$ — the AVERAGE. The midpoint formula just does this twice: once for the street running east–west ($x$) and once for the street running north–south ($y$).",
+    whatItIs: "The midpoint of the segment from $(x_1, y_1)$ to $(x_2, y_2)$ is the point exactly halfway along it. Each of its coordinates is the average of the matching endpoint coordinates.",
+    whyItWorks: "Halfway means: walk half the difference from the start. Half of $x_2 - x_1$ added to $x_1$ gives $x_1 + \\frac{x_2 - x_1}{2} = \\frac{2x_1 + x_2 - x_1}{2} = \\frac{x_1 + x_2}{2}$ — the average, by algebra, not coincidence. The two coordinates are independent (moving east never changes how far north you are), so halving each axis separately lands exactly halfway along the diagonal too.",
+    whenToUse: "Meeting points and centers: the center of a circle from a diameter's ends, the balance point of two locations, bisecting a segment in constructions, and averaging paired data.",
+    representations: [
+      { kind: "graphical", label: "Halfway along the diagonal", body: "From $(1, 3)$ to $(7, 11)$: the midpoint $(4, 7)$ sits at the center of the segment — half the run ($3$) and half the rise ($4$) from the start." },
+      { kind: "numeric", label: "Just two averages", body: "$M_x = \\frac{1 + 7}{2} = 4$, $\\; M_y = \\frac{3 + 11}{2} = 7$. Each axis is the house-number problem again." },
+      { kind: "balance", label: "The balance point", body: "Put equal weights at the endpoints — the segment balances exactly at the midpoint, the way a mean balances a data set." }
+    ],
+    commonMistakes: [
+      { label: "Adding without halving", why: "Reporting $(x_1 + x_2, y_1 + y_2)$ — the sum lands PAST the far endpoint, not between them.", fix: "An average has two steps: add, then divide by $2$. Check: the midpoint must sit BETWEEN the endpoints on both axes." },
+      { label: "Halving only the difference", why: "Computing $(\\frac{x_2 - x_1}{2}, \\frac{y_2 - y_1}{2})$ gives the half-STEP, not the halfway POINT — it forgets where the segment starts.", fix: "The half-difference must be added back to the starting point: $x_1 + \\frac{x_2 - x_1}{2}$. Or skip the detour and average directly." }
+    ],
+    connections: [
+      { concept: "stat_mean", note: "Each coordinate is the mean of two values — the midpoint is a two-point average, drawn." },
+      { concept: "point_on_line", note: "The midpoint always lies on the line through its endpoints — halfway in $x$ forces halfway in $y$." },
+      { concept: "distance_formula", note: "The midpoint splits the segment into two pieces of equal distance — the formulas cross-check each other." }
+    ],
+    examples: [
+      { question: "What is the midpoint of the segment from $(2, 5)$ to $(8, 9)$?", answer: "(5, 7)", explanation: "Average each axis: $\\frac{2 + 8}{2} = 5$ and $\\frac{5 + 9}{2} = 7$." },
+      { question: "What is the midpoint of the segment from $(1, 4)$ to $(7, 12)$?", answer: "(4, 8)", explanation: "$\\frac{1 + 7}{2} = 4$ and $\\frac{4 + 12}{2} = 8$." }
+    ]
+  },
+
+  distance_formula: {
+    title: "Distance Between Points",
+    formula: "d = \\sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}",
+    oneLineSummary: "The distance between two points is the Pythagorean theorem in disguise — square the horizontal and vertical gaps, add, take the root.",
+    intuitionHook: "A city walker goes $3$ blocks east and $4$ blocks north — $7$ blocks of walking. A crow flies the straight diagonal: only $5$. The crow's shortcut is the hypotenuse of the triangle the walker traced, and the distance formula is how the crow does its math.",
+    whatItIs: "The distance between $(x_1, y_1)$ and $(x_2, y_2)$ is the length of the straight segment joining them: the square root of the sum of the squared coordinate differences.",
+    whyItWorks: "Drop a right triangle under the segment: the horizontal leg is $x_2 - x_1$, the vertical leg is $y_2 - y_1$, and the segment itself is the hypotenuse. The Pythagorean theorem gives $d^2 = (x_2-x_1)^2 + (y_2-y_1)^2$; rooting both sides frees $d$. Squaring is what makes direction irrelevant — a gap of $-3$ squares to the same $9$ as $+3$ — so the formula works in every quadrant without case-checking.",
+    whenToUse: "Straight-line distances on maps and grids, radii from a center to a point, checking whether triangles are isosceles, collision distances in games, and anywhere 'how far apart' has a diagonal answer.",
+    representations: [
+      { kind: "graphical", label: "The hidden right triangle", body: "From $(1, 2)$ to $(4, 6)$: legs $3$ and $4$ under the segment, so $d = \\sqrt{9 + 16} = \\sqrt{25} = 5$." },
+      { kind: "story", label: "Walker vs crow", body: "Legs = the walker's blocks ($3 + 4 = 7$). Hypotenuse = the crow's flight ($5$). The diagonal always beats the corner." },
+      { kind: "symbolic", label: "Pythagoras with coordinates", body: "$a^2 + b^2 = c^2$ where $a = \\Delta x$, $b = \\Delta y$, $c = d$. Same theorem, new clothes." }
+    ],
+    commonMistakes: [
+      { label: "Adding the legs directly", why: "Reporting $3 + 4 = 7$ for legs $3$ and $4$ — that's the walk around the corner, not the straight line.", fix: "Legs combine as SQUARES: $\\sqrt{3^2 + 4^2} = 5$. The straight-line distance is always SHORTER than the leg sum." },
+      { label: "Forgetting the square root", why: "Stopping at $d^2 = 25$ and answering $25$.", fix: "The theorem hands you the SQUARED distance. The last step is always the root: sanity-check that the answer is bigger than each leg but smaller than their sum." }
+    ],
+    connections: [
+      { concept: "pythagorean", note: "This IS the Pythagorean theorem — the coordinate grid just builds the right triangle for you." },
+      { concept: "square_root", note: "The final step is a square root; Pythagorean triples keep it whole." },
+      { concept: "slope_from_points", note: "Same two legs ($\\Delta x$, $\\Delta y$): divided they give slope, squared under a root they give distance." }
+    ],
+    examples: [
+      { question: "What is the distance between $(1, 1)$ and $(4, 5)$?", answer: "5", explanation: "Legs $3$ and $4$: $d = \\sqrt{3^2 + 4^2} = \\sqrt{25} = 5$." },
+      { question: "What is the distance between $(2, 3)$ and $(8, 11)$?", answer: "10", explanation: "Legs $6$ and $8$: $d = \\sqrt{36 + 64} = \\sqrt{100} = 10$." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -1742,6 +1885,13 @@ function levelToConceptId(category, level) {
     if (lvl <= 9) return 'exponent_quotient_rule';
     if (lvl <= 11) return 'exponent_zero_negative';
     return 'scientific_notation';
+  }
+  if (cat === 'graphing') {
+    if (lvl <= 8) return 'point_on_line';
+    if (lvl <= 9) return 'slope_from_points';
+    if (lvl <= 11) return 'slope_intercept_id';
+    if (lvl <= 13) return 'midpoint';
+    return 'distance_formula';
   }
   if (cat === 'expressions') {
     if (lvl <= 11) return 'eval_expression';

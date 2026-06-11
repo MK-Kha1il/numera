@@ -499,6 +499,55 @@ const concepts = {
       { id: "exponent_miscount", label: "Counted the decimal shift off by one", rule: (ans) => ans },
       { id: "mantissa_out_of_range", label: "Left the leading number outside 1–10", rule: (ans) => ans }
     ]
+  },
+
+  // ---- Graphing strand (linear graphing & the coordinate plane — the 8.EE/8.F/8.G bridge) ----
+  "point_on_line": {
+    name: "Points on a Line",
+    prereqs: ["eval_expression"],
+    baseElo: 940,
+    misconceptions: [
+      { id: "forgot_intercept", label: "Multiplied by the slope but never applied the intercept", rule: (ans, p) => p.m * p.x },
+      { id: "added_before_multiplying", label: "Added the intercept to x before multiplying by the slope", rule: (ans, p) => p.m * (p.x + p.b) },
+      { id: "flipped_intercept_sign", label: "Applied the intercept with the wrong sign", rule: (ans, p) => ans - 2 * p.b }
+    ]
+  },
+  "slope_from_points": {
+    name: "Slope Between Two Points",
+    prereqs: ["point_on_line", "integer_sub"],
+    baseElo: 1000,
+    misconceptions: [
+      { id: "mixed_subtraction_order", label: "Subtracted the coordinates in opposite orders, flipping the sign", rule: (ans) => -ans },
+      { id: "inverted_rise_run", label: "Computed run over rise instead of rise over run", rule: (ans) => 1 / ans },
+      { id: "rise_only", label: "Used only the change in y and ignored the run", rule: (ans, p) => p.y2 - p.y1 }
+    ]
+  },
+  "slope_intercept_id": {
+    name: "Slope–Intercept Form",
+    prereqs: ["slope_from_points"],
+    baseElo: 1030,
+    misconceptions: [
+      { id: "swapped_slope_intercept", label: "Read the intercept as the slope (or vice versa)", rule: (ans, p) => (Math.abs(ans - p.m) < 0.001 ? p.b : p.m) },
+      { id: "dropped_sign", label: "Dropped the sign of the coefficient", rule: (ans) => -ans }
+    ]
+  },
+  "midpoint": {
+    name: "Midpoint of a Segment",
+    prereqs: ["point_on_line", "stat_mean"],
+    baseElo: 1060,
+    misconceptions: [
+      { id: "halved_difference", label: "Halved the coordinate differences but forgot the starting point", rule: (ans) => ans },
+      { id: "forgot_to_halve", label: "Added the endpoints without dividing by two", rule: (ans) => ans }
+    ]
+  },
+  "distance_formula": {
+    name: "Distance Between Points",
+    prereqs: ["pythagorean", "slope_from_points"],
+    baseElo: 1120,
+    misconceptions: [
+      { id: "added_legs", label: "Added the legs directly instead of squaring under the root", rule: (ans, p) => p.legA + p.legB },
+      { id: "forgot_root", label: "Computed the squared distance but skipped the square root", rule: (ans) => ans * ans }
+    ]
   }
 };
 
@@ -564,6 +613,11 @@ const STANDARDS = {
   exponent_quotient_rule: "8.EE.A.1",
   exponent_zero_negative: "8.EE.A.1",
   scientific_notation: "8.EE.A.3",
+  point_on_line: "8.F.A.1",
+  slope_from_points: "8.EE.B.6",
+  slope_intercept_id: "8.F.A.3",
+  midpoint: "G-GPE.B.6",
+  distance_formula: "8.G.B.8",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

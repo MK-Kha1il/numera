@@ -77,6 +77,13 @@ const CONCEPT_TO_LEVEL = {
   exponent_quotient_rule: { category: 'powers',      level: 9  },
   exponent_zero_negative: { category: 'powers',      level: 11 },
   scientific_notation:    { category: 'powers',      level: 13 },
+  // Graphing strand (linear graphing & the coordinate plane — 8.EE/8.F/8.G).
+  // Keys deliberately skip 10: milestone keys are force-routed to boss categories.
+  point_on_line:          { category: 'graphing',    level: 8  },
+  slope_from_points:      { category: 'graphing',    level: 9  },
+  slope_intercept_id:     { category: 'graphing',    level: 11 },
+  midpoint:               { category: 'graphing',    level: 13 },
+  distance_formula:       { category: 'graphing',    level: 15 },
   linear_one_step:      { category: 'algebra',       level: 11 },
   linear_two_step:      { category: 'algebra',       level: 13 },
   quadratic:            { category: 'algebra',       level: 15 },
@@ -235,6 +242,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'fractions';
   } else if (normalizedCat === 'powers') {
     catKey = 'powers';
+  } else if (normalizedCat === 'graphing') {
+    catKey = 'graphing';
   } else {
     catKey = 'arithmetic';
   }

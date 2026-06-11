@@ -786,6 +786,19 @@ const migrations = [
       }
     },
   },
+  {
+    version: 30,
+    name: 'graphing_strand_mastery',
+    // Graphing strand (linear graphing & the coordinate plane, 8.EE/8.F/8.G) — its mastery
+    // counter, mirroring v29.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE user_mastery ADD COLUMN graphing_correct INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**

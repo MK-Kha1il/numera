@@ -235,6 +235,7 @@ function initDb() {
           statistics_correct INTEGER DEFAULT 0,
           expressions_correct INTEGER DEFAULT 0,
           powers_correct INTEGER DEFAULT 0,
+          graphing_correct INTEGER DEFAULT 0,
           FOREIGN KEY(user_id) REFERENCES users(id)
         )
       `);
@@ -908,6 +909,11 @@ function initDb() {
         { id: 'mastery_powers_2', name: 'Powers Adept', description: 'Solve 20 Exponents & Roots problems', icon: 'school', target_type: 'mastery_powers', target_value: 20, reward_coins: 150, category: 'Mastery', chain_id: 'mastery_powers', chain_order: 2, is_hidden: 0 },
         { id: 'mastery_powers_3', name: 'Powers Expert', description: 'Solve 50 Exponents & Roots problems', icon: 'school', target_type: 'mastery_powers', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_powers', chain_order: 3, is_hidden: 0 },
         { id: 'mastery_powers_4', name: 'Powers Master', description: 'Solve 150 Exponents & Roots problems', icon: 'school', target_type: 'mastery_powers', target_value: 150, reward_coins: 800, category: 'Mastery', chain_id: 'mastery_powers', chain_order: 4, is_hidden: 0 },
+
+        { id: 'mastery_graphing_1', name: 'Graphing Apprentice', description: 'Solve 5 Linear Graphing problems', icon: 'school', target_type: 'mastery_graphing', target_value: 5, reward_coins: 50, category: 'Mastery', chain_id: 'mastery_graphing', chain_order: 1, is_hidden: 0 },
+        { id: 'mastery_graphing_2', name: 'Graphing Adept', description: 'Solve 20 Linear Graphing problems', icon: 'school', target_type: 'mastery_graphing', target_value: 20, reward_coins: 150, category: 'Mastery', chain_id: 'mastery_graphing', chain_order: 2, is_hidden: 0 },
+        { id: 'mastery_graphing_3', name: 'Graphing Expert', description: 'Solve 50 Linear Graphing problems', icon: 'school', target_type: 'mastery_graphing', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_graphing', chain_order: 3, is_hidden: 0 },
+        { id: 'mastery_graphing_4', name: 'Graphing Master', description: 'Solve 150 Linear Graphing problems', icon: 'school', target_type: 'mastery_graphing', target_value: 150, reward_coins: 800, category: 'Mastery', chain_id: 'mastery_graphing', chain_order: 4, is_hidden: 0 },
 
         // 5. Social Chain
         { id: 'social_1', name: 'Friendly Greeting', description: 'Add your first friend', icon: 'group', target_type: 'friends_count', target_value: 1, reward_coins: 30, category: 'Social', chain_id: 'social_path', chain_order: 1, is_hidden: 0 },

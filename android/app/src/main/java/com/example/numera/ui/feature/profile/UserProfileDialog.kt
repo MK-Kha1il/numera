@@ -264,6 +264,12 @@ fun UserProfileDialog(
                                 maxCount = 100,
                                 color = Color(0xFF64B5F6)
                             )
+                            MasteryBar(
+                                topicName = "Linear Graphing",
+                                correctCount = profile.mastery.graphing_correct,
+                                maxCount = 100,
+                                color = Color(0xFFEF5350)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(Spacing.l))
