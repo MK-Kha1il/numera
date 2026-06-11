@@ -48,3 +48,20 @@ test('strand categories band into their own template key ranges', () => {
   // Milestones still pass through untouched for strands.
   assert.strictEqual(P.normalizeLevelForGenerator('fractions', 20), 20);
 });
+
+test('strand bands never normalize onto a milestone template key', () => {
+  // generateProblemInstance force-routes internal level 10 to the arithmetic boss template,
+  // so a strand band landing on a multiple of 10 serves the WRONG category (statistics at UI
+  // levels 21–24 used to get a pythagorean problem) and miscounts mastery.
+  const strands = ['geometry', 'integers', 'decimals', 'fractions', 'number_sense',
+    'statistics', 'expressions', 'powers', 'graphing'];
+  for (const cat of strands) {
+    for (let lvl = 1; lvl <= 60; lvl++) {
+      if (lvl % 10 === 0) continue; // real milestones pass through by design
+      const n = P.normalizeLevelForGenerator(cat, lvl);
+      assert.notStrictEqual(n % 10, 0, `${cat} UI level ${lvl} normalized to milestone key ${n}`);
+    }
+  }
+  // The collision band now lands one key above instead.
+  assert.strictEqual(P.normalizeLevelForGenerator('statistics', 21), 11);
+});

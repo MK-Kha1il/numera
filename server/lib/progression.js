@@ -88,6 +88,7 @@ const STRAND_BANDS = {
   statistics: [7, 13],
   expressions: [11, 15],
   powers: [4, 13],
+  graphing: [8, 15],
 };
 
 // Map a UI level + category to the generator's internal level band (milestones pass through).
@@ -109,7 +110,11 @@ function normalizeLevelForGenerator(category, level) {
     return 41 + Math.min(8, index);
   } else if (STRAND_BANDS[cat]) {
     const [min, max] = STRAND_BANDS[cat];
-    return Math.min(min + index, max);
+    const banded = Math.min(min + index, max);
+    // Multiples of 10 are milestone template keys: generateProblemInstance force-routes
+    // them to the boss category (level 10 → arithmetic/pythagorean), so a strand band must
+    // never land on one — it would serve the wrong category AND miscount mastery.
+    return banded % 10 === 0 ? Math.min(banded + 1, max) : banded;
   } else {
     return 1 + index;
   }
