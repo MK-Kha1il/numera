@@ -276,6 +276,12 @@ fun UserProfileDialog(
                                 maxCount = 100,
                                 color = Color(0xFF8D6E63)
                             )
+                            MasteryBar(
+                                topicName = "Functions",
+                                correctCount = profile.mastery.functions_correct,
+                                maxCount = 100,
+                                color = Color(0xFF26C6DA)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(Spacing.l))

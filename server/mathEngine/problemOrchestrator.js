@@ -97,7 +97,13 @@ const TYPE_TO_CONCEPT = {
   geo_angles_lines:         'geo_angles_lines',
   percent_discount:         'percent_discount',
   simple_interest:          'simple_interest',
-  multi_step_word:          'multi_step_word'
+  multi_step_word:          'multi_step_word',
+  // Functions strand.
+  function_evaluate:        'function_evaluate',
+  function_table:           'function_table',
+  rate_of_change:           'rate_of_change',
+  function_initial:         'function_initial',
+  function_solve:           'function_solve'
 };
 
 // Resolve a concept from a template type string
@@ -295,7 +301,8 @@ function getCategoryConceptIds(category, level) {
     expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'translate_expression', 'distribute', 'foil_binomials', 'square_binomial', 'factor_trinomial'],
     powers:        ['square_root', 'cube_root', 'exponent_product_rule', 'exponent_power_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation'],
     graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula'],
-    inequalities:  ['inequality_one_step_add', 'inequality_one_step_mult', 'inequality_flip_negative', 'inequality_two_step', 'inequality_compound']
+    inequalities:  ['inequality_one_step_add', 'inequality_one_step_mult', 'inequality_flip_negative', 'inequality_two_step', 'inequality_compound'],
+    functions:     ['function_evaluate', 'function_table', 'rate_of_change', 'function_initial', 'function_solve']
   };
   const key = (category || 'arithmetic').toLowerCase();
   return map[key] || map.arithmetic;

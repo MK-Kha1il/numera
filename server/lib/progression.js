@@ -90,6 +90,7 @@ const STRAND_BANDS = {
   powers: [4, 13],
   graphing: [8, 15],
   inequalities: [7, 15],
+  functions: [7, 15],
 };
 
 // Map a UI level + category to the generator's internal level band (milestones pass through).

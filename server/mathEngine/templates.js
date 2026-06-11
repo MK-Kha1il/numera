@@ -2643,6 +2643,92 @@ templates.inequalities = {
   }
 };
 
+// -------------------------------------------------------------
+// FUNCTIONS TEMPLATES — the 8.F band: function notation, rules from tables, rate of change,
+// initial value, and solving f(x) = T. Routed by the 'functions' category. Keys skip
+// multiples of 10 (milestone boss keys). Params (a/b/c, dx, V/r/t, T) ride along for the
+// misconception classifier.
+// -------------------------------------------------------------
+templates.functions = {
+  // Evaluate f(c) for f(x) = ax + b — the notation is the new skill.
+  7: (_diffFactor, idx) => {
+    const a = 2 + (idx % 4);              // 2..5
+    const bMag = 1 + ((idx + 1) % 5);     // 1..5
+    const b = idx % 2 === 0 ? bMag : -bMag;
+    const c = 2 + (idx % 5);              // 2..6
+    const y = a * c + b;
+    const bTxt = b >= 0 ? `+ ${b}` : `- ${bMag}`;
+    return {
+      question: `Given $f(x) = ${a}x ${bTxt}$, find $f(${c})$.`,
+      answer: y,
+      distractors: [a * c, a * (c + b), a * c - b], // dropped the constant; added before multiplying; flipped its sign
+      explanation: `$f(${c})$ means: feed $${c}$ into the machine wherever $x$ appears. Multiply first: $${a} \\cdot ${c} = ${a * c}$, then apply the constant: $${a * c} ${bTxt} = ${y}$. The notation $f(${c})$ is an INPUT, never a multiplication of $f$ by $${c}$.`,
+      type: "function_evaluate",
+      a, b, c
+    };
+  },
+  // Which rule produced the table? The trap rule fits only the first row.
+  9: (_diffFactor, idx) => {
+    const r = 2 + (idx % 3);              // rate 2..4
+    const s = r + 1 + (idx % 3);          // start, strictly bigger than the rate
+    const row = (x) => r * x + s;
+    return {
+      question: `A table pairs inputs with outputs:\n$x$: $1, 2, 3, 4$\n$y$: $${row(1)}, ${row(2)}, ${row(3)}, ${row(4)}$\nWhich rule produces this table?`,
+      answer: `y = ${r}x + ${s}`,
+      distractors: [`y = ${r + s}x`, `y = ${s}x + ${r}`, `y = ${r}x - ${s}`], // fits the first row only; swapped rate and start; sign slip
+      explanation: `Check the STEP between rows: each $+1$ in $x$ adds $${r}$ to $y$ — that's the coefficient. Then anchor any row: at $x = 1$, $y = ${row(1)} = ${r} + ${s}$, so the constant is $${s}$. The rule $y = ${r + s}x$ matches the first row and nothing after — one row is never enough evidence.`,
+      type: "function_table"
+    };
+  },
+  // Rate of change from two measurements in context.
+  11: (_diffFactor, idx) => {
+    const m = 2 + (idx % 4);              // 2..5 cm per week
+    const x1 = 2 + (idx % 3);             // week 2..4
+    const dx = 3 + (idx % 2);             // 3..4 weeks later (parity keeps dx clear of m)
+    const x2 = x1 + dx;
+    const y1 = 5 + (idx % 5);             // 5..9 cm
+    const y2 = y1 + m * dx;
+    return {
+      question: `A plant measured $${y1}$ cm in week $${x1}$ and $${y2}$ cm in week $${x2}$, growing at a steady rate. How many cm does it grow per week?`,
+      answer: m,
+      distractors: [y2 - y1, dx, y2], // the total change; the elapsed weeks; the final height
+      explanation: `Rate of change is change PER unit: the plant grew $${y2} - ${y1} = ${y2 - y1}$ cm over $${x2} - ${x1} = ${dx}$ weeks, so $\\frac{${y2 - y1}}{${dx}} = ${m}$ cm each week. The total ($${y2 - y1}$) answers 'how much', not 'how fast'.`,
+      type: "rate_of_change",
+      y1, y2, dx
+    };
+  },
+  // Initial value: walk the rate backwards from a later measurement.
+  13: (_diffFactor, idx) => {
+    const r = 3 + (idx % 4);              // drains 3..6 L/min
+    const t = 4 + (idx % 3);              // after 4..6 min
+    const V = 20 + 5 * (idx % 5);         // current 20..40 L
+    const V0 = V + r * t;
+    return {
+      question: `A tank drains at $${r}$ liters per minute. After $${t}$ minutes it holds $${V}$ liters. How many liters did it hold at the start?`,
+      answer: V0,
+      distractors: [V - r * t, r * t, V], // walked the rate the wrong way; the drained amount; the current amount
+      explanation: `Run the story backwards: $${t}$ minutes of draining removed $${r} \\times ${t} = ${r * t}$ liters, so the start held the current amount PLUS what left: $${V} + ${r * t} = ${V0}$. Subtracting drains it twice — direction matters when you rewind.`,
+      type: "function_initial",
+      V, r, t
+    };
+  },
+  // Solve f(x) = T — the input is the unknown, and plugging T in is the classic trap.
+  15: (_diffFactor, idx) => {
+    const a = 2 + (idx % 4);              // 2..5
+    const b = 1 + ((idx + 1) % 5);        // 1..5
+    const q = 2 + (idx % 5);              // 2..6
+    const T = a * q + b;
+    return {
+      question: `Given $f(x) = ${a}x + ${b}$, for what value of $x$ is $f(x) = ${T}$?`,
+      answer: q,
+      distractors: [a * T + b, T - b, q + 1], // computed f(T); forgot to divide; near miss
+      explanation: `$f(x) = ${T}$ asks which INPUT produces the output $${T}$ — solve $${a}x + ${b} = ${T}$: subtract $${b}$ ($${a}x = ${T - b}$), divide by $${a}$ ($x = ${q}$). Computing $f(${T}) = ${a * T + b}$ answers the opposite question: it feeds the target in as an input.`,
+      type: "function_solve",
+      a, b, T
+    };
+  }
+};
+
 module.exports = {
   templates
 };

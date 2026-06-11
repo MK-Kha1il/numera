@@ -49,6 +49,7 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
           powers_correct: 0,
           graphing_correct: 0,
           inequalities_correct: 0,
+          functions_correct: 0,
         };
         res.json({
           id: user.id,
@@ -82,6 +83,7 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
             powers_correct: mast.powers_correct || 0,
             graphing_correct: mast.graphing_correct || 0,
             inequalities_correct: mast.inequalities_correct || 0,
+            functions_correct: mast.functions_correct || 0,
           },
         });
       });

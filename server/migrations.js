@@ -811,6 +811,18 @@ const migrations = [
       }
     },
   },
+  {
+    version: 32,
+    name: 'functions_strand_mastery',
+    // Functions strand (8.F — notation, tables, rate of change) — its mastery counter.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE user_mastery ADD COLUMN functions_correct INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**

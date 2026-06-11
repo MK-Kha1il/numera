@@ -2551,6 +2551,149 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // FUNCTIONS STRAND (8.F — notation, tables, rate of change, initial value).
+  // ===========================================================================
+  function_evaluate: {
+    title: "Evaluating Functions",
+    formula: "f(x) = ax + b: \\quad f(c) = a \\cdot c + b",
+    oneLineSummary: "A function is a machine and f(c) is its output for input c — the parentheses mean 'feed this in', never 'multiply'.",
+    intuitionHook: "A vending machine: press B4, get a snack. The machine is $f$, the button is the input, the snack is $f(B4)$. Writing $f(x) = 2x + 3$ publishes the machine's wiring diagram — and $f(5)$ just asks: what falls out when you press $5$? (Answer: $13$.)",
+    whatItIs: "Function notation names a rule and its inputs: $f(x) = 2x + 3$ defines the rule, $f(5)$ requests its output at $5$. Evaluating substitutes the input everywhere $x$ appears, then simplifies.",
+    whyItWorks: "The notation is pure bookkeeping on top of expression evaluation: $f(5)$ for $f(x) = 2x + 3$ means exactly 'evaluate $2x + 3$ at $x = 5$'. What's NEW is the naming: the rule itself becomes an object, so different machines ($f$, $g$) can coexist and be compared. The parentheses are the historical hazard — everywhere else in algebra $a(b)$ multiplies, but $f(5)$ is an application, not a product. There is no quantity '$f$' to multiply by $5$; there's a machine $f$ being handed a $5$.",
+    whenToUse: "Reading any formula in function form ($C(n)$ for cost, $h(t)$ for height), programming (functions ARE this idea executable), graphing point by point, and all later f-and-g algebra.",
+    representations: [
+      { kind: "machine", label: "Input → machine → output", body: "$f(x) = 2x + 3$: feed $5$, the machine doubles it and adds three, out comes $13$. $f(5) = 13$ records the transaction." },
+      { kind: "substitution", label: "Replace every x", body: "$f(5)$: rewrite the rule with $5$ in $x$'s seat — $2(5) + 3$ — then simplify. Multiply before adding, as always." },
+      { kind: "graph_point", label: "A point on the graph", body: "$f(5) = 13$ IS the point $(5, 13)$ on the machine's graph — evaluation and plotting are the same act." }
+    ],
+    commonMistakes: [
+      { label: "Reading f(5) as f times 5", why: "Treating the parentheses as multiplication because $a(b)$ multiplies everywhere else.", fix: "$f$ is a machine, not a number — there's nothing to multiply. $f(5)$ is a request: run the machine on $5$." },
+      { label: "Dropping the constant", why: "Computing $f(5) = 2 \\cdot 5 = 10$ for $f(x) = 2x + 3$ — the substitution stopped halfway.", fix: "Substitute into the WHOLE rule: every term survives. $2(5) + 3 = 13$ — the machine has two stages." }
+    ],
+    connections: [
+      { concept: "eval_expression", note: "Evaluation is the engine; the notation adds a name and an interface." },
+      { concept: "point_on_line", note: "f(c) for a linear f is finding y on the line — same computation, new clothes." },
+      { concept: "function_solve", note: "The reverse request: given the output, recover the input." }
+    ],
+    examples: [
+      { question: "Given $f(x) = 3x + 2$, find $f(4)$.", answer: "14", explanation: "Substitute: $3(4) + 2 = 12 + 2 = 14$." },
+      { question: "Given $f(x) = 5x - 1$, find $f(3)$.", answer: "14", explanation: "$5(3) - 1 = 15 - 1 = 14$." }
+    ]
+  },
+
+  function_table: {
+    title: "Rules from Tables",
+    formula: "\\text{step in } y \\to \\text{coefficient}; \\quad \\text{anchor a row} \\to \\text{constant}",
+    oneLineSummary: "Read a linear rule off a table in two moves: the y-step per unit x is the coefficient, and any single row then pins down the constant.",
+    intuitionHook: "A mystery machine logged its work: in 1 → out 7, in 2 → out 10, in 3 → out 13. Each extra input adds $3$ to the output — the machine multiplies by $3$. And at input 1 it gave $7 = 3 + 4$, so it also adds $4$: the rule is $y = 3x + 4$. Two observations, machine reverse-engineered.",
+    whatItIs: "Recovering the rule $y = mx + b$ from a table of input-output pairs: the constant difference between consecutive outputs (per unit input) gives $m$; substituting any row gives $b$.",
+    whyItWorks: "A linear rule adds its coefficient once per unit step — that's what 'times $m$' means — so consecutive outputs in a unit-step table differ by exactly $m$, every time. One row alone can't identify a rule: infinitely many rules pass through a single pair (the trap rule $y = 7x$ also maps $1 \\to 7$, then misses every other row). The STEP is what separates them, and the anchor row finishes the job. Checking the candidate rule against a row you didn't use is the professional habit — it catches both slips at once.",
+    whenToUse: "Finding patterns in data, spreadsheet formulas from examples, sequences, science labs (fitting a linear law to measurements), and reverse-engineering any constant-rate process.",
+    representations: [
+      { kind: "differences", label: "Look at the steps", body: "Outputs $7, 10, 13, 16$: steps of $+3$ — the coefficient announces itself in the gaps." },
+      { kind: "anchor", label: "Then anchor a row", body: "With $m = 3$ and the row $(1, 7)$: $7 = 3(1) + b$, so $b = 4$. Any row works; pick the easiest." },
+      { kind: "verify", label: "Test an unused row", body: "Claim $y = 3x + 4$; check $x = 4$: $16$ ✓. A rule must fit EVERY row — one match is coincidence, four is a law." }
+    ],
+    commonMistakes: [
+      { label: "Fitting only the first row", why: "Choosing $y = 7x$ because $7 \\times 1 = 7$ — one row matched, the rest never consulted.", fix: "A rule answers to the whole table. Check a second row immediately: $7 \\times 2 = 14 \\ne 10$ — discard and look at the steps instead." },
+      { label: "Swapping rate and start", why: "Writing $y = 4x + 3$ when the steps say $3$ and the anchor says $4$ — both numbers right, both jobs wrong.", fix: "The STEP between rows is the multiplier; the leftover at the anchor is the adder. Label them as you find them." }
+    ],
+    connections: [
+      { concept: "function_evaluate", note: "Each table row IS one evaluation — reading rules is evaluation run backwards." },
+      { concept: "rate_of_change", note: "The y-step per unit x is the rate of change, met in table form." },
+      { concept: "slope_intercept_id", note: "m and b have the same two jobs here as in y = mx + b — found instead of read." }
+    ],
+    examples: [
+      { question: "A table maps $1, 2, 3 \\to 9, 13, 17$. Which rule fits?", answer: "y = 4x + 5", explanation: "Steps of $+4$ give the coefficient; row $(1, 9)$: $9 = 4 + b \\to b = 5$." },
+      { question: "A table maps $1, 2, 3 \\to 5, 8, 11$. Which rule fits?", answer: "y = 3x + 2", explanation: "Steps $+3$; anchor $(1,5)$: $b = 2$. Check $x=3$: $11$ ✓." }
+    ]
+  },
+
+  rate_of_change: {
+    title: "Rate of Change",
+    formula: "\\text{rate} = \\frac{\\Delta y}{\\Delta x} = \\frac{y_2 - y_1}{x_2 - x_1}",
+    oneLineSummary: "Rate of change is how much the output moves per ONE unit of input — total change divided by elapsed input, the slope of a real story.",
+    intuitionHook: "Your plant was $8$ cm in week 2 and $20$ cm in week 5. 'It grew $12$ cm' tells the past; '$4$ cm per week' predicts the future — next week, $24$. Dividing the total by the three weeks turns a fact into a forecast. That per-week number is the rate of change.",
+    whatItIs: "The constant rate at which a linear quantity changes: the change in output divided by the change in input between any two measurements. In graphs it's the slope; in stories it's the speed, growth rate, or price per unit.",
+    whyItWorks: "A steady process spreads its total change evenly across the elapsed input — $12$ cm over $3$ weeks means each week contributed equally: $12 \\div 3 = 4$. That's why the rate needs BOTH differences: the total change alone ($12$) answers 'how much', the elapsed input alone ($3$) answers 'how long', and only their ratio answers 'how fast'. Steadiness is what makes the answer trustworthy between and beyond the measurements — the same division on any two points of the same line yields the same rate.",
+    whenToUse: "Growth and decay stories, speed from two odometer readings, cost per additional item, temperature change per hour — and as the m of every linear model you'll ever fit.",
+    representations: [
+      { kind: "story", label: "Per-week thinking", body: "$8$ cm → $20$ cm across weeks 2 → 5: $\\frac{12 \\text{ cm}}{3 \\text{ wk}} = 4$ cm/week. The units narrate the division." },
+      { kind: "graphical", label: "Slope in costume", body: "Plot (2, 8) and (5, 20): the rate is the rise over run between them — slope, wearing a gardening glove." },
+      { kind: "forecast", label: "Rates predict", body: "At 4 cm/week, week 6 ≈ 24 cm and week 10 ≈ 40 cm. A total can't do that; a rate can." }
+    ],
+    commonMistakes: [
+      { label: "Reporting the total change", why: "Answering '12' to 'how fast does it grow per week?' — the change happened over THREE weeks, not one.", fix: "Read the unit in the question: PER WEEK demands a per-week number. Divide the total by the elapsed weeks." },
+      { label: "Dividing by the raw endpoint", why: "Computing $12 \\div 5$ using week 5 instead of the elapsed $5 - 2 = 3$ weeks.", fix: "Both differences, top and bottom: $\\frac{y_2 - y_1}{x_2 - x_1}$. The clock starts at the FIRST measurement, not at zero." }
+    ],
+    connections: [
+      { concept: "slope_from_points", note: "Identical computation — rate of change is slope with units attached." },
+      { concept: "unit_rate", note: "A rate of change IS a unit rate measured between two snapshots." },
+      { concept: "function_initial", note: "Rate plus starting value rebuilds the whole linear story: y = (rate)x + (start)." }
+    ],
+    examples: [
+      { question: "A pool held $30$ L at minute 2 and $54$ L at minute 8. How many liters per minute is it filling?", answer: "4", explanation: "$\\frac{54 - 30}{8 - 2} = \\frac{24}{6} = 4$ L/min." },
+      { question: "A plant was $6$ cm in week 1 and $21$ cm in week 6. How many cm per week did it grow?", answer: "3", explanation: "$\\frac{15}{5} = 3$ cm per week." }
+    ]
+  },
+
+  function_initial: {
+    title: "Initial Value",
+    formula: "\\text{start} = \\text{current} \\pm \\text{rate} \\times \\text{time (rewound)}",
+    oneLineSummary: "The initial value is the story rewound to time zero — undo the rate's work: add back what drained away, remove what accumulated.",
+    intuitionHook: "A tank has been draining at $5$ L/min, and after $6$ minutes it holds $20$ L. How full was it at the start? The drain REMOVED $30$ L, so rewinding means putting them back: $50$ L. Rewinding a story flips its arrow — what drained must return, what grew must shrink.",
+    whatItIs: "Finding a linear process's starting amount (the y-intercept, $b$) from its rate and a later measurement. It's the second of the two numbers — rate and start — that pin down any linear story.",
+    whyItWorks: "A constant rate makes the past computable: in $t$ minutes, exactly $r \\times t$ entered or left, no more, no less. The current amount plus the rewound change recovers the start: $V_0 = V + rt$ for a drain (the lost liters return), $V_0 = V - rt$ for a fill (the gained liters leave). The direction flip is where errors live — subtracting from a draining tank drains it TWICE. Algebraically this is the $b$ in $V(t) = b - rt$: set the model against the measurement and solve. Time zero is where the graph cuts the y-axis; the initial value IS the y-intercept with a story attached.",
+    whenToUse: "Reconstructing starting balances, original prices before steady markdowns, launch heights, how full the tank/battery was, and identifying b when fitting linear models to real data.",
+    representations: [
+      { kind: "rewind", label: "Play the tape backwards", body: "Drained $5$ L/min for $6$ min → $30$ L left the tank. Rewind: $20 + 30 = 50$ L at the start." },
+      { kind: "intercept", label: "The y-axis crossing", body: "On the graph of liters vs minutes, the initial value is where the line meets $t = 0$ — the intercept of the story." },
+      { kind: "model", label: "Solve the model", body: "$V(t) = V_0 - 5t$ and $V(6) = 20$: so $V_0 - 30 = 20$, $V_0 = 50$. The formula agrees with the rewind." }
+    ],
+    commonMistakes: [
+      { label: "Walking the rate the wrong way", why: "Computing $20 - 30 = -10$ L for the draining tank — rewinding with the forward arrow drains it twice (into nonsense: negative liters).", fix: "Ask what the process DID, then undo it: draining removed liters, so the start had MORE. A negative or absurd answer is the direction flag." },
+      { label: "Reporting the change instead of the start", why: "Answering $30$ — the amount drained — to a question about the starting amount.", fix: "$rt$ is the journey; the question asked for the origin. Combine: current $+$ journey $=$ start." }
+    ],
+    connections: [
+      { concept: "rate_of_change", note: "Rate and initial value are the m and b of the story — this one anchors the line." },
+      { concept: "slope_intercept_id", note: "The initial value IS b in y = mx + b, found from context instead of read from the form." },
+      { concept: "linear_two_step", note: "Solving the model equation for V0 is a two-step solve." }
+    ],
+    examples: [
+      { question: "A candle burns at $2$ cm/hour. After $4$ hours it is $7$ cm tall. How tall was it new?", answer: "15", explanation: "Burned: $2 \\times 4 = 8$ cm. Rewind: $7 + 8 = 15$ cm." },
+      { question: "A tank drains at $4$ L/min; after $5$ minutes it holds $25$ L. How much did it start with?", answer: "45", explanation: "$25 + 4 \\times 5 = 45$ L." }
+    ]
+  },
+
+  function_solve: {
+    title: "Solving f(x) = T",
+    formula: "f(x) = ax + b = T \\implies x = \\frac{T - b}{a}",
+    oneLineSummary: "f(x) = T asks which INPUT produces output T — run the machine backwards by undoing its steps in reverse; plugging T in answers the opposite question.",
+    intuitionHook: "A taxi charges $f(x) = 3x + 2$ dollars for $x$ kilometers, and you have exactly $\\$17$. 'How far can I ride?' is $f(x) = 17$ — the OUTPUT is known, the input is the mystery. Unwrap the fare: drop the $\\$2$ fee ($15$ left), divide by the rate ($5$ km). Plugging in $17$ instead would price a 17-km ride: $\\$53$ — the right math for the wrong question.",
+    whatItIs: "Solving for the input given the output: set the function's formula equal to the target value and solve the resulting equation. For linear $f$, that's a two-step solve: subtract the constant, divide by the coefficient.",
+    whyItWorks: "$f(x) = 17$ is a statement ABOUT the output: 'the machine produced $17$ — from what?' Since the machine multiplied then added, the rewind subtracts then divides — operations undone in reverse order, like unwrapping a package. The classic trap, computing $f(17)$, runs the machine FORWARD on the target: it treats the known output as a fresh input, answering 'what does $17$ produce?' instead of 'what produces $17$?'. The check is built in: feed your answer back through — $f(5) = 3(5) + 2 = 17$ ✓ — the forward machine certifies the backward solve.",
+    whenToUse: "Budget questions (how much can I afford?), break-even points, 'when does it reach...' time questions, inverse lookups in any formula — the everyday direction of real-world function use.",
+    representations: [
+      { kind: "machine", label: "Run it backwards", body: "Forward: ×3 then +2. Backward from $17$: −2 then ÷3 → $5$. Reverse order, inverse operations." },
+      { kind: "two_questions", label: "f(17) vs f(x) = 17", body: "$f(17) = 53$: what 17 produces. $f(x) = 17 \\to x = 5$: what produces 17. Same symbols, opposite directions." },
+      { kind: "graph", label: "Horizontal line hunt", body: "On the graph, $f(x) = 17$ finds where the line crosses HEIGHT 17 — read down to the x-axis for the answer." }
+    ],
+    commonMistakes: [
+      { label: "Plugging the target in", why: "Computing $f(17)$ for $f(x) = 17$ — the known value enters the wrong door (input instead of output).", fix: "Mark what's known: $17$ is an OUTPUT. Outputs sit on the right of $ax + b = T$; the unknown input is the x you solve for. Verify by feeding the answer forward." },
+      { label: "Subtracting but not dividing", why: "Reaching $3x = 15$ and answering $15$ — one undo short of a bare x.", fix: "Count the wrapping layers: the input was multiplied AND shifted, so the rewind needs BOTH undos: $x = 15 \\div 3 = 5$." }
+    ],
+    connections: [
+      { concept: "function_evaluate", note: "The forward direction — and the verification step for every backward solve." },
+      { concept: "linear_two_step", note: "The algebra is exactly a two-step equation; the notation frames it as un-running a machine." },
+      { concept: "inequality_two_step", note: "Budgets often ask f(x) ≤ T — the same rewind with a range answer." }
+    ],
+    examples: [
+      { question: "Given $f(x) = 2x + 5$, for what $x$ is $f(x) = 17$?", answer: "6", explanation: "Rewind: $17 - 5 = 12$, then $12 \\div 2 = 6$. Check: $f(6) = 17$ ✓." },
+      { question: "Given $f(x) = 4x + 3$, for what $x$ is $f(x) = 23$?", answer: "5", explanation: "$23 - 3 = 20$; $20 \\div 4 = 5$." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -2983,6 +3126,13 @@ function levelToConceptId(category, level) {
     if (lvl <= 11) return 'inequality_flip_negative';
     if (lvl <= 13) return 'inequality_two_step';
     return 'inequality_compound';
+  }
+  if (cat === 'functions') {
+    if (lvl <= 7) return 'function_evaluate';
+    if (lvl <= 9) return 'function_table';
+    if (lvl <= 11) return 'rate_of_change';
+    if (lvl <= 13) return 'function_initial';
+    return 'function_solve';
   }
   if (cat === 'expressions') {
     if (lvl <= 11) return 'eval_expression';

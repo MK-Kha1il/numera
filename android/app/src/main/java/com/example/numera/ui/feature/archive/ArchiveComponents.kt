@@ -73,6 +73,7 @@ fun LevelNode(
         category == "powers" -> Triple(Color(0xFF64B5F6), Color(0xFF1976D2), Color(0xFF0D47A1))
         category == "graphing" -> Triple(Color(0xFFF87171), Color(0xFFDC2626), Color(0xFF991B1B))
         category == "inequalities" -> Triple(Color(0xFF6EE7B7), Color(0xFF10B981), Color(0xFF047857))
+        category == "functions" -> Triple(Color(0xFFFACC15), Color(0xFFCA8A04), Color(0xFF713F12))
         else -> Triple(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFF92400E))
     }
 

@@ -122,6 +122,12 @@ const CONCEPT_TO_LEVEL = {
   inequality_flip_negative: { category: 'inequalities', level: 11 },
   inequality_two_step:      { category: 'inequalities', level: 13 },
   inequality_compound:      { category: 'inequalities', level: 15 },
+  // Functions strand (8.F — notation, tables, rate of change). Keys skip 10 (boss-routed).
+  function_evaluate:        { category: 'functions',  level: 7  },
+  function_table:           { category: 'functions',  level: 9  },
+  rate_of_change:           { category: 'functions',  level: 11 },
+  function_initial:         { category: 'functions',  level: 13 },
+  function_solve:           { category: 'functions',  level: 15 },
   linear_one_step:      { category: 'algebra',       level: 11 },
   linear_two_step:      { category: 'algebra',       level: 13 },
   // Promoted from variety templates: the level-14/16 generators already produced these.
@@ -287,6 +293,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'graphing';
   } else if (normalizedCat === 'inequalities') {
     catKey = 'inequalities';
+  } else if (normalizedCat === 'functions') {
+    catKey = 'functions';
   } else {
     catKey = 'arithmetic';
   }

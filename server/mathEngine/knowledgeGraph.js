@@ -908,6 +908,53 @@ const concepts = {
       { id: "stopped_early", label: "Answered an intermediate result instead of the final question", rule: (ans) => ans },
       { id: "wrong_operation_chain", label: "Combined the numbers with the wrong sequence of operations", rule: (ans) => ans }
     ]
+  },
+
+  // ---- Functions strand (8.F — notation, tables, rate of change, initial value) ----
+  "function_evaluate": {
+    name: "Evaluating Functions",
+    prereqs: ["eval_expression", "point_on_line"],
+    baseElo: 1060,
+    misconceptions: [
+      { id: "forgot_constant", label: "Applied the coefficient but dropped the constant term", rule: (ans, p) => p.a * p.c },
+      { id: "added_before_multiplying", label: "Added the constant to the input before multiplying", rule: (ans, p) => p.a * (p.c + p.b) }
+    ]
+  },
+  "function_table": {
+    name: "Rules from Tables",
+    prereqs: ["function_evaluate"],
+    baseElo: 1120,
+    misconceptions: [
+      { id: "first_row_only", label: "Chose a rule that fits only the first table entry", rule: (ans) => ans },
+      { id: "swapped_coefficients", label: "Swapped the rate and the starting value in the rule", rule: (ans) => ans }
+    ]
+  },
+  "rate_of_change": {
+    name: "Rate of Change",
+    prereqs: ["function_table", "slope_from_points"],
+    baseElo: 1160,
+    misconceptions: [
+      { id: "total_not_rate", label: "Reported the total change instead of the change per unit", rule: (ans, p) => p.y2 - p.y1 },
+      { id: "used_the_run", label: "Reported the elapsed units instead of the rate", rule: (ans, p) => p.dx }
+    ]
+  },
+  "function_initial": {
+    name: "Initial Value",
+    prereqs: ["rate_of_change"],
+    baseElo: 1200,
+    misconceptions: [
+      { id: "wrong_direction", label: "Walked the rate the wrong way from the current state", rule: (ans, p) => p.V - p.r * p.t },
+      { id: "gave_the_change", label: "Reported how much changed instead of the starting amount", rule: (ans, p) => p.r * p.t }
+    ]
+  },
+  "function_solve": {
+    name: "Solving f(x) = T",
+    prereqs: ["function_evaluate", "linear_two_step"],
+    baseElo: 1240,
+    misconceptions: [
+      { id: "plugged_in_the_target", label: "Computed f(T) instead of solving f(x) = T", rule: (ans, p) => p.a * p.T + p.b },
+      { id: "forgot_to_divide", label: "Subtracted the constant but never divided by the coefficient", rule: (ans, p) => p.T - p.b }
+    ]
   }
 };
 
@@ -1014,6 +1061,11 @@ const STANDARDS = {
   percent_discount: "7.RP.A.3",
   simple_interest: "7.RP.A.3",
   multi_step_word: "4.OA.A.3",
+  function_evaluate: "8.F.A.1",
+  function_table: "8.F.A.1",
+  rate_of_change: "8.F.B.4",
+  function_initial: "8.F.B.4",
+  function_solve: "HSF-IF.A.2",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";
