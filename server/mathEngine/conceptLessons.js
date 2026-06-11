@@ -1492,6 +1492,264 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // INEQUALITIES STRAND (order reasoning — the 6.EE/7.EE band).
+  // ===========================================================================
+  inequality_one_step_add: {
+    title: "One-Step Inequalities (Add/Subtract)",
+    formula: "x + a > b \\implies x > b - a",
+    oneLineSummary: "Solve an inequality the way you solve an equation — slide the same amount off both sides — and the < or > sign just comes along for the ride.",
+    intuitionHook: "Your backpack holds at most $10$ kg and your books already weigh $3$ kg. How much MORE can you pack? Anything up to $7$ kg — not exactly $7$, anything UP TO it. That 'anything up to' is what an inequality says that an equation can't: the answer is a whole range, not one number.",
+    whatItIs: "An inequality like $x + 3 > 10$ states that one side is bigger than the other. Solving it means isolating $x$ — and the solution is every number that works, written as a range like $x > 7$.",
+    whyItWorks: "If one pile is heavier than another, adding the same weight to both piles — or removing it from both — keeps the heavier pile heavier. That's why adding or subtracting on both sides NEVER changes the direction of the sign: $x + 3 > 10$ and $x > 7$ describe the same set of numbers. Test it: $x = 8$ satisfies both; $x = 6$ fails both. The sign only ever flips for one specific reason (multiplying or dividing by a negative), and that reason never appears in this step.",
+    whenToUse: "Budgets and capacity limits ('at most', 'at least'), minimum scores needed, age and height restrictions — any constraint where the answer is a range, not a single value.",
+    representations: [
+      { kind: "number_line", label: "A ray, not a point", body: "$x > 7$ is an open dot at $7$ with an arrow to the right — infinitely many solutions, drawn at once." },
+      { kind: "balance", label: "An unbalanced scale", body: "$x + 3 > 10$: the left pan hangs heavier. Take $3$ off BOTH pans and it still hangs heavier: $x > 7$." },
+      { kind: "story", label: "'At most' and 'at least'", body: "'You need at least $\\$25$ and you have $\\$9$': $9 + x \\ge 25$, so $x \\ge 16$ — every amount from $16$ up works." }
+    ],
+    commonMistakes: [
+      { label: "Treating it as an equation", why: "Answering $x = 7$ for $x + 3 > 10$ — collapsing a whole range into a single number (which isn't even a solution here).", fix: "Keep the inequality sign through every step. The answer should still HAVE a $>$ or $<$ in it — check one number from your range in the original." },
+      { label: "Flipping for no reason", why: "Writing $x < 7$ — over-applying the famous flip rule to a step that never triggers it.", fix: "The flip belongs to ONE move only: multiplying or dividing by a negative. Adding and subtracting never flip. Test $x = 8$: it satisfies $x + 3 > 10$, so the arrow must point toward it." }
+    ],
+    connections: [
+      { concept: "linear_one_step", note: "The same one-step isolation — inequalities just keep a direction sign instead of an equals sign." },
+      { concept: "inequality_one_step_mult", note: "Next: isolating x when it's multiplied — still no flip while the numbers stay positive." },
+      { concept: "integer_add", note: "Ranges often cross zero — signed-number fluency keeps the endpoints honest." }
+    ],
+    examples: [
+      { question: "Solve $x + 5 > 12$.", answer: "x > 7", explanation: "Subtract $5$ from both sides: $x > 7$. The $>$ never moves for subtraction." },
+      { question: "Solve $x - 4 < 6$.", answer: "x < 10", explanation: "Add $4$ to both sides: $x < 10$." }
+    ]
+  },
+
+  inequality_one_step_mult: {
+    title: "One-Step Inequalities (Multiply/Divide)",
+    formula: "ax < b \\implies x < \\tfrac{b}{a} \\quad (a > 0)",
+    oneLineSummary: "Dividing both sides by a positive number keeps the inequality pointing exactly the same way.",
+    intuitionHook: "Three identical tickets cost less than $\\$24$ in total — so one ticket costs less than $\\$8$. You just divided both sides of $3x < 24$ by $3$, and no part of you wanted to flip the 'less than'. Positive division preserves order; your intuition already knows it.",
+    whatItIs: "Inequalities like $3x < 24$ isolate $x$ by dividing both sides by the coefficient. While that coefficient is positive, the direction of the inequality is untouched: $x < 8$.",
+    whyItWorks: "Scaling two quantities by the same POSITIVE factor preserves their order — if one stack of coins is shorter than another, taking a third of each stack keeps the shorter one shorter. Formally: $3x < 24$ means $x$ tripled still falls below $24$, so $x$ itself falls below a third of $24$. The reason this needs saying at all is the negative case (next concept): multiplying by $-1$ MIRRORS the number line and reverses every order. Positive scaling does no mirroring, so nothing reverses.",
+    whenToUse: "Unit prices from totals, speed limits from distances and times, sharing constraints ('the per-person cost must stay under...'), and the divide step inside every two-step inequality.",
+    representations: [
+      { kind: "numeric", label: "Check a value", body: "$3x < 24 \\to x < 8$. Try $x = 5$: $15 < 24$ ✓ and $5 < 8$ ✓ — both statements agree, no flip happened." },
+      { kind: "stacks", label: "Scaling keeps order", body: "A 6-coin stack is shorter than a 9-coin stack; a third of each (2 vs 3) is STILL shorter. Positive scaling never reorders." },
+      { kind: "number_line", label: "Stretching, not mirroring", body: "Dividing by $3$ squeezes the number line toward zero — points keep their left-to-right order." }
+    ],
+    commonMistakes: [
+      { label: "Flipping for a positive divisor", why: "Learning 'dividing flips the sign' as a blanket rule and writing $3x < 24 \\to x > 8$.", fix: "The flip rule has one trigger: a NEGATIVE multiplier or divisor. Before flipping, ask: is the number I'm dividing by negative? If not, hands off the sign." },
+      { label: "Subtracting the coefficient", why: "Turning $3x < 24$ into $x < 21$ — undoing multiplication with subtraction.", fix: "$3x$ means $3$ TIMES $x$; its inverse is division. $x < 24 \\div 3 = 8$. Check: $x = 21$ gives $63 < 24$ — false." }
+    ],
+    connections: [
+      { concept: "inequality_one_step_add", note: "The add/subtract step — together they solve anything one-step." },
+      { concept: "inequality_flip_negative", note: "The crucial exception: a NEGATIVE divisor mirrors the line and flips the sign." },
+      { concept: "arithmetic_div", note: "The inverse-operation instinct: undo a multiply with a divide." }
+    ],
+    examples: [
+      { question: "Solve $4x < 20$.", answer: "x < 5", explanation: "Divide both sides by $4$ (positive — no flip): $x < 5$." },
+      { question: "Solve $5x > 35$.", answer: "x > 7", explanation: "Divide by $5$: $x > 7$. The direction is preserved." }
+    ]
+  },
+
+  inequality_flip_negative: {
+    title: "Flip on Negative",
+    formula: "-ax < b \\implies x > -\\tfrac{b}{a} \\quad (a > 0)",
+    oneLineSummary: "Multiplying or dividing an inequality by a negative number mirrors the number line — so the inequality sign must flip.",
+    intuitionHook: "$3 < 5$, obviously. Now multiply both by $-1$: is $-3 < -5$? No — owing $3$ is BETTER than owing $5$, so $-3 > -5$. Negation turned the bigger number into the smaller one. Every time a negative multiplies through an inequality, this same reversal happens — and the sign has to flip to keep telling the truth.",
+    whatItIs: "When solving inequalities like $-2x < 6$, the final step divides by a negative. That division reverses the order of every pair of numbers, so the inequality symbol reverses too: $x > -3$.",
+    whyItWorks: "Multiplying by a negative number reflects the entire number line through zero: right becomes left, bigger becomes smaller. Any true statement about order ('$a$ is left of $b$') becomes false after the mirror unless the sign flips with it. Watch it concretely: $-2x < 6$ is satisfied by $x = 0$ (since $0 < 6$). Divide by $-2$ WITHOUT flipping and you'd get $x < -3$ — which excludes $0$. The flipped version $x > -3$ keeps $0$, matching reality. The flip isn't a ritual; it's the mirror's paperwork.",
+    whenToUse: "Whenever the variable carries a negative coefficient: cooling rates, debts and losses, 'fewer than' constraints, and rearranging any inequality where you move the variable across the sign.",
+    representations: [
+      { kind: "mirror", label: "The number-line mirror", body: "Multiply by $-1$: the point $3$ lands on $-3$, the point $5$ on $-5$. Their left-right order swaps — that swap IS the flip." },
+      { kind: "numeric", label: "Test a witness", body: "$-2x < 6$: try $x = 0 \\to 0 < 6$ ✓. So the solution must CONTAIN $0$: $x > -3$ does, $x < -3$ doesn't." },
+      { kind: "table", label: "Watch the order reverse", body: "$1 < 2 < 3$ becomes $-1 > -2 > -3$ after negation — every comparison reverses at once." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting the flip", why: "Dividing $-2x < 6$ by $-2$ and writing $x < -3$ — the single most common inequality error in algebra.", fix: "Make the test-a-number check a habit: pick an easy value like $0$, see if it satisfies the ORIGINAL, and make sure your answer agrees. The flip will catch itself." },
+      { label: "Flipping the sign of the answer instead", why: "Turning $-2x < 6$ into $x < 3$ or $x > 3$ — negating the VALUE when the SYMBOL was the thing that needed flipping.", fix: "Two separate things happen: the value gets its sign from arithmetic ($6 \\div (-2) = -3$), the symbol flips because the divisor is negative. Do both, separately: $x > -3$." }
+    ],
+    connections: [
+      { concept: "inequality_one_step_mult", note: "The positive case it contrasts with — same move, opposite paperwork." },
+      { concept: "integer_mult", note: "Sign rules for negatives power the arithmetic half of the step." },
+      { concept: "inequality_two_step", note: "Two-step problems hide a possible flip in their final division — stay alert." }
+    ],
+    examples: [
+      { question: "Solve $-3x < 12$.", answer: "x > -4", explanation: "Divide by $-3$ AND flip: $x > \\frac{12}{-3} = -4$. Check with $x=0$: $0 < 12$ ✓ and $0 > -4$ ✓." },
+      { question: "Solve $-2x > -10$.", answer: "x < 5", explanation: "Divide by $-2$, flip the $>$ to $<$: $x < 5$. The two negatives cancel in the VALUE, but the flip still happens." }
+    ]
+  },
+
+  inequality_two_step: {
+    title: "Two-Step Inequalities",
+    formula: "ax + b \\le c \\implies x \\le \\tfrac{c - b}{a} \\quad (a > 0)",
+    oneLineSummary: "Unwrap the inequality in reverse order — subtract the constant first, divide by the coefficient second — flipping only if that divisor is negative.",
+    intuitionHook: "A taxi charges a $\\$2$ flat fee plus $\\$3$ per km, and you have at most $\\$14$: $3x + 2 \\le 14$. Peel the fee off first ($3x \\le 12$), then split by the rate ($x \\le 4$). You can ride at most $4$ km — and you solved it exactly the way you'd un-dress the expression: last operation off first.",
+    whatItIs: "Two-step inequalities wrap $x$ in a multiplication and an addition: $ax + b \\le c$. Solving reverses both operations in backwards order, keeping the inequality sign honest at each step.",
+    whyItWorks: "Building $3x + 2$ from $x$ applies 'times 3' THEN 'plus 2' — so dismantling it must undo 'plus 2' first, 'times 3' second (socks on before shoes; shoes off before socks). Each undo obeys its own sign rule: the subtraction step never flips, and the division step flips only when the coefficient is negative. With $a = 3 > 0$ nothing flips, and each step produces an inequality with exactly the same solution set as the one before — that's why the final $x \\le 4$ answers the original question.",
+    whenToUse: "Budget problems with a fixed cost plus a rate (rentals, taxis, phone plans), score targets with a baseline, and as the template for solving ANY linear inequality.",
+    representations: [
+      { kind: "unwrap", label: "Peel in reverse", body: "$3x + 2 \\le 14 \\to 3x \\le 12 \\to x \\le 4$: the $+2$ came last, so it leaves first." },
+      { kind: "story", label: "Flat fee + rate", body: "Budget $\\$14$, fee $\\$2$, rate $\\$3$/km: after the fee, $\\$12$ remains, which buys at most $4$ km." },
+      { kind: "number_line", label: "A closed ray", body: "$x \\le 4$: a filled dot at $4$ (the $\\le$ includes it) and everything to the left." }
+    ],
+    commonMistakes: [
+      { label: "Dividing before subtracting", why: "Hitting $3x + 2 \\le 14$ with $\\div 3$ first gives $x + \\frac{2}{3} \\le \\frac{14}{3}$ — legal but messy, and usually botched.", fix: "Undo operations in REVERSE order of how the expression was built: constants peel off before coefficients." },
+      { label: "Stopping at the multiplication", why: "Reaching $3x \\le 12$ and reporting $x \\le 12$ — the coefficient never got divided away.", fix: "The goal is a bare $x$. If a number still multiplies it, you're one step short: $x \\le 12 \\div 3 = 4$." }
+    ],
+    connections: [
+      { concept: "linear_two_step", note: "The identical two-step unwrap with an equals sign — inequalities add only the sign-direction bookkeeping." },
+      { concept: "inequality_flip_negative", note: "When the coefficient is negative, the final division flips the sign — the two skills combine." },
+      { concept: "inequality_compound", note: "Next: the same moves applied to all three parts of a sandwich at once." }
+    ],
+    examples: [
+      { question: "Solve $2x + 3 \\le 11$.", answer: "x ≤ 4", explanation: "Subtract $3$: $2x \\le 8$. Divide by $2$: $x \\le 4$. Positive divisor — no flip." },
+      { question: "Solve $4x + 1 \\le 13$.", answer: "x ≤ 3", explanation: "Subtract $1$, then divide by $4$: $x \\le 3$." }
+    ]
+  },
+
+  inequality_compound: {
+    title: "Compound Inequalities",
+    formula: "a < x + b < c \\implies a - b < x < c - b",
+    oneLineSummary: "A compound inequality is a sandwich with three parts — whatever you do to the middle, do to BOTH outer slices too.",
+    intuitionHook: "A water park says: riders must be older than $8$ but younger than $14$. That's one rule with two walls: $8 < \\text{age} < 14$. Solving a compound inequality is just moving both walls by the same amount — if everyone waits two years, the rule becomes $10 < \\text{age+2} < 16$. Three parts, one motion.",
+    whatItIs: "A compound inequality like $4 < x + 1 < 9$ chains two conditions into one statement: $x + 1$ exceeds $4$ AND stays below $9$. The solution is the strip between two bounds: $3 < x < 8$.",
+    whyItWorks: "The chain $a < x + b < c$ is shorthand for two simultaneous inequalities, $a < x + b$ and $x + b < c$. Solving each one subtracts $b$ from both of ITS sides — and since the middle expression appears in both, the subtraction must reach all three positions of the chain. Skip one outer part and the two component inequalities no longer say the same thing, so the strip of solutions shifts off target. Each part getting the same treatment is exactly what keeps both conditions true at once.",
+    whenToUse: "Ranges with two walls: acceptable temperatures, valid measurement tolerances, age brackets, scores between two cutoffs — any 'between' in a word problem.",
+    representations: [
+      { kind: "number_line", label: "A bounded strip", body: "$3 < x < 8$: open dots at $3$ and $8$, shading only BETWEEN them — unlike a one-sided ray, this solution set has two ends." },
+      { kind: "split", label: "Two inequalities in a trench coat", body: "$4 < x + 1 < 9$ is '$4 < x + 1$' AND '$x + 1 < 9$' — solve both, keep the overlap: $3 < x$ and $x < 8$." },
+      { kind: "story", label: "Two walls, one motion", body: "Both cutoffs shift together: subtract the same $b$ from the lower wall, the middle, and the upper wall." }
+    ],
+    commonMistakes: [
+      { label: "Operating on one side only", why: "Subtracting $1$ from the middle and the right of $4 < x + 1 < 9$ but not the left gives $4 < x < 8$ — the lower wall is wrong.", fix: "Count to three: a compound inequality has THREE parts and every operation visits all of them. $4 - 1 < x < 9 - 1$." },
+      { label: "Dropping a bound", why: "Reporting just $x < 8$ — the 'between' became a one-sided ray, admitting values like $x = -100$ that the original excludes.", fix: "The answer to a 'between' question must still BE a between: two bounds, with $x$ in the middle." }
+    ],
+    connections: [
+      { concept: "inequality_two_step", note: "Each component is an ordinary inequality — the compound just solves both at once." },
+      { concept: "inequality_one_step_add", note: "The same slide-both-sides move, extended to a third position." },
+      { concept: "stat_range", note: "A solution strip has a width — the distance between its walls — much like a data range." }
+    ],
+    examples: [
+      { question: "Solve $5 < x + 2 < 9$.", answer: "3 < x < 7", explanation: "Subtract $2$ from all three parts: $5 - 2 < x < 9 - 2$, so $3 < x < 7$." },
+      { question: "Solve $2 < x + 1 < 6$.", answer: "1 < x < 5", explanation: "Subtract $1$ everywhere: $1 < x < 5$." }
+    ]
+  },
+
+  // ===========================================================================
+  // GEOMETRY DEPTH (solid measurement — volume, surface area, circumference).
+  // ===========================================================================
+  geo_volume_rect: {
+    title: "Volume of a Rectangular Prism",
+    formula: "V = l \\times w \\times h",
+    oneLineSummary: "Volume counts the unit cubes that fill a box: one floor of l×w cubes, stacked h floors high.",
+    intuitionHook: "Pack a moving box with $1$-cm sugar cubes. The bottom layer is a neat $5 \\times 4$ grid — $20$ cubes. The box fits $3$ such layers, so $60$ cubes fill it completely. You never measured anything 'three-dimensional'; you counted a floor and multiplied by the floors.",
+    whatItIs: "The volume of a rectangular prism (a box) is the amount of space inside it, measured in unit cubes: length times width times height, in cubic units.",
+    whyItWorks: "Multiplication counts rectangular arrangements. The bottom layer is an $l \\times w$ ARRAY of unit cubes — that's the area fact you already know, $lw$ cubes. The box is $h$ layers of that identical floor, so the total is $lw$ taken $h$ times: $lwh$. That's also why volume units are CUBIC (cm³): each counted object is a little cube, $1$ long, $1$ wide, $1$ tall. Adding $l + w + h$ instead measures a walk along three edges — a length, not a filling.",
+    whenToUse: "Capacity of boxes, rooms, tanks and drawers; shipping and storage; converting between liters and cubic centimeters; and as the base case for every other volume formula.",
+    representations: [
+      { kind: "layers", label: "Floors of cubes", body: "$5 \\times 4 \\times 3$: a floor of $20$ cubes, $3$ floors — $60$ cubes. Volume is repeated floor-counting." },
+      { kind: "symbolic", label: "Three factors", body: "$V = lwh$ — the order doesn't matter ($5 \\cdot 4 \\cdot 3 = 3 \\cdot 4 \\cdot 5$): any face can be the 'floor'." },
+      { kind: "units", label: "Why cm³", body: "Each counted cube is $1\\text{cm} \\times 1\\text{cm} \\times 1\\text{cm} = 1\\text{cm}^3$ — three lengths multiplied give a three-dimensional unit." }
+    ],
+    commonMistakes: [
+      { label: "Adding the dimensions", why: "$5 + 4 + 3 = 12$ measures the length of three edges laid end to end — a 1-dimensional answer to a 3-dimensional question.", fix: "Volume FILLS; filling is repeated multiplication. Picture the cube layers: $5 \\times 4$ per floor, times $3$ floors." },
+      { label: "Stopping at the base area", why: "Computing $5 \\times 4 = 20$ and forgetting the box has height — that's the floor, not the box.", fix: "Three dimensions need three factors. After the base area, multiply by the height: $20 \\times 3 = 60$." }
+    ],
+    connections: [
+      { concept: "geo_area_rect", note: "The base layer IS the rectangle-area fact; volume adds one more factor." },
+      { concept: "geo_volume_cylinder", note: "Same recipe with a round floor: base area times height." },
+      { concept: "geo_surface_area_rect", note: "The same box measured differently: surface wraps, volume fills." }
+    ],
+    examples: [
+      { question: "A box is $4$ units long, $5$ units wide and $3$ units tall. What is its volume?", answer: "60", explanation: "$V = lwh = 4 \\times 5 \\times 3 = 60$ cubic units." },
+      { question: "A box is $3$ units long, $6$ units wide and $2$ units tall. What is its volume?", answer: "36", explanation: "Base layer $3 \\times 6 = 18$ cubes, stacked $2$ high: $36$." }
+    ]
+  },
+
+  geo_surface_area_rect: {
+    title: "Surface Area of a Rectangular Prism",
+    formula: "SA = 2(lw + lh + wh)",
+    oneLineSummary: "Surface area is the wrapping paper: a box has three different face shapes, each appearing exactly twice.",
+    intuitionHook: "Gift-wrap a shoebox. The top and bottom match. The front and back match. The two ends match. Three different rectangle shapes, two of each — measure one of each, add them up, double the lot. That's the whole formula, discovered with wrapping paper.",
+    whatItIs: "Surface area is the total area of all six faces of a box, in square units — how much material covers the outside, as opposed to how much space fills the inside.",
+    whyItWorks: "A box has six faces but only three SHAPES: top/bottom are $l \\times w$, front/back are $l \\times h$, and the two ends are $w \\times h$. Opposite faces are congruent because the box's edges are parallel — the top is a translated copy of the bottom. So the six areas collapse to $2lw + 2lh + 2wh$, factored as $2(lw + lh + wh)$. Forgetting the $2$ wraps exactly half the box; computing $lwh$ answers a different question entirely (filling, not wrapping) — and even has the wrong units, cubic instead of square.",
+    whenToUse: "Paint, wrapping paper, sheet metal, cardboard — any 'how much material covers it' question; heat loss through walls; comparing packaging efficiency (most volume per surface).",
+    representations: [
+      { kind: "net", label: "Unfold the box", body: "Cut along the edges and flatten: six rectangles in a cross shape — count the three matching pairs directly." },
+      { kind: "pairs", label: "Three pairs", body: "$(l \\times w)$ twice, $(l \\times h)$ twice, $(w \\times h)$ twice: $SA = 2(lw + lh + wh)$." },
+      { kind: "units", label: "Square, not cubic", body: "Wrapping is 2-dimensional even on a 3-D object — surface area always lands in cm², never cm³." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting each face's twin", why: "Adding $lw + lh + wh$ covers the top, the front and one end — half a box, with the other three faces bare.", fix: "Faces come in opposite PAIRS. After summing the three shapes, double: $2(lw + lh + wh)$." },
+      { label: "Computing the volume instead", why: "$lwh$ measures the space inside, not the cover outside — the units betray it (cubic, not square).", fix: "Ask which question is being answered: FILL (multiply all three) or WRAP (sum the face areas). Paint never cares how much water fits inside." }
+    ],
+    connections: [
+      { concept: "geo_area_rect", note: "Each face is a plain rectangle — surface area is six area problems batched." },
+      { concept: "geo_volume_rect", note: "The wrap-vs-fill contrast: same box, square units vs cubic units." },
+      { concept: "geo_perimeter_rect", note: "The boundary-vs-inside distinction, one dimension up." }
+    ],
+    examples: [
+      { question: "A box is $3$ units long, $4$ units wide and $2$ units tall. What is its surface area?", answer: "52", explanation: "$2(lw + lh + wh) = 2(12 + 6 + 8) = 2 \\times 26 = 52$ square units." },
+      { question: "A box is $5$ units long, $4$ units wide and $3$ units tall. What is its surface area?", answer: "94", explanation: "$2(20 + 15 + 12) = 2 \\times 47 = 94$ square units." }
+    ]
+  },
+
+  geo_circumference: {
+    title: "Circumference of a Circle",
+    formula: "C = 2\\pi r = \\pi d",
+    oneLineSummary: "The circumference is the distance around a circle — always exactly π times the diameter, for every circle ever drawn.",
+    intuitionHook: "Wrap a string around a tin can, then lay the string flat and measure it against the can's width. The string is always a little more than $3$ widths long — about $3.14159...$ of them, no matter the can. That stubborn ratio is $\\pi$: not a formula someone invented, but a fact every circle keeps repeating.",
+    whatItIs: "Circumference is a circle's perimeter — the length of its rim. It equals $\\pi$ times the diameter, or equivalently $2\\pi r$, since the diameter is two radii.",
+    whyItWorks: "All circles are scaled copies of one another, and scaling multiplies every length by the same factor — so the ratio rim-to-diameter is identical for every circle. That universal ratio is what we NAME $\\pi$; '$C = \\pi d$' is almost its definition. The $2$ in $2\\pi r$ does exactly one job: turning a radius into a diameter ($d = 2r$). It is not part of $\\pi$'s magic — given a diameter, the formula is just $C = \\pi d$, and doubling again wraps the circle twice.",
+    whenToUse: "Wheels and rotations (one turn travels one circumference), circular tracks and fences, pipe and tree-trunk girth, pulleys and belts, gear ratios.",
+    representations: [
+      { kind: "string", label: "Unroll the rim", body: "Roll a wheel one full turn: it travels exactly its circumference — the rim, laid out straight." },
+      { kind: "ratio", label: "Always π widths", body: "Rim $\\div$ width $= \\pi$ for a coin, a plate, a planet. $C = \\pi d$ just rearranges that fact." },
+      { kind: "contrast", label: "Rim vs inside", body: "$C = 2\\pi r$ is a LENGTH (one $r$, units cm); $A = \\pi r^2$ is an AREA (two $r$'s, units cm²). One $r$ walks the edge, two $r$'s tile the inside." }
+    ],
+    commonMistakes: [
+      { label: "Mixing radius and diameter", why: "Using $\\pi r$ for circumference (half the rim), or applying the doubling $2$ to a DIAMETER (twice the rim).", fix: "The $2$ exists only to convert radius → diameter. Given $r$: $C = 2\\pi r$. Given $d$: $C = \\pi d$, the $2$ is already inside." },
+      { label: "Squaring the radius", why: "Writing $C = \\pi r^2$ — reaching for the area formula when the question asks for the rim.", fix: "Count the $r$'s: distance around uses ONE $r$; area inside uses TWO. A length can't come from $r^2$." }
+    ],
+    connections: [
+      { concept: "geo_circle_area", note: "The companion formula: one $r$ for the rim, $r^2$ for the inside." },
+      { concept: "geo_perimeter_rect", note: "Circumference is perimeter for round shapes — same 'distance around' idea." },
+      { concept: "geo_volume_cylinder", note: "Sweep the circle upward and its rim becomes the cylinder's curved wall." }
+    ],
+    examples: [
+      { question: "What is the circumference of a circle with radius $4$, in terms of $\\pi$?", answer: "8π", explanation: "$C = 2\\pi r = 2\\pi(4) = 8\\pi$." },
+      { question: "What is the circumference of a circle with diameter $10$, in terms of $\\pi$?", answer: "10π", explanation: "$C = \\pi d = 10\\pi$ — the diameter is given, so the $2$ is already accounted for." }
+    ]
+  },
+
+  geo_volume_cylinder: {
+    title: "Volume of a Cylinder",
+    formula: "V = \\pi r^2 h",
+    oneLineSummary: "A cylinder is a circle swept upward: its volume is the circle's area times the height — base × height, with a round base.",
+    intuitionHook: "A stack of identical coins: each coin is (almost) a flat circle of area $\\pi r^2$, and stacking $h$ of them builds a cylinder. The volume is just 'area of one coin' times 'how many coins high'. Same trick as the box — only the floor plan changed from rectangle to circle.",
+    whatItIs: "The volume of a cylinder with radius $r$ and height $h$ is the area of its circular base, $\\pi r^2$, multiplied by its height — the space inside a can.",
+    whyItWorks: "The prism principle: for any solid with straight vertical sides, volume = base area × height, because the solid is $h$ identical unit-thick slices of its base. The box uses base $lw$; the cylinder uses base $\\pi r^2$; nothing else changes. The $r^2$ is essential — it comes from the AREA of the disk. Using $\\pi r h$ sweeps a line segment instead of a disk and actually computes (half) the curved wall, not the filling; and slipping a diameter in where $r$ belongs quadruples the answer, since $(2r)^2 = 4r^2$.",
+    whenToUse: "Cans, tanks, pipes, silos, glasses — capacity of anything round and straight-sided; comparing container sizes; liters from dimensions.",
+    representations: [
+      { kind: "stack", label: "A stack of disks", body: "Each slice has area $\\pi r^2$; the cylinder is $h$ slices: $V = \\pi r^2 h$." },
+      { kind: "analogy", label: "Box recipe, round base", body: "Box: $(lw) \\times h$. Cylinder: $(\\pi r^2) \\times h$. Volume is always base × height for straight-sided solids." },
+      { kind: "scaling", label: "Radius counts twice", body: "Double the height → volume doubles. Double the RADIUS → volume quadruples: $r$ appears squared because the base is 2-dimensional." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting to square the radius", why: "$\\pi r h$ multiplies a length by a length — it gives a wall area, not a volume; the units come out cm², not cm³.", fix: "The base is a DISK with area $\\pi r^2$. Compute that first, then multiply by height: disk, then stack." },
+      { label: "Using the diameter as the radius", why: "A can '$10$ across' has $r = 5$; plugging $r = 10$ inflates the volume by a factor of four.", fix: "The radius runs from the CENTER to the rim — half of 'across'. Halve the diameter before it enters the formula." }
+    ],
+    connections: [
+      { concept: "geo_circle_area", note: "The base-area fact the formula is built on: $A = \\pi r^2$." },
+      { concept: "geo_volume_rect", note: "The same base-times-height principle with a rectangular floor." },
+      { concept: "geo_circumference", note: "The disk's rim, swept up the height, forms the curved wall — perimeter and area each play their own role." }
+    ],
+    examples: [
+      { question: "What is the volume of a cylinder with radius $3$ and height $5$, in terms of $\\pi$?", answer: "45π", explanation: "Base area $\\pi(3)^2 = 9\\pi$, times height $5$: $V = 45\\pi$." },
+      { question: "What is the volume of a cylinder with radius $4$ and height $3$, in terms of $\\pi$?", answer: "48π", explanation: "$V = \\pi r^2 h = \\pi \\times 16 \\times 3 = 48\\pi$." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -1863,6 +2121,10 @@ function levelToConceptId(category, level) {
     if (lvl <= 3) return 'geo_area_rect';
     if (lvl <= 4) return 'geo_area_triangle';
     if (lvl <= 5) return 'geo_angles_triangle';
+    if (lvl <= 6) return 'geo_volume_rect';
+    if (lvl <= 7) return 'geo_surface_area_rect';
+    if (lvl <= 8) return 'geo_circumference';
+    if (lvl <= 9) return 'geo_volume_cylinder';
     return 'geo_circle_area';
   }
   if (cat === 'number_sense' || cat === 'number sense') {
@@ -1892,6 +2154,13 @@ function levelToConceptId(category, level) {
     if (lvl <= 11) return 'slope_intercept_id';
     if (lvl <= 13) return 'midpoint';
     return 'distance_formula';
+  }
+  if (cat === 'inequalities') {
+    if (lvl <= 7) return 'inequality_one_step_add';
+    if (lvl <= 9) return 'inequality_one_step_mult';
+    if (lvl <= 11) return 'inequality_flip_negative';
+    if (lvl <= 13) return 'inequality_two_step';
+    return 'inequality_compound';
   }
   if (cat === 'expressions') {
     if (lvl <= 11) return 'eval_expression';

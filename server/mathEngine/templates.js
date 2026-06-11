@@ -1243,6 +1243,71 @@ templates.geometry = {
       type: "geo_angles_triangle"
     };
   },
+  // Volume of a rectangular prism: V = l·w·h. Dimension ranges (l 3..5, w 4..6, h 2..4) are
+  // chosen so no distractor can ever equal the answer or another distractor.
+  6: (_diffFactor, idx) => {
+    const l = 3 + (idx % 3);
+    const w = 4 + ((idx + 1) % 3);
+    const h = 2 + ((idx + 2) % 4);
+    const answer = l * w * h;
+    return {
+      question: `A box is $${l}$ units long, $${w}$ units wide and $${h}$ units tall. What is its volume?`,
+      answer,
+      distractors: [l * w, l + w + h, 2 * (l * w + l * h + w * h)], // forgot the height; added the dimensions; surface area
+      explanation: `Volume fills the box layer by layer: the base holds $${l} \\times ${w} = ${l * w}$ unit cubes, stacked $${h}$ layers high — $V = lwh = ${l * w} \\times ${h} = ${answer}$ cubic units.`,
+      type: "geo_volume_rect",
+      l, w, h
+    };
+  },
+  // Surface area of a rectangular prism: SA = 2(lw + lh + wh).
+  7: (_diffFactor, idx) => {
+    const l = 3 + (idx % 3);
+    const w = 4 + ((idx + 1) % 3);
+    const h = 2 + ((idx + 2) % 4);
+    const half = l * w + l * h + w * h;
+    const answer = 2 * half;
+    return {
+      question: `A box is $${l}$ units long, $${w}$ units wide and $${h}$ units tall. What is its surface area?`,
+      answer,
+      distractors: [half, l * w * h, 2 * (l + w + h)], // forgot each face appears twice; volume; doubled the edge sum
+      explanation: `A box has three PAIRS of identical faces: top/bottom ($${l} \\times ${w}$), front/back ($${l} \\times ${h}$) and the two sides ($${w} \\times ${h}$). One of each is $${l * w} + ${l * h} + ${w * h} = ${half}$; doubling covers all six: $SA = ${answer}$ square units.`,
+      type: "geo_surface_area_rect",
+      l, w, h
+    };
+  },
+  // Circumference in terms of pi, alternating radius/diameter prompts.
+  8: (_diffFactor, idx) => {
+    if (idx % 2 === 0) {
+      const r = 3 + (idx % 5); // 3..7
+      return {
+        question: `What is the circumference of a circle with radius $${r}$? Give your answer in terms of $\\pi$.`,
+        answer: `${2 * r}\\pi`,
+        distractors: [`${r}\\pi`, `${r * r}\\pi`, `${2 * r * r}\\pi`], // forgot the 2; area instead; mixed both formulas
+        explanation: `Circumference is $\\pi$ times the DIAMETER: $C = 2\\pi r = 2 \\pi (${r}) = ${2 * r}\\pi$. Squaring the radius ($${r * r}\\pi$) measures area — the inside, not the rim.`,
+        type: "geo_circumference"
+      };
+    }
+    const d = 2 * (3 + (idx % 5)); // even 6..14
+    return {
+      question: `What is the circumference of a circle with diameter $${d}$? Give your answer in terms of $\\pi$.`,
+      answer: `${d}\\pi`,
+      distractors: [`${2 * d}\\pi`, `${d * d}\\pi`, `${d / 2}\\pi`], // doubled the diameter too; squared; halved
+      explanation: `With the diameter already given, $C = \\pi d = ${d}\\pi$. The $2$ in $2\\pi r$ exists only to turn a RADIUS into a diameter — applying it to $d$ doubles the circle.`,
+      type: "geo_circumference"
+    };
+  },
+  // Volume of a cylinder in terms of pi: V = pi r^2 h (r >= 3 keeps all options distinct).
+  9: (_diffFactor, idx) => {
+    const r = 3 + (idx % 3);       // 3..5
+    const h = 3 + ((idx + 1) % 4); // 3..6
+    return {
+      question: `What is the volume of a cylinder with radius $${r}$ and height $${h}$? Give your answer in terms of $\\pi$.`,
+      answer: `${r * r * h}\\pi`,
+      distractors: [`${r * h}\\pi`, `${2 * r * h}\\pi`, `${4 * r * r * h}\\pi`], // forgot to square; lateral surface; used the diameter
+      explanation: `A cylinder is a circle of area $\\pi r^2 = ${r * r}\\pi$ swept up through height $${h}$: $V = \\pi r^2 h = ${r * r}\\pi \\times ${h} = ${r * r * h}\\pi$. Forgetting the square ($${r * h}\\pi$) sweeps a line, not a disk.`,
+      type: "geo_volume_cylinder"
+    };
+  },
   // Area of a circle in terms of pi: A = pi r^2  → answer like "16\\pi" (r >= 3 keeps all options distinct)
   12: (diffFactor, idx) => {
     const r = Math.max(3, Math.round(((idx % 5) + 3) * Math.max(1, diffFactor)));
@@ -2004,6 +2069,102 @@ templates.graphing = {
       explanation: `The horizontal leg is $${x2} - ${x1} = ${a}$ and the vertical leg is $${y2} - ${y1} = ${b}$; the distance is the hypotenuse: $\\sqrt{${a}^2 + ${b}^2} = \\sqrt{${a * a} + ${b * b}} = \\sqrt{${c * c}} = ${c}$. Legs combine as SQUARES under a root — adding them directly measures the walk around the corner, not the straight line.`,
       type: "distance_formula",
       legA: a, legB: b
+    };
+  }
+};
+
+// -------------------------------------------------------------
+// INEQUALITIES TEMPLATES — solving order statements (the 6.EE/7.EE band): one-step add/subtract,
+// one-step multiply/divide, the flip-on-negative rule (THE signature misconception), two-step,
+// and compound sandwiches. Answers are plain solution strings like "x > 4" (questions render
+// LaTeX; options stay exact-match text). Keys skip multiples of 10 (milestone boss keys).
+// -------------------------------------------------------------
+templates.inequalities = {
+  // One-step add/subtract: x + a > b  /  x - a < b.
+  7: (_diffFactor, idx) => {
+    const a = 2 + (idx % 5); // 2..6
+    if (idx % 2 === 0) {
+      const v = 2 + (idx % 4); // 2..5
+      const b = a + v;
+      return {
+        question: `Solve: $x + ${a} > ${b}$`,
+        answer: `x > ${v}`,
+        distractors: [`x < ${v}`, `x > ${b + a}`, `x = ${v}`], // flipped for no reason; added instead of subtracting; equation thinking
+        explanation: `Subtract $${a}$ from both sides: $x > ${b} - ${a}$, so $x > ${v}$. Adding or subtracting NEVER flips an inequality — the order of two numbers doesn't change when both slide the same distance.`,
+        type: "inequality_one_step_add"
+      };
+    }
+    const b = 3 + (idx % 6); // 3..8
+    const s = a + b;
+    return {
+      question: `Solve: $x - ${a} < ${b}$`,
+      answer: `x < ${s}`,
+      distractors: [`x > ${s}`, `x < ${b - a}`, `x = ${s}`], // flipped; subtracted instead of adding; equation thinking
+      explanation: `Add $${a}$ to both sides: $x < ${b} + ${a}$, so $x < ${s}$. The $- ${a}$ is undone by ADDING $${a}$ — and the $<$ stays exactly as it was.`,
+      type: "inequality_one_step_add"
+    };
+  },
+  // One-step multiply/divide by a POSITIVE coefficient (no flip).
+  9: (_diffFactor, idx) => {
+    const a = 2 + (idx % 4);  // 2..5
+    const q = 3 + (idx % 4);  // 3..6 (q >= 3 keeps b - a from ever equaling q)
+    const b = a * q;
+    return {
+      question: `Solve: $${a}x < ${b}$`,
+      answer: `x < ${q}`,
+      distractors: [`x > ${q}`, `x < ${b - a}`, `x = ${q}`], // flipped though the divisor is positive; subtracted instead of dividing; equation thinking
+      explanation: `Divide both sides by $${a}$: $x < \\frac{${b}}{${a}} = ${q}$. Dividing by a POSITIVE number keeps the inequality's direction — the flip rule only fires for negatives.`,
+      type: "inequality_one_step_mult"
+    };
+  },
+  // Flip on negative: -ax < b  →  x > -b/a. The whole concept is the flip.
+  11: (_diffFactor, idx) => {
+    const a = 2 + (idx % 3);  // 2..4
+    const q = 2 + (idx % 4);  // 2..5
+    const b = a * q;
+    if (idx % 2 === 0) {
+      return {
+        question: `Solve: $-${a}x < ${b}$`,
+        answer: `x > -${q}`,
+        distractors: [`x < -${q}`, `x > ${q}`, `x < ${q}`], // forgot the flip; dropped the negative; both slips
+        explanation: `Divide both sides by $-${a}$ — and dividing by a NEGATIVE flips the inequality: $x > \\frac{${b}}{-${a}} = -${q}$. Check with a number: $x = 0$ satisfies the original ($0 < ${b}$), and indeed $0 > -${q}$.`,
+        type: "inequality_flip_negative"
+      };
+    }
+    return {
+      question: `Solve: $-${a}x > -${b}$`,
+      answer: `x < ${q}`,
+      distractors: [`x > ${q}`, `x < -${q}`, `x > -${q}`], // forgot the flip; sign moved onto the answer; both
+      explanation: `Divide by $-${a}$ and FLIP: $x < \\frac{-${b}}{-${a}} = ${q}$. Both negatives cancel in the value, but the flip still happens — it comes from the division, not from the signs of the numbers.`,
+      type: "inequality_flip_negative"
+    };
+  },
+  // Two-step: ax + b <= c  →  x <= q.
+  13: (_diffFactor, idx) => {
+    const a = 2 + (idx % 4); // 2..5
+    const b = 1 + (idx % 5); // 1..5
+    const q = 2 + (idx % 5); // 2..6
+    const c = a * q + b;
+    return {
+      question: `Solve: $${a}x + ${b} \\le ${c}$`,
+      answer: `x ≤ ${q}`,
+      distractors: [`x ≥ ${q}`, `x ≤ ${a * q}`, `x = ${q}`], // flipped without a negative; subtracted b but forgot to divide; equation thinking
+      explanation: `Undo the operations in reverse order: subtract $${b}$ ($${a}x \\le ${a * q}$), then divide by $${a}$ ($x \\le ${q}$). No negative divisor appeared, so the $\\le$ never flips.`,
+      type: "inequality_two_step"
+    };
+  },
+  // Compound sandwich: a < x + b < c  →  subtract b from ALL THREE parts.
+  15: (_diffFactor, idx) => {
+    const b = 1 + (idx % 4);        // 1..4
+    const lo = 1 + (idx % 3);       // 1..3
+    const hi = lo + 2 + (idx % 3);  // 3..8
+    const a = lo + b, c = hi + b;
+    return {
+      question: `Solve: $${a} < x + ${b} < ${c}$`,
+      answer: `${lo} < x < ${hi}`,
+      distractors: [`${a} < x < ${c}`, `${a} < x < ${hi}`, `x < ${hi}`], // never subtracted; subtracted on the right only; dropped the left bound
+      explanation: `A compound inequality is a sandwich — whatever you do, do to ALL THREE parts. Subtract $${b}$ everywhere: $${a} - ${b} < x < ${c} - ${b}$, so $${lo} < x < ${hi}$. Dropping a side keeps numbers the sandwich was built to exclude.`,
+      type: "inequality_compound"
     };
   }
 };

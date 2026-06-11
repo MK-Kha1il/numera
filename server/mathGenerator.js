@@ -37,6 +37,11 @@ const CONCEPT_TO_LEVEL = {
   geo_area_triangle:    { category: 'geometry',      level: 4  },
   geo_angles_triangle:  { category: 'geometry',      level: 5  },
   geo_circle_area:      { category: 'geometry',      level: 12 },
+  // Geometry depth (solid measurement — volume, surface area, circumference).
+  geo_volume_rect:      { category: 'geometry',      level: 6  },
+  geo_surface_area_rect:{ category: 'geometry',      level: 7  },
+  geo_circumference:    { category: 'geometry',      level: 8  },
+  geo_volume_cylinder:  { category: 'geometry',      level: 9  },
   // Integers strand (audit #1.1 — signed-number arithmetic; the negatives band).
   absolute_value:       { category: 'integers',      level: 4  },
   integer_add:          { category: 'integers',      level: 5  },
@@ -84,6 +89,12 @@ const CONCEPT_TO_LEVEL = {
   slope_intercept_id:     { category: 'graphing',    level: 11 },
   midpoint:               { category: 'graphing',    level: 13 },
   distance_formula:       { category: 'graphing',    level: 15 },
+  // Inequalities strand (order reasoning — the 6.EE/7.EE band). Keys skip 10 (boss-routed).
+  inequality_one_step_add:  { category: 'inequalities', level: 7  },
+  inequality_one_step_mult: { category: 'inequalities', level: 9  },
+  inequality_flip_negative: { category: 'inequalities', level: 11 },
+  inequality_two_step:      { category: 'inequalities', level: 13 },
+  inequality_compound:      { category: 'inequalities', level: 15 },
   linear_one_step:      { category: 'algebra',       level: 11 },
   linear_two_step:      { category: 'algebra',       level: 13 },
   quadratic:            { category: 'algebra',       level: 15 },
@@ -244,6 +255,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'powers';
   } else if (normalizedCat === 'graphing') {
     catKey = 'graphing';
+  } else if (normalizedCat === 'inequalities') {
+    catKey = 'inequalities';
   } else {
     catKey = 'arithmetic';
   }

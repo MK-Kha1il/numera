@@ -270,6 +270,12 @@ fun UserProfileDialog(
                                 maxCount = 100,
                                 color = Color(0xFFEF5350)
                             )
+                            MasteryBar(
+                                topicName = "Inequalities",
+                                correctCount = profile.mastery.inequalities_correct,
+                                maxCount = 100,
+                                color = Color(0xFF8D6E63)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(Spacing.l))

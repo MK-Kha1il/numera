@@ -236,6 +236,7 @@ function initDb() {
           expressions_correct INTEGER DEFAULT 0,
           powers_correct INTEGER DEFAULT 0,
           graphing_correct INTEGER DEFAULT 0,
+          inequalities_correct INTEGER DEFAULT 0,
           FOREIGN KEY(user_id) REFERENCES users(id)
         )
       `);
@@ -914,6 +915,11 @@ function initDb() {
         { id: 'mastery_graphing_2', name: 'Graphing Adept', description: 'Solve 20 Linear Graphing problems', icon: 'school', target_type: 'mastery_graphing', target_value: 20, reward_coins: 150, category: 'Mastery', chain_id: 'mastery_graphing', chain_order: 2, is_hidden: 0 },
         { id: 'mastery_graphing_3', name: 'Graphing Expert', description: 'Solve 50 Linear Graphing problems', icon: 'school', target_type: 'mastery_graphing', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_graphing', chain_order: 3, is_hidden: 0 },
         { id: 'mastery_graphing_4', name: 'Graphing Master', description: 'Solve 150 Linear Graphing problems', icon: 'school', target_type: 'mastery_graphing', target_value: 150, reward_coins: 800, category: 'Mastery', chain_id: 'mastery_graphing', chain_order: 4, is_hidden: 0 },
+
+        { id: 'mastery_inequalities_1', name: 'Inequality Apprentice', description: 'Solve 5 Inequalities problems', icon: 'school', target_type: 'mastery_inequalities', target_value: 5, reward_coins: 50, category: 'Mastery', chain_id: 'mastery_inequalities', chain_order: 1, is_hidden: 0 },
+        { id: 'mastery_inequalities_2', name: 'Inequality Adept', description: 'Solve 20 Inequalities problems', icon: 'school', target_type: 'mastery_inequalities', target_value: 20, reward_coins: 150, category: 'Mastery', chain_id: 'mastery_inequalities', chain_order: 2, is_hidden: 0 },
+        { id: 'mastery_inequalities_3', name: 'Inequality Expert', description: 'Solve 50 Inequalities problems', icon: 'school', target_type: 'mastery_inequalities', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_inequalities', chain_order: 3, is_hidden: 0 },
+        { id: 'mastery_inequalities_4', name: 'Inequality Master', description: 'Solve 150 Inequalities problems', icon: 'school', target_type: 'mastery_inequalities', target_value: 150, reward_coins: 800, category: 'Mastery', chain_id: 'mastery_inequalities', chain_order: 4, is_hidden: 0 },
 
         // 5. Social Chain
         { id: 'social_1', name: 'Friendly Greeting', description: 'Add your first friend', icon: 'group', target_type: 'friends_count', target_value: 1, reward_coins: 30, category: 'Social', chain_id: 'social_path', chain_order: 1, is_hidden: 0 },

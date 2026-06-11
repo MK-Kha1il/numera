@@ -799,6 +799,18 @@ const migrations = [
       }
     },
   },
+  {
+    version: 31,
+    name: 'inequalities_strand_mastery',
+    // Inequalities strand (order reasoning, 6.EE/7.EE) — its mastery counter, mirroring v30.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE user_mastery ADD COLUMN inequalities_correct INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**

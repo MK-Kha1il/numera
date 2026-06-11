@@ -252,6 +252,7 @@ private fun categoryLabel(category: String): String = when (category) {
     "expressions" -> "Algebraic Expressions"
     "powers" -> "Exponents & Roots"
     "graphing" -> "Linear Graphing"
+    "inequalities" -> "Inequalities"
     "mental" -> "Mental Math"
     else -> category.replaceFirstChar { it.uppercase() }
 }

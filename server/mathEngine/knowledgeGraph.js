@@ -548,6 +548,92 @@ const concepts = {
       { id: "added_legs", label: "Added the legs directly instead of squaring under the root", rule: (ans, p) => p.legA + p.legB },
       { id: "forgot_root", label: "Computed the squared distance but skipped the square root", rule: (ans) => ans * ans }
     ]
+  },
+
+  // ---- Inequalities strand (solving & reasoning about order — the 6.EE/7.EE band) ----
+  "inequality_one_step_add": {
+    name: "One-Step Inequalities (Add/Subtract)",
+    prereqs: ["linear_one_step"],
+    baseElo: 900,
+    misconceptions: [
+      { id: "flipped_direction", label: "Flipped the inequality sign when no flip was needed", rule: (ans) => ans },
+      { id: "wrong_inverse_op", label: "Added instead of subtracting (or vice versa) when isolating x", rule: (ans) => ans },
+      { id: "treated_as_equation", label: "Answered with = as if it were an equation", rule: (ans) => ans }
+    ]
+  },
+  "inequality_one_step_mult": {
+    name: "One-Step Inequalities (Multiply/Divide)",
+    prereqs: ["inequality_one_step_add", "arithmetic_div"],
+    baseElo: 950,
+    misconceptions: [
+      { id: "flipped_direction", label: "Flipped the sign while dividing by a POSITIVE number", rule: (ans) => ans },
+      { id: "subtracted_instead", label: "Subtracted the coefficient instead of dividing by it", rule: (ans) => ans }
+    ]
+  },
+  "inequality_flip_negative": {
+    name: "Flip on Negative",
+    prereqs: ["inequality_one_step_mult", "integer_mult"],
+    baseElo: 1050,
+    misconceptions: [
+      { id: "forgot_flip", label: "Divided by a negative without flipping the inequality", rule: (ans) => ans },
+      { id: "dropped_negative", label: "Dropped the negative sign from the solution", rule: (ans) => ans }
+    ]
+  },
+  "inequality_two_step": {
+    name: "Two-Step Inequalities",
+    prereqs: ["inequality_one_step_mult", "linear_two_step"],
+    baseElo: 1080,
+    misconceptions: [
+      { id: "flipped_direction", label: "Flipped the sign without a negative division", rule: (ans) => ans },
+      { id: "forgot_to_divide", label: "Subtracted the constant but never divided by the coefficient", rule: (ans) => ans }
+    ]
+  },
+  "inequality_compound": {
+    name: "Compound Inequalities",
+    prereqs: ["inequality_two_step"],
+    baseElo: 1150,
+    misconceptions: [
+      { id: "one_side_only", label: "Applied the operation to only one side of the sandwich", rule: (ans) => ans },
+      { id: "dropped_constraint", label: "Kept only one of the two bounds", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Geometry depth (solid measurement — volume, surface area, circumference) ----
+  "geo_volume_rect": {
+    name: "Volume of a Rectangular Prism",
+    prereqs: ["geo_area_rect"],
+    baseElo: 880,
+    misconceptions: [
+      { id: "added_dimensions", label: "Added the dimensions instead of multiplying them", rule: (ans, p) => p.l + p.w + p.h },
+      { id: "forgot_height", label: "Computed the base area but forgot the height", rule: (ans, p) => p.l * p.w }
+    ]
+  },
+  "geo_surface_area_rect": {
+    name: "Surface Area of a Rectangular Prism",
+    prereqs: ["geo_volume_rect"],
+    baseElo: 1000,
+    misconceptions: [
+      { id: "forgot_double", label: "Summed the three face areas but forgot each appears twice", rule: (ans) => ans / 2 },
+      { id: "volume_confusion", label: "Computed the volume instead of the surface area", rule: (ans, p) => p.l * p.w * p.h }
+    ]
+  },
+  "geo_circumference": {
+    name: "Circumference of a Circle",
+    prereqs: ["geo_circle_area"],
+    baseElo: 960,
+    misconceptions: [
+      { id: "radius_diameter_mixup", label: "Mixed up the radius and the diameter", rule: (ans) => ans },
+      { id: "area_confusion", label: "Squared the radius — computed area instead of circumference", rule: (ans) => ans }
+    ]
+  },
+  "geo_volume_cylinder": {
+    name: "Volume of a Cylinder",
+    prereqs: ["geo_volume_rect", "geo_circle_area"],
+    baseElo: 1100,
+    misconceptions: [
+      { id: "forgot_square", label: "Used πrh — forgot to square the radius", rule: (ans) => ans },
+      { id: "used_diameter", label: "Used the diameter where the radius belongs", rule: (ans) => ans }
+    ]
   }
 };
 
@@ -618,6 +704,15 @@ const STANDARDS = {
   slope_intercept_id: "8.F.A.3",
   midpoint: "G-GPE.B.6",
   distance_formula: "8.G.B.8",
+  inequality_one_step_add: "6.EE.B.8",
+  inequality_one_step_mult: "7.EE.B.4b",
+  inequality_flip_negative: "7.EE.B.4b",
+  inequality_two_step: "7.EE.B.4b",
+  inequality_compound: "HSA-REI.B.3",
+  geo_volume_rect: "6.G.A.2",
+  geo_surface_area_rect: "6.G.A.4",
+  geo_circumference: "7.G.B.4",
+  geo_volume_cylinder: "8.G.C.9",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

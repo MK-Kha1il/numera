@@ -1034,6 +1034,7 @@ fun ProfileScreen(
                                                     "mastery_expressions" -> "Expressions Mastery"
                                                     "mastery_powers" -> "Exponents & Roots Mastery"
                                                     "mastery_graphing" -> "Linear Graphing Mastery"
+                                                    "mastery_inequalities" -> "Inequalities Mastery"
                                                     "social_path" -> "Social Connections"
                                                     "gladiator_path" -> "Arena Victor Milestones"
                                                     "exploration_path" -> "Explorer Milestones"
