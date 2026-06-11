@@ -1311,6 +1311,22 @@ templates.geometry = {
       type: "geo_volume_cylinder"
     };
   },
+  // Composite figure: an L-shape is a rectangle with a corner bitten off.
+  11: (_diffFactor, idx) => {
+    const A = 8 + (idx % 4);             // 8..11
+    const B = 6 + (idx % 3);             // 6..8
+    const C = 2 + (idx % 3);             // 2..4 (notch, strictly smaller than the rectangle)
+    const D = 2 + ((idx + 1) % 3);       // 2..4
+    const answer = A * B - C * D;
+    return {
+      question: `An L-shaped floor is a $${A} \\times ${B}$ rectangle with a $${C} \\times ${D}$ corner cut away. What is its area?`,
+      answer,
+      distractors: [A * B, A * B + C * D, (A - C) * (B - D)], // ignored the cut; added the cut back on; shrank both sides
+      explanation: `Composite areas decompose: the full rectangle holds $${A} \\times ${B} = ${A * B}$, and the missing corner took $${C} \\times ${D} = ${C * D}$ of it away: $${A * B} - ${C * D} = ${answer}$. Shrinking both side lengths ($${A - C} \\times ${B - D}$) removes a whole STRIP along each edge — far more than one corner.`,
+      type: "geo_composite",
+      full: A * B, notch: C * D
+    };
+  },
   // Area of a circle in terms of pi: A = pi r^2  → answer like "16\\pi" (r >= 3 keeps all options distinct)
   12: (diffFactor, idx) => {
     const r = Math.max(3, Math.round(((idx % 5) + 3) * Math.max(1, diffFactor)));
@@ -1555,6 +1571,21 @@ templates.statistics = {
       distractors: [max, max + min, base + 2], // gave the max; summed instead; a stray value
       explanation: `Range = largest - smallest = ${max} - ${min} = ${answer}.`,
       type: "stat_range"
+    };
+  },
+  // Work BACKWARDS from the mean: the total is the mean's hidden promise.
+  12: (_diffFactor, idx) => {
+    const M = 10 + (idx % 5);                  // mean 10..14
+    const a = M - 4 + (idx % 3);
+    const b = M + 1 + (idx % 3);
+    const c = M - 2 - (idx % 2);
+    const x = 4 * M - (a + b + c);             // always > M by construction (never equals the mean distractor)
+    return {
+      question: `The mean of four scores is $${M}$. Three of them are $${a}$, $${b}$ and $${c}$. What is the fourth score?`,
+      answer: x,
+      distractors: [M, 4 * M, a + b + c], // repeated the mean; gave the total; summed the three
+      explanation: `A mean of $${M}$ over four scores promises a TOTAL of $4 \\times ${M} = ${4 * M}$. The three known scores supply $${a} + ${b} + ${c} = ${a + b + c}$, so the fourth must contribute the rest: $${4 * M} - ${a + b + c} = ${x}$. The mean itself is rarely any individual score — it's the total in disguise.`,
+      type: "mean_missing_value"
     };
   },
   // Probability as a percent (operands chosen so the percent is a whole number).
@@ -1838,6 +1869,26 @@ templates.decimals = {
       type: "decimal_add"
     };
   },
+  // Percent ↔ decimal conversion: a percent IS hundredths, so the point slides two places.
+  4: (_diffFactor, idx) => {
+    const p = [35, 7, 42, 65, 8, 56, 73][idx % 7]; // no 50 (its complement would collide)
+    if (idx % 2 === 0) {
+      return {
+        question: `Write $${p}\\%$ as a decimal.`,
+        answer: (p / 100).toFixed(2),
+        distractors: [(p / 10).toFixed(1), `${p}`, (p / 10000).toFixed(4)], // slid one place; dropped the percent; slid too far
+        explanation: `Percent means 'per hundred', so $${p}\\% = \\frac{${p}}{100} = ${(p / 100).toFixed(2)}$ — the decimal point slides exactly TWO places left, one per zero in 100.`,
+        type: "percent_decimal_convert"
+      };
+    }
+    return {
+      question: `Write $${(p / 100).toFixed(2)}$ as a percent (number only).`,
+      answer: p,
+      distractors: [p / 10, p * 10, 100 - p], // slid one place; slid three; complement confusion
+      explanation: `Multiply by $100$ (slide the point two places right): $${(p / 100).toFixed(2)} = ${p}\\%$. Out of a hundred — that's all a percent says.`,
+      type: "percent_decimal_convert"
+    };
+  },
   // Subtracting decimals — line up the points (result kept positive; signs are the integers strand).
   5: (_diffFactor, idx) => {
     const b10 = 8 + ((idx * 3) % 36);     // 0.8 .. 4.3
@@ -1858,6 +1909,21 @@ templates.decimals = {
       type: "decimal_sub"
     };
   },
+  // Which decimal is largest? The "more digits = bigger" trap, by construction.
+  6: (_diffFactor, idx) => {
+    const t = 3 + (idx % 4); // tenths digit 3..6
+    const a = `0.${t}5`;                 // largest
+    const b = `0.${t}`;
+    const c = `0.${t - 1}99`;            // the most DIGITS, yet third in size
+    const d = `0.${t - 1}8`;
+    return {
+      question: `Which of these decimals is the largest? $${a}, \\;\\; ${b}, \\;\\; ${c}, \\;\\; ${d}$`,
+      answer: a,
+      distractors: [c, b, d], // the longest string; the bare tenths; the smallest
+      explanation: `Compare place by place, left to right: the tenths digit decides first — $${a}$ and $${b}$ start with $${t}$, beating the $${t - 1}$s regardless of how many digits follow. Then hundredths: $5 > 0$. Length is not size: $${c}$ wears the most digits and still loses to $${b}$.`,
+      type: "decimal_compare"
+    };
+  },
   // Multiplying decimals — multiply the digits, then count decimal places.
   7: (_diffFactor, idx) => {
     const a10 = 3 + (idx % 12);           // 0.3 .. 1.4
@@ -1876,6 +1942,22 @@ templates.decimals = {
       ],
       explanation: `Multiply the digits as whole numbers ($${a10} \\times ${b10} = ${prod100}$), then place the point so the product has $2$ decimal places: $${answer}$.`,
       type: "decimal_mult"
+    };
+  },
+  // Fraction → decimal: benchmark fractions with exact decimal forms.
+  8: (_diffFactor, idx) => {
+    const pairs = [[1, 2, '0.5'], [3, 4, '0.75'], [1, 4, '0.25'], [2, 5, '0.4'], [3, 5, '0.6'], [1, 8, '0.125'], [4, 5, '0.8']];
+    const [a, b, dec] = pairs[idx % 7];
+    return {
+      question: `Write $\\frac{${a}}{${b}}$ as a decimal.`,
+      answer: dec,
+      distractors: [
+        `${(a / b * 10) % 1 === 0 ? (a / b * 10) : (a / b * 10).toFixed(1)}`, // decimal point one place off
+        `0.${a}${b}`,                                                          // glued the digits
+        `0.${a}`                                                               // numerator as tenths
+      ],
+      explanation: `The fraction bar is a division: $${a} \\div ${b} = ${dec}$. The digits of the fraction never just move behind a point — $\\frac{${a}}{${b}}$ means '$${a}$ split $${b}$ ways', and only dividing performs the split.`,
+      type: "fraction_decimal_convert"
     };
   },
   // Rounding decimals — round a hundredths value to the nearest tenth.
@@ -2131,6 +2213,18 @@ templates.powers = {
       type: "square_root"
     };
   },
+  // Cube roots of perfect cubes (r >= 3 keeps 2r, r+1 and r^2 pairwise distinct).
+  5: (_diffFactor, idx) => {
+    const r = 3 + (idx % 4); // roots 3..6
+    const n = r * r * r;
+    return {
+      question: `Compute $\\sqrt[3]{${n}}$`,
+      answer: r,
+      distractors: [r * r, 2 * r, r + 1], // squared/cubed mix-up; doubled; neighboring root
+      explanation: `$\\sqrt[3]{${n}}$ asks: which number used THREE times in a product makes $${n}$? Since $${r} \\times ${r} \\times ${r} = ${n}$, the cube root is $${r}$. The little $3$ counts the factors — it never divides anything.`,
+      type: "cube_root"
+    };
+  },
   // Product rule: x^a · x^b = x^(a+b).
   7: (_diffFactor, idx) => {
     const a = 2 + (idx % 5); // 2..6
@@ -2142,6 +2236,19 @@ templates.powers = {
       distractors: [`x^${a * b}`, `2x^${sum}`, `x^${Math.abs(a - b) || 1}`], // multiplied exponents; invented a coefficient; subtracted
       explanation: `$x^{${a}}$ means ${a} copies of $x$ multiplied, and $x^{${b}}$ means ${b} more — so together there are $${a} + ${b} = ${sum}$ copies: $x^{${sum}}$. Multiplying the exponents (getting $x^{${a * b}}$) counts copies of copies, which is the POWER rule, not the product rule.`,
       type: "exponent_product_rule"
+    };
+  },
+  // Power rule: (x^a)^b = x^(ab). b >= 3 keeps a^b clear of ab for every a.
+  8: (_diffFactor, idx) => {
+    const a = 2 + (idx % 4);       // 2..5
+    const b = 3 + (idx % 2);       // 3..4
+    const prod = a * b;
+    return {
+      question: `Simplify: $(x^{${a}})^{${b}}$`,
+      answer: `x^${prod}`,
+      distractors: [`x^${a + b}`, `x^${Math.pow(a, b)}`, `x^${prod + 1}`], // added (product-rule reflex); raised the exponent itself; near miss
+      explanation: `$(x^{${a}})^{${b}}$ makes $${b}$ copies of the whole pile $x^{${a}}$ — $${b}$ piles of $${a}$ copies is $${a} \\times ${b} = ${prod}$ copies: $x^{${prod}}$. ADDING the exponents is the product rule ($x^{${a}} \\cdot x^{${b}}$), where the piles sit side by side instead of nesting.`,
+      type: "exponent_power_rule"
     };
   },
   // Quotient rule: x^a / x^b = x^(a−b).

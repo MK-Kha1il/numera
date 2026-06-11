@@ -42,6 +42,7 @@ const CONCEPT_TO_LEVEL = {
   geo_surface_area_rect:{ category: 'geometry',      level: 7  },
   geo_circumference:    { category: 'geometry',      level: 8  },
   geo_volume_cylinder:  { category: 'geometry',      level: 9  },
+  geo_composite:        { category: 'geometry',      level: 11 },
   // Integers strand (audit #1.1 — signed-number arithmetic; the negatives band).
   absolute_value:       { category: 'integers',      level: 4  },
   integer_add:          { category: 'integers',      level: 5  },
@@ -51,8 +52,11 @@ const CONCEPT_TO_LEVEL = {
   integer_ops:          { category: 'integers',      level: 11 },
   // Decimals strand (audit #1.1 — decimal place value & operations; all math in scaled ints).
   decimal_add:          { category: 'decimals',      level: 3  },
+  percent_decimal_convert: { category: 'decimals',   level: 4  },
   decimal_sub:          { category: 'decimals',      level: 5  },
+  decimal_compare:      { category: 'decimals',      level: 6  },
   decimal_mult:         { category: 'decimals',      level: 7  },
+  fraction_decimal_convert: { category: 'decimals',  level: 8  },
   decimal_round:        { category: 'decimals',      level: 9  },
   decimal_div:          { category: 'decimals',      level: 11 },
   // Fractions strand (audit #1.1 — fraction operations, the core middle-school topic).
@@ -79,6 +83,7 @@ const CONCEPT_TO_LEVEL = {
   stat_mean:            { category: 'statistics',    level: 8  },
   stat_median:          { category: 'statistics',    level: 9  },
   stat_range:           { category: 'statistics',    level: 11 },
+  mean_missing_value:   { category: 'statistics',    level: 12 },
   stat_probability:     { category: 'statistics',    level: 13 },
   compound_probability: { category: 'statistics',    level: 14 },
   // Algebraic-expressions strand (audit #1.1 — the bridge into algebra).
@@ -92,7 +97,9 @@ const CONCEPT_TO_LEVEL = {
   factor_trinomial:     { category: 'expressions',   level: 18 },
   // Powers strand (exponents & roots — the 8.EE band).
   square_root:            { category: 'powers',      level: 4  },
+  cube_root:              { category: 'powers',      level: 5  },
   exponent_product_rule:  { category: 'powers',      level: 7  },
+  exponent_power_rule:    { category: 'powers',      level: 8  },
   exponent_quotient_rule: { category: 'powers',      level: 9  },
   exponent_zero_negative: { category: 'powers',      level: 11 },
   scientific_notation:    { category: 'powers',      level: 13 },

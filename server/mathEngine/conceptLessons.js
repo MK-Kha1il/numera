@@ -2163,6 +2163,214 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // DECIMALS DEPTH (representation fluency: percent ↔ decimal ↔ fraction, ordering).
+  // ===========================================================================
+  percent_decimal_convert: {
+    title: "Percents & Decimals",
+    formula: "p\\% = \\frac{p}{100} \\quad (\\text{two decimal slides})",
+    oneLineSummary: "A percent IS a decimal in disguise — 'per hundred' means divide by 100, so the point slides exactly two places.",
+    intuitionHook: "A $35\\%$ discount and the decimal $0.35$ are the SAME fact wearing different clothes: thirty-five hundredths. The percent sign is literally a squashed '$/100$' — once you see that, converting stops being a rule and becomes a translation.",
+    whatItIs: "Converting between percent and decimal notation: percent → decimal divides by 100 (slide the point two left); decimal → percent multiplies by 100 (slide two right). The quantity never changes — only its outfit.",
+    whyItWorks: "Percent means per hundred, so $p\\%$ is DEFINED as $\\frac{p}{100}$. Dividing by 100 moves the decimal point one place per zero — two places, always. That's why the one-place slide ($35\\% \\to 3.5$) is the classic slip: it divides by ten, leaving the value ten times too large. Sanity anchors kill the error fast: $100\\% = 1$ (the whole), $50\\% = 0.5$ (half), and anything under $100\\%$ must land below $1$.",
+    whenToUse: "Discounts and tax, interest rates, statistics and survey results, probability ↔ percent translation, and any calculator work where the percent must enter as a decimal.",
+    representations: [
+      { kind: "translation", label: "Same value, two outfits", body: "$35\\% = \\frac{35}{100} = 0.35$ — the percent sign is a hidden ÷100." },
+      { kind: "anchor", label: "Sanity anchors", body: "$100\\% = 1$, $50\\% = 0.5$, $7\\% = 0.07$. Below one hundred percent ⇒ below one." },
+      { kind: "slides", label: "Two slides, always", body: "Percent → decimal: two left. Decimal → percent: two right. One per zero in 100." }
+    ],
+    commonMistakes: [
+      { label: "Sliding one place instead of two", why: "$35\\% \\to 3.5$ — dividing by 10, because one slide 'feels like enough'.", fix: "Anchor on $100\\% = 1$: if $100\\%$ takes two slides to become $1$, so does everything else. $35\\% = 0.35$." },
+      { label: "Dropping the percent sign", why: "$7\\% \\to 7$ — treating the sign as decoration. As a multiplier, $7$ is a hundred times too strong.", fix: "Read the sign as '$/100$' out loud: seven per hundred. $0.07$ of a price, not seven times the price." }
+    ],
+    connections: [
+      { concept: "percentage_of", note: "Computing $p\\%$ OF a number starts with exactly this conversion." },
+      { concept: "decimal_mult", note: "Sliding the point is multiplying/dividing by powers of ten." },
+      { concept: "fraction_decimal_convert", note: "The third outfit: $35\\% = 0.35 = \\frac{7}{20}$ — one value, three notations." }
+    ],
+    examples: [
+      { question: "Write $42\\%$ as a decimal.", answer: "0.42", explanation: "$42 \\div 100 = 0.42$ — two slides left." },
+      { question: "Write $0.08$ as a percent.", answer: "8", explanation: "$0.08 \\times 100 = 8\\%$ — two slides right." }
+    ]
+  },
+
+  decimal_compare: {
+    title: "Comparing Decimals",
+    formula: "\\text{compare place by place, left to right}",
+    oneLineSummary: "Decimal size is decided left to right, one place at a time — the number of digits says nothing about the size.",
+    intuitionHook: "Which is more money: $\\$0.5$ or $\\$0.45$? The first is $50$ cents, the second $45$ — yet $0.45$ LOOKS bigger because it has more digits. Whole-number instinct says longer = larger; decimals break that rule on purpose, because digits to the right only ever add smaller and smaller crumbs.",
+    whatItIs: "Ordering decimals by value. The algorithm: compare the tenths digit first; if tied, move to hundredths, and so on. The first place where the digits differ settles it, no matter what follows.",
+    whyItWorks: "Place value is a strict hierarchy: one tenth outweighs ANY number of hundredths and thousandths combined ($0.0999... < 0.1$). So once a higher place wins, nothing downstream can overturn it — that's why $0.5 > 0.499$ despite the three digits. The cleanest mental trick is padding with zeros until the lengths match: $0.5$ vs $0.45$ becomes $0.50$ vs $0.45$ — fifty hundredths against forty-five, and the illusion evaporates. Padding works because trailing zeros add nothing: $0.5$ and $0.50$ are the same point on the line.",
+    whenToUse: "Comparing prices and measurements, reading sensor or lab values, ordering race times (where smaller wins), placing decimals on number lines, judging rounding results.",
+    representations: [
+      { kind: "money", label: "Cents make it concrete", body: "$0.5 = 50$ cents, $0.45 = 45$ cents, $0.399 = 39.9$ cents — money translates every comparison instantly." },
+      { kind: "padding", label: "Pad to equal length", body: "$0.5$ vs $0.45$ → $0.50$ vs $0.45$: trailing zeros change nothing and the columns line up fairly." },
+      { kind: "hierarchy", label: "Tenths outrank everything after", body: "$0.5 > 0.499$: the $4$ lost in the tenths place, and no quantity of $9$s behind it can catch up." }
+    ],
+    commonMistakes: [
+      { label: "Longer means larger", why: "Picking $0.399$ over $0.4$ because $399 > 4$ — reading the decimal part as a whole number.", fix: "Pad and compare columns: $0.400$ vs $0.399$ — the tenths tie ($4$=$4$)... no wait, $4 > 3$ settles it at the FIRST digit. Or convert to money: $40$ cents beats $39.9$." },
+      { label: "Longer means smaller", why: "Over-correcting with fraction logic ('thousandths are tinier, so $0.399 < 0.39$').", fix: "Digit count isn't evidence either way. Only the place-by-place comparison is: $0.399 > 0.390$ because the thousandths digit $9 > 0$." }
+    ],
+    connections: [
+      { concept: "decimal_round", note: "Rounding asks which gridline is closest — comparison is the engine inside." },
+      { concept: "fraction_compare", note: "The same lesson in fraction clothes: representation size ≠ value size." },
+      { concept: "stat_median", note: "Finding a median starts by ORDERING values — often decimals." }
+    ],
+    examples: [
+      { question: "Which is larger: $0.6$ or $0.58$?", answer: "0.6", explanation: "Pad: $0.60$ vs $0.58$ — sixty hundredths beats fifty-eight." },
+      { question: "Which is larger: $0.72$ or $0.7199$?", answer: "0.72", explanation: "Tenths and hundredths tie; the next digit decides: $0.7200 > 0.7199$." }
+    ]
+  },
+
+  fraction_decimal_convert: {
+    title: "Fractions & Decimals",
+    formula: "\\frac{a}{b} = a \\div b",
+    oneLineSummary: "The fraction bar is a division sign — a fraction becomes a decimal by actually performing the divide, never by rearranging its digits.",
+    intuitionHook: "Three friends split $\\$3$: a dollar each. Three friends split $\\$1$: that's $\\frac{1}{3}$ — and also $1 \\div 3 = 0.333...$ The fraction and the division were never two different things. $\\frac{3}{4}$ of a dollar is $3$ quarters: $75$ cents, $0.75$.",
+    whatItIs: "Converting a fraction to its decimal form by dividing numerator by denominator. Benchmark fractions have exact, memorable forms: $\\frac{1}{2} = 0.5$, $\\frac{1}{4} = 0.25$, $\\frac{3}{4} = 0.75$, $\\frac{1}{5} = 0.2$, $\\frac{1}{8} = 0.125$.",
+    whyItWorks: "$\\frac{a}{b}$ MEANS $a$ split into $b$ parts — which is the division $a \\div b$ by definition. A slick shortcut works whenever the denominator can scale to a power of ten: $\\frac{3}{4} = \\frac{75}{100} = 0.75$ — and that's the same maneuver as long division, just done in one jump. The digits themselves never simply 'move behind the point': $\\frac{3}{4} \\ne 0.34$, as a half-second size check shows ($\\frac{3}{4}$ is most of a whole; $0.34$ is barely a third). Estimation is the everywhere-armor: know roughly where the fraction lives before any digits get written.",
+    whenToUse: "Money and measurements, calculator input/output, comparing a fraction against a decimal, percent work (via the decimal), and reading scales and gauges.",
+    representations: [
+      { kind: "money", label: "Quarters and dimes", body: "$\\frac{3}{4}$ dollar = 3 quarters = $0.75$; $\\frac{2}{5}$ dollar = 4 dimes = $0.40$. Coins are pre-converted fractions." },
+      { kind: "scaling", label: "Aim for a power of ten", body: "$\\frac{3}{4} = \\frac{3 \\times 25}{4 \\times 25} = \\frac{75}{100} = 0.75$ — equivalent fractions do the long division in one hop." },
+      { kind: "benchmark", label: "The famous five", body: "$\\frac{1}{2} = 0.5$, $\\frac{1}{4} = 0.25$, $\\frac{3}{4} = 0.75$, $\\frac{1}{5} = 0.2$, $\\frac{1}{8} = 0.125$ — anchors that locate every nearby fraction." }
+    ],
+    commonMistakes: [
+      { label: "Gluing the digits", why: "$\\frac{3}{4} \\to 0.34$ — copying numerator and denominator behind a point instead of dividing.", fix: "Size-check first: $\\frac{3}{4}$ is three quarters of the way to $1$, so the decimal must be far above $0.34$. Then divide: $3 \\div 4 = 0.75$." },
+      { label: "Misplacing the point after dividing", why: "$3 \\div 4$ computed as $7.5$ — right digits, wrong magnitude.", fix: "A proper fraction (top < bottom) ALWAYS lands below $1$. If the decimal beats $1$, the point is in the wrong house." }
+    ],
+    connections: [
+      { concept: "decimal_div", note: "The conversion IS a decimal division — this is its most-used application." },
+      { concept: "fraction_simplify", note: "Scaling the denominator to 100 is equivalent-fraction work in reverse." },
+      { concept: "percent_decimal_convert", note: "Chain one step further and every fraction becomes a percent." }
+    ],
+    examples: [
+      { question: "Write $\\frac{2}{5}$ as a decimal.", answer: "0.4", explanation: "$\\frac{2}{5} = \\frac{4}{10} = 0.4$ — or simply $2 \\div 5$." },
+      { question: "Write $\\frac{1}{8}$ as a decimal.", answer: "0.125", explanation: "Halve $0.5$ twice: $\\frac{1}{4} = 0.25$, $\\frac{1}{8} = 0.125$." }
+    ]
+  },
+
+  // ===========================================================================
+  // POWERS DEPTH (cube roots, the power rule).
+  // ===========================================================================
+  cube_root: {
+    title: "Cube Roots",
+    formula: "\\sqrt[3]{n} = r \\iff r \\times r \\times r = n",
+    oneLineSummary: "The cube root asks: which number, used three times in a product, builds this? It's the edge of a cube, recovered from its volume.",
+    intuitionHook: "A storage cube holds $64$ unit boxes. How long is each edge? You need the number that multiplied by itself THREE times gives $64$ — that's $4$, because $4 \\times 4 \\times 4 = 64$. The cube root of a volume is literally the edge of the cube.",
+    whatItIs: "The cube root of $n$ is the number $r$ with $r^3 = n$. Perfect cubes ($8, 27, 64, 125, 216$) have whole-number roots — and unlike square roots, cube roots of negatives exist: $\\sqrt[3]{-8} = -2$.",
+    whyItWorks: "Cubing and cube-rooting are inverses: $4 \\to 64$ by cubing, $64 \\to 4$ by rooting — the same staircase walked backwards. The little $3$ in $\\sqrt[3]{n}$ COUNTS the identical factors; it never divides ($64 \\div 3$ is irrelevant) and it isn't the square root's $2$ in disguise: $\\sqrt{64} = 8$ but $\\sqrt[3]{64} = 4$ — same $64$, different questions ('which number twice?' vs 'which number three times?'). Knowing the cubes $2^3 = 8$, $3^3 = 27$, $4^3 = 64$, $5^3 = 125$, $6^3 = 216$ as facts makes every recognition instant.",
+    whenToUse: "Edges from volumes (tanks, boxes, dice), scaling laws (double the edge → eight times the volume, and back), solving $x^3 = n$, and side-by-side with square roots in the 8.EE band.",
+    representations: [
+      { kind: "volume", label: "Edge of a cube", body: "$\\sqrt[3]{64}$ is the edge of a cube with volume $64$: a $4 \\times 4 \\times 4$ stack of unit boxes." },
+      { kind: "inverse", label: "Cubing, reversed", body: "$4 \\to 64 \\to 4$: cube right, root left — the same arrow walked both ways." },
+      { kind: "ladder", label: "Know the cubes", body: "$8, 27, 64, 125, 216$ — five landmarks; every perfect-cube question is a lookup once they're yours." }
+    ],
+    commonMistakes: [
+      { label: "Mixing cube and square roots", why: "$\\sqrt[3]{64} = 8$ — answering the square root because $64$ is famous as $8^2$.", fix: "Read the index first: the $3$ demands THREE equal factors. $8 \\times 8 \\times 8 = 512$, way past $64$; only $4$ works." },
+      { label: "Dividing by three", why: "$\\sqrt[3]{27} = 9$ — the little $3$ misread as a division.", fix: "Check by rebuilding: $9 \\times 9 \\times 9 = 729$, not $27$. The index counts factors; it never divides the number." }
+    ],
+    connections: [
+      { concept: "square_root", note: "Same inverse idea, one factor deeper — and the index tells which question is being asked." },
+      { concept: "geo_volume_rect", note: "Volume formulas are where cube roots come from: V = e³ run backwards." },
+      { concept: "exponent_power", note: "Fluency with small powers IS fluency with their roots." }
+    ],
+    examples: [
+      { question: "Compute $\\sqrt[3]{125}$.", answer: "5", explanation: "$5 \\times 5 \\times 5 = 125$, so the cube root is $5$." },
+      { question: "Compute $\\sqrt[3]{27}$.", answer: "3", explanation: "$3^3 = 27$ — three equal factors of $3$." }
+    ]
+  },
+
+  exponent_power_rule: {
+    title: "Power Rule for Exponents",
+    formula: "(x^{a})^{b} = x^{ab}",
+    oneLineSummary: "Raising a power to a power MULTIPLIES the exponents — b nested piles of a copies is a×b copies in total.",
+    intuitionHook: "$(x^{3})^{2}$ says: take the pile $x^3$ and square IT — two piles of three copies each. Lay them out: $x \\cdot x \\cdot x$ next to $x \\cdot x \\cdot x$ — six copies, $x^6$. Two piles of three is $2 \\times 3$, and that's the whole rule.",
+    whatItIs: "The power rule simplifies a power raised to another power: keep the base, multiply the exponents. It's the third member of the exponent-rule family, next to the product rule (add) and quotient rule (subtract).",
+    whyItWorks: "An exponent counts copies, so $(x^{a})^{b}$ counts copies OF copies: $b$ groups, each holding $a$ factors of $x$ — $a \\times b$ factors in all. The danger is the product-rule reflex: $x^{a} \\cdot x^{b}$ pools piles SIDE BY SIDE (exponents add), while $(x^{a})^{b}$ NESTS them (exponents multiply). Numbers settle any doubt: $(2^{2})^{3} = 4^3 = 64 = 2^{6}$, and $6 = 2 \\times 3$, not $2 + 3$.",
+    whenToUse: "Simplifying nested powers, scientific-notation powers ($(10^{3})^{2} = 10^{6}$), compound growth over grouped periods, and algebraic manipulation throughout Algebra I and II.",
+    representations: [
+      { kind: "nesting", label: "Piles of piles", body: "$(x^{3})^{2}$: two bags, each holding three $x$'s — $2 \\times 3 = 6$ factors: $x^{6}$." },
+      { kind: "numeric", label: "Check with numbers", body: "$(2^{2})^{3} = 4 \\cdot 4 \\cdot 4 = 64 = 2^{6}$; the exponents multiplied: $2 \\times 3 = 6$." },
+      { kind: "family", label: "The three rules", body: "Side by side → add ($x^a x^b = x^{a+b}$). Stacked → subtract. NESTED → multiply: $(x^a)^b = x^{ab}$." }
+    ],
+    commonMistakes: [
+      { label: "Adding the exponents", why: "$(x^{4})^{3} = x^{7}$ — the product-rule reflex fired on a nested power.", fix: "Ask: side-by-side or nested? A bracket around a power means nesting, and nesting multiplies: $x^{12}$. Expand a small case to feel it: $(x^2)^2 = x^2 \\cdot x^2 = x^4$." },
+      { label: "Raising the exponent to the power", why: "$(x^{2})^{3} = x^{8}$ — computing $2^{3}$ in the exponent instead of $2 \\times 3$.", fix: "The outer exponent multiplies the inner one; it never exponentiates it. Count the factors: three bags of two is six, not eight." }
+    ],
+    connections: [
+      { concept: "exponent_product_rule", note: "The contrast that defines both: side-by-side adds, nested multiplies." },
+      { concept: "scientific_notation", note: "Powers of powers of ten — $(10^3)^2$ — appear whenever scaled units get squared." },
+      { concept: "square_binomial", note: "Squaring expressions: $(x^a)^2 = x^{2a}$ is the clean case of what (x+a)² is the messy case of." }
+    ],
+    examples: [
+      { question: "Simplify $(x^{3})^{4}$.", answer: "x^12", explanation: "Nested powers multiply: $3 \\times 4 = 12$, so $x^{12}$." },
+      { question: "Simplify $(x^{5})^{3}$.", answer: "x^15", explanation: "$5 \\times 3 = 15$ — fifteen factors of $x$ in total." }
+    ]
+  },
+
+  // ===========================================================================
+  // GEOMETRY DEPTH II (composite figures).
+  // ===========================================================================
+  geo_composite: {
+    title: "Composite Figures",
+    formula: "A_{\\text{shape}} = A_{\\text{whole}} - A_{\\text{cut}} \\;\\; (\\text{or a sum of pieces})",
+    oneLineSummary: "Complicated shapes are simple shapes in combination — add the pieces, or subtract the holes from an enclosing whole.",
+    intuitionHook: "An L-shaped room has no 'L-area formula' — and needs none. See it as a big rectangle with a corner bitten off: full rectangle minus the bite. Or slice the L into two rectangles and add. Two roads, same area; the skill is SEEING the decomposition.",
+    whatItIs: "Finding areas of figures built from (or carved out of) basic shapes: L-shapes, frames, T-shapes. The two strategies are decomposition (slice into pieces, add) and subtraction (enclose in a simple whole, remove the gaps).",
+    whyItWorks: "Area is additive: a region split into non-overlapping pieces has area equal to the pieces' sum — that's what area MEANS as a measure. Subtraction is the same axiom rearranged: whole = shape + hole, so shape = whole − hole. The tempting wrong move — shrinking BOTH side lengths by the notch's dimensions, $(A-C)(B-D)$ — fails because subtracting from a length removes an entire STRIP across the figure, not one corner: side lengths and areas live in different dimensions and can't absorb each other's corrections.",
+    whenToUse: "Floor plans and paint coverage, picture frames and borders (area between rectangles), garden plots with cutouts, cross-sections in engineering — most real-world area problems are composite.",
+    representations: [
+      { kind: "subtract", label: "Whole minus bite", body: "L-shape = $8 \\times 6$ rectangle $-$ $3 \\times 2$ corner: $48 - 6 = 42$. Enclose, then remove." },
+      { kind: "slice", label: "Slice and add", body: "The same L cut into two rectangles: $8 \\times 4 + 5 \\times 2 = 32 + 10 = 42$ — different road, same destination (a built-in check!)." },
+      { kind: "grid", label: "Count unit squares", body: "On grid paper both methods are visible at once: the bite's squares are exactly the ones the big rectangle over-counts." }
+    ],
+    commonMistakes: [
+      { label: "Ignoring the cut", why: "Reporting the enclosing rectangle's full area — the missing corner counted as if it were floor.", fix: "Trace the actual boundary. If the shape has a notch, some of the big rectangle ISN'T shape — name the bite's area explicitly and subtract it." },
+      { label: "Shrinking both sides", why: "Computing $(8-3)(6-2)$ for a $3 \\times 2$ corner cut — but each subtracted length removes a full strip, slicing away far more than the corner.", fix: "Corrections to AREA happen in area units: subtract $3 \\times 2 = 6$ square units, not $3$ from one ruler and $2$ from another." }
+    ],
+    connections: [
+      { concept: "geo_area_rect", note: "Every piece is a plain rectangle — composites are area facts assembled." },
+      { concept: "geo_surface_area_rect", note: "Surface area already thinks in pieces: six faces summed is decomposition practice." },
+      { concept: "integer_sub", note: "The subtraction strategy runs on clean whole-minus-part arithmetic." }
+    ],
+    examples: [
+      { question: "An L-shaped floor is a $9 \\times 7$ rectangle with a $3 \\times 2$ corner cut away. What is its area?", answer: "57", explanation: "$9 \\times 7 = 63$ minus the bite $3 \\times 2 = 6$: $57$ square units." },
+      { question: "A $10 \\times 8$ rectangle has a $4 \\times 3$ corner removed. What is the remaining area?", answer: "68", explanation: "$80 - 12 = 68$." }
+    ]
+  },
+
+  // ===========================================================================
+  // STATISTICS DEPTH II (reverse-mean reasoning).
+  // ===========================================================================
+  mean_missing_value: {
+    title: "Missing Value from the Mean",
+    formula: "x = n \\cdot \\bar{x} - (\\text{sum of the known values})",
+    oneLineSummary: "A mean is a total in disguise — multiply it back out, subtract what you already have, and the missing value is whatever's left.",
+    intuitionHook: "You need a $90$ average across four tests, and your first three were $85$, $92$ and $88$. The average makes a promise about the TOTAL: $4 \\times 90 = 360$ points. So far you've banked $265$ — the last test must supply $360 - 265 = 95$. Every 'what do I need on the final' calculation ever done is this exact move.",
+    whatItIs: "Finding an unknown data value when the mean of the full set is known. Reverse the averaging: total = count × mean, then the missing value is the total minus the known values' sum.",
+    whyItWorks: "The mean is DEFINED as total ÷ count, so total = count × mean — the definition read right-to-left. The mean compresses the whole data set into one number, but the total is what it actually certifies; individual values are free to sit anywhere as long as they honor that sum. That's why 'the missing score probably equals the mean' fails: the known values already sit off-center (their average isn't the target), so the last value must pull AGAINST their lean to land the promised total — often well away from the mean itself.",
+    whenToUse: "Grade targets ('what do I need on the final?'), sports averages, balancing budgets to a target daily spend, quality control (one lost measurement), any backwards-from-the-average puzzle.",
+    representations: [
+      { kind: "promise", label: "The total promise", body: "Mean $90$ over $4$ tests promises $360$ points. Banked: $265$. Owed: $95$. Three numbers, no algebra." },
+      { kind: "balance", label: "The see-saw", body: "Values below the mean must be balanced by values above it: if the three known scores lean low, the missing one must sit high." },
+      { kind: "equation", label: "As an equation", body: "$\\frac{85 + 92 + 88 + x}{4} = 90 \\implies x = 360 - 265$ — the formula is the story, symbolized." }
+    ],
+    commonMistakes: [
+      { label: "Answering with the mean itself", why: "'The average is 90, so the last test must be 90' — but the known values rarely average exactly to the target.", fix: "Check the lean: $85, 92, 88$ average $88.3$, BELOW the target — so the missing score must land ABOVE $90$ to compensate. Compute the totals." },
+      { label: "Never converting to a total", why: "Trying to reason directly with the mean and getting lost — the mean alone doesn't say what any value is.", fix: "First move, always: total $=$ count $\\times$ mean. Once the promise is a number, the rest is subtraction." }
+    ],
+    connections: [
+      { concept: "stat_mean", note: "The definition run backwards — computing means forward is the prerequisite." },
+      { concept: "linear_one_step", note: "It's an equation in disguise: sum + x = total, solved by one subtraction." },
+      { concept: "stat_range", note: "The balance view (values above vs below the mean) is the doorway to spread and deviations." }
+    ],
+    examples: [
+      { question: "The mean of four scores is $12$. Three of them are $9$, $14$ and $11$. What is the fourth?", answer: "14", explanation: "Total promised: $4 \\times 12 = 48$. Banked: $34$. Missing: $48 - 34 = 14$." },
+      { question: "The mean of four numbers is $10$; three are $7$, $12$ and $9$. Find the fourth.", answer: "12", explanation: "$40 - 28 = 12$." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -2519,9 +2727,12 @@ function levelToConceptId(category, level) {
   }
   if (cat === 'decimals') {
     if (lvl <= 3) return 'decimal_add';
+    if (lvl <= 4) return 'percent_decimal_convert';
     if (lvl <= 5) return 'decimal_sub';
+    if (lvl <= 6) return 'decimal_compare';
     if (lvl <= 7) return 'decimal_mult';
-    if (lvl <= 9) return 'decimal_round';
+    if (lvl <= 8) return 'fraction_decimal_convert';
+    if (lvl <= 10) return 'decimal_round';
     return 'decimal_div';
   }
   if (cat === 'fractions') {
@@ -2541,7 +2752,8 @@ function levelToConceptId(category, level) {
     if (lvl <= 6) return 'geo_volume_rect';
     if (lvl <= 7) return 'geo_surface_area_rect';
     if (lvl <= 8) return 'geo_circumference';
-    if (lvl <= 9) return 'geo_volume_cylinder';
+    if (lvl <= 10) return 'geo_volume_cylinder'; // 10 has no template key; closest-below serves 9
+    if (lvl <= 11) return 'geo_composite';
     return 'geo_circle_area';
   }
   if (cat === 'number_sense' || cat === 'number sense') {
@@ -2560,12 +2772,15 @@ function levelToConceptId(category, level) {
     if (lvl <= 8) return 'stat_mean';
     if (lvl <= 9) return 'stat_median';
     if (lvl <= 11) return 'stat_range';
+    if (lvl <= 12) return 'mean_missing_value';
     if (lvl <= 13) return 'stat_probability';
     return 'compound_probability';
   }
   if (cat === 'powers') {
     if (lvl <= 4) return 'square_root';
+    if (lvl <= 6) return 'cube_root'; // 6 has no template key; closest-below serves 5
     if (lvl <= 7) return 'exponent_product_rule';
+    if (lvl <= 8) return 'exponent_power_rule';
     if (lvl <= 9) return 'exponent_quotient_rule';
     if (lvl <= 11) return 'exponent_zero_negative';
     return 'scientific_notation';

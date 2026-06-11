@@ -774,6 +774,77 @@ const concepts = {
       { id: "added_probabilities", label: "Added the two probabilities instead of multiplying them", rule: (ans) => ans },
       { id: "ignored_second_event", label: "Reported the probability of only one of the events", rule: (ans) => ans }
     ]
+  },
+
+  // ---- Decimals depth (conversions & ordering — the representation-fluency band) ----
+  "percent_decimal_convert": {
+    name: "Percents & Decimals",
+    prereqs: ["decimal_mult", "percentage_of"],
+    baseElo: 800,
+    misconceptions: [
+      { id: "one_place_slip", label: "Slid the decimal point one place instead of two", rule: (ans) => ans * 10 },
+      { id: "dropped_percent", label: "Dropped the percent sign without converting at all", rule: (ans) => ans * 100 }
+    ]
+  },
+  "decimal_compare": {
+    name: "Comparing Decimals",
+    prereqs: ["decimal_round"],
+    baseElo: 760,
+    misconceptions: [
+      { id: "longer_is_larger", label: "Judged size by the number of digits after the point", rule: (ans) => ans },
+      { id: "shorter_is_larger", label: "Treated extra decimal digits like fraction denominators (more digits = smaller)", rule: (ans) => ans }
+    ]
+  },
+  "fraction_decimal_convert": {
+    name: "Fractions & Decimals",
+    prereqs: ["fraction_simplify", "decimal_div"],
+    baseElo: 880,
+    misconceptions: [
+      { id: "glued_digits", label: "Wrote the fraction's digits behind a decimal point without dividing", rule: (ans) => ans },
+      { id: "place_slip", label: "Divided correctly but misplaced the decimal point", rule: (ans) => ans * 10 }
+    ]
+  },
+
+  // ---- Powers depth (cube roots, the power rule) ----
+  "cube_root": {
+    name: "Cube Roots",
+    prereqs: ["square_root"],
+    baseElo: 1000,
+    misconceptions: [
+      { id: "square_cube_mixup", label: "Found the square root (or square) instead of the cube root", rule: (ans) => ans * ans },
+      { id: "divided_by_three", label: "Divided by three instead of un-cubing", rule: (ans) => ans }
+    ]
+  },
+  "exponent_power_rule": {
+    name: "Power Rule for Exponents",
+    prereqs: ["exponent_product_rule"],
+    baseElo: 1020,
+    misconceptions: [
+      { id: "added_exponents", label: "Added the exponents — the product-rule reflex applied to nesting", rule: (ans) => ans },
+      { id: "raised_exponent", label: "Raised the exponent to the power instead of multiplying", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Geometry depth II (composite figures) ----
+  "geo_composite": {
+    name: "Composite Figures",
+    prereqs: ["geo_area_rect"],
+    baseElo: 1050,
+    misconceptions: [
+      { id: "ignored_cut", label: "Found the full rectangle's area and forgot the missing corner", rule: (ans, p) => p.full },
+      { id: "added_cut", label: "Added the cut-out area instead of subtracting it", rule: (ans, p) => p.full + p.notch }
+    ]
+  },
+
+  // ---- Statistics depth II (reverse-mean reasoning) ----
+  "mean_missing_value": {
+    name: "Missing Value from the Mean",
+    prereqs: ["stat_mean", "linear_one_step"],
+    baseElo: 1080,
+    misconceptions: [
+      { id: "repeated_the_mean", label: "Assumed the missing score equals the mean", rule: (ans) => ans },
+      { id: "forgot_total", label: "Never converted the mean back into a total", rule: (ans) => ans }
+    ]
   }
 };
 
@@ -867,6 +938,13 @@ const STANDARDS = {
   mixed_number: "4.NF.B.3c",
   fraction_compare: "4.NF.A.2",
   compound_probability: "7.SP.C.8",
+  percent_decimal_convert: "6.RP.A.3c",
+  decimal_compare: "5.NBT.A.3b",
+  fraction_decimal_convert: "7.NS.A.2d",
+  cube_root: "8.EE.A.2",
+  exponent_power_rule: "8.EE.A.1",
+  geo_composite: "7.G.B.6",
+  mean_missing_value: "6.SP.B.5c",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";
