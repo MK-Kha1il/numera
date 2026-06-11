@@ -14,7 +14,9 @@ const { CONCEPT_TO_LEVEL } = require('../mathGenerator');
 const UPGRADED = [
   'quadratic', 'matrix_trace', 'matrix_determinant', 'pigeonhole',
   'permutations', 'combinations', 'derivative',
-  'integral', 'gcd_lcm', 'modular_arithmetic', 'totient'
+  'integral', 'gcd_lcm', 'modular_arithmetic', 'totient',
+  // Algebra promotions (variety templates 14/16 raised to first-class concepts).
+  'linear_variable_both_sides', 'linear_system'
 ];
 
 // Same control-char fingerprint guard as the other content gates (tab/newline/CR are legitimate).

@@ -1750,6 +1750,211 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // ALGEBRA PROMOTIONS (variety templates raised to first-class concepts).
+  // ===========================================================================
+  linear_variable_both_sides: {
+    title: "Variables on Both Sides",
+    formula: "ax + b = cx + d \\implies (a - c)x = d - b",
+    oneLineSummary: "When x lives on both sides, collect the x-terms on one side first — moving a term across the equals sign flips its sign.",
+    intuitionHook: "Two phone plans: Plan A charges $4$ coins per item minus a $5$-coin credit, Plan B charges $1$ coin per item plus a $12$-coin fee. When do they cost the same? $4x - 5 = x + 12$. You can't divide yet — $x$ is on BOTH sides, like two people pulling the same rope. First gather all the pull on one side.",
+    whatItIs: "An equation with the variable on both sides, like $4x - 5 = x + 12$. Solving adds one step before the usual two: collect the x-terms together (and the constants together), then finish as a two-step equation.",
+    whyItWorks: "The balance principle still rules: subtract $x$ from BOTH sides and the equation stays true, but now only one side holds the variable: $3x - 5 = 12$. 'Moving a term across the equals sign' is just shorthand for that — and the sign flips because what was ADDED on one side is being SUBTRACTED from both. From there it's the familiar unwrap: add $5$, divide by $3$, $x = \\frac{17}{3}$... or with friendlier numbers, an integer. Forgetting the sign flip is really forgetting that the move IS a subtraction.",
+    whenToUse: "Break-even comparisons (when do two plans/offers cost the same?), balance puzzles, geometry problems equating two expressions, and any model where two changing quantities meet.",
+    representations: [
+      { kind: "balance", label: "A scale with blocks on both pans", body: "$4x - 5 = x + 12$: remove one block ($x$) from EACH pan — the balance holds: $3x - 5 = 12$." },
+      { kind: "story", label: "Break-even point", body: "Two plans cost the same where their expressions are equal — solving finds the crossing quantity." },
+      { kind: "graphical", label: "Two lines crossing", body: "$y = 4x - 5$ and $y = x + 12$ intersect where the equation holds — solving locates that x." }
+    ],
+    commonMistakes: [
+      { label: "Moving a term without flipping its sign", why: "Turning $4x - 5 = x + 12$ into $5x = 17$ — the $x$ 'moved' but kept its $+$ sign.", fix: "Say the move out loud as an operation: 'subtract $x$ from both sides'. What lands on the other side carries the OPPOSITE sign: $3x$, not $5x$." },
+      { label: "Combining unlike terms", why: "Merging $3x$ and $-5$ into $-2x$ — an x-term and a constant are different species.", fix: "Sort first, combine second: x-terms with x-terms, numbers with numbers. $3x - 5$ is already as combined as it gets." }
+    ],
+    connections: [
+      { concept: "linear_two_step", note: "After collecting the x-terms, the finish IS a two-step equation." },
+      { concept: "combine_like_terms", note: "The collection step is like-term combining across the equals sign." },
+      { concept: "linear_system", note: "Two equations in two unknowns extend this: equating expressions is how substitution works." }
+    ],
+    examples: [
+      { question: "Solve $5x - 4 = 2x + 8$.", answer: "4", explanation: "Subtract $2x$: $3x - 4 = 8$. Add $4$: $3x = 12$. Divide: $x = 4$." },
+      { question: "Solve $6x + 3 = 4x + 11$.", answer: "4", explanation: "Subtract $4x$: $2x + 3 = 11$, so $2x = 8$ and $x = 4$." }
+    ]
+  },
+
+  linear_system: {
+    title: "Systems of Two Equations",
+    formula: "x + y = s, \\;\\; x - y = d \\implies x = \\tfrac{s + d}{2}",
+    oneLineSummary: "Two equations pin down two unknowns — add or subtract the equations to make one unknown vanish, then the other falls out.",
+    intuitionHook: "Two numbers add up to $10$ and differ by $4$. Add the two facts together: $(x + y) + (x - y) = 10 + 4$ — the $y$'s cancel and $2x = 14$, so $x = 7$ (and $y = 3$). Two clues, each useless alone, intersect in exactly one answer. That's a system: triangulation with equations.",
+    whatItIs: "A system of two linear equations shares two unknowns across two facts. The solution is the one pair $(x, y)$ satisfying BOTH — solvable by elimination (add/subtract equations to cancel a variable) or substitution.",
+    whyItWorks: "Equations are balanced scales, and adding equal things to equal things preserves equality — so the SUM of two true equations is also true. Elimination picks the combination whose coefficients cancel: in $x + y = s$ and $x - y = d$, adding kills $+y$ against $-y$, leaving $2x = s + d$. One unknown, one step. Geometrically each equation is a line; two non-parallel lines cross at exactly one point, which is why two independent facts buy you a unique answer where one fact alone leaves a whole line of possibilities.",
+    whenToUse: "Sum-and-difference puzzles, age problems, ticket-price/coin-count problems, mixture questions, break-even with two constraints — any scenario stating two facts about two quantities.",
+    representations: [
+      { kind: "graphical", label: "Two lines, one crossing", body: "Each equation draws a line of possibilities; the solution is their intersection point." },
+      { kind: "elimination", label: "Stack and add", body: "$x + y = 10$ over $x - y = 4$: add columns — $2x = 14$. The $y$-column cancels itself." },
+      { kind: "story", label: "Two clues triangulate", body: "'They add to 10' allows many pairs; 'they differ by 4' allows many pairs; only $(7, 3)$ survives both." }
+    ],
+    commonMistakes: [
+      { label: "Reporting the wrong unknown", why: "Solving perfectly for the larger number and answering with the smaller (or vice versa) — the algebra was fine, the question wasn't reread.", fix: "After solving, return to the question: WHICH quantity did it ask for? Label your unknowns in writing ($x$ = older friend) before solving." },
+      { label: "Halving the sum and ignoring the difference", why: "Answering $5$ and $5$ for 'sum $10$, difference $4$' — splitting evenly uses only the first fact.", fix: "Check BOTH facts: $5 - 5 = 0 \\ne 4$. The second clue moves the split off-center: half the sum plus half the difference." }
+    ],
+    connections: [
+      { concept: "linear_variable_both_sides", note: "Substitution turns a system into one equation with x on both sides." },
+      { concept: "stat_mean", note: "x = (s+d)/2 is the average of the sum and difference — the midpoint logic again." },
+      { concept: "point_on_line", note: "The solution is a point lying on BOTH lines — coordinates meet algebra." }
+    ],
+    examples: [
+      { question: "Two numbers have a sum of $14$ and a difference of $6$. What is the larger number?", answer: "10", explanation: "Add the facts: $2x = 14 + 6 = 20$, so $x = 10$ (the smaller is $4$)." },
+      { question: "Solve for $x$: $x + y = 9$ and $x - y = 5$.", answer: "7", explanation: "Adding eliminates $y$: $2x = 14$, so $x = 7$." }
+    ]
+  },
+
+  // ===========================================================================
+  // POLYNOMIAL DEPTH (expressions strand — multiply and factor binomials).
+  // ===========================================================================
+  foil_binomials: {
+    title: "Multiplying Binomials (FOIL)",
+    formula: "(x + a)(x + b) = x^2 + (a + b)x + ab",
+    oneLineSummary: "Each term in the first bracket multiplies each term in the second — four products (First, Outer, Inner, Last), with the two middle ones merging.",
+    intuitionHook: "A garden is $x + 3$ meters by $x + 4$ meters. Slice it into four patches: the $x \\times x$ lawn, an $x \\times 4$ strip, a $3 \\times x$ strip, and a $3 \\times 4$ corner. Total area: $x^2 + 4x + 3x + 12 = x^2 + 7x + 12$. FOIL isn't a trick — it's the four patches of a sliced rectangle.",
+    whatItIs: "Multiplying two binomials applies the distributive law twice: every term of the first factor times every term of the second — four products, collected into a trinomial.",
+    whyItWorks: "Distribution says $(x + a) \\cdot M = xM + aM$. Let $M$ be the whole second bracket: $(x+a)(x+b) = x(x+b) + a(x+b)$ — then distribute each piece: $x^2 + bx + ax + ab$. The middle terms $bx$ and $ax$ are like terms and merge into $(a+b)x$. So the final coefficients carry a fingerprint: the middle is the SUM of the constants, the last is their PRODUCT. FOIL (First-Outer-Inner-Last) is just a checklist ensuring none of the four products is forgotten — skipping Outer/Inner is exactly the error the checklist exists to prevent.",
+    whenToUse: "Expanding areas with variable sides, building quadratics from roots, verifying a factoring, completing algebraic identities — the gateway move of polynomial algebra.",
+    representations: [
+      { kind: "area", label: "The sliced rectangle", body: "$(x+3)(x+4)$: four patches — $x^2$, $4x$, $3x$, $12$ — tile the whole garden." },
+      { kind: "checklist", label: "F-O-I-L", body: "First $x \\cdot x$, Outer $x \\cdot 4$, Inner $3 \\cdot x$, Last $3 \\cdot 4$ — four products, every pairing exactly once." },
+      { kind: "fingerprint", label: "Sum and product", body: "$(x+a)(x+b) = x^2 + (a{+}b)x + ab$: middle = sum, last = product. Factoring will read this fingerprint backwards." }
+    ],
+    commonMistakes: [
+      { label: "Skipping the middle products", why: "Writing $(x+3)(x+4) = x^2 + 12$ — multiplying Firsts and Lasts like the brackets were independent.", fix: "Draw the rectangle: the two strips ($4x$ and $3x$) are real area you just erased. Four terms in, four products out, every time." },
+      { label: "Losing a sign with negatives", why: "$(x-3)(x-4) = x^2 - 7x - 12$ — the Last product $(-3)(-4)$ kept a minus.", fix: "Negative times negative is POSITIVE: the last term is $+12$; only the middle stays negative. Expand slowly with the signs attached to their numbers." }
+    ],
+    connections: [
+      { concept: "distribute", note: "FOIL is distribution applied twice — the same law, one level up." },
+      { concept: "square_binomial", note: "The special case a = b, where the middle term doubles." },
+      { concept: "factor_trinomial", note: "Factoring runs this expansion in reverse, hunting the sum/product fingerprint." }
+    ],
+    examples: [
+      { question: "Expand $(x + 2)(x + 5)$.", answer: "x^2 + 7x + 10", explanation: "F: $x^2$, O: $5x$, I: $2x$, L: $10$ → $x^2 + 7x + 10$." },
+      { question: "Expand $(x - 1)(x - 6)$.", answer: "x^2 - 7x + 6", explanation: "Middle: $-6x - x = -7x$; Last: $(-1)(-6) = +6$." }
+    ]
+  },
+
+  square_binomial: {
+    title: "Squaring a Binomial",
+    formula: "(x + a)^2 = x^2 + 2ax + a^2",
+    oneLineSummary: "Squaring a sum is NOT term-by-term: the cross term appears twice, so (x+a)² = x² + 2ax + a².",
+    intuitionHook: "Extend a square garden of side $x$ by $3$ meters each way. The new $(x+3)^2$ garden isn't just the old lawn plus a $3 \\times 3$ corner — there are TWO $3 \\times x$ strips, one along each edge. Total: $x^2 + 3x + 3x + 9$. The strips are the famous middle term, and forgetting them is pretending the garden only grew at the corner.",
+    whatItIs: "The square of a binomial expands to a perfect-square trinomial: the square of the first term, twice the product of both terms, and the square of the last. With a minus, only the middle term goes negative: $(x-a)^2 = x^2 - 2ax + a^2$.",
+    whyItWorks: "$(x+a)^2$ means $(x+a)(x+a)$ — FOIL it and the Outer and Inner products are IDENTICAL ($ax$ both times), so they merge into $2ax$. That's the whole secret: squaring doesn't distribute over addition because multiplication crosses terms. The belief $(x+a)^2 = x^2 + a^2$ (the 'freshman's dream') dies on a one-number check: $(3+4)^2 = 49$, but $9 + 16 = 25$. The missing $24$ is exactly $2 \\cdot 3 \\cdot 4$ — the cross term, every time. And $(x-a)^2$ keeps $+a^2$ because a negative times itself is positive: squares are never negative.",
+    whenToUse: "Perfect-square patterns, completing the square, mental arithmetic ($31^2 = (30+1)^2 = 900 + 60 + 1$), distance/Pythagorean expansions, and spotting factorable trinomials.",
+    representations: [
+      { kind: "area", label: "The extended square", body: "$(x+3)^2$: old lawn $x^2$ + TWO $3x$ strips + corner $9$. The strips are the $2ax$." },
+      { kind: "numeric", label: "Mental-math superpower", body: "$31^2 = (30 + 1)^2 = 900 + 2(30) + 1 = 961$ — the identity does arithmetic for you." },
+      { kind: "counterexample", label: "Test the dream", body: "$(3+4)^2 = 49 \\ne 25 = 3^2 + 4^2$. The gap, $24 = 2 \\cdot 3 \\cdot 4$, is the cross term." }
+    ],
+    commonMistakes: [
+      { label: "The freshman's dream", why: "$(x+a)^2 = x^2 + a^2$ — distributing the square over the plus as if it were multiplication.", fix: "Write the square OUT: $(x+a)(x+a)$, then FOIL. Or test with numbers: $(3+4)^2$ vs $3^2 + 4^2$ settles it instantly." },
+      { label: "Forgetting to double", why: "Writing $x^2 + ax + a^2$ — the cross term counted once instead of twice.", fix: "Outer AND Inner both contribute $ax$ — the garden has a strip on EACH side. The middle term is always $2 \\times$ first $\\times$ last." }
+    ],
+    connections: [
+      { concept: "foil_binomials", note: "The special case of FOIL where both brackets match — and the middle merges into a double." },
+      { concept: "exponent_power", note: "Squaring means multiplying by itself — exponent meaning powers the expansion." },
+      { concept: "factor_trinomial", note: "Recognizing x² + 2ax + a² lets you factor perfect squares on sight." }
+    ],
+    examples: [
+      { question: "Expand $(x + 5)^2$.", answer: "x^2 + 10x + 25", explanation: "$x^2 + 2(5)x + 5^2 = x^2 + 10x + 25$." },
+      { question: "Expand $(x - 4)^2$.", answer: "x^2 - 8x + 16", explanation: "Middle doubles and keeps the minus: $-8x$; last squares to $+16$." }
+    ]
+  },
+
+  factor_trinomial: {
+    title: "Factoring Trinomials",
+    formula: "x^2 + (a + b)x + ab = (x + a)(x + b)",
+    oneLineSummary: "Factoring reads FOIL's fingerprint backwards: find two numbers that MULTIPLY to the last term and ADD to the middle coefficient.",
+    intuitionHook: "A rectangle puzzle in reverse: the garden's total area is $x^2 + 7x + 12$, and you must recover its side lengths. FOIL left a fingerprint — the $12$ is the product of the two constants, the $7$ their sum. Which pair multiplies to $12$ and adds to $7$? Test: $(1,12)$ adds to $13$; $(2,6)$ to $8$; $(3,4)$ to $7$ ✓. Sides found: $(x+3)(x+4)$.",
+    whatItIs: "Factoring a trinomial $x^2 + Sx + P$ rewrites it as a product of two binomials. The constants in those binomials are the pair of numbers whose product is $P$ and whose sum is $S$ — both conditions at once.",
+    whyItWorks: "Expansion proved $(x+a)(x+b) = x^2 + (a{+}b)x + ab$ for every $a, b$ — so any trinomial matching that shape must have come from such a pair, and finding the pair IS the factoring. The signs narrate the pair's story: product positive + sum positive → both numbers positive; product positive + sum NEGATIVE → both negative (two negatives multiply positive but add negative); product negative → one of each. Each candidate pair satisfying only ONE condition is a trap — $(1, 12)$ multiplies to $12$ but adds to $13$ — which is why the check must verify both, ideally by FOILing the answer back out.",
+    whenToUse: "Solving quadratics by the zero-product property, simplifying rational expressions, finding roots and x-intercepts, and reversing any expansion.",
+    representations: [
+      { kind: "fingerprint", label: "Sum & product hunt", body: "$x^2 + 7x + 12$: pairs multiplying to $12$ — $(1,12), (2,6), (3,4)$ — only $(3,4)$ also adds to $7$." },
+      { kind: "sign_story", label: "Signs narrate the pair", body: "$x^2 - 7x + 12 = (x-3)(x-4)$: positive product, negative sum → BOTH factors negative." },
+      { kind: "verification", label: "FOIL it back", body: "Factoring claims a product; expanding the claim must reproduce the original — a built-in answer check." }
+    ],
+    commonMistakes: [
+      { label: "Right product, wrong sum", why: "Choosing $(2, 6)$ for $x^2 + 7x + 12$ because $2 \\times 6 = 12$ — the sum condition was never checked.", fix: "TWO conditions, one pair. List the product pairs, then test each sum — and FOIL your final answer to confirm both." },
+      { label: "Mixing the signs", why: "Writing $(x + 3)(x - 4)$ for $x^2 - 7x + 12$ — but mixed signs make the product NEGATIVE ($-12$).", fix: "Read the sign story first: $+12$ product with $-7$ sum forces both negative: $(x-3)(x-4)$." }
+    ],
+    connections: [
+      { concept: "foil_binomials", note: "The inverse operation — every factoring is an expansion read backwards." },
+      { concept: "quadratic", note: "Factoring is the engine of solving quadratics: zero product → roots." },
+      { concept: "gcd_lcm", note: "The product-pair hunt reuses divisor-finding fluency." }
+    ],
+    examples: [
+      { question: "Factor $x^2 + 9x + 20$.", answer: "(x + 4)(x + 5)", explanation: "$4 \\times 5 = 20$ and $4 + 5 = 9$ — both conditions met." },
+      { question: "Factor $x^2 - 8x + 15$.", answer: "(x - 3)(x - 5)", explanation: "Positive product, negative sum → both negative: $(-3)(-5) = 15$, $-3 - 5 = -8$." }
+    ]
+  },
+
+  // ===========================================================================
+  // MEASUREMENT (number-sense depth — unit conversion).
+  // ===========================================================================
+  unit_convert_metric: {
+    title: "Metric Unit Conversion",
+    formula: "1 \\text{ km} = 1000 \\text{ m}, \\quad 1 \\text{ m} = 100 \\text{ cm}, \\quad 1 \\text{ kg} = 1000 \\text{ g}",
+    oneLineSummary: "Metric units convert by sliding the decimal point — multiply by the power of ten going to smaller units, divide going to larger.",
+    intuitionHook: "A $2$ km walk is $2000$ m — you didn't compute anything, you renamed it. The metric system was DESIGNED so that converting is just relabeling with a shifted decimal point: kilo- means a thousand of, centi- means a hundredth of. The only real question is which way the point slides.",
+    whatItIs: "Converting between metric units (km↔m, m↔cm, kg↔g, L↔mL) multiplies or divides by a power of ten given by the prefix: kilo = 1000, centi = 1/100, milli = 1/1000.",
+    whyItWorks: "The quantity never changes — only the SIZE of the counting unit. Smaller units need MORE of themselves to cover the same amount ($2$ km = $2000$ m: meters are smaller, so the count grows), and larger units need fewer ($3000$ g = $3$ kg). That's why the direction rule is really a sanity check, not a memorized arrow: after converting, ask 'did the number grow when the unit shrank?' If number and unit moved the same way, the conversion went backwards. The powers of ten are the prefixes' literal meanings, so 'kilo→base' is always three decimal slides.",
+    whenToUse: "Distances on maps vs signs, recipe and medicine dosages (mL), shopping weights, science class — and as the warm-up for scientific notation, which runs on the same decimal slides.",
+    representations: [
+      { kind: "ladder", label: "The prefix ladder", body: "km — m — cm — mm: each step down multiplies the count (×1000, ×100, ×10); each step up divides." },
+      { kind: "sanity", label: "Smaller unit, bigger number", body: "$5$ kg → $5000$ g ✓ (grams are tinier, you need more). $5$ kg → $0.005$ g ✗ — number and unit both shrank." },
+      { kind: "decimal", label: "Slide, don't compute", body: "$3.2$ km = $3200$ m: three decimal slides right. No multiplication algorithm needed — the system is base ten on purpose." }
+    ],
+    commonMistakes: [
+      { label: "Off by a power of ten", why: "Converting $4$ km to $400$ m — sliding the decimal two places when kilo demands three.", fix: "Anchor the prefixes to their meanings: KILO = thousand (3 slides), CENTI = hundredth (2 slides), MILLI = thousandth (3). Count slides aloud." },
+      { label: "Converting the wrong direction", why: "Turning $6000$ m into $6{,}000{,}000$ km — multiplying on the way to a BIGGER unit.", fix: "Bigger unit ⇒ fewer of them ⇒ divide. Run the sanity check: $6{,}000{,}000$ km is longer than the Earth-Moon round trip — the number should have SHRUNK." }
+    ],
+    connections: [
+      { concept: "decimal_mult", note: "Sliding the decimal IS multiplying/dividing by powers of ten." },
+      { concept: "scientific_notation", note: "The same decimal slides, formalized into exponents of 10." },
+      { concept: "ratio_solve", note: "A conversion factor is a ratio: 1000 m per 1 km, used as a multiplier." }
+    ],
+    examples: [
+      { question: "Convert $3$ km to meters.", answer: "3000", explanation: "Kilo = thousand: $3 \\times 1000 = 3000$ m. Smaller unit, bigger count ✓." },
+      { question: "Convert $4000$ grams to kilograms.", answer: "4", explanation: "Going UP to kilograms divides: $4000 \\div 1000 = 4$ kg." }
+    ]
+  },
+
+  unit_convert_time: {
+    title: "Time Unit Conversion",
+    formula: "1 \\text{ h} = 60 \\text{ min}, \\quad 1 \\text{ min} = 60 \\text{ s}",
+    oneLineSummary: "Time runs on sixties, not tens — convert hours and minutes by multiplying by 60, and never let the decimal instinct sneak in a 100.",
+    intuitionHook: "Why does $1.5$ hours feel like it should be $1$ hour $50$ minutes? Because everything ELSE you measure runs on tens. But clocks are Babylonian: $60$ minutes per hour, $60$ seconds per minute. $1.5$ hours is $90$ minutes — half an hour is $30$, not $50$. The single most useful time skill is noticing when your decimal reflexes are lying.",
+    whatItIs: "Converting among hours, minutes and seconds multiplies or divides by 60 (and by 24 for days). Mixed amounts like '$2$ hours $15$ minutes' convert piecewise: whole units first, leftover added after.",
+    whyItWorks: "A conversion factor counts how many small units tile one big unit — and a clock hour holds exactly $60$ minutes, so the multiplier is $60$, full stop. Mixed quantities work by the distributive law: $2$ h $15$ min $= 2 \\times 60 + 15 = 135$ min — convert the hours, then ADD the minutes that were already minutes. The classic wrong answers are both shape-errors: using $100$ imports the metric reflex into a base-60 system, and dropping the $+15$ converts only half the quantity.",
+    whenToUse: "Schedules and durations, speed problems (km/h needs hours), cooking and exam timing, programming with seconds/milliseconds, converting race times.",
+    representations: [
+      { kind: "clock", label: "The base-60 dial", body: "The minute hand sweeps $60$ steps per hour — the conversion factor is drawn on every clock face." },
+      { kind: "piecewise", label: "Whole units + leftover", body: "$2$ h $15$ min: the hours become $120$ min, the $15$ rides along: $135$ min total." },
+      { kind: "contrast", label: "Tens vs sixties", body: "$1.5$ km $= 1500$ m (tens), but $1.5$ h $= 90$ min (sixties). Same idea, different base — the units choose the base." }
+    ],
+    commonMistakes: [
+      { label: "Treating an hour as 100 minutes", why: "Computing $3$ h $= 300$ min — the decimal-system reflex applied to a base-60 unit.", fix: "Time is the exception to base ten: anchor on the clock face — one full sweep is $60$. $3 \\times 60 = 180$." },
+      { label: "Dropping the leftover minutes", why: "Converting $2$ h $30$ min to $120$ min — only the hours got converted.", fix: "Convert piecewise and ADD: $2 \\times 60 = 120$, plus the $30$ already in minutes: $150$. Every part of the quantity must arrive." }
+    ],
+    connections: [
+      { concept: "unit_convert_metric", note: "Same convert-by-factor idea — only the base changes from 10 to 60." },
+      { concept: "arithmetic_mult", note: "The ×60 step is times-table work; fluency keeps clock math instant." },
+      { concept: "modular_arithmetic", note: "Clock time wraps at 60 and 24 — the gateway example of mod." }
+    ],
+    examples: [
+      { question: "How many minutes are in $2$ hours and $20$ minutes?", answer: "140", explanation: "$2 \\times 60 = 120$, plus the leftover $20$: $140$ minutes." },
+      { question: "How many seconds are in $5$ minutes?", answer: "300", explanation: "$5 \\times 60 = 300$ seconds." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -2066,13 +2271,13 @@ function levelToConceptId(category, level) {
   }
   if (cat === 'algebra') {
     if (lvl <= 12) return 'linear_one_step';
-    if (lvl <= 14) return 'linear_two_step';
+    if (lvl <= 13) return 'linear_two_step';
+    if (lvl <= 14) return 'linear_variable_both_sides';
     if (lvl <= 15) return 'quadratic';
-    // L16 template generates a linear_system (sum/difference) — keep legacy; the matrix concepts
-    // align with their templates: L17 = trace, L18/L19 = determinant.
+    if (lvl === 16) return 'linear_system';
     if (lvl === 17) return 'matrix_trace';
     if (lvl === 18 || lvl === 19) return 'matrix_determinant';
-    return null; // L16 linear_system + L20 Fermat milestone keep legacy
+    return null; // L20 Fermat milestone keeps legacy
   }
   if (cat === 'combinatorics') {
     if (lvl <= 22) return 'pigeonhole';
@@ -2131,7 +2336,9 @@ function levelToConceptId(category, level) {
     if (lvl <= 6) return 'percentage_of';
     if (lvl <= 7) return 'fraction_of';
     if (lvl <= 8) return 'ratio_solve';
-    if (lvl <= 9) return 'percent_change';
+    if (lvl <= 10) return 'percent_change';
+    if (lvl <= 11) return 'unit_convert_metric';
+    if (lvl <= 13) return 'unit_convert_time';
     return 'exponent_power';
   }
   if (cat === 'statistics') {
@@ -2165,8 +2372,11 @@ function levelToConceptId(category, level) {
   if (cat === 'expressions') {
     if (lvl <= 11) return 'eval_expression';
     if (lvl <= 12) return 'eval_two_var';
-    if (lvl <= 13) return 'combine_like_terms';
-    return 'distribute';
+    if (lvl <= 14) return 'combine_like_terms'; // 14 has no template key; closest-below serves 13
+    if (lvl <= 15) return 'distribute';
+    if (lvl <= 16) return 'foil_binomials';
+    if (lvl <= 17) return 'square_binomial';
+    return 'factor_trinomial';
   }
   return null;
 }

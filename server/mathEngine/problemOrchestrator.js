@@ -42,6 +42,10 @@ const TYPE_TO_CONCEPT = {
   pigeonhole:           'pigeonhole',
   permutations:         'permutations',
   combinations:         'combinations',
+  // These two must sit ABOVE 'binomial': conceptFromType matches by substring in insertion
+  // order, and 'binomial' would otherwise capture both polynomial types.
+  foil_binomials:       'foil_binomials',
+  square_binomial:      'square_binomial',
   binomial:             'binomial',
   derivative:           'derivative',
   integral:             'integral',
@@ -64,7 +68,13 @@ const TYPE_TO_CONCEPT = {
   geo_volume_rect:          'geo_volume_rect',
   geo_surface_area_rect:    'geo_surface_area_rect',
   geo_circumference:        'geo_circumference',
-  geo_volume_cylinder:      'geo_volume_cylinder'
+  geo_volume_cylinder:      'geo_volume_cylinder',
+  // Algebra promotions + polynomial/measurement depth.
+  linear_variable_both_sides: 'linear_variable_both_sides',
+  linear_system:            'linear_system',
+  factor_trinomial:         'factor_trinomial',
+  unit_convert_metric:      'unit_convert_metric',
+  unit_convert_time:        'unit_convert_time'
 };
 
 // Resolve a concept from a template type string
@@ -241,7 +251,7 @@ async function selectNextConcept(db, userId, currentCategory, currentLevel) {
 function getCategoryConceptIds(category, level) {
   const map = {
     arithmetic:    ['arithmetic_add', 'arithmetic_sub', 'arithmetic_mult', 'arithmetic_div', 'pemdas'],
-    algebra:       ['linear_one_step', 'linear_two_step', 'quadratic', 'matrix_trace', 'matrix_determinant'],
+    algebra:       ['linear_one_step', 'linear_two_step', 'linear_variable_both_sides', 'quadratic', 'linear_system', 'matrix_trace', 'matrix_determinant'],
     combinatorics: ['pigeonhole', 'permutations', 'combinations', 'binomial'],
     calculus:      ['derivative', 'integral'],
     number_theory: ['gcd_lcm', 'modular_arithmetic', 'totient'],
@@ -256,9 +266,9 @@ function getCategoryConceptIds(category, level) {
     integers:      ['absolute_value', 'integer_add', 'integer_sub', 'integer_mult'],
     decimals:      ['decimal_add', 'decimal_sub', 'decimal_mult', 'decimal_round', 'decimal_div'],
     fractions:     ['fraction_simplify', 'fraction_add', 'fraction_sub', 'fraction_mult', 'fraction_div'],
-    number_sense:  ['percentage_of', 'fraction_of', 'ratio_solve', 'percent_change', 'exponent_power'],
+    number_sense:  ['percentage_of', 'fraction_of', 'ratio_solve', 'percent_change', 'unit_convert_metric', 'unit_convert_time', 'exponent_power'],
     statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'stat_probability'],
-    expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'distribute'],
+    expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'distribute', 'foil_binomials', 'square_binomial', 'factor_trinomial'],
     powers:        ['square_root', 'exponent_product_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation'],
     graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula'],
     inequalities:  ['inequality_one_step_add', 'inequality_one_step_mult', 'inequality_flip_negative', 'inequality_two_step', 'inequality_compound']

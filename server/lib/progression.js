@@ -86,7 +86,7 @@ const STRAND_BANDS = {
   fractions: [3, 9],
   number_sense: [6, 14],
   statistics: [7, 13],
-  expressions: [11, 15],
+  expressions: [11, 18],
   powers: [4, 13],
   graphing: [8, 15],
   inequalities: [7, 15],

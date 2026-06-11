@@ -371,8 +371,11 @@ templates.algebra = {
     return {
       question: v.question,
       answer: xVal,
+      // The smaller unknown, the sum, the difference — each a real solve-path slip.
+      distractors: [yVal, s, d],
       explanation: v.explanation,
-      type: "linear_system"
+      type: "linear_system",
+      xVal, yVal
     };
   },
   17: (diffFactor, idx) => {
@@ -1385,6 +1388,56 @@ templates.number_sense = {
       type: "percent_change"
     };
   },
+  // Metric conversion, alternating directions. Distractors stay powers of 10 apart.
+  11: (_diffFactor, idx) => {
+    const units = [
+      ['km', 'meters', 1000],
+      ['kg', 'grams', 1000],
+      ['liters', 'milliliters', 1000],
+      ['m', 'centimeters', 100],
+    ];
+    const [big, small, f] = units[idx % 4];
+    const v = 2 + (idx % 7); // 2..8
+    if (idx % 2 === 0) {
+      return {
+        question: `Convert $${v}$ ${big} to ${small}.`,
+        answer: v * f,
+        distractors: [v * f / 10, v * f * 10, v * f / 100], // one power of ten short; one too many; two short
+        explanation: `$1$ ${big} $= ${f}$ ${small}, so $${v}$ ${big} $= ${v} \\times ${f} = ${v * f}$ ${small}. Metric prefixes move by powers of ten — count the zeros, don't guess them.`,
+        type: "unit_convert_metric"
+      };
+    }
+    return {
+      question: `Convert $${v * f}$ ${small} to ${big}.`,
+      answer: v,
+      distractors: [v * 10, v * f, v * f * 10], // divided one power short; never divided; multiplied instead
+      explanation: `Going from ${small} UP to ${big} divides: $${v * f} \\div ${f} = ${v}$ ${big}. The bigger unit needs FEWER of itself — if the number grew, the conversion went the wrong way.`,
+      type: "unit_convert_metric"
+    };
+  },
+  // Time conversion — the base is 60, not 10. Mixed hours+minutes keeps the remainder honest.
+  12: (_diffFactor, idx) => {
+    if (idx % 2 === 0) {
+      const h = 2 + (idx % 4);          // 2..5
+      const m = 10 + 5 * (idx % 7);     // 10..40
+      const answer = 60 * h + m;
+      return {
+        question: `How many minutes are in $${h}$ hours and $${m}$ minutes?`,
+        answer,
+        distractors: [60 * h, 100 * h + m, h + m], // dropped the extra minutes; used 100 min/hour; added raw numbers
+        explanation: `Each hour is $60$ minutes: $${h} \\times 60 = ${60 * h}$, plus the leftover $${m}$: $${answer}$ minutes. Time runs on $60$s, not $100$s — the decimal instinct is the trap.`,
+        type: "unit_convert_time"
+      };
+    }
+    const m = 3 + (idx % 6); // 3..8
+    return {
+      question: `How many seconds are in $${m}$ minutes?`,
+      answer: 60 * m,
+      distractors: [100 * m, 30 * m, 6 * m], // used 100; used half a minute; dropped a zero
+      explanation: `Each minute is $60$ seconds: $${m} \\times 60 = ${60 * m}$ seconds.`,
+      type: "unit_convert_time"
+    };
+  },
   // Evaluate b^e.
   14: (_diffFactor, idx) => {
     const b = [2, 3, 4, 5][idx % 4];
@@ -1537,6 +1590,72 @@ templates.expressions = {
       distractors: [`${a}x + ${b}`, `x + ${a * b}`, `${a}x + ${a + b}`], // forgot to distribute to constant; to first term; added instead of multiplied
       explanation: `Multiply $${a}$ by each term inside the parentheses: $${a}(x + ${b}) = ${a}x + ${a * b}$.`,
       type: "distribute"
+    };
+  },
+  // --- Polynomial depth (keys 16-18; key 14 stays free so 10s/boss rules are untouched). ---
+  // Multiply two binomials (FOIL). b > a >= 1 keeps the sum and product always distinct.
+  16: (_diffFactor, idx) => {
+    const a = 1 + (idx % 4);            // 1..4
+    const b = a + 1 + (idx % 3);        // a+1 .. a+3
+    const S = a + b, P = a * b;
+    if (idx % 2 === 0) {
+      return {
+        question: `Expand: $(x + ${a})(x + ${b})$`,
+        answer: `x^2 + ${S}x + ${P}`,
+        distractors: [`x^2 + ${P}`, `x^2 + ${P}x + ${S}`, `x^2 + ${S}x + ${S}`], // skipped Outer/Inner; swapped sum and product; used the sum twice
+        explanation: `Four products — First $x \\cdot x$, Outer $x \\cdot ${b}$, Inner $${a} \\cdot x$, Last $${a} \\cdot ${b}$: $x^2 + ${b}x + ${a}x + ${P} = x^2 + ${S}x + ${P}$. The middle term comes from the Outer+Inner pairs — skipping them is the classic slip.`,
+        type: "foil_binomials"
+      };
+    }
+    return {
+      question: `Expand: $(x - ${a})(x - ${b})$`,
+      answer: `x^2 - ${S}x + ${P}`,
+      distractors: [`x^2 - ${S}x - ${P}`, `x^2 + ${S}x + ${P}`, `x^2 - ${P}x + ${S}`], // negative times negative stayed negative; dropped both minus signs; swapped sum and product
+      explanation: `FOIL with signs: $x^2 - ${b}x - ${a}x + ${P}$. The Last product $(-${a})(-${b}) = +${P}$ — two negatives multiply to a POSITIVE, while the middle terms stay negative: $x^2 - ${S}x + ${P}$.`,
+      type: "foil_binomials"
+    };
+  },
+  // Square a binomial. a >= 3 keeps 2a, a, and a^2 pairwise distinct in the options.
+  17: (_diffFactor, idx) => {
+    const a = 3 + (idx % 4); // 3..6
+    const D = 2 * a, Q = a * a;
+    if (idx % 2 === 0) {
+      return {
+        question: `Expand: $(x + ${a})^2$`,
+        answer: `x^2 + ${D}x + ${Q}`,
+        distractors: [`x^2 + ${Q}`, `x^2 + ${a}x + ${Q}`, `x^2 + ${D}x + ${D}`], // the freshman's dream; forgot to double the middle; doubled the last term too
+        explanation: `$(x + ${a})^2 = (x + ${a})(x + ${a})$ — FOIL it: $x^2 + ${a}x + ${a}x + ${Q} = x^2 + ${D}x + ${Q}$. The middle term appears TWICE (once Outer, once Inner), which is where the $2$ in $2ax$ comes from. $x^2 + ${Q}$ ignores both cross terms.`,
+        type: "square_binomial"
+      };
+    }
+    return {
+      question: `Expand: $(x - ${a})^2$`,
+      answer: `x^2 - ${D}x + ${Q}`,
+      distractors: [`x^2 - ${Q}`, `x^2 - ${D}x - ${Q}`, `x^2 - ${a}x + ${Q}`], // freshman's dream with a minus; last term kept negative; forgot to double
+      explanation: `$(x - ${a})^2$: the cross terms are $-${a}x$ twice → $-${D}x$, and the Last is $(-${a})(-${a}) = +${Q}$ — a square is never negative: $x^2 - ${D}x + ${Q}$.`,
+      type: "square_binomial"
+    };
+  },
+  // Factor a trinomial back into binomials. a >= 2 keeps the (1, P) trap a genuine distractor.
+  18: (_diffFactor, idx) => {
+    const a = 2 + (idx % 3);            // 2..4
+    const b = a + 1 + (idx % 3);        // a+1 .. a+3
+    const S = a + b, P = a * b;
+    if (idx % 2 === 0) {
+      return {
+        question: `Factor: $x^2 + ${S}x + ${P}$`,
+        answer: `(x + ${a})(x + ${b})`,
+        distractors: [`(x + 1)(x + ${P})`, `(x + 1)(x + ${S - 1})`, `(x - ${a})(x - ${b})`], // right product, wrong sum; right sum, wrong product; flipped the signs
+        explanation: `Hunt for two numbers that MULTIPLY to $${P}$ and ADD to $${S}$: $${a}$ and $${b}$. Then $x^2 + ${S}x + ${P} = (x + ${a})(x + ${b})$ — FOIL it back to check both conditions, not just one.`,
+        type: "factor_trinomial"
+      };
+    }
+    return {
+      question: `Factor: $x^2 - ${S}x + ${P}$`,
+      answer: `(x - ${a})(x - ${b})`,
+      distractors: [`(x + ${a})(x + ${b})`, `(x + ${a})(x - ${b})`, `(x - 1)(x - ${P})`], // ignored the minus; mixed signs (product would be negative); right product, wrong sum
+      explanation: `The product $+${P}$ is positive but the sum $-${S}$ is negative — BOTH factors must be negative: $(x - ${a})(x - ${b})$. Mixed signs would make the product negative; check by expanding.`,
+      type: "factor_trinomial"
     };
   }
 };

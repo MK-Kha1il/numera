@@ -64,6 +64,9 @@ const CONCEPT_TO_LEVEL = {
   fraction_of:          { category: 'number_sense',  level: 7  },
   ratio_solve:          { category: 'number_sense',  level: 8  },
   percent_change:       { category: 'number_sense',  level: 9  },
+  // Measurement depth (unit conversion — metric powers of ten vs. base-60 time).
+  unit_convert_metric:  { category: 'number_sense',  level: 11 },
+  unit_convert_time:    { category: 'number_sense',  level: 12 },
   exponent_power:       { category: 'number_sense',  level: 14 },
   // Statistics strand (audit #1.1 — descriptive stats & basic probability).
   stat_mode:            { category: 'statistics',    level: 7  },
@@ -76,6 +79,10 @@ const CONCEPT_TO_LEVEL = {
   eval_two_var:         { category: 'expressions',   level: 12 },
   combine_like_terms:   { category: 'expressions',   level: 13 },
   distribute:           { category: 'expressions',   level: 15 },
+  // Polynomial depth (multiply & factor binomials — the algebra I core).
+  foil_binomials:       { category: 'expressions',   level: 16 },
+  square_binomial:      { category: 'expressions',   level: 17 },
+  factor_trinomial:     { category: 'expressions',   level: 18 },
   // Powers strand (exponents & roots — the 8.EE band).
   square_root:            { category: 'powers',      level: 4  },
   exponent_product_rule:  { category: 'powers',      level: 7  },
@@ -97,7 +104,10 @@ const CONCEPT_TO_LEVEL = {
   inequality_compound:      { category: 'inequalities', level: 15 },
   linear_one_step:      { category: 'algebra',       level: 11 },
   linear_two_step:      { category: 'algebra',       level: 13 },
+  // Promoted from variety templates: the level-14/16 generators already produced these.
+  linear_variable_both_sides: { category: 'algebra', level: 14 },
   quadratic:            { category: 'algebra',       level: 15 },
+  linear_system:        { category: 'algebra',       level: 16 },
   matrix_trace:         { category: 'algebra',       level: 17 },
   matrix_determinant:   { category: 'algebra',       level: 18 },
   pigeonhole:           { category: 'combinatorics', level: 21 },

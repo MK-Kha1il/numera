@@ -634,6 +634,75 @@ const concepts = {
       { id: "forgot_square", label: "Used πrh — forgot to square the radius", rule: (ans) => ans },
       { id: "used_diameter", label: "Used the diameter where the radius belongs", rule: (ans) => ans }
     ]
+  },
+
+  // ---- Algebra promotions (existing variety templates raised to first-class concepts) ----
+  "linear_variable_both_sides": {
+    name: "Variables on Both Sides",
+    prereqs: ["linear_two_step", "combine_like_terms"],
+    baseElo: 1150,
+    misconceptions: [
+      { id: "sign_not_flipped", label: "Moved an x-term across the equals sign without changing its sign", rule: (ans) => ans },
+      { id: "combined_unlike", label: "Combined an x-term with a constant", rule: (ans) => ans }
+    ]
+  },
+  "linear_system": {
+    name: "Systems of Two Equations",
+    prereqs: ["linear_variable_both_sides"],
+    baseElo: 1250,
+    misconceptions: [
+      { id: "answered_smaller", label: "Solved correctly but reported the other unknown", rule: (ans, p) => p.yVal },
+      { id: "halved_the_sum", label: "Split the sum in half, ignoring the difference", rule: (ans, p) => (p.xVal + p.yVal) / 2 }
+    ]
+  },
+
+  // ---- Polynomials (expressions depth — multiply and factor binomials) ----
+  "foil_binomials": {
+    name: "Multiplying Binomials (FOIL)",
+    prereqs: ["distribute"],
+    baseElo: 1180,
+    misconceptions: [
+      { id: "forgot_middle", label: "Multiplied Firsts and Lasts but skipped the Outer/Inner pairs", rule: (ans) => ans },
+      { id: "swapped_sum_product", label: "Swapped the sum and the product of the constants", rule: (ans) => ans }
+    ]
+  },
+  "square_binomial": {
+    name: "Squaring a Binomial",
+    prereqs: ["foil_binomials", "exponent_power"],
+    baseElo: 1220,
+    misconceptions: [
+      { id: "dropped_middle_term", label: "Decided (x+a)² = x² + a² — the freshman's dream", rule: (ans) => ans },
+      { id: "forgot_double", label: "Wrote the middle term as ax instead of 2ax", rule: (ans) => ans }
+    ]
+  },
+  "factor_trinomial": {
+    name: "Factoring Trinomials",
+    prereqs: ["foil_binomials"],
+    baseElo: 1280,
+    misconceptions: [
+      { id: "product_pair_wrong_sum", label: "Picked a factor pair with the right product but the wrong sum", rule: (ans) => ans },
+      { id: "sign_mix", label: "Mixed the signs of the factors", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Measurement (number-sense depth — unit conversion) ----
+  "unit_convert_metric": {
+    name: "Metric Unit Conversion",
+    prereqs: ["decimal_mult"],
+    baseElo: 850,
+    misconceptions: [
+      { id: "wrong_power", label: "Converted by the wrong power of ten", rule: (ans) => ans },
+      { id: "wrong_direction", label: "Multiplied when the conversion needed division (or vice versa)", rule: (ans) => ans }
+    ]
+  },
+  "unit_convert_time": {
+    name: "Time Unit Conversion",
+    prereqs: ["arithmetic_mult"],
+    baseElo: 820,
+    misconceptions: [
+      { id: "used_100", label: "Treated an hour as 100 minutes (decimal-clock thinking)", rule: (ans) => ans },
+      { id: "dropped_remainder", label: "Converted the whole units but dropped the leftover part", rule: (ans) => ans }
+    ]
   }
 };
 
@@ -713,6 +782,13 @@ const STANDARDS = {
   geo_surface_area_rect: "6.G.A.4",
   geo_circumference: "7.G.B.4",
   geo_volume_cylinder: "8.G.C.9",
+  linear_variable_both_sides: "8.EE.C.7b",
+  linear_system: "8.EE.C.8b",
+  foil_binomials: "HSA-APR.A.1",
+  square_binomial: "HSA-APR.A.1",
+  factor_trinomial: "HSA-SSE.B.3a",
+  unit_convert_metric: "5.MD.A.1",
+  unit_convert_time: "4.MD.A.1",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";
