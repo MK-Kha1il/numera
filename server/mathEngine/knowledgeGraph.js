@@ -845,6 +845,69 @@ const concepts = {
       { id: "repeated_the_mean", label: "Assumed the missing score equals the mean", rule: (ans) => ans },
       { id: "forgot_total", label: "Never converted the mean back into a total", rule: (ans) => ans }
     ]
+  },
+
+  // ---- Integers depth II (ordering on the number line) ----
+  "integer_compare": {
+    name: "Ordering Integers",
+    prereqs: ["absolute_value"],
+    baseElo: 740,
+    misconceptions: [
+      { id: "magnitude_as_size", label: "Ranked negatives by their digits — treated -8 as bigger than -3", rule: (ans) => ans },
+      { id: "negatives_above_positives", label: "Placed a negative above a positive", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Expressions depth II (words → symbols) ----
+  "translate_expression": {
+    name: "Words to Expressions",
+    prereqs: ["eval_expression"],
+    baseElo: 1010,
+    misconceptions: [
+      { id: "reversed_subtraction", label: "Translated 'b less than a' as b - a instead of a - b", rule: (ans) => ans },
+      { id: "grouped_wrongly", label: "Wrapped the addition inside the multiplication", rule: (ans) => ans },
+      { id: "swapped_roles", label: "Swapped the multiplier and the added constant", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Geometry depth III (angle pairs at a crossing) ----
+  "geo_angles_lines": {
+    name: "Angles at a Crossing",
+    prereqs: ["geo_angles_triangle"],
+    baseElo: 980,
+    misconceptions: [
+      { id: "supplement_for_vertical", label: "Subtracted from 180° for a vertical angle (which is simply equal)", rule: (ans, p) => 180 - ans },
+      { id: "complement_confusion", label: "Used 90° where the straight line demands 180°", rule: (ans, p) => 90 - (180 - ans) }
+    ]
+  },
+
+  // ---- Percent applications (number-sense depth II) ----
+  "percent_discount": {
+    name: "Discounts & Sale Prices",
+    prereqs: ["percentage_of"],
+    baseElo: 920,
+    misconceptions: [
+      { id: "gave_the_discount", label: "Reported the discount amount instead of the final price", rule: (ans) => ans },
+      { id: "subtracted_percent_as_dollars", label: "Subtracted the percent number directly from the price", rule: (ans) => ans }
+    ]
+  },
+  "simple_interest": {
+    name: "Simple Interest",
+    prereqs: ["percent_discount", "arithmetic_mult"],
+    baseElo: 1040,
+    misconceptions: [
+      { id: "forgot_the_years", label: "Computed one year's interest and stopped", rule: (ans, p) => ans / p.t },
+      { id: "gave_the_balance", label: "Reported principal plus interest when only the interest was asked", rule: (ans, p) => p.P + ans }
+    ]
+  },
+  "multi_step_word": {
+    name: "Multi-Step Word Problems",
+    prereqs: ["arithmetic_mult", "arithmetic_sub"],
+    baseElo: 900,
+    misconceptions: [
+      { id: "stopped_early", label: "Answered an intermediate result instead of the final question", rule: (ans) => ans },
+      { id: "wrong_operation_chain", label: "Combined the numbers with the wrong sequence of operations", rule: (ans) => ans }
+    ]
   }
 };
 
@@ -945,6 +1008,12 @@ const STANDARDS = {
   exponent_power_rule: "8.EE.A.1",
   geo_composite: "7.G.B.6",
   mean_missing_value: "6.SP.B.5c",
+  integer_compare: "6.NS.C.7a",
+  translate_expression: "6.EE.A.2a",
+  geo_angles_lines: "7.G.B.5",
+  percent_discount: "7.RP.A.3",
+  simple_interest: "7.RP.A.3",
+  multi_step_word: "4.OA.A.3",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

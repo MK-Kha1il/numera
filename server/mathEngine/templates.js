@@ -1338,6 +1338,27 @@ templates.geometry = {
       explanation: `The area of a circle is $A = \\pi r^2 = \\pi (${r})^2 = ${r * r}\\pi$.`,
       type: "geo_circle_area"
     };
+  },
+  // Angle pairs where two lines cross: vertical (equal) vs adjacent (supplementary).
+  // θ avoids 45° so the complement distractor can never equal the answer.
+  13: (_diffFactor, idx) => {
+    const theta = [25, 35, 55, 65, 75][idx % 5];
+    if (idx % 2 === 0) {
+      return {
+        question: `Two straight lines cross. One of the four angles measures $${theta}^{\\circ}$. What is the measure of the angle directly OPPOSITE it?`,
+        answer: theta,
+        distractors: [180 - theta, 90 - theta, 180 - 2 * theta], // supplement; complement; invented arithmetic
+        explanation: `Opposite (vertical) angles are EQUAL: both are what's left of the same straight line after the same neighbor is removed — $180^{\\circ} - ${180 - theta}^{\\circ} = ${theta}^{\\circ}$ twice over. No subtraction needed for the opposite angle itself.`,
+        type: "geo_angles_lines"
+      };
+    }
+    return {
+      question: `Two straight lines cross. One of the four angles measures $${theta}^{\\circ}$. What is the measure of the angle NEXT to it (sharing one arm)?`,
+      answer: 180 - theta,
+      distractors: [theta, 90 - theta, 360 - theta], // copied the vertical rule; complement; full-turn confusion
+      explanation: `Neighboring angles at a crossing sit together on a STRAIGHT line, so they sum to $180^{\\circ}$: the neighbor is $180 - ${theta} = ${180 - theta}^{\\circ}$. The $90^{\\circ}$ rule belongs to right-angle corners, not straight lines.`,
+      type: "geo_angles_lines"
+    };
   }
 };
 
@@ -1507,6 +1528,72 @@ templates.number_sense = {
       explanation: `The denominator grew by a factor of $${k}$ (because $${b} \\times ${k} = ${big}$), so the numerator must grow by the SAME factor: $x = ${a} \\times ${k} = ${x}$. Adding the gap ($+${big - b}$, giving $${a + big - b}$) keeps the difference equal — proportions keep the RATIO equal, and those are different promises.`,
       type: "proportion_solve"
     };
+  },
+  // Discounts: percent OF the price, never the percent AS dollars. No P=100, no 50% —
+  // those make distractors collide with the answer.
+  16: (_diffFactor, idx) => {
+    const P = [40, 60, 80, 120][idx % 4];
+    const pct = [10, 20, 25, 40][(idx + 1) % 4];
+    const D = (P * pct) / 100;
+    if (idx % 2 === 0) {
+      return {
+        question: `A $\\$${P}$ jacket is $${pct}\\%$ off. What is the sale price?`,
+        answer: P - D,
+        distractors: [D, P - pct, P + D], // gave the discount; subtracted the percent as dollars; raised the price
+        explanation: `The discount is $${pct}\\%$ OF $\\$${P}$: $${P} \\times \\frac{${pct}}{100} = \\$${D}$. The sale price is what REMAINS: $${P} - ${D} = \\$${P - D}$. Subtracting the bare $${pct}$ treats a percent like dollars — it's a fraction of the price, not a price.`,
+        type: "percent_discount",
+        P, pct
+      };
+    }
+    return {
+      question: `A $\\$${P}$ jacket is $${pct}\\%$ off. How much money do you save?`,
+      answer: D,
+      distractors: [P - D, pct, P - pct], // gave the sale price; the bare percent; percent-as-dollars
+      explanation: `The saving IS the discount: $${pct}\\%$ of $\\$${P} = ${P} \\times \\frac{${pct}}{100} = \\$${D}$. The sale price ($\\$${P - D}$) answers a different question — always reread which number was asked for.`,
+      type: "percent_discount",
+      P, pct
+    };
+  },
+  // Simple interest: I = P × r × t / 100 — the years multiply too.
+  17: (_diffFactor, idx) => {
+    const P = 100 * (2 + (idx % 4));      // 200..500
+    const r = 2 + ((idx + 1) % 5);        // 2..6 percent
+    const t = 2 + (idx % 3);              // 2..4 years
+    const I = (P * r * t) / 100;
+    return {
+      question: `You deposit $\\$${P}$ at $${r}\\%$ simple interest per year. How much INTEREST has it earned after $${t}$ years?`,
+      answer: I,
+      distractors: [(P * r) / 100, P + I, 10 * r * t], // one year only; the full balance; small-number noise
+      explanation: `Each year earns the same slice: $${r}\\%$ of $\\$${P} = \\$${(P * r) / 100}$. Over $${t}$ years that's $${(P * r) / 100} \\times ${t} = \\$${I}$ — the years MULTIPLY ($I = P \\cdot r \\cdot t$). The balance ($\\$${P + I}$) includes the principal; the question asked for the interest alone.`,
+      type: "simple_interest",
+      P, r, t
+    };
+  },
+  // Multi-step word problems: the first computed number is almost never the answer.
+  18: (_diffFactor, idx) => {
+    if (idx % 2 === 0) {
+      const n = 3 + (idx % 3);            // 3..5 items
+      const p = [3, 4, 6, 7][idx % 4];    // no 5 — keeps n·p clear of 25 (= 50 − 25 collision)
+      const cost = n * p;
+      return {
+        question: `Maya buys $${n}$ notebooks at $\\$${p}$ each and pays with a $\\$50$ bill. How much change does she get?`,
+        answer: 50 - cost,
+        distractors: [cost, 50 - n - p, 50 - p], // stopped at the cost; subtracted the parts; bought one notebook
+        explanation: `Two steps, in order: the notebooks cost $${n} \\times ${p} = \\$${cost}$; the change is what's left of the bill: $50 - ${cost} = \\$${50 - cost}$. The cost is a STOP on the way, not the destination — reread the question before answering.`,
+        type: "multi_step_word"
+      };
+    }
+    const T = 30 + 10 * (idx % 3);        // 30..50
+    const k = 2 + (idx % 3);              // 2..4 books
+    const q = 4 + (idx % 4);              // 4..7 each
+    const spent = k * q;
+    return {
+      question: `Liam has $\\$${T}$. He buys $${k}$ books at $\\$${q}$ each. How much money does he have left?`,
+      answer: T - spent,
+      distractors: [spent, T - q, T - k - q], // stopped at the spending; one book only; subtracted the parts
+      explanation: `First the spending: $${k} \\times ${q} = \\$${spent}$. Then what remains: $${T} - ${spent} = \\$${T - spent}$. Multi-step problems hide the real question behind an intermediate number — finish the chain.`,
+      type: "multi_step_word"
+    };
   }
 };
 
@@ -1664,6 +1751,27 @@ templates.expressions = {
       type: "combine_like_terms"
     };
   },
+  // Words → symbols. b > a keeps the swapped-roles distractor honest.
+  14: (_diffFactor, idx) => {
+    const a = 2 + (idx % 4);           // multiplier 2..5
+    const b = a + 1 + (idx % 4);       // constant, strictly bigger than a
+    if (idx % 2 === 0) {
+      return {
+        question: `Translate into an expression: "$${b}$ more than $${a}$ times a number $x$".`,
+        answer: `${a}x + ${b}`,
+        distractors: [`${a}(x + ${b})`, `${b}x + ${a}`, `${a}x - ${b}`], // grouped the addition inside; swapped the roles; flipped more/less
+        explanation: `Build it inside-out: "$${a}$ times a number" is $${a}x$; "$${b}$ more than" THAT adds $${b}$ afterwards: $${a}x + ${b}$. Wrapping it as $${a}(x + ${b})$ multiplies the $${b}$ too — the words never asked for that.`,
+        type: "translate_expression"
+      };
+    }
+    return {
+      question: `Translate into an expression: "$${b}$ less than $${a}$ times a number $x$".`,
+      answer: `${a}x - ${b}`,
+      distractors: [`${b} - ${a}x`, `${a}x + ${b}`, `${a}(x - ${b})`], // reversed the subtraction (THE classic); flipped less/more; grouped
+      explanation: `"$${b}$ less than SOMETHING" means the something comes first and $${b}$ leaves it: $${a}x - ${b}$. English reverses the order here — "$${b}$ less than $${a}x$" is NOT $${b} - ${a}x$, just as "3 less than 10" is 7, not $-7$.`,
+      type: "translate_expression"
+    };
+  },
   // Distribute a(x + b).
   15: (_diffFactor, idx) => {
     const a = 2 + (idx % 4);
@@ -1793,6 +1901,28 @@ templates.integers = {
       distractors: [b - a, a + b, -(a + b)], // reversed the order; added instead; flipped
       explanation: `Subtracting is adding the opposite: $${a} - ${wrap(b)} = ${a} + ${wrap(-b)} = ${answer}$.`,
       type: "integer_sub"
+    };
+  },
+  // Ordering integers: left on the number line is smaller, whatever the digits say.
+  7: (_diffFactor, idx) => {
+    const m = 2 + (idx % 4); // 2..5
+    const vals = [-(m + 6), -(m + 1), m + 2, m + 6];
+    const fmt = (v) => `${v}`;
+    if (idx % 2 === 0) {
+      return {
+        question: `Which of these integers is the smallest? $${vals[0]}, \\;\\; ${m + 2}, \\;\\; ${vals[1]}, \\;\\; ${m + 6}$`,
+        answer: fmt(vals[0]),
+        distractors: [fmt(vals[1]), fmt(m + 2), fmt(m + 6)], // the 'smaller-looking' negative; the positives
+        explanation: `On the number line, smaller means further LEFT. Both negatives sit left of both positives, and between the negatives, $${vals[0]}$ lies further left than $${vals[1]}$ — a bigger debt is a smaller balance. Digits measure distance from zero, not order.`,
+        type: "integer_compare"
+      };
+    }
+    return {
+      question: `Which of these integers is the largest? $${vals[1]}, \\;\\; ${m + 6}, \\;\\; ${vals[0]}, \\;\\; ${m + 2}$`,
+      answer: fmt(m + 6),
+      distractors: [fmt(vals[0]), fmt(m + 2), fmt(vals[1])], // the big-digit negative trap; the runner-up; the near negative
+      explanation: `Largest means furthest RIGHT: $${m + 6}$. The trap is $${vals[0]}$ — its digits are big, but the minus sign sends it furthest LEFT of all. Any positive beats every negative.`,
+      type: "integer_compare"
     };
   },
   // Multiplying signed integers (sign rules).

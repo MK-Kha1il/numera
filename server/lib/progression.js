@@ -80,11 +80,11 @@ function getRankValue(rankStr) {
 // fell through the generic 1+(level-1)/6 band, which lands BELOW some strands' key ranges
 // (expressions starts at 11), collapsing them onto their easiest concept forever.
 const STRAND_BANDS = {
-  geometry: [2, 12],
+  geometry: [2, 13],
   integers: [4, 11],
   decimals: [3, 11],
   fractions: [3, 9],
-  number_sense: [6, 15],
+  number_sense: [6, 18],
   statistics: [7, 14],
   expressions: [11, 18],
   powers: [4, 13],

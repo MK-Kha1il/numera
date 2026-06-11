@@ -43,10 +43,12 @@ const CONCEPT_TO_LEVEL = {
   geo_circumference:    { category: 'geometry',      level: 8  },
   geo_volume_cylinder:  { category: 'geometry',      level: 9  },
   geo_composite:        { category: 'geometry',      level: 11 },
+  geo_angles_lines:     { category: 'geometry',      level: 13 },
   // Integers strand (audit #1.1 — signed-number arithmetic; the negatives band).
   absolute_value:       { category: 'integers',      level: 4  },
   integer_add:          { category: 'integers',      level: 5  },
   integer_sub:          { category: 'integers',      level: 6  },
+  integer_compare:      { category: 'integers',      level: 7  },
   integer_mult:         { category: 'integers',      level: 8  },
   integer_div:          { category: 'integers',      level: 9  },
   integer_ops:          { category: 'integers',      level: 11 },
@@ -78,6 +80,9 @@ const CONCEPT_TO_LEVEL = {
   unit_rate:            { category: 'number_sense',  level: 13 },
   exponent_power:       { category: 'number_sense',  level: 14 },
   proportion_solve:     { category: 'number_sense',  level: 15 },
+  percent_discount:     { category: 'number_sense',  level: 16 },
+  simple_interest:      { category: 'number_sense',  level: 17 },
+  multi_step_word:      { category: 'number_sense',  level: 18 },
   // Statistics strand (audit #1.1 — descriptive stats & basic probability).
   stat_mode:            { category: 'statistics',    level: 7  },
   stat_mean:            { category: 'statistics',    level: 8  },
@@ -90,6 +95,7 @@ const CONCEPT_TO_LEVEL = {
   eval_expression:      { category: 'expressions',   level: 11 },
   eval_two_var:         { category: 'expressions',   level: 12 },
   combine_like_terms:   { category: 'expressions',   level: 13 },
+  translate_expression: { category: 'expressions',   level: 14 },
   distribute:           { category: 'expressions',   level: 15 },
   // Polynomial depth (multiply & factor binomials — the algebra I core).
   foil_binomials:       { category: 'expressions',   level: 16 },

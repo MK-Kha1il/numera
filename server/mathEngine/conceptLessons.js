@@ -2371,6 +2371,186 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // INTEGERS DEPTH II (ordering on the number line).
+  // ===========================================================================
+  integer_compare: {
+    title: "Ordering Integers",
+    formula: "a < b \\iff a \\text{ lies left of } b \\text{ on the number line}",
+    oneLineSummary: "Smaller means further left on the number line — among negatives, the one with BIGGER digits is the SMALLER number.",
+    intuitionHook: "Which is colder: $-8°$ or $-3°$? Minus eight, obviously — it's deeper below freezing. Yet on paper, $8 > 3$ whispers that $-8$ should be 'bigger'. Temperature already taught you the truth: the further below zero, the smaller. The number line just draws what winter feels like.",
+    whatItIs: "Ordering positive and negative integers by value. The rule is geometric: every number sits at a point on the number line, and left means smaller — always, regardless of how large the digits look.",
+    whyItWorks: "The digits of a number measure its DISTANCE from zero (that's absolute value); the sign says which side of zero it lives on. Order is about position, not distance: $-8$ is eight steps left of zero, $-3$ only three, so $-8$ sits further left and is smaller. Money makes it concrete — owing $8$ leaves you poorer than owing $3$ — and every positive number, however tiny, beats every negative one, because right of zero always beats left of it.",
+    whenToUse: "Temperatures, elevations and depths, bank balances and debts, golf scores, sorting any data with negatives — and reading inequalities like $x > -4$ correctly.",
+    representations: [
+      { kind: "number_line", label: "Left is less", body: "$-8 \\;\\; -3 \\;\\; 0 \\;\\; 4 \\;\\; 8$: written in line order, already sorted. Position IS the comparison." },
+      { kind: "temperature", label: "Below zero", body: "$-8°$ is colder than $-3°$ — the thermometer is a vertical number line everyone already trusts." },
+      { kind: "money", label: "Debts", body: "A balance of $-8$ coins is worse than $-3$: bigger debt, smaller fortune. Digits measure the size of the hole." }
+    ],
+    commonMistakes: [
+      { label: "Ranking negatives by their digits", why: "Choosing $-3$ as smaller than $-8$ because $3 < 8$ — comparing distances when the question asked about positions.", fix: "Translate to temperature or debt: which is colder, which owes more? Or sketch the line: $-8$ sits LEFT of $-3$." },
+      { label: "Putting a negative above a positive", why: "Feeling that $-9$ with its big digits should beat $2$.", fix: "Zero is the gatekeeper: everything negative is below $0$, everything positive above. $2 > 0 > -9$, no contest." }
+    ],
+    connections: [
+      { concept: "absolute_value", note: "Digits = distance from zero; sign = side. Comparison uses the side first, distance second." },
+      { concept: "integer_sub", note: "Subtracting walks the line leftward — ordering is reading the line standing still." },
+      { concept: "inequality_one_step_add", note: "Solution ranges like x > -4 only make sense once the line's order is solid." }
+    ],
+    examples: [
+      { question: "Which is smaller: $-9$ or $-2$?", answer: "-9", explanation: "$-9$ lies further left (deeper below zero): a $9$-coin debt beats a $2$-coin debt at being broke." },
+      { question: "Order from smallest: $3, -5, 0, -1$.", answer: "-5, -1, 0, 3", explanation: "Number-line order, left to right: $-5 < -1 < 0 < 3$." }
+    ]
+  },
+
+  // ===========================================================================
+  // EXPRESSIONS DEPTH II (words → symbols).
+  // ===========================================================================
+  translate_expression: {
+    title: "Words to Expressions",
+    formula: "\\text{\"}b\\text{ more than }a\\text{ times a number\"} = ax + b",
+    oneLineSummary: "Translating words into algebra is building the expression inside-out — find the core quantity first, then apply each phrase to it, watching for English's reversed 'less than'.",
+    intuitionHook: "A taxi fare: '$3$ per kilometer, plus a $\\$5$ pickup fee'. Before you compute anything, you can WRITE it: $3x + 5$. Algebra's superpower is exactly this — turning a sentence into a machine. The translation step, not the arithmetic, is where word problems are won or lost.",
+    whatItIs: "Converting verbal phrases into algebraic expressions: 'times' and 'of' multiply, 'more than' adds, 'less than' subtracts — in reverse — and the order of phrases tells you what wraps what.",
+    whyItWorks: "Phrases nest like the operations they describe. '$5$ more than $3$ times a number' has a core ('3 times a number' → $3x$) and a modifier ('5 more than' → $+5$ applied to that core): $3x + 5$. Parentheses appear only when the words group first: '$3$ times the SUM of a number and 5' wraps before multiplying — $3(x+5)$, a genuinely different machine (test $x=2$: $11$ vs $21$). The notorious reversal: '$5$ less than $y$' means $y - 5$, not $5 - y$ — English names the amount removed first, but algebra writes the thing it's removed FROM first. '3 less than 10' is 7; the words and symbols run opposite directions.",
+    whenToUse: "Setting up every equation from a story: fares, plans and fees, perimeter conditions, age puzzles — translation is step one of all applied algebra.",
+    representations: [
+      { kind: "machine", label: "Build inside-out", body: "Core first: 'twice a number' → $2x$. Then the wrapper: '7 more than' → $2x + 7$. Each phrase is one assembly step." },
+      { kind: "test_value", label: "Check with a number", body: "Does '$3$ times the sum of $x$ and $5$' mean $3x+5$ or $3(x+5)$? Try $x = 2$: the words promise $3 \\times 7 = 21$ — the parentheses win." },
+      { kind: "reversal", label: "The 'less than' flip", body: "'$5$ less than $y$' = $y - 5$. Anchor: '3 less than 10' is 7 = $10 - 3$. The words run backwards; the math doesn't." }
+    ],
+    commonMistakes: [
+      { label: "Reversing the subtraction", why: "Writing '$4$ less than $3x$' as $4 - 3x$ — following the word order instead of the meaning.", fix: "Test with plain numbers: '4 less than 10' is 6, which is $10 - 4$. The amount removed goes SECOND: $3x - 4$." },
+      { label: "Grouping what wasn't grouped", why: "Turning '$5$ more than $3$ times $x$' into $3(x + 5)$ — letting the addition sneak inside the multiplication.", fix: "Find the core phrase first: '3 times x' stands alone as $3x$; the '5 more' arrives after. Only 'the sum/the quantity' words create parentheses." }
+    ],
+    connections: [
+      { concept: "eval_expression", note: "Evaluating is running the machine; translating is building it — inverse fluencies." },
+      { concept: "distribute", note: "Why $3(x+5) \\ne 3x+5$: distribution shows the grouped version multiplies the 5 too." },
+      { concept: "multi_step_word", note: "Word problems = translate, then compute. This is the translate half." }
+    ],
+    examples: [
+      { question: "Translate: \"$7$ more than $4$ times a number $x$\".", answer: "4x + 7", explanation: "Core: $4x$. Wrapper: $+7$. Result: $4x + 7$." },
+      { question: "Translate: \"$3$ less than $5$ times a number $x$\".", answer: "5x - 3", explanation: "'Less than' reverses: the $3$ is removed FROM $5x$: $5x - 3$." }
+    ]
+  },
+
+  // ===========================================================================
+  // GEOMETRY DEPTH III (angle pairs at a crossing).
+  // ===========================================================================
+  geo_angles_lines: {
+    title: "Angles at a Crossing",
+    formula: "\\text{vertical: equal} \\quad\\;\\; \\text{adjacent on a line: sum to } 180^{\\circ}",
+    oneLineSummary: "Two crossing lines make two angle relationships: opposite (vertical) angles are equal, neighboring angles on a straight line sum to 180°.",
+    intuitionHook: "Open a pair of scissors. The gap at the top and the gap at the bottom are obviously the same angle — close one and the other closes with it. That's vertical angles: equal not by decree but because both blades move together. The side gaps? Each pairs with a top gap to fill the straight blade — together they make $180°$.",
+    whatItIs: "When two straight lines cross they form four angles. Opposite (vertical) angles are always equal; adjacent angles — sharing one arm, sitting together along a straight line — are supplementary (sum to $180°$).",
+    whyItWorks: "Everything follows from one fact: a straight line is a $180°$ angle. Call the four angles $a, b, a', b'$ going around. $a$ and $b$ fill one straight line, so $a + b = 180°$. But $b$ and $a'$ fill the OTHER straight line too: $b + a' = 180°$. Two things that complete the same partner must be equal: $a = a' = 180° - b$. Vertical angles are equal because each is the same leftover of the same straight line — the 'rule' is just subtraction done twice. The $90°$ instinct belongs to complementary angles (right-angle corners) and has no business at a straight crossing.",
+    whenToUse: "Road intersections and map angles, scissor and lever mechanisms, finding unknown angles in figures, and as the base for parallel-line angle chasing (corresponding/alternate angles).",
+    representations: [
+      { kind: "scissors", label: "Blades move together", body: "Opening the scissors widens BOTH opposite gaps at once — vertical angles can't disagree." },
+      { kind: "subtraction", label: "Same leftover twice", body: "$a = 180° - b$ and $a' = 180° - b$: equal because they're the same subtraction. The X holds two straight lines, each worth $180°$." },
+      { kind: "four_angles", label: "Only two sizes", body: "The four angles at a crossing come in two matched pairs: $35°, 145°, 35°, 145°$ — know one, know all four." }
+    ],
+    commonMistakes: [
+      { label: "Subtracting from 180° for a vertical angle", why: "Computing the OPPOSITE angle as $180° - 35° = 145°$ — applying the neighbor rule to the wrong pair.", fix: "Opposite = equal (the scissors); NEIGHBOR = supplementary (the straight line). Locate the angle first: across the X, or beside it?" },
+      { label: "Using 90° at a straight line", why: "Computing a neighbor as $90° - 35°$ — the complement reflex, imported from right angles.", fix: "Ask what the two angles fill together: a straight LINE is $180°$; only a right-angle CORNER is $90°$." }
+    ],
+    connections: [
+      { concept: "geo_angles_triangle", note: "The same fill-up-a-known-total reasoning — 180° in a triangle, 180° on a line." },
+      { concept: "integer_sub", note: "Angle chasing is subtraction with a geometric story." },
+      { concept: "geo_perimeter_rect", note: "Right angles and straight lines are the degree benchmarks all figures lean on." }
+    ],
+    examples: [
+      { question: "Two lines cross; one angle is $40°$. What is the angle directly opposite?", answer: "40", explanation: "Vertical angles are equal: $40°$. Both are $180° - 140°$, the same leftover." },
+      { question: "Two lines cross; one angle is $40°$. What is the angle next to it?", answer: "140", explanation: "Neighbors fill a straight line: $180° - 40° = 140°$." }
+    ]
+  },
+
+  // ===========================================================================
+  // PERCENT APPLICATIONS (number-sense depth II).
+  // ===========================================================================
+  percent_discount: {
+    title: "Discounts & Sale Prices",
+    formula: "\\text{sale price} = P - P \\cdot \\frac{p}{100}",
+    oneLineSummary: "A discount is a percent OF the price — compute the slice first, then subtract it; the percent number itself is never dollars.",
+    intuitionHook: "'$25\\%$ off an $\\$80$ jacket.' The store isn't handing you $\\$25$ — it's handing you a quarter OF the price: $\\$20$. Final price $\\$60$. Same percent on a $\\$400$ TV is $\\$100$ off. The percent is a RATE; what it's worth depends entirely on what it bites into.",
+    whatItIs: "Computing sale prices and savings: the discount equals the price times the percent (as a fraction of 100); the sale price is the original minus that discount. Two questions, two answers — 'how much do you save' wants the slice, 'what do you pay' wants the remainder.",
+    whyItWorks: "Percent means per hundred, so $25\\%$ off promises: for every $\\$100$ of price, $\\$25$ leaves. An $\\$80$ jacket holds $0.8$ hundreds, so $0.8 \\times 25 = \\$20$ leaves — that's exactly $P \\times \\frac{p}{100}$. Subtracting the bare $25$ from $\\$80$ would take the same $\\$25$ off a jacket or a yacht, which no store intends. A slick shortcut: paying after $25\\%$ off means keeping $75\\%$ — sale price $= P \\times 0.75$ in one step. Both roads must agree, which doubles as a check.",
+    whenToUse: "Shopping and sales, tips and taxes (the same math, added instead of subtracted), commission, percent-off coupons stacked against budgets, comparing deals.",
+    representations: [
+      { kind: "slice", label: "Slice, then subtract", body: "$\\$80$ at $25\\%$ off: slice $= 80 \\times \\frac{25}{100} = \\$20$; pay $80 - 20 = \\$60$." },
+      { kind: "keep_rate", label: "What you still pay", body: "$25\\%$ off = keep $75\\%$: $80 \\times 0.75 = \\$60$ — one multiplication, same answer, built-in check." },
+      { kind: "per_hundred", label: "Per hundred, literally", body: "$\\$25$ off each $\\$100$: an $\\$80$ item is $0.8$ hundreds → $\\$20$ off. A $\\$400$ item is $4$ hundreds → $\\$100$ off." }
+    ],
+    commonMistakes: [
+      { label: "Subtracting the percent as dollars", why: "$\\$80 - 25 = \\$55$ — treating the rate like a coupon worth $\\$25$ flat.", fix: "A percent has no dollar value until it meets a price: $25\\%$ OF $80$ is $20$. Compute the slice before any subtraction." },
+      { label: "Answering the wrong question", why: "Reporting $\\$20$ when asked the sale price, or $\\$60$ when asked the savings — both numbers are correct, for each other's questions.", fix: "Last step, every time: reread the question. 'Save' → the slice. 'Pay' → the remainder. They always sum to the original." }
+    ],
+    connections: [
+      { concept: "percentage_of", note: "The discount slice IS a percent-of computation — this concept aims it at money." },
+      { concept: "percent_decimal_convert", note: "The keep-rate shortcut runs on percent → decimal conversion." },
+      { concept: "simple_interest", note: "The same slice, repeated per year and added instead of removed." }
+    ],
+    examples: [
+      { question: "A $\\$60$ game is $20\\%$ off. What is the sale price?", answer: "48", explanation: "Slice: $60 \\times 0.20 = 12$. Pay: $60 - 12 = \\$48$ (or directly $60 \\times 0.80$)." },
+      { question: "A $\\$120$ chair is $25\\%$ off. How much do you save?", answer: "30", explanation: "$120 \\times \\frac{25}{100} = \\$30$ — the slice is the saving." }
+    ]
+  },
+
+  simple_interest: {
+    title: "Simple Interest",
+    formula: "I = P \\cdot \\frac{r}{100} \\cdot t",
+    oneLineSummary: "Simple interest pays the same percent slice of the original deposit every year — multiply the one-year slice by the years.",
+    intuitionHook: "Park $\\$300$ at $5\\%$ simple interest and the bank mails you the SAME $\\$15$ every year — year one, year two, year three: $\\$45$ after three years. It's rent paid on your money, at a flat rate. (Banks compounding is the sequel; simple interest is the clean original.)",
+    whatItIs: "Interest computed only on the original principal: each year earns $P \\times \\frac{r}{100}$, so after $t$ years the total interest is $I = P \\cdot \\frac{r}{100} \\cdot t$. The balance is principal plus interest: $P + I$.",
+    whyItWorks: "Two facts multiply together. The yearly slice is a percent-of computation ($5\\%$ of $\\$300$ = $\\$15$ — per hundred, times three hundreds). 'Simple' means that slice never changes, because it's always measured against the ORIGINAL deposit — so $t$ years pay $t$ identical slices: multiplication as repeated addition, $15 + 15 + 15 = 15 \\times 3$. Forgetting the $t$ answers a one-year question; reporting $P + I$ answers the balance question. The formula is three quantities with one job each: $P$ sets the base, $r$ sets the rate, $t$ counts the repeats.",
+    whenToUse: "Savings bonds and CDs, simple loans between people, deposit math in word problems, quick estimates before compound formulas — and as the bridge from percents into linear growth.",
+    representations: [
+      { kind: "rent", label: "Rent on money", body: "$\\$300$ at $5\\%$: the money earns $\\$15$/year of rent. Three years of tenancy: $\\$45$." },
+      { kind: "table", label: "Year by year", body: "Year 1: $+15$. Year 2: $+15$. Year 3: $+15$. Simple interest is a flat staircase — the same step forever." },
+      { kind: "linear", label: "A line in disguise", body: "Balance $= P + (P \\tfrac{r}{100}) t$ — slope-intercept form with the deposit as intercept and the yearly slice as slope." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting the years", why: "Computing the $\\$15$ yearly slice and stopping — a $t$-year question answered for $t = 1$.", fix: "The formula has three factors; count them off: principal ✓ rate ✓ TIME ✓. Each year adds another identical slice." },
+      { label: "Reporting the balance as the interest", why: "Answering $\\$345$ (deposit + earnings) when only the earnings were asked.", fix: "Interest is what the money EARNED; balance is earnings plus the original. Reread which one the question wants." }
+    ],
+    connections: [
+      { concept: "percent_discount", note: "The same percent-slice computation — added over time instead of subtracted once." },
+      { concept: "unit_rate", note: "The yearly slice is a rate: dollars per year. Interest is a unit rate with a bank account." },
+      { concept: "point_on_line", note: "Balance over time is y = mx + b: simple interest IS linear growth." }
+    ],
+    examples: [
+      { question: "You deposit $\\$200$ at $4\\%$ simple interest. How much interest after $3$ years?", answer: "24", explanation: "Yearly slice: $200 \\times 0.04 = \\$8$. Three years: $8 \\times 3 = \\$24$." },
+      { question: "You deposit $\\$500$ at $3\\%$ simple interest. How much interest after $2$ years?", answer: "30", explanation: "$500 \\times \\frac{3}{100} \\times 2 = \\$30$." }
+    ]
+  },
+
+  multi_step_word: {
+    title: "Multi-Step Word Problems",
+    formula: "\\text{plan} \\to \\text{compute} \\to \\text{answer the question asked}",
+    oneLineSummary: "Multi-step problems hide the real question behind an intermediate number — plan the chain of operations first, and never stop at a stop on the way.",
+    intuitionHook: "Maya buys $4$ notebooks at $\\$6$ each and pays with a $\\$50$ bill. 'How much change?' Your brain computes $24$ — and $24$ is exactly the WRONG answer, sitting there looking finished. The cost was a stepping stone; the question asked about the change: $50 - 24 = \\$26$. Multi-step problems are traps built from your own correct work.",
+    whatItIs: "Word problems requiring two or more operations in sequence: compute a subtotal (a cost, a sum), then use it in a second operation (change, remainder, difference). The skill is decomposition: which numbers combine, with which operations, in which order.",
+    whyItWorks: "Stories nest computations the way expressions nest operations: 'change from $\\$50$ after buying $4$ at $\\$6$' is literally $50 - 4 \\times 6$ — the multiplication lives inside the subtraction, so it must finish first. Writing the plan as one expression imports all of order-of-operations for free. The classic failure isn't bad arithmetic; it's answering the inner step ($24$) because it arrived first and felt complete — or chaining the right numbers with wrong operations ($50 - 4 - 6$). Rereading the final question before answering catches both.",
+    whenToUse: "Shopping and change, budgets and remainders, recipe leftovers, trip planning (distance minus progress), and as the assembled form of every single-skill problem in the catalog.",
+    representations: [
+      { kind: "chain", label: "Plan the chain", body: "Change problem: (price × count) THEN (bill − cost). Two links; the output of one feeds the other." },
+      { kind: "expression", label: "Write it as one expression", body: "$50 - 4 \\times 6$: the story in symbols — and PEMDAS already knows the multiplication goes first." },
+      { kind: "question_check", label: "The last-line test", body: "Underline the actual question. '$\\$24$' answers 'what did it cost?' — nobody asked that." }
+    ],
+    commonMistakes: [
+      { label: "Stopping at the subtotal", why: "Answering $\\$24$ (the cost) to a question about change — the intermediate number feels like a destination.", fix: "Before writing the answer, reread the question's last line. Does your number answer THAT? The cost still needs the subtraction." },
+      { label: "Right numbers, wrong chain", why: "Computing $50 - 4 - 6 = 40$ — every number used once, no operation matching the story.", fix: "Tell the story back: '4 notebooks at \\$6' is a MULTIPLICATION ($24$), not two subtractions. Each phrase picks its own operation." }
+    ],
+    connections: [
+      { concept: "translate_expression", note: "Writing the plan as one expression is translation — the sibling skill." },
+      { concept: "pemdas", note: "The inner-operation-first rule is order of operations, narrated." },
+      { concept: "unit_rate", note: "The 'price × count' link is rate reasoning — most chains start with one." }
+    ],
+    examples: [
+      { question: "Maya buys $3$ notebooks at $\\$4$ each and pays with a $\\$50$ bill. How much change does she get?", answer: "38", explanation: "Cost: $3 \\times 4 = \\$12$. Change: $50 - 12 = \\$38$." },
+      { question: "Liam has $\\$40$ and buys $3$ books at $\\$7$ each. How much is left?", answer: "19", explanation: "Spent: $21$. Left: $40 - 21 = \\$19$." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -2720,7 +2900,8 @@ function levelToConceptId(category, level) {
   if (cat === 'integers') {
     if (lvl <= 4) return 'absolute_value';
     if (lvl <= 5) return 'integer_add';
-    if (lvl <= 7) return 'integer_sub'; // 7 has no template key; closest-below serves 6
+    if (lvl <= 6) return 'integer_sub';
+    if (lvl <= 7) return 'integer_compare';
     if (lvl <= 8) return 'integer_mult';
     if (lvl <= 10) return 'integer_div';
     return 'integer_ops';
@@ -2754,7 +2935,8 @@ function levelToConceptId(category, level) {
     if (lvl <= 8) return 'geo_circumference';
     if (lvl <= 10) return 'geo_volume_cylinder'; // 10 has no template key; closest-below serves 9
     if (lvl <= 11) return 'geo_composite';
-    return 'geo_circle_area';
+    if (lvl <= 12) return 'geo_circle_area';
+    return 'geo_angles_lines';
   }
   if (cat === 'number_sense' || cat === 'number sense') {
     if (lvl <= 6) return 'percentage_of';
@@ -2765,7 +2947,10 @@ function levelToConceptId(category, level) {
     if (lvl <= 12) return 'unit_convert_time';
     if (lvl <= 13) return 'unit_rate';
     if (lvl <= 14) return 'exponent_power';
-    return 'proportion_solve';
+    if (lvl <= 15) return 'proportion_solve';
+    if (lvl <= 16) return 'percent_discount';
+    if (lvl <= 17) return 'simple_interest';
+    return 'multi_step_word';
   }
   if (cat === 'statistics') {
     if (lvl <= 7) return 'stat_mode';
@@ -2802,7 +2987,8 @@ function levelToConceptId(category, level) {
   if (cat === 'expressions') {
     if (lvl <= 11) return 'eval_expression';
     if (lvl <= 12) return 'eval_two_var';
-    if (lvl <= 14) return 'combine_like_terms'; // 14 has no template key; closest-below serves 13
+    if (lvl <= 13) return 'combine_like_terms';
+    if (lvl <= 14) return 'translate_expression';
     if (lvl <= 15) return 'distribute';
     if (lvl <= 16) return 'foil_binomials';
     if (lvl <= 17) return 'square_binomial';
