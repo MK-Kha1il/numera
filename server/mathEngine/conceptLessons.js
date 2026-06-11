@@ -1955,6 +1955,214 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // PROPORTIONAL REASONING DEPTH (number-sense strand).
+  // ===========================================================================
+  unit_rate: {
+    title: "Unit Rates",
+    formula: "\\text{rate} = \\frac{\\text{total}}{\\text{count}}",
+    oneLineSummary: "A unit rate scales any quantity down to 'per ONE' — price per item, kilometers per hour — and 'per' always means divide.",
+    intuitionHook: "Two stores: one sells $4$ pens for $\\$12$, the other $6$ pens for $\\$15$. Which is cheaper? You can't compare $12$ against $15$ — different counts. Bring both to PER ONE PEN: $\\$3$ vs $\\$2.50$. Unit rates are the universal adapter that makes any two deals comparable.",
+    whatItIs: "A unit rate expresses a relationship per single unit: dollars per item, km per hour, points per game. It's computed by dividing the total by the count — and once everything is 'per one', comparison and prediction become plain arithmetic.",
+    whyItWorks: "If $5$ notebooks cost $\\$20$ and each costs the same, the $\\$20$ splits equally five ways — division by definition: $\\$4$ each. The power move is reversing it: once you know the per-one price, ANY count is one multiplication away ($7$ notebooks: $7 \\times 4 = \\$28$). Subtracting ($20 - 5 = 15$) feels available but mixes units — dollars minus notebooks measures nothing. The word 'per' is a reliable translation cue: it literally marks the division bar.",
+    whenToUse: "Best-buy comparisons, speed and pace, wages per hour, scoring averages, recipe scaling — and as the gateway to proportions, slopes and linear models (a slope IS a unit rate).",
+    representations: [
+      { kind: "sharing", label: "Split it equally", body: "$\\$20$ across $5$ identical notebooks: the money divides evenly — $\\$4$ lands on each." },
+      { kind: "table", label: "The per-one row", body: "Pens: 4 → \\$12, 2 → \\$6, 1 → \\$3. Every ratio table has a per-one row, and it unlocks all the others." },
+      { kind: "speed", label: "Distance per hour", body: "$120$ km in $3$ h = $40$ km in EACH hour — the unit rate is what the speedometer shows." }
+    ],
+    commonMistakes: [
+      { label: "Subtracting instead of dividing", why: "'$6$ notebooks cost $\\$42$' → $42 - 6 = 36$ — the numbers got combined with the wrong operation, and the units (dollars minus notebooks) make no sense.", fix: "'Per' = divide. Check the answer by re-multiplying: $6 \\times 7 = 42$ ✓, while $6 \\times 36$ is nowhere near $42$." },
+      { label: "Dividing the wrong way around", why: "Computing $6 \\div 42$ gives notebooks per dollar — a real rate, but not the one asked for.", fix: "Put the quantity you want ALONE on top: dollars per notebook = dollars ÷ notebooks. Say the unit of your answer out loud before computing." }
+    ],
+    connections: [
+      { concept: "ratio_solve", note: "A unit rate is a ratio scaled until the second quantity is 1." },
+      { concept: "proportion_solve", note: "Proportions scale unit rates up to any count." },
+      { concept: "slope_from_points", note: "A line's slope is a unit rate: change in y per ONE step of x." }
+    ],
+    examples: [
+      { question: "$5$ notebooks cost $\\$35$. What is the price per notebook?", answer: "7", explanation: "$35 \\div 5 = 7$ dollars each; check $5 \\times 7 = 35$ ✓." },
+      { question: "A cyclist rides $80$ km in $4$ hours. What is her speed in km/h?", answer: "20", explanation: "$80 \\div 4 = 20$ km in each hour." }
+    ]
+  },
+
+  proportion_solve: {
+    title: "Solving Proportions",
+    formula: "\\frac{a}{b} = \\frac{x}{bk} \\implies x = ak",
+    oneLineSummary: "A proportion says two ratios are the same — solve it by finding the scale factor, because ratios scale by multiplying, never by adding.",
+    intuitionHook: "A recipe for $2$ people uses $3$ eggs. For $8$ people? The crowd is $4\\times$ bigger, so the eggs are $4\\times$ more: $12$. NOT '$6$ more people, so $6$ more eggs' — $9$ eggs would feed your dinner party a strangely eggless meal. Recipes scale by multiplying; that's what keeps the TASTE (the ratio) the same.",
+    whatItIs: "A proportion equates two ratios: $\\frac{3}{4} = \\frac{x}{20}$. Solving finds the missing value that keeps both ratios identical — via the scale factor between the known pair, or cross-multiplication.",
+    whyItWorks: "Equal ratios are scaled copies: if $\\frac{3}{4} = \\frac{x}{20}$ and the denominator was multiplied by $5$ (since $4 \\times 5 = 20$), the numerator must be multiplied by the SAME $5$, giving $x = 15$ — multiplying top and bottom by one number is exactly what leaves a fraction's value unchanged. The additive trap ($4$ grew by $16$, so $3 + 16 = 19$) preserves the DIFFERENCE instead, and equal differences are a different promise than equal ratios: $\\frac{19}{20}$ is nearly a whole, $\\frac{3}{4}$ is not. When the scale factor is ugly, cross-multiplying ($3 \\times 20 = 4x$) runs the same logic without needing it to be whole.",
+    whenToUse: "Recipe and model scaling, map distances, similar triangles, currency conversion, 'if 3 cost this, what do 7 cost' — every similarity argument in geometry runs on proportions.",
+    representations: [
+      { kind: "scaling", label: "The scale factor", body: "$\\frac{3}{4} = \\frac{x}{20}$: bottom went ×5, so top goes ×5 → $x = 15$. One factor moves both floors." },
+      { kind: "table", label: "Ratio table", body: "people 2 → 8 (×4), eggs 3 → 12 (×4): the columns of a ratio table always move together." },
+      { kind: "cross", label: "Cross-multiply", body: "$\\frac{a}{b} = \\frac{x}{c} \\implies a c = b x$ — the products of the diagonals match exactly when the ratios do." }
+    ],
+    commonMistakes: [
+      { label: "Adding the difference", why: "'$4$ became $20$ by adding $16$, so $x = 3 + 16 = 19$' — keeping differences equal keeps the wrong thing equal.", fix: "Ask 'times what?', never 'plus what?'. Sanity-check: $\\frac{19}{20}$ is almost $1$, while $\\frac{3}{4}$ clearly isn't — the ratios don't match." },
+      { label: "Scaling only one part", why: "Multiplying the denominator by the factor but copying the numerator across unchanged.", fix: "A fraction keeps its value only when top AND bottom take the same ride: $\\frac{3 \\times 5}{4 \\times 5}$." }
+    ],
+    connections: [
+      { concept: "unit_rate", note: "Solving via the per-one value is the two-step version of the same scaling." },
+      { concept: "fraction_simplify", note: "Equivalent fractions ARE proportions — simplifying runs the scale factor backwards." },
+      { concept: "geo_area_rect", note: "Similar shapes keep side RATIOS equal — proportions power every similarity computation." }
+    ],
+    examples: [
+      { question: "Solve $\\frac{2}{5} = \\frac{x}{20}$.", answer: "8", explanation: "The denominator scaled ×4 ($5 \\to 20$), so $x = 2 \\times 4 = 8$." },
+      { question: "Solve $\\frac{3}{7} = \\frac{x}{21}$.", answer: "9", explanation: "$7 \\times 3 = 21$, so $x = 3 \\times 3 = 9$." }
+    ]
+  },
+
+  // ===========================================================================
+  // INTEGERS DEPTH (division sign rules, order of operations with negatives).
+  // ===========================================================================
+  integer_div: {
+    title: "Dividing Integers",
+    formula: "\\frac{+}{+} = +, \\;\\; \\frac{-}{-} = +, \\;\\; \\frac{+}{-} = \\frac{-}{+} = -",
+    oneLineSummary: "Integer division follows the same sign rules as multiplication — like signs give positive, unlike signs give negative — because every division is a multiplication read backwards.",
+    intuitionHook: "A debt of $24$ coins is split among $6$ friends: each owes $-24 \\div 6 = -4$ — sharing a debt gives everyone a piece of debt. But asking 'how many $-6$s fit into $-24$?' gives $+4$: it takes four steps of $-6$ to fall to $-24$. Same numbers, different signs in play, and the rules sort it out.",
+    whatItIs: "Dividing signed integers: divide the magnitudes as usual, then set the sign — positive when the signs match, negative when they differ. Identical to the multiplication sign rules.",
+    whyItWorks: "Division is defined by multiplication: $\\frac{-24}{6} = q$ means $q \\times 6 = -24$, and only $-4$ works. Because every division question secretly asks a multiplication question, it inherits multiplication's sign table wholesale — including the surprising row: $\\frac{-24}{-6} = +4$, since $+4 \\times (-6) = -24$. 'Two negatives stay negative' fails the check instantly: $-4 \\times -6 = +24 \\ne -24$. When in doubt, multiply back — the check is built into the definition.",
+    whenToUse: "Splitting debts and losses, average temperature drops, rate-of-descent per hour, undoing signed multiplications when solving equations (including the inequality flip step).",
+    representations: [
+      { kind: "inverse", label: "Multiplication, reversed", body: "$\\frac{-24}{6} = ?$ asks: what times $6$ gives $-24$? Answer: $-4$. Every quotient is checkable by multiplying back." },
+      { kind: "sharing", label: "Splitting a debt", body: "$-24$ split $6$ ways: six equal shares of $-4$. A shared loss is a smaller loss each, still a loss." },
+      { kind: "table", label: "The sign table", body: "Same signs → $+$, different signs → $-$: one table serves both × and ÷, because ÷ is × in reverse." }
+    ],
+    commonMistakes: [
+      { label: "Two negatives staying negative", why: "$\\frac{-24}{-6} = -4$ — carrying the 'negatives are negative' instinct into a place where the signs cancel.", fix: "Multiply back: $-4 \\times -6 = +24$, not $-24$. Only $+4$ survives the check." },
+      { label: "Right magnitude, wrong sign", why: "Computing $24 \\div 6 = 4$ correctly, then guessing the sign instead of reading the rule.", fix: "Two steps, always in order: magnitudes first ($4$), then the sign rule (signs differ → negative)." }
+    ],
+    connections: [
+      { concept: "integer_mult", note: "The sign rules are inherited directly — division is multiplication read backwards." },
+      { concept: "arithmetic_div", note: "The magnitude half of every problem is plain division." },
+      { concept: "inequality_flip_negative", note: "Dividing an inequality by a negative is this skill plus the flip." }
+    ],
+    examples: [
+      { question: "Calculate $-35 \\div 7$.", answer: "-5", explanation: "Magnitudes: $35 \\div 7 = 5$. Signs differ → negative: $-5$. Check: $-5 \\times 7 = -35$ ✓." },
+      { question: "Calculate $-42 \\div (-6)$.", answer: "7", explanation: "Like signs → positive: $+7$. Check: $7 \\times (-6) = -42$ ✓." }
+    ]
+  },
+
+  integer_ops: {
+    title: "Order of Operations with Negatives",
+    formula: "a + b \\times c: \\text{ multiply first, even when signs fly}",
+    oneLineSummary: "Negatives don't change the order of operations — multiplication still binds before addition; the signs just demand more care inside each step.",
+    intuitionHook: "Your account sits at $-3$ coins, and then $2$ fees of $4$ coins each hit: $-3 + 2 \\times (-4)$. The fees multiply FIRST ($-8$), then join the balance: $-11$. Reading left to right ($-3 + 2 = -1$, times $-4$ = $+4$) would turn two fees into a profit — order isn't pedantry, it's the difference between owing and earning.",
+    whatItIs: "Evaluating expressions that mix signed numbers with several operations. PEMDAS still rules: multiplication and division before addition and subtraction — negatives change the values, never the order.",
+    whyItWorks: "The order convention exists so an expression means ONE thing: $-3 + 2 \\times (-4)$ is defined as $-3 + (2 \\times -4)$, a sum of a balance and a product. Grouping left to right computes a DIFFERENT expression, $(-3 + 2) \\times (-4)$ — with parentheses that aren't there. Negatives raise the stakes because each step also carries a sign decision (product of unlike signs is negative; adding two negatives goes deeper negative), so a slip in either the order or a single sign flips the final answer's direction entirely.",
+    whenToUse: "Multi-step balance calculations, temperature changes with rates, evaluating formulas at negative inputs, and reading any expression before solving an equation built from it.",
+    representations: [
+      { kind: "story", label: "Balance plus fees", body: "$-3 + 2 \\times (-4)$: two $-4$ fees total $-8$; merged with the $-3$ balance: $-11$. The story forces the right order." },
+      { kind: "tree", label: "The expression tree", body: "The $\\times$ sits BELOW the $+$: compute deep nodes first. $2 \\times (-4) = -8$ feeds upward into the sum." },
+      { kind: "contrast", label: "What left-to-right computes", body: "$(-3 + 2) \\times (-4) = +4$ vs $-3 + 2 \\times (-4) = -11$: same symbols, different trees, opposite signs." }
+    ],
+    commonMistakes: [
+      { label: "Working left to right", why: "Adding $-3 + 2$ first because it appears first — inserting parentheses the expression never had.", fix: "Scan for × and ÷ before touching anything: settle every product, then combine. The + waits its turn." },
+      { label: "Dropping a negative mid-stream", why: "$2 \\times (-4)$ becoming $8$, or $-3 + (-8)$ becoming $+5$ — one sign lost anywhere flips everything after it.", fix: "Write each intermediate WITH its sign: $-3 + (-8)$. Adding two negatives digs deeper: $-11$." }
+    ],
+    connections: [
+      { concept: "pemdas", note: "The same order convention — negatives are the stress test that exposes shortcuts." },
+      { concept: "integer_mult", note: "Each product inside carries the sign rules." },
+      { concept: "eval_expression", note: "Evaluating ax + b at negative values is exactly this skill with letters." }
+    ],
+    examples: [
+      { question: "Calculate $-5 + 3 \\times (-2)$.", answer: "-11", explanation: "Multiply first: $3 \\times (-2) = -6$; then $-5 + (-6) = -11$." },
+      { question: "Calculate $-2 + 4 \\times (-3)$.", answer: "-14", explanation: "$4 \\times (-3) = -12$, then $-2 - 12 = -14$." }
+    ]
+  },
+
+  // ===========================================================================
+  // FRACTIONS DEPTH (mixed numbers, structural comparison).
+  // ===========================================================================
+  mixed_number: {
+    title: "Mixed Numbers & Improper Fractions",
+    formula: "w\\tfrac{n}{d} = \\frac{w \\times d + n}{d}",
+    oneLineSummary: "A mixed number and an improper fraction are two outfits for the same value — convert by trading wholes for parts at d parts per whole.",
+    intuitionHook: "You have $2$ whole pizzas and $3$ extra quarter-slices. How many quarter-slices in total? Each whole pizza CASHES IN for $4$ quarters: $2 \\times 4 = 8$, plus the loose $3$ — eleven quarters, $\\frac{11}{4}$. The conversion is just exchanging big bills for coins.",
+    whatItIs: "A mixed number ($2\\frac{3}{4}$) writes a value as wholes plus a proper part; an improper fraction ($\\frac{11}{4}$) counts everything in parts. Converting between them changes the notation, never the amount.",
+    whyItWorks: "One whole IS $\\frac{d}{d}$ — that identity powers both directions. Going to improper: each of the $w$ wholes becomes $d$ parts, so the numerator is $w \\times d + n$ (multiply FIRST, because the wholes must be exchanged before the loose parts can join the count). Going back: divide — the quotient is how many full wholes the parts assemble into, the REMAINDER is what's left over: $\\frac{11}{4} \\to 11 \\div 4 = 2$ r $3 \\to 2\\frac{3}{4}$. Adding $w + n$ or gluing digits ($2$ and $3 \\to \\frac{23}{4}$) skips the exchange step and miscounts the wholes entirely.",
+    whenToUse: "Adding and multiplying mixed amounts (recipes, measurements), placing values on number lines, reading rulers and measuring cups, interpreting division remainders.",
+    representations: [
+      { kind: "pizza", label: "Wholes cash in for slices", body: "$2\\frac{3}{4}$ pizzas in quarter-slices: $2 \\times 4 = 8$ from the wholes, $+3$ loose: $\\frac{11}{4}$." },
+      { kind: "number_line", label: "Same point, two names", body: "$2\\frac{3}{4}$ and $\\frac{11}{4}$ land on the SAME tick — between $2$ and $3$, three quarter-steps past $2$." },
+      { kind: "division", label: "Back via remainder", body: "$\\frac{11}{4}$: $4$ fits into $11$ twice (the wholes), remainder $3$ (the part): $2\\frac{3}{4}$." }
+    ],
+    commonMistakes: [
+      { label: "Adding the whole to the numerator", why: "$2\\frac{3}{4} \\to \\frac{5}{4}$ — the $2$ joined the count without being exchanged into quarters first.", fix: "A whole is worth $d$ parts, not $1$: multiply before adding. $2 \\times 4 + 3 = 11$." },
+      { label: "Gluing the digits", why: "$2\\frac{3}{4} \\to \\frac{23}{4}$ — treating the notation as digits instead of quantities ($\\frac{23}{4}$ is almost $6$, way past $2\\frac{3}{4}$).", fix: "Estimate first: $2\\frac{3}{4}$ is just under $3$, so the improper numerator must be just under $3 \\times 4 = 12$ — that's $11$, not $23$." }
+    ],
+    connections: [
+      { concept: "fraction_simplify", note: "Both rest on the same identity: multiplying count and size of parts together preserves value." },
+      { concept: "arithmetic_div", note: "Improper → mixed is division with remainder, wearing fraction clothes." },
+      { concept: "fraction_add", note: "Adding mixed numbers usually routes through improper form — this conversion is the on-ramp." }
+    ],
+    examples: [
+      { question: "Write $3\\frac{2}{5}$ as an improper fraction.", answer: "17/5", explanation: "$3 \\times 5 = 15$ fifths from the wholes, plus $2$: $\\frac{17}{5}$." },
+      { question: "Write $\\frac{13}{4}$ as a mixed number.", answer: "3 1/4", explanation: "$4$ fits into $13$ three times (12), remainder $1$: $3\\frac{1}{4}$." }
+    ]
+  },
+
+  fraction_compare: {
+    title: "Comparing Fractions",
+    formula: "\\frac{n}{n+g} = 1 - \\frac{g}{n+g} \\;\\; (\\text{larger } n \\Rightarrow \\text{closer to } 1)",
+    oneLineSummary: "A fraction's size is a relationship, not a pair of numbers — compare by thinking about how much is missing from the whole, or against benchmarks like one half.",
+    intuitionHook: "Which is more pizza: $\\frac{7}{8}$ or $\\frac{3}{4}$? Don't crunch — look at what's MISSING: $\\frac{7}{8}$ is one thin eighth short of a whole pizza; $\\frac{3}{4}$ is a whole fat quarter short. The one missing LESS is bigger. Strong comparers reason about the gap, not the digits.",
+    whatItIs: "Deciding which of several fractions is largest. Tools, roughly in order of power: structural reasoning (distance to $0$, $\\frac{1}{2}$ or $1$), benchmarks, common denominators, and cross-multiplication as the fallback.",
+    whyItWorks: "A fraction measures a part-to-whole RELATIONSHIP, so its size can't be read off either number alone: $\\frac{4}{5} > \\frac{5}{9}$ despite smaller digits. The gap trick works because fractions one step below a whole, $\\frac{n}{n+g}$, equal $1 - \\frac{g}{n+g}$ — and the missing piece $\\frac{g}{n+g}$ shrinks as $n$ grows (same $g$ split over a larger whole is a thinner slice). So in a family like $\\frac{2}{3}, \\frac{3}{4}, \\frac{4}{5}, \\frac{5}{6}$, the LAST is largest: it's missing the thinnest sliver. 'Bigger numbers = bigger fraction' is the precise opposite of how denominators work.",
+    whenToUse: "Choosing the better deal or bigger share, ordering data given as rates, judging probabilities, estimating before computing — and number-line placement everywhere.",
+    representations: [
+      { kind: "gap", label: "What's missing", body: "$\\frac{7}{8}$ misses $\\frac{1}{8}$; $\\frac{3}{4}$ misses $\\frac{1}{4}$. Smaller gap → bigger fraction — no common denominator needed." },
+      { kind: "benchmark", label: "Anchor at one half", body: "$\\frac{4}{9}$ is below $\\frac{1}{2}$ (since $4 < 4.5$), $\\frac{5}{8}$ above. Half the comparisons in the wild end right there." },
+      { kind: "number_line", label: "Place, don't compute", body: "Each fraction is a point; comparing is just left-vs-right. $\\frac{2}{3}, \\frac{3}{4}, \\frac{4}{5}$ march rightward toward $1$." }
+    ],
+    commonMistakes: [
+      { label: "Bigger numbers means bigger fraction", why: "Picking $\\frac{2}{5}$ over $\\frac{2}{3}$ because $5 > 3$ — but a bigger denominator means the whole is cut into SMALLER pieces.", fix: "Two pieces of a 3-cut pizza vs two pieces of a 5-cut: same count, fatter slices. When numerators match, the SMALLER denominator wins." },
+      { label: "Comparing numerators alone", why: "Ranking $\\frac{5}{9}$ above $\\frac{4}{5}$ because $5 > 4$ — ignoring that the wholes are cut differently.", fix: "Check against $\\frac{1}{2}$ or $1$ first: $\\frac{5}{9}$ barely clears half; $\\frac{4}{5}$ is nearly whole." }
+    ],
+    connections: [
+      { concept: "fraction_simplify", note: "Equivalent forms are what make comparison subtle — the same value wears many number-pairs." },
+      { concept: "stat_probability", note: "Judging which event is likelier is comparing fractions in disguise." },
+      { concept: "decimal_round", note: "Converting to decimals is the brute-force comparison when structure doesn't help." }
+    ],
+    examples: [
+      { question: "Which is larger: $\\frac{5}{6}$ or $\\frac{7}{8}$?", answer: "7/8", explanation: "$\\frac{5}{6}$ is missing $\\frac{1}{6}$; $\\frac{7}{8}$ is missing only $\\frac{1}{8}$ — the smaller gap wins." },
+      { question: "Which is larger: $\\frac{3}{7}$ or $\\frac{5}{8}$?", answer: "5/8", explanation: "$\\frac{3}{7}$ is below one half ($3 < 3.5$), $\\frac{5}{8}$ is above ($5 > 4$)." }
+    ]
+  },
+
+  // ===========================================================================
+  // STATISTICS DEPTH (compound events).
+  // ===========================================================================
+  compound_probability: {
+    title: "Compound Probability",
+    formula: "P(A \\text{ and } B) = P(A) \\times P(B) \\;\\; (\\text{independent events})",
+    oneLineSummary: "For independent events, 'and' multiplies the probabilities — each extra requirement shrinks the chance, which is exactly what multiplying by a fraction does.",
+    intuitionHook: "Flip a coin and roll a die. Heads alone: half the time. Heads AND a six? Of the half where the coin cooperates, only one time in six does the die join in: a sixth OF a half — $\\frac{1}{2} \\times \\frac{1}{6} = \\frac{1}{12}$. Stacking demands multiplies fractions, and the chance can only shrink.",
+    whatItIs: "The probability that two independent events BOTH happen. Independent means neither outcome influences the other (separate spinners, coin then die); the joint probability is the product of the individual ones.",
+    whyItWorks: "Count the outcome PAIRS: a coin (2 outcomes) with a die (6 outcomes) makes $2 \\times 6 = 12$ equally likely pairs, and exactly one is (heads, 6) — so $\\frac{1}{12}$, which is precisely $\\frac{1}{2} \\times \\frac{1}{6}$. The multiplication IS the grid of possibilities. Adding instead gives $\\frac{1}{2} + \\frac{1}{6} = \\frac{2}{3}$ — a probability that GREW after adding a second demand, which the smell test rejects instantly: requiring more can never be more likely. (Adding has its own job: either-or questions about mutually exclusive outcomes of a single draw.)",
+    whenToUse: "Multiple coin flips or dice rolls, winning two games in a row, two components both failing, password-guessing odds, any chain of independent requirements.",
+    representations: [
+      { kind: "grid", label: "The outcome grid", body: "Coin × die: $2 \\times 6 = 12$ cells, one cell is (H, 6). The product rule is just cell-counting." },
+      { kind: "tree", label: "Branch then branch again", body: "Half the tree is heads; a sixth of THAT branch is a six. Fractions of fractions multiply." },
+      { kind: "shrink", label: "Demands shrink chances", body: "$P = \\frac{1}{2} \\to \\frac{1}{12}$: every extra requirement multiplies by something below 1. If your 'and' made the number grow, an addition snuck in." }
+    ],
+    commonMistakes: [
+      { label: "Adding the probabilities", why: "$P(\\text{heads and } 6) = \\frac{1}{2} + \\frac{1}{6} = \\frac{2}{3}$ — but demanding BOTH can't beat the chance of either alone.", fix: "Run the smell test: more conditions ⇒ smaller chance. 'And' multiplies; 'or' (for exclusive outcomes) is what adds." },
+      { label: "Ignoring one event", why: "Reporting $\\frac{1}{6}$ for heads-and-six — the coin's veto never got counted.", fix: "Draw the grid: only the rows where the FIRST event succeeded even get to ask about the second." }
+    ],
+    connections: [
+      { concept: "stat_probability", note: "Single-event probability supplies the factors this rule multiplies." },
+      { concept: "fraction_mult", note: "A fraction OF a fraction — the arithmetic engine under the product rule." },
+      { concept: "combinations", note: "Counting outcome pairs is the first step into combinatorics." }
+    ],
+    examples: [
+      { question: "Two spinners have $3$ and $5$ equal sections, one winning section each. What is the probability both land on the winning section?", answer: "1/15", explanation: "$\\frac{1}{3} \\times \\frac{1}{5} = \\frac{1}{15}$ — one pair out of $15$ equally likely pairs." },
+      { question: "What is the probability of flipping heads twice in a row?", answer: "1/4", explanation: "$\\frac{1}{2} \\times \\frac{1}{2} = \\frac{1}{4}$: of the four pair-outcomes HH, HT, TH, TT, one is HH." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -2304,8 +2512,10 @@ function levelToConceptId(category, level) {
   if (cat === 'integers') {
     if (lvl <= 4) return 'absolute_value';
     if (lvl <= 5) return 'integer_add';
-    if (lvl <= 6) return 'integer_sub';
-    return 'integer_mult';
+    if (lvl <= 7) return 'integer_sub'; // 7 has no template key; closest-below serves 6
+    if (lvl <= 8) return 'integer_mult';
+    if (lvl <= 10) return 'integer_div';
+    return 'integer_ops';
   }
   if (cat === 'decimals') {
     if (lvl <= 3) return 'decimal_add';
@@ -2317,7 +2527,9 @@ function levelToConceptId(category, level) {
   if (cat === 'fractions') {
     if (lvl <= 3) return 'fraction_simplify';
     if (lvl <= 4) return 'fraction_add';
+    if (lvl <= 5) return 'mixed_number';
     if (lvl <= 6) return 'fraction_sub';
+    if (lvl <= 7) return 'fraction_compare';
     if (lvl <= 8) return 'fraction_mult';
     return 'fraction_div';
   }
@@ -2338,15 +2550,18 @@ function levelToConceptId(category, level) {
     if (lvl <= 8) return 'ratio_solve';
     if (lvl <= 10) return 'percent_change';
     if (lvl <= 11) return 'unit_convert_metric';
-    if (lvl <= 13) return 'unit_convert_time';
-    return 'exponent_power';
+    if (lvl <= 12) return 'unit_convert_time';
+    if (lvl <= 13) return 'unit_rate';
+    if (lvl <= 14) return 'exponent_power';
+    return 'proportion_solve';
   }
   if (cat === 'statistics') {
     if (lvl <= 7) return 'stat_mode';
     if (lvl <= 8) return 'stat_mean';
     if (lvl <= 9) return 'stat_median';
     if (lvl <= 11) return 'stat_range';
-    return 'stat_probability';
+    if (lvl <= 13) return 'stat_probability';
+    return 'compound_probability';
   }
   if (cat === 'powers') {
     if (lvl <= 4) return 'square_root';

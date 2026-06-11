@@ -81,11 +81,11 @@ function getRankValue(rankStr) {
 // (expressions starts at 11), collapsing them onto their easiest concept forever.
 const STRAND_BANDS = {
   geometry: [2, 12],
-  integers: [4, 8],
+  integers: [4, 11],
   decimals: [3, 11],
   fractions: [3, 9],
-  number_sense: [6, 14],
-  statistics: [7, 13],
+  number_sense: [6, 15],
+  statistics: [7, 14],
   expressions: [11, 18],
   powers: [4, 13],
   graphing: [8, 15],

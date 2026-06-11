@@ -703,6 +703,77 @@ const concepts = {
       { id: "used_100", label: "Treated an hour as 100 minutes (decimal-clock thinking)", rule: (ans) => ans },
       { id: "dropped_remainder", label: "Converted the whole units but dropped the leftover part", rule: (ans) => ans }
     ]
+  },
+
+  // ---- Proportional reasoning depth (number-sense strand) ----
+  "unit_rate": {
+    name: "Unit Rates",
+    prereqs: ["ratio_solve", "arithmetic_div"],
+    baseElo: 900,
+    misconceptions: [
+      { id: "subtracted_instead", label: "Subtracted the quantities instead of dividing them", rule: (ans, p) => p.total - p.count },
+      { id: "inverted_rate", label: "Divided the wrong way around (count per dollar, not dollars per item)", rule: (ans) => 1 / ans }
+    ]
+  },
+  "proportion_solve": {
+    name: "Solving Proportions",
+    prereqs: ["unit_rate", "fraction_simplify"],
+    baseElo: 1000,
+    misconceptions: [
+      { id: "additive_thinking", label: "Added the same amount instead of scaling by the same factor", rule: (ans) => ans },
+      { id: "copied_denominator", label: "Matched the denominators instead of the ratio", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Integers depth (division sign rules, order of operations with negatives) ----
+  "integer_div": {
+    name: "Dividing Integers",
+    prereqs: ["integer_mult", "arithmetic_div"],
+    baseElo: 800,
+    misconceptions: [
+      { id: "sign_slip", label: "Got the magnitude right but the sign wrong", rule: (ans) => -ans },
+      { id: "two_negatives_negative", label: "Decided negative ÷ negative stays negative", rule: (ans) => -ans }
+    ]
+  },
+  "integer_ops": {
+    name: "Order of Operations with Negatives",
+    prereqs: ["integer_mult", "pemdas"],
+    baseElo: 950,
+    misconceptions: [
+      { id: "left_to_right", label: "Worked left to right, adding before multiplying", rule: (ans) => ans },
+      { id: "dropped_negative", label: "Lost a negative sign mid-calculation", rule: (ans) => -ans }
+    ]
+  },
+
+  // ---- Fractions depth (mixed numbers, structural comparison) ----
+  "mixed_number": {
+    name: "Mixed Numbers & Improper Fractions",
+    prereqs: ["fraction_simplify", "arithmetic_mult"],
+    baseElo: 780,
+    misconceptions: [
+      { id: "added_whole_to_numerator", label: "Added the whole number to the numerator without multiplying by the denominator", rule: (ans) => ans },
+      { id: "digit_concatenation", label: "Glued the whole number onto the numerator as digits", rule: (ans) => ans }
+    ]
+  },
+  "fraction_compare": {
+    name: "Comparing Fractions",
+    prereqs: ["fraction_simplify"],
+    baseElo: 850,
+    misconceptions: [
+      { id: "bigger_numbers_bigger", label: "Judged by the size of the numbers instead of the size of the fraction", rule: (ans) => ans },
+      { id: "numerator_only", label: "Compared numerators and ignored the denominators", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Statistics depth (compound events) ----
+  "compound_probability": {
+    name: "Compound Probability",
+    prereqs: ["stat_probability", "fraction_mult"],
+    baseElo: 1100,
+    misconceptions: [
+      { id: "added_probabilities", label: "Added the two probabilities instead of multiplying them", rule: (ans) => ans },
+      { id: "ignored_second_event", label: "Reported the probability of only one of the events", rule: (ans) => ans }
+    ]
   }
 };
 
@@ -789,6 +860,13 @@ const STANDARDS = {
   factor_trinomial: "HSA-SSE.B.3a",
   unit_convert_metric: "5.MD.A.1",
   unit_convert_time: "4.MD.A.1",
+  unit_rate: "6.RP.A.2",
+  proportion_solve: "7.RP.A.2c",
+  integer_div: "7.NS.A.2b",
+  integer_ops: "7.NS.A.3",
+  mixed_number: "4.NF.B.3c",
+  fraction_compare: "4.NF.A.2",
+  compound_probability: "7.SP.C.8",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

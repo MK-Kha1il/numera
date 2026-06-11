@@ -44,7 +44,7 @@ test('strand categories band into their own template key ranges', () => {
   assert.strictEqual(P.normalizeLevelForGenerator('number_sense', 1), 6);
   assert.strictEqual(P.normalizeLevelForGenerator('number sense', 1), 6); // space form too
   assert.strictEqual(P.normalizeLevelForGenerator('statistics', 25), 11);
-  assert.strictEqual(P.normalizeLevelForGenerator('integers', 59), 8);
+  assert.strictEqual(P.normalizeLevelForGenerator('integers', 59), 11); // cap follows integer_ops
   // Milestones still pass through untouched for strands.
   assert.strictEqual(P.normalizeLevelForGenerator('fractions', 20), 20);
 });

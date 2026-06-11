@@ -47,6 +47,8 @@ const CONCEPT_TO_LEVEL = {
   integer_add:          { category: 'integers',      level: 5  },
   integer_sub:          { category: 'integers',      level: 6  },
   integer_mult:         { category: 'integers',      level: 8  },
+  integer_div:          { category: 'integers',      level: 9  },
+  integer_ops:          { category: 'integers',      level: 11 },
   // Decimals strand (audit #1.1 — decimal place value & operations; all math in scaled ints).
   decimal_add:          { category: 'decimals',      level: 3  },
   decimal_sub:          { category: 'decimals',      level: 5  },
@@ -56,7 +58,9 @@ const CONCEPT_TO_LEVEL = {
   // Fractions strand (audit #1.1 — fraction operations, the core middle-school topic).
   fraction_simplify:    { category: 'fractions',     level: 3  },
   fraction_add:         { category: 'fractions',     level: 4  },
+  mixed_number:         { category: 'fractions',     level: 5  },
   fraction_sub:         { category: 'fractions',     level: 6  },
+  fraction_compare:     { category: 'fractions',     level: 7  },
   fraction_mult:        { category: 'fractions',     level: 8  },
   fraction_div:         { category: 'fractions',     level: 9  },
   // Number-sense / pre-algebra strand (audit #1.1 — the band the ladder used to skip).
@@ -67,13 +71,16 @@ const CONCEPT_TO_LEVEL = {
   // Measurement depth (unit conversion — metric powers of ten vs. base-60 time).
   unit_convert_metric:  { category: 'number_sense',  level: 11 },
   unit_convert_time:    { category: 'number_sense',  level: 12 },
+  unit_rate:            { category: 'number_sense',  level: 13 },
   exponent_power:       { category: 'number_sense',  level: 14 },
+  proportion_solve:     { category: 'number_sense',  level: 15 },
   // Statistics strand (audit #1.1 — descriptive stats & basic probability).
   stat_mode:            { category: 'statistics',    level: 7  },
   stat_mean:            { category: 'statistics',    level: 8  },
   stat_median:          { category: 'statistics',    level: 9  },
   stat_range:           { category: 'statistics',    level: 11 },
   stat_probability:     { category: 'statistics',    level: 13 },
+  compound_probability: { category: 'statistics',    level: 14 },
   // Algebraic-expressions strand (audit #1.1 — the bridge into algebra).
   eval_expression:      { category: 'expressions',   level: 11 },
   eval_two_var:         { category: 'expressions',   level: 12 },

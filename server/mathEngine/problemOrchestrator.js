@@ -74,7 +74,15 @@ const TYPE_TO_CONCEPT = {
   linear_system:            'linear_system',
   factor_trinomial:         'factor_trinomial',
   unit_convert_metric:      'unit_convert_metric',
-  unit_convert_time:        'unit_convert_time'
+  unit_convert_time:        'unit_convert_time',
+  // Proportional / integers / fractions / probability depth.
+  unit_rate:                'unit_rate',
+  proportion_solve:         'proportion_solve',
+  integer_div:              'integer_div',
+  integer_ops:              'integer_ops',
+  mixed_number:             'mixed_number',
+  fraction_compare:         'fraction_compare',
+  compound_probability:     'compound_probability'
 };
 
 // Resolve a concept from a template type string
@@ -263,11 +271,11 @@ function getCategoryConceptIds(category, level) {
     // targeting silently stops working for the strand.
     geometry:      ['geo_perimeter_rect', 'geo_area_rect', 'geo_area_triangle', 'geo_angles_triangle', 'geo_circle_area',
                     'geo_volume_rect', 'geo_surface_area_rect', 'geo_circumference', 'geo_volume_cylinder'],
-    integers:      ['absolute_value', 'integer_add', 'integer_sub', 'integer_mult'],
+    integers:      ['absolute_value', 'integer_add', 'integer_sub', 'integer_mult', 'integer_div', 'integer_ops'],
     decimals:      ['decimal_add', 'decimal_sub', 'decimal_mult', 'decimal_round', 'decimal_div'],
-    fractions:     ['fraction_simplify', 'fraction_add', 'fraction_sub', 'fraction_mult', 'fraction_div'],
-    number_sense:  ['percentage_of', 'fraction_of', 'ratio_solve', 'percent_change', 'unit_convert_metric', 'unit_convert_time', 'exponent_power'],
-    statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'stat_probability'],
+    fractions:     ['fraction_simplify', 'fraction_add', 'mixed_number', 'fraction_sub', 'fraction_compare', 'fraction_mult', 'fraction_div'],
+    number_sense:  ['percentage_of', 'fraction_of', 'ratio_solve', 'percent_change', 'unit_convert_metric', 'unit_convert_time', 'unit_rate', 'exponent_power', 'proportion_solve'],
+    statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'stat_probability', 'compound_probability'],
     expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'distribute', 'foil_binomials', 'square_binomial', 'factor_trinomial'],
     powers:        ['square_root', 'exponent_product_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation'],
     graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula'],

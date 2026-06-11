@@ -1438,6 +1438,33 @@ templates.number_sense = {
       type: "unit_convert_time"
     };
   },
+  // Unit rates: price per item / speed per hour.
+  13: (_diffFactor, idx) => {
+    if (idx % 2 === 0) {
+      const u = 3 + (idx % 4);            // 3..6 per item
+      const n = u + 1 + (idx % 3);        // count > unit price keeps every option distinct
+      const total = u * n;
+      return {
+        question: `$${n}$ identical notebooks cost $\\$${total}$ in total. What is the price per notebook?`,
+        answer: u,
+        distractors: [total - n, n, total * n], // subtracted; reported the count; multiplied
+        explanation: `A unit rate divides the total by the count: $\\$${total} \\div ${n} = \\$${u}$ each. Check by re-multiplying: $${n} \\times ${u} = ${total}$ — 'per' always signals a division.`,
+        type: "unit_rate",
+        total, count: n
+      };
+    }
+    const s = 20 + 10 * (idx % 5);        // 20..60 km/h
+    const t = 2 + (idx % 3);              // 2..4 h
+    const dkm = s * t;
+    return {
+      question: `A train covers $${dkm}$ km in $${t}$ hours at a steady speed. How fast is it going, in km/h?`,
+      answer: s,
+      distractors: [dkm - t, dkm + t, dkm * t], // subtracted; added; multiplied
+      explanation: `Speed is the distance covered in ONE hour: $${dkm} \\div ${t} = ${s}$ km/h. Subtracting mixes units (km minus hours measures nothing).`,
+      type: "unit_rate",
+      total: dkm, count: t
+    };
+  },
   // Evaluate b^e.
   14: (_diffFactor, idx) => {
     const b = [2, 3, 4, 5][idx % 4];
@@ -1449,6 +1476,20 @@ templates.number_sense = {
       distractors: [b * e, Math.pow(b, e - 1), b + e], // multiplied instead of powered; off-by-one exponent; added
       explanation: `$${b}^{${e}}$ means $${b}$ multiplied by itself $${e}$ times: $${b}^{${e}} = ${answer}$.`,
       type: "exponent_power"
+    };
+  },
+  // Solve a proportion: the ratio scales, it never adds.
+  15: (_diffFactor, idx) => {
+    const a = 2 + (idx % 4);             // 2..5
+    const b = a + 1 + (idx % 3);         // > a, so the additive trap never equals the answer
+    const k = 2 + ((idx + 1) % 4);       // scale factor 2..5
+    const big = b * k, x = a * k;
+    return {
+      question: `Solve the proportion for $x$: $\\frac{${a}}{${b}} = \\frac{x}{${big}}$`,
+      answer: x,
+      distractors: [a + (big - b), a * b, x + a], // kept the DIFFERENCE equal (additive trap); multiplied the wrong pair; overshot a step
+      explanation: `The denominator grew by a factor of $${k}$ (because $${b} \\times ${k} = ${big}$), so the numerator must grow by the SAME factor: $x = ${a} \\times ${k} = ${x}$. Adding the gap ($+${big - b}$, giving $${a + big - b}$) keeps the difference equal — proportions keep the RATIO equal, and those are different promises.`,
+      type: "proportion_solve"
     };
   }
 };
@@ -1527,6 +1568,18 @@ templates.statistics = {
       distractors: [R, 100 - pct, total - R], // the count; the complement; the blue count
       explanation: `Probability of red = ${R} out of ${total} = ${R}/${total} = ${pct}%.`,
       type: "stat_probability"
+    };
+  },
+  // Compound probability: independent events MULTIPLY. Answers as fractions.
+  14: (_diffFactor, idx) => {
+    const a = 2 + (idx % 3);   // 2..4 sections on the first spinner
+    const b = 4 + (idx % 3);   // 4..6 on the second
+    return {
+      question: `One spinner has $${a}$ equal sections (one is red); another has $${b}$ equal sections (one is blue). You spin both. What is the probability of landing on red AND blue?`,
+      answer: `1/${a * b}`,
+      distractors: [`1/${a + b}`, `${a + b}/${a * b}`, `1/${b}`], // added the denominators; added the probabilities; ignored the first spinner
+      explanation: `The spins don't influence each other, so the probabilities MULTIPLY: $\\frac{1}{${a}} \\times \\frac{1}{${b}} = \\frac{1}{${a * b}}$ — of the $${a * b}$ equally likely outcome PAIRS, exactly one is (red, blue). Adding probabilities is only for either-or questions about a single draw, never for both-at-once.`,
+      type: "compound_probability"
     };
   }
 };
@@ -1724,6 +1777,35 @@ templates.integers = {
       distractors: [-(a * b), a + b, -(a + b)], // wrong sign; added instead; flipped sum
       explanation: `Like signs give a positive product, unlike signs a negative one: $${a} \\times ${wrap(b)} = ${answer}$.`,
       type: "integer_mult"
+    };
+  },
+  // Dividing signed integers (sign rules; quotients always exact).
+  9: (_diffFactor, idx) => {
+    const q = 2 + (idx % 5);              // 2..6
+    const d = 2 + ((idx + 1) % 4);        // 2..5
+    const [s1, s2] = [[-1, 1], [-1, -1], [1, -1]][idx % 3];
+    const a = s1 * q * d, b = s2 * d;
+    const answer = a / b;                  // ±q
+    return {
+      question: `Calculate: $${a} \\div ${wrap(b)}$`,
+      answer,
+      distractors: [-answer, a * b, answer + (answer > 0 ? 1 : -1)], // sign slip; multiplied instead; magnitude slip
+      explanation: `Divide the magnitudes ($${q * d} \\div ${d} = ${q}$), then apply the SAME sign rule as multiplication — like signs positive, unlike signs negative: $${answer}$.`,
+      type: "integer_div"
+    };
+  },
+  // Order of operations with negatives: multiplication binds before addition.
+  11: (_diffFactor, idx) => {
+    const a = 2 + (idx % 5);             // 2..6
+    const b = 2 + ((idx + 1) % 4);       // 2..5
+    const c = 2 + ((idx + 2) % 3);       // 2..4
+    const answer = -a - b * c;
+    return {
+      question: `Calculate: $-${a} + ${b} \\times (-${c})$`,
+      answer,
+      distractors: [(-a + b) * -c, -a + b * c, a + b * c], // added before multiplying; treated -c as c; dropped both signs
+      explanation: `Multiplication first: $${b} \\times (-${c}) = -${b * c}$. Then combine: $-${a} + (-${b * c}) = ${answer}$. Working left to right computes $(-${a} + ${b}) \\times (-${c})$ — a different expression entirely.`,
+      type: "integer_ops"
     };
   }
 };
@@ -1923,6 +2005,29 @@ templates.fractions = {
       type: "fraction_add"
     };
   },
+  // Mixed numbers ↔ improper fractions. Odd denominators keep the complement slip distinct.
+  5: (_diffFactor, idx) => {
+    const d = [3, 5, 7][idx % 3];
+    const w = 2 + (idx % 3);             // 2..4
+    const n = 1 + (idx % (d - 1));       // 1..d-1, always a proper part
+    const improper = w * d + n;
+    if (idx % 2 === 0) {
+      return {
+        question: `Write $${w}\\frac{${n}}{${d}}$ as an improper fraction.`,
+        answer: `${improper}/${d}`,
+        distractors: [`${w + n}/${d}`, `${w * d}/${d}`, `${w}${n}/${d}`], // added w to the numerator; dropped the extra part; glued the digits
+        explanation: `The whole number hides $${w} \\times ${d} = ${w * d}$ ${d}ths; add the $${n}$ extra: $\\frac{${improper}}{${d}}$. The whole number must be MULTIPLIED by the denominator first — never just added or glued onto the numerator.`,
+        type: "mixed_number"
+      };
+    }
+    return {
+      question: `Write $\\frac{${improper}}{${d}}$ as a mixed number.`,
+      answer: `${w} ${n}/${d}`,
+      distractors: [`${w + 1} ${n}/${d}`, `${w} ${d - n}/${d}`, `${n} ${w}/${d}`], // whole part off by one; complement slip; swapped the parts
+      explanation: `$${d}$ fits into $${improper}$ exactly $${w}$ times ($${w * d}$), with $${improper} - ${w * d} = ${n}$ left over: $${w}\\frac{${n}}{${d}}$. The remainder — not its complement — becomes the fraction part.`,
+      type: "mixed_number"
+    };
+  },
   // Subtract fractions with unlike denominators (kept positive — signs are the integers strand).
   6: (_diffFactor, idx) => {
     let b = FRACTION_DENS[idx % FRACTION_DENS.length];
@@ -1946,6 +2051,19 @@ templates.fractions = {
       ]),
       explanation: `Rewrite over the common denominator $${cd}$: $\\frac{${a * d}}{${cd}} - \\frac{${c * b}}{${cd}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
       type: "fraction_sub"
+    };
+  },
+  // Which fraction is largest? A same-gap family n/(n+g): the piece missing from 1 shrinks as n grows.
+  7: (_diffFactor, idx) => {
+    const g = 1 + (idx % 3);             // gap 1..3
+    const m = 1 + (idx % 4);             // smallest numerator 1..4
+    const fr = (n) => `${n}/${n + g}`;
+    return {
+      question: `Which of these fractions is the largest? $\\frac{${m}}{${m + g}}, \\;\\; \\frac{${m + 1}}{${m + 1 + g}}, \\;\\; \\frac{${m + 2}}{${m + 2 + g}}, \\;\\; \\frac{${m + 3}}{${m + 3 + g}}$`,
+      answer: fr(m + 3),
+      distractors: [fr(m), fr(m + 1), fr(m + 2)], // 'smallest numbers' trap and the two middles
+      explanation: `Every one of these is exactly $${g}$ part short of a whole: $\\frac{n}{n+${g}} = 1 - \\frac{${g}}{n+${g}}$. The missing piece $\\frac{${g}}{n+${g}}$ SHRINKS as $n$ grows, so $\\frac{${m + 3}}{${m + 3 + g}}$ sits closest to $1$. Don't judge a fraction by the size of its numbers — judge the part against the whole.`,
+      type: "fraction_compare"
     };
   },
   // Multiply fractions (multiply across, then reduce).
