@@ -83,6 +83,8 @@ const CONCEPT_TO_LEVEL = {
   percent_discount:     { category: 'number_sense',  level: 16 },
   simple_interest:      { category: 'number_sense',  level: 17 },
   multi_step_word:      { category: 'number_sense',  level: 18 },
+  percent_markup:       { category: 'number_sense',  level: 19 },
+  percent_error:        { category: 'number_sense',  level: 21 },
   // Statistics strand (audit #1.1 — descriptive stats & basic probability).
   stat_mode:            { category: 'statistics',    level: 7  },
   stat_mean:            { category: 'statistics',    level: 8  },
@@ -91,6 +93,7 @@ const CONCEPT_TO_LEVEL = {
   mean_missing_value:   { category: 'statistics',    level: 12 },
   stat_probability:     { category: 'statistics',    level: 13 },
   compound_probability: { category: 'statistics',    level: 14 },
+  probability_complement: { category: 'statistics',  level: 15 },
   // Algebraic-expressions strand (audit #1.1 — the bridge into algebra).
   eval_expression:      { category: 'expressions',   level: 11 },
   eval_two_var:         { category: 'expressions',   level: 12 },
@@ -116,6 +119,9 @@ const CONCEPT_TO_LEVEL = {
   slope_intercept_id:     { category: 'graphing',    level: 11 },
   midpoint:               { category: 'graphing',    level: 13 },
   distance_formula:       { category: 'graphing',    level: 15 },
+  // Coordinate transformations (reflections & translations on the plane).
+  coord_reflect:          { category: 'graphing',    level: 16 },
+  coord_translate:        { category: 'graphing',    level: 17 },
   // Inequalities strand (order reasoning — the 6.EE/7.EE band). Keys skip 10 (boss-routed).
   inequality_one_step_add:  { category: 'inequalities', level: 7  },
   inequality_one_step_mult: { category: 'inequalities', level: 9  },
@@ -142,8 +148,12 @@ const CONCEPT_TO_LEVEL = {
   binomial:             { category: 'combinatorics', level: 30 },
   derivative:           { category: 'calculus',      level: 31 },
   integral:             { category: 'calculus',      level: 35 },
+  // Promoted from a variety template: the level-38 generator already produced limits.
+  limit:                { category: 'calculus',      level: 38 },
   gcd_lcm:              { category: 'number_theory', level: 41 },
   modular_arithmetic:   { category: 'number_theory', level: 45 },
+  // Promoted from a variety template: the level-47 generator already counted divisors.
+  divisor_count:        { category: 'number_theory', level: 47 },
   totient:              { category: 'number_theory', level: 49 }
 };
 

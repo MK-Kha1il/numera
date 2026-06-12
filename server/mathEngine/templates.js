@@ -1594,6 +1594,35 @@ templates.number_sense = {
       explanation: `First the spending: $${k} \\times ${q} = \\$${spent}$. Then what remains: $${T} - ${spent} = \\$${T - spent}$. Multi-step problems hide the real question behind an intermediate number — finish the chain.`,
       type: "multi_step_word"
     };
+  },
+  // Markup: add the increase to the original. pct avoids 50 (which makes up == P - up).
+  19: (_diffFactor, idx) => {
+    const P = [40, 50, 80, 120][idx % 4];
+    const pct = [10, 25, 30, 40][(idx + 1) % 4];
+    const up = (P * pct) / 100;
+    return {
+      question: `A store buys a lamp for $\\$${P}$ and marks it up by $${pct}\\%$. What is the selling price?`,
+      answer: P + up,
+      distractors: [up, P - up, P + pct], // gave the markup; subtracted it; added the percent as dollars
+      explanation: `A markup ADDS to the cost: the increase is $${pct}\\%$ of $\\$${P} = \\$${up}$, so the price becomes $${P} + ${up} = \\$${P + up}$. (Keeping $${100 + pct}\\%$ of the cost in one step: $${P} \\times ${(100 + pct) / 100} = \\$${P + up}$.) A discount would subtract — a markup climbs.`,
+      type: "percent_markup"
+    };
+  },
+  // Percent error: |measured - true| / TRUE × 100. Always an OVER-measurement so the
+  // divide-by-measured distractor rounds strictly below the answer (no collision); errors
+  // are large enough that the rounded wrong value never lands on the right one.
+  21: (_diffFactor, idx) => {
+    const T = [50, 80, 200, 40][idx % 4];      // true value
+    const errPct = [10, 20, 25, 40][idx % 4];  // intended whole-percent error
+    const diff = (T * errPct) / 100;
+    const measured = T + diff;
+    return {
+      question: `A true value is $${T}$, but an experiment measured $${measured}$. What is the percent error?`,
+      answer: errPct,
+      distractors: [Math.round((diff / measured) * 100), diff, errPct + 5], // divided by measured; raw difference; near miss
+      explanation: `Percent error scales the miss against the TRUE value: $\\frac{|${measured} - ${T}|}{${T}} \\times 100 = \\frac{${diff}}{${T}} \\times 100 = ${errPct}\\%$. Dividing by the measured value ($${measured}$) answers a subtly different — and wrong — question: the accepted truth is the yardstick, not your own reading.`,
+      type: "percent_error"
+    };
   }
 };
 
@@ -1698,6 +1727,19 @@ templates.statistics = {
       distractors: [`1/${a + b}`, `${a + b}/${a * b}`, `1/${b}`], // added the denominators; added the probabilities; ignored the first spinner
       explanation: `The spins don't influence each other, so the probabilities MULTIPLY: $\\frac{1}{${a}} \\times \\frac{1}{${b}} = \\frac{1}{${a * b}}$ — of the $${a * b}$ equally likely outcome PAIRS, exactly one is (red, blue). Adding probabilities is only for either-or questions about a single draw, never for both-at-once.`,
       type: "compound_probability"
+    };
+  },
+  // The complement rule: P(not A) = 1 - P(A), as a percent.
+  15: (_diffFactor, idx) => {
+    const total = 20;
+    const fav = [3, 7, 9, 11, 13][idx % 5];   // favorable count; pct never 50, never equals 100-pct
+    const pct = (fav * 100) / total;
+    return {
+      question: `A bag holds $20$ marbles, $${fav}$ of them red. What is the probability of drawing a marble that is NOT red, as a percent?`,
+      answer: 100 - pct,
+      distractors: [pct, fav, total - fav], // gave P(red); the red count; the non-red count (not a percent)
+      explanation: `Every marble is red OR not red, and the two chances fill the whole $100\\%$: $P(\\text{red}) = \\frac{${fav}}{20} = ${pct}\\%$, so $P(\\text{not red}) = 100\\% - ${pct}\\% = ${100 - pct}\\%$. The complement is what's LEFT of certainty — subtract from $100$, not from the count.`,
+      type: "probability_complement"
     };
   }
 };
@@ -2543,6 +2585,42 @@ templates.graphing = {
       explanation: `The horizontal leg is $${x2} - ${x1} = ${a}$ and the vertical leg is $${y2} - ${y1} = ${b}$; the distance is the hypotenuse: $\\sqrt{${a}^2 + ${b}^2} = \\sqrt{${a * a} + ${b * b}} = \\sqrt{${c * c}} = ${c}$. Legs combine as SQUARES under a root — adding them directly measures the walk around the corner, not the straight line.`,
       type: "distance_formula",
       legA: a, legB: b
+    };
+  },
+  // Reflect a point over an axis: one coordinate flips sign, the other is untouched.
+  16: (_diffFactor, idx) => {
+    const x = 2 + (idx % 6);              // 2..7
+    const yRaw = 2 + ((idx + 2) % 6);     // 2..7
+    const y = yRaw === x ? yRaw + 1 : yRaw; // keep x != y so the 'swapped' distractor stays distinct
+    if (idx % 2 === 0) {
+      return {
+        question: `Reflect the point $(${x}, ${y})$ over the x-axis. What are its new coordinates?`,
+        answer: `(${x}, -${y})`,
+        distractors: [`(-${x}, ${y})`, `(-${x}, -${y})`, `(${y}, ${x})`], // flipped x instead; negated both; swapped
+        explanation: `The x-axis is the floor; reflecting across it flips only the HEIGHT: $y \\to -y$, while $x$ (the left-right position) stays put. $(${x}, ${y}) \\to (${x}, -${y})$. The axis you reflect over is the one whose coordinate holds STILL.`,
+        type: "coord_reflect"
+      };
+    }
+    return {
+      question: `Reflect the point $(${x}, ${y})$ over the y-axis. What are its new coordinates?`,
+      answer: `(-${x}, ${y})`,
+      distractors: [`(${x}, -${y})`, `(-${x}, -${y})`, `(${y}, ${x})`], // flipped y instead; negated both; swapped
+      explanation: `The y-axis is the vertical mirror; reflecting across it flips only the left-right position: $x \\to -x$, while the height $y$ stays. $(${x}, ${y}) \\to (-${x}, ${y})$. Mirror over an axis, and that axis's own coordinate never moves.`,
+      type: "coord_reflect"
+    };
+  },
+  // Translate a point: horizontal adds to x, vertical adds to y — independently.
+  17: (_diffFactor, idx) => {
+    const x = 2 + (idx % 5);              // 2..6
+    const y = 3 + (idx % 4);              // 3..6
+    const dx = 2 + (idx % 4);             // 2..5
+    const dy = 3 + ((idx + 1) % 3);       // 3..5 (dx != dy keeps the swapped distractor distinct)
+    return {
+      question: `Translate the point $(${x}, ${y})$ right $${dx}$ and up $${dy}$. What are its new coordinates?`,
+      answer: `(${x + dx}, ${y + dy})`,
+      distractors: [`(${x + dy}, ${y + dx})`, `(${x - dx}, ${y - dy})`, `(${x}, ${y + dx + dy})`], // swapped the shifts; moved the wrong way; piled both onto y
+      explanation: `Horizontal and vertical moves are independent: 'right $${dx}$' adds to the x-coordinate ($${x} + ${dx} = ${x + dx}$), 'up $${dy}$' adds to the y-coordinate ($${y} + ${dy} = ${y + dy}$). Each shift travels on its OWN axis — $(${x + dx}, ${y + dy})$.`,
+      type: "coord_translate"
     };
   }
 };

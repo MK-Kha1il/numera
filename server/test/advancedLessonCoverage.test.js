@@ -16,7 +16,9 @@ const UPGRADED = [
   'permutations', 'combinations', 'derivative',
   'integral', 'gcd_lcm', 'modular_arithmetic', 'totient',
   // Algebra promotions (variety templates 14/16 raised to first-class concepts).
-  'linear_variable_both_sides', 'linear_system'
+  'linear_variable_both_sides', 'linear_system',
+  // Advanced promotions (calculus limit, number-theory divisor count).
+  'limit', 'divisor_count'
 ];
 
 // Same control-char fingerprint guard as the other content gates (tab/newline/CR are legitimate).

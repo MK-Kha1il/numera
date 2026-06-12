@@ -52,6 +52,9 @@ const TYPE_TO_CONCEPT = {
   gcd_lcm:              'gcd_lcm',
   modular_arithmetic:   'modular_arithmetic',
   totient:              'totient',
+  // Advanced promotions: the template type strings differ from their conceptIds.
+  limit:                'limit',
+  divisors:             'divisor_count',
   // Graphing strand — template types equal conceptIds; mapping them routes the Socratic
   // engine to the concept-specific misconception rules instead of the generic fallback.
   point_on_line:        'point_on_line',
@@ -103,7 +106,13 @@ const TYPE_TO_CONCEPT = {
   function_table:           'function_table',
   rate_of_change:           'rate_of_change',
   function_initial:         'function_initial',
-  function_solve:           'function_solve'
+  function_solve:           'function_solve',
+  // Capstone depth (wave 7).
+  probability_complement:   'probability_complement',
+  coord_reflect:            'coord_reflect',
+  coord_translate:          'coord_translate',
+  percent_markup:           'percent_markup',
+  percent_error:            'percent_error'
 };
 
 // Resolve a concept from a template type string
@@ -282,8 +291,8 @@ function getCategoryConceptIds(category, level) {
     arithmetic:    ['arithmetic_add', 'arithmetic_sub', 'arithmetic_mult', 'arithmetic_div', 'pemdas'],
     algebra:       ['linear_one_step', 'linear_two_step', 'linear_variable_both_sides', 'quadratic', 'linear_system', 'matrix_trace', 'matrix_determinant'],
     combinatorics: ['pigeonhole', 'permutations', 'combinations', 'binomial'],
-    calculus:      ['derivative', 'integral'],
-    number_theory: ['gcd_lcm', 'modular_arithmetic', 'totient'],
+    calculus:      ['derivative', 'integral', 'limit'],
+    number_theory: ['gcd_lcm', 'modular_arithmetic', 'totient', 'divisor_count'],
     mental:        ['arithmetic_add', 'arithmetic_sub', 'arithmetic_mult'],
     milestone:     ['pythagorean', 'binomial', 'integral', 'totient'],
     // Curriculum strands (audit #1.1). Must stay in sync with CONCEPT_TO_LEVEL in
@@ -296,11 +305,11 @@ function getCategoryConceptIds(category, level) {
     decimals:      ['decimal_add', 'percent_decimal_convert', 'decimal_sub', 'decimal_compare', 'decimal_mult', 'fraction_decimal_convert', 'decimal_round', 'decimal_div'],
     fractions:     ['fraction_simplify', 'fraction_add', 'mixed_number', 'fraction_sub', 'fraction_compare', 'fraction_mult', 'fraction_div'],
     number_sense:  ['percentage_of', 'fraction_of', 'ratio_solve', 'percent_change', 'unit_convert_metric', 'unit_convert_time', 'unit_rate', 'exponent_power', 'proportion_solve',
-                    'percent_discount', 'simple_interest', 'multi_step_word'],
-    statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'mean_missing_value', 'stat_probability', 'compound_probability'],
+                    'percent_discount', 'simple_interest', 'multi_step_word', 'percent_markup', 'percent_error'],
+    statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'mean_missing_value', 'stat_probability', 'compound_probability', 'probability_complement'],
     expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'translate_expression', 'distribute', 'foil_binomials', 'square_binomial', 'factor_trinomial'],
     powers:        ['square_root', 'cube_root', 'exponent_product_rule', 'exponent_power_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation'],
-    graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula'],
+    graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula', 'coord_reflect', 'coord_translate'],
     inequalities:  ['inequality_one_step_add', 'inequality_one_step_mult', 'inequality_flip_negative', 'inequality_two_step', 'inequality_compound'],
     functions:     ['function_evaluate', 'function_table', 'rate_of_change', 'function_initial', 'function_solve']
   };

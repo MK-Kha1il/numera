@@ -955,6 +955,79 @@ const concepts = {
       { id: "plugged_in_the_target", label: "Computed f(T) instead of solving f(x) = T", rule: (ans, p) => p.a * p.T + p.b },
       { id: "forgot_to_divide", label: "Subtracted the constant but never divided by the coefficient", rule: (ans, p) => p.T - p.b }
     ]
+  },
+
+  // ---- Statistics depth III (the complement rule) ----
+  "probability_complement": {
+    name: "Complement of an Event",
+    prereqs: ["stat_probability"],
+    baseElo: 1020,
+    misconceptions: [
+      { id: "used_event_itself", label: "Reported the event's own probability instead of its complement", rule: (ans) => ans },
+      { id: "wrong_whole", label: "Subtracted from the wrong total", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Coordinate geometry (transformations on the plane) ----
+  "coord_reflect": {
+    name: "Reflecting a Point",
+    prereqs: ["point_on_line", "integer_compare"],
+    baseElo: 940,
+    misconceptions: [
+      { id: "wrong_coordinate", label: "Flipped the coordinate the axis leaves unchanged", rule: (ans) => ans },
+      { id: "negated_both", label: "Negated both coordinates instead of just one", rule: (ans) => ans }
+    ]
+  },
+  "coord_translate": {
+    name: "Translating a Point",
+    prereqs: ["coord_reflect", "integer_add"],
+    baseElo: 980,
+    misconceptions: [
+      { id: "wrong_axis", label: "Applied the horizontal shift to the vertical coordinate", rule: (ans) => ans },
+      { id: "wrong_sign", label: "Moved the point the opposite direction", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Percent applications II (markup, percent error) ----
+  "percent_markup": {
+    name: "Markup & Percent Increase",
+    prereqs: ["percent_discount"],
+    baseElo: 960,
+    misconceptions: [
+      { id: "gave_the_markup", label: "Reported the increase instead of the new total", rule: (ans) => ans },
+      { id: "used_decrease", label: "Subtracted the markup instead of adding it", rule: (ans) => ans }
+    ]
+  },
+  "percent_error": {
+    name: "Percent Error",
+    prereqs: ["percent_markup", "percent_change"],
+    baseElo: 1080,
+    misconceptions: [
+      { id: "divided_by_measured", label: "Divided by the measured value instead of the true value", rule: (ans) => ans },
+      { id: "forgot_to_scale", label: "Reported the raw difference, never converting to a percent", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Calculus promotion (limits of rational sequences) ----
+  "limit": {
+    name: "Limits at Infinity",
+    prereqs: ["derivative"],
+    baseElo: 1500,
+    misconceptions: [
+      { id: "ignored_lower_degree", label: "Let a lower-degree term survive the limit", rule: (ans) => ans },
+      { id: "read_constant_term", label: "Read off a constant instead of the ratio of leading coefficients", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Number-theory promotion (counting divisors) ----
+  "divisor_count": {
+    name: "Counting Divisors",
+    prereqs: ["gcd_lcm"],
+    baseElo: 1350,
+    misconceptions: [
+      { id: "listed_primes_only", label: "Counted only the prime factors, not all divisors", rule: (ans) => ans },
+      { id: "forgot_exponent_plus_one", label: "Multiplied the exponents instead of (exponent + 1)", rule: (ans) => ans }
+    ]
   }
 };
 
@@ -1066,6 +1139,13 @@ const STANDARDS = {
   rate_of_change: "8.F.B.4",
   function_initial: "8.F.B.4",
   function_solve: "HSF-IF.A.2",
+  probability_complement: "7.SP.C.5",
+  coord_reflect: "8.G.A.3",
+  coord_translate: "8.G.A.3",
+  percent_markup: "7.RP.A.3",
+  percent_error: "7.RP.A.3",
+  limit: "Calculus — Limits at Infinity (AP/IB)",
+  divisor_count: "Number Theory — Divisor Function",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

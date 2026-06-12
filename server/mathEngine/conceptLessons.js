@@ -2694,6 +2694,214 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // STATISTICS DEPTH III (the complement rule).
+  // ===========================================================================
+  probability_complement: {
+    title: "Complement of an Event",
+    formula: "P(\\text{not } A) = 1 - P(A)",
+    oneLineSummary: "The chance an event does NOT happen is whatever's left of 100% after the event's own chance — certainty, minus the part you already counted.",
+    intuitionHook: "If there's a $30\\%$ chance of rain, the chance of NO rain is the other $70\\%$ — you didn't recount the clouds, you just took what was left. Every event splits the future into 'happens' and 'doesn't', and the two slices always fill the whole pie.",
+    whatItIs: "The complement of an event is everything OTHER than that event. Its probability is $1$ (or $100\\%$) minus the event's probability, because the event and its complement together cover every possible outcome exactly once.",
+    whyItWorks: "Something must happen, and the total probability of all outcomes is always $1$ — a certainty. An event $A$ and its complement 'not $A$' partition that certainty with no overlap and no gap (every outcome is in exactly one), so their probabilities sum to $1$: $P(\\text{not }A) = 1 - P(A)$. The power is in the shortcut: counting the few ways to FAIL is often far easier than the many ways to SUCCEED — 'at least one' problems almost always go through the complement. The trap is subtracting from the wrong whole (the count instead of $100\\%$): the complement lives in probability space, where the total is always one whole.",
+    whenToUse: "'At least one' questions, 'not', safety/failure rates, and any time the complement is easier to count than the event itself — a cornerstone problem-solving move.",
+    representations: [
+      { kind: "pie", label: "Two slices fill the pie", body: "$P(\\text{red}) = 35\\%$ → $P(\\text{not red}) = 65\\%$: the slices complete the whole $100\\%$ disk." },
+      { kind: "shortcut", label: "Count the failures", body: "P(at least one six in many rolls) is a nightmare directly; P(no six) is one easy product — subtract it from 1." },
+      { kind: "certainty", label: "Subtract from the whole", body: "Total probability $= 1$. The complement is $1$ minus the event — never the raw count minus the event." }
+    ],
+    commonMistakes: [
+      { label: "Reporting the event itself", why: "Giving $P(\\text{red})$ when the question asked for $P(\\text{not red})$ — answering the opposite event.", fix: "Underline 'not'. The complement is what's LEFT: $100\\%$ minus the event's chance." },
+      { label: "Subtracting from the wrong total", why: "Computing 'count of non-red' or subtracting from the marble count instead of from $100\\%$.", fix: "The complement is a PROBABILITY, so subtract from $1$ (or $100\\%$): $P(\\text{not }A) = 100\\% - P(A)$." }
+    ],
+    connections: [
+      { concept: "stat_probability", note: "The event's own probability is the number you subtract from 1." },
+      { concept: "compound_probability", note: "'At least one' problems pair the complement rule with the product rule." },
+      { concept: "percent_change", note: "100% minus a percent is the same move as keeping what's left after a discount." }
+    ],
+    examples: [
+      { question: "A spinner lands on blue $40\\%$ of the time. What percent of spins are NOT blue?", answer: "60", explanation: "$100\\% - 40\\% = 60\\%$." },
+      { question: "A bag of $20$ marbles has $9$ green. What is the probability (percent) of drawing a NON-green marble?", answer: "55", explanation: "$P(\\text{green}) = \\frac{9}{20} = 45\\%$, so $P(\\text{not green}) = 55\\%$." }
+    ]
+  },
+
+  // ===========================================================================
+  // COORDINATE GEOMETRY (transformations on the plane).
+  // ===========================================================================
+  coord_reflect: {
+    title: "Reflecting a Point",
+    formula: "\\text{over x-axis: } (x, y) \\to (x, -y); \\quad \\text{over y-axis: } (x, y) \\to (-x, y)",
+    oneLineSummary: "Reflecting a point across an axis flips the sign of ONE coordinate — the one measured perpendicular to that axis — and leaves the other alone.",
+    intuitionHook: "Stand a mirror flat on the x-axis. Your reflection has the same left-right position but hangs the same distance BELOW — so $(3, 4)$ becomes $(3, -4)$. The mirror line itself doesn't move; only the across-the-mirror distance flips. Which coordinate changes is decided by which way you're looking into the glass.",
+    whatItIs: "Reflecting a point over a coordinate axis produces its mirror image. Over the x-axis, the y-coordinate negates ($(x,y) \\to (x,-y)$); over the y-axis, the x-coordinate negates ($(x,y) \\to (-x,y)$). The coordinate along the mirror line is unchanged.",
+    whyItWorks: "A reflection keeps every point the same distance from the mirror, but on the opposite side. The x-axis is a horizontal mirror, so it flips HEIGHT (the y-value's sign) while left-right position (x) is unaffected — you slide straight down through the axis to a point equally far below. The rule of thumb: the axis you reflect over names the coordinate that STAYS (reflect over the x-axis → x stays). Negating BOTH coordinates is a different transformation (a $180°$ rotation), and swapping them is reflection over the diagonal line $y=x$ — neither is a flip over an axis.",
+    whenToUse: "Symmetry in figures and graphs, computer graphics and game sprites, folding/origami geometry, even/odd function behavior, and as a building block of all rigid transformations.",
+    representations: [
+      { kind: "mirror", label: "Flat mirror on the axis", body: "Over the x-axis: $(3, 4) \\to (3, -4)$ — same column, mirrored height. The axis is the waterline." },
+      { kind: "rule", label: "The axis names what stays", body: "Reflect over x-axis → x unchanged, y flips. Over y-axis → y unchanged, x flips." },
+      { kind: "distance", label: "Equal and opposite", body: "$4$ above the x-axis reflects to $4$ below: same distance, flipped sign. The mirror line itself holds still." }
+    ],
+    commonMistakes: [
+      { label: "Flipping the wrong coordinate", why: "Reflecting $(3,4)$ over the x-axis to $(-3, 4)$ — negating x when the horizontal mirror flips height.", fix: "The axis you reflect over keeps its OWN coordinate: x-axis reflection leaves x alone. Picture sliding straight toward and through the axis." },
+      { label: "Negating both", why: "Sending $(3,4) \\to (-3,-4)$ — that's a $180°$ rotation, not a single reflection.", fix: "A reflection over one axis changes exactly ONE sign. Two sign changes means two reflections (or a rotation)." }
+    ],
+    connections: [
+      { concept: "integer_compare", note: "Negating a coordinate is sign reasoning on the number line, in two dimensions." },
+      { concept: "coord_translate", note: "The other basic rigid motion — sliding instead of flipping." },
+      { concept: "point_on_line", note: "Reflections act on the same (x, y) coordinates you plot and evaluate." }
+    ],
+    examples: [
+      { question: "Reflect $(5, 2)$ over the x-axis.", answer: "(5, -2)", explanation: "x-axis flips height: y negates, x stays — $(5, -2)$." },
+      { question: "Reflect $(5, 2)$ over the y-axis.", answer: "(-5, 2)", explanation: "y-axis flips left-right: x negates, y stays — $(-5, 2)$." }
+    ]
+  },
+
+  coord_translate: {
+    title: "Translating a Point",
+    formula: "(x, y) \\xrightarrow{\\text{right } a,\\ \\text{up } b} (x + a, y + b)",
+    oneLineSummary: "Translating slides a point without turning or flipping it — add the horizontal move to x and the vertical move to y, each on its own axis.",
+    intuitionHook: "A chess piece moves '$2$ right, $3$ up' from its square: the column count rises by $2$, the row count by $3$, and the piece never rotates. $(4, 1)$ becomes $(6, 4)$. A translation is the simplest motion there is — a pure slide, with horizontal and vertical bookkept separately.",
+    whatItIs: "A translation shifts every point by the same amount: right/left changes the x-coordinate, up/down changes the y-coordinate. The point keeps its size and orientation — only its position moves.",
+    whyItWorks: "The x- and y-axes are independent directions, so a horizontal slide cannot affect height and a vertical slide cannot affect left-right position — each shift lands on its own coordinate. Rightward and upward are the positive directions, so 'right $a$' means $x + a$ and 'up $b$' means $y + b$ (left and down subtract). Because the moves are independent, you can do them in either order or both at once and reach the same place. The errors come from crossing the wires — adding the horizontal shift to y — or from sign-flipping the direction (treating 'right' as a subtraction).",
+    whenToUse: "Moving sprites and objects in games and graphics, mapping and navigation offsets, shifting graphs (y = f(x) + b raises a curve), and composing with reflections/rotations for full transformations.",
+    representations: [
+      { kind: "chess", label: "Slide, don't turn", body: "'2 right, 3 up' from $(4,1)$: $x: 4 \\to 6$, $y: 1 \\to 4$ → $(6, 4)$. Orientation untouched." },
+      { kind: "independent", label: "Each axis its own move", body: "Horizontal shift touches only x; vertical shift only y. The two never trade." },
+      { kind: "signs", label: "Right/up add, left/down subtract", body: "Right $+$, left $-$ on x; up $+$, down $-$ on y. Direction picks the sign." }
+    ],
+    commonMistakes: [
+      { label: "Applying a shift to the wrong axis", why: "Adding the horizontal move to the y-coordinate — crossing the wires.", fix: "Horizontal = x, vertical = y, always. 'Right' lives on the x-coordinate; 'up' on the y." },
+      { label: "Moving the wrong direction", why: "Treating 'right 3' as $x - 3$ — flipping the sign of the slide.", fix: "Right and up are POSITIVE (add); left and down subtract. Match the word to the sign before computing." }
+    ],
+    connections: [
+      { concept: "coord_reflect", note: "The two basic rigid motions: translations slide, reflections flip." },
+      { concept: "integer_add", note: "Each coordinate update is a signed addition — direction sets the sign." },
+      { concept: "slope_intercept_id", note: "Adding b to a function translates its whole graph vertically by b." }
+    ],
+    examples: [
+      { question: "Translate $(3, 5)$ right $4$ and up $2$.", answer: "(7, 7)", explanation: "$x: 3+4 = 7$, $y: 5+2 = 7$ → $(7, 7)$." },
+      { question: "Translate $(2, 6)$ right $3$ and up $1$.", answer: "(5, 7)", explanation: "$x: 2+3 = 5$, $y: 6+1 = 7$." }
+    ]
+  },
+
+  // ===========================================================================
+  // PERCENT APPLICATIONS II (markup, percent error).
+  // ===========================================================================
+  percent_markup: {
+    title: "Markup & Percent Increase",
+    formula: "\\text{new} = P + P \\cdot \\frac{p}{100} = P\\left(1 + \\frac{p}{100}\\right)",
+    oneLineSummary: "A markup adds a percent of the original onto itself — compute the increase, then ADD it; a discount's mirror image.",
+    intuitionHook: "A store buys a lamp for $\\$40$ and marks it up $25\\%$ to make a profit. The markup is a quarter OF $\\$40$ — that's $\\$10$ — added on top: $\\$50$. Same arithmetic as a discount, just climbing instead of falling. Markup builds the price up; discount knocks it down.",
+    whatItIs: "Markup (percent increase) raises a starting amount by a percentage of itself: the increase is the percent times the original, and the new total is the original PLUS that increase. The mirror of a discount.",
+    whyItWorks: "Percent means per hundred, so a $25\\%$ markup adds $\\$25$ for every $\\$100$ of cost — $0.25 \\times P$ in total. Crucially the percent is OF the original, not of the percent number itself: adding the bare $25$ to $\\$40$ ignores that a percent is a fraction of the base. A one-step shortcut mirrors the discount's 'keep 75%': a $25\\%$ markup means the price becomes $125\\%$ of cost, $P \\times 1.25$. And as with discounts, 'what's the increase' (the $\\$10$) and 'what's the new price' (the $\\$50$) are different questions — reread which one is asked.",
+    whenToUse: "Retail pricing and profit margins, tips on a bill, population/salary growth, tax added to a price, and any 'increased by p%' phrasing — the additive twin of discounts.",
+    representations: [
+      { kind: "build_up", label: "Increase, then add", body: "$\\$40$ marked up $25\\%$: increase $= 40 \\times 0.25 = \\$10$; new price $= 40 + 10 = \\$50$." },
+      { kind: "one_step", label: "Become 125% of cost", body: "Up $25\\%$ = $125\\%$ of the original: $40 \\times 1.25 = \\$50$ in one multiplication." },
+      { kind: "mirror", label: "Discount, upside down", body: "Discount subtracts the slice; markup adds it. Same slice computation, opposite final step." }
+    ],
+    commonMistakes: [
+      { label: "Reporting the increase as the price", why: "Answering $\\$10$ (the markup) when asked for the new selling price $\\$50$.", fix: "The increase is a STEP toward the new total — add it back: $40 + 10 = \\$50$. Reread whether the question wants the rise or the result." },
+      { label: "Adding the percent as dollars", why: "Computing $40 + 25 = \\$65$ — treating the $25\\%$ as $\\$25$ flat.", fix: "A percent is a fraction of the base: $25\\%$ of $\\$40$ is $\\$10$, not $\\$25$. Find the slice before adding." }
+    ],
+    connections: [
+      { concept: "percent_discount", note: "The exact mirror — discount subtracts the slice, markup adds it." },
+      { concept: "percent_change", note: "Markup is percent increase; the general percent-change machinery underlies both." },
+      { concept: "simple_interest", note: "Interest is a repeated markup on the same principal, year after year." }
+    ],
+    examples: [
+      { question: "A $\\$60$ item is marked up $20\\%$. What is the new price?", answer: "72", explanation: "Increase: $60 \\times 0.20 = \\$12$; new price: $60 + 12 = \\$72$ (or $60 \\times 1.20$)." },
+      { question: "A $\\$50$ item is marked up $30\\%$. What is the new price?", answer: "65", explanation: "$50 \\times 1.30 = \\$65$." }
+    ]
+  },
+
+  percent_error: {
+    title: "Percent Error",
+    formula: "\\text{percent error} = \\frac{|\\text{measured} - \\text{true}|}{\\text{true}} \\times 100",
+    oneLineSummary: "Percent error measures how far a measurement missed, as a fraction of the TRUE value — the accepted truth is always the yardstick, never your own reading.",
+    intuitionHook: "You estimate a wall is $55$ cm; it's really $50$. You were off by $5$ cm — but is that a big miss? Only against the real size: $5$ out of $50$ is $10\\%$. Percent error turns a raw miss into a fair, comparable judgment by measuring it against the truth.",
+    whatItIs: "Percent error expresses the gap between a measured (or estimated) value and the true value as a percentage of the true value: take the absolute difference, divide by the TRUE value, multiply by 100.",
+    whyItWorks: "A raw error ($5$ cm) is meaningless without scale — $5$ cm off a wall is trivial, $5$ cm off a fingernail is absurd. Dividing by the true value rescales the miss into 'parts per hundred of the real thing', making errors of different sizes comparable. The truth is the denominator because it's the accepted reference everyone agrees on; dividing by your own measured value instead would make the yardstick depend on the mistake you're trying to grade. The absolute value appears because error size doesn't care about direction — over or under by $5$ is the same $5$ of miss.",
+    whenToUse: "Lab accuracy in science, estimation vs actual, manufacturing tolerances, comparing the precision of different methods, and judging any prediction against a known result.",
+    representations: [
+      { kind: "scale", label: "Miss against the truth", body: "Off by $5$ on a true $50$: $\\frac{5}{50} = 10\\%$. The denominator is the real value, always." },
+      { kind: "compare", label: "Why percent, not raw", body: "$5$ cm off a $50$ cm wall ($10\\%$) vs $5$ cm off a $500$ cm wall ($1\\%$): same raw miss, very different accuracy." },
+      { kind: "absolute", label: "Direction doesn't matter", body: "Measured $55$ or $45$ against true $50$: both are $5$ off → both $10\\%$ error. The bars are absolute." }
+    ],
+    commonMistakes: [
+      { label: "Dividing by the measured value", why: "Using $\\frac{5}{55}$ instead of $\\frac{5}{50}$ — grading the error against the flawed reading.", fix: "The TRUE value is the reference: it goes on the bottom. Your measurement is what's being judged, not the standard." },
+      { label: "Reporting the raw difference", why: "Answering '$5$' — the gap in centimeters, never scaled to a percent.", fix: "Percent error is a percent: divide by the true value and multiply by 100. A bare difference isn't comparable across scales." }
+    ],
+    connections: [
+      { concept: "percent_change", note: "Same structure — a difference over a baseline, times 100 — applied to accuracy instead of growth." },
+      { concept: "percent_markup", note: "Both scale a difference against an original; here the original is the accepted truth." },
+      { concept: "decimal_round", note: "Measurement and estimation lean on rounding — percent error grades the result." }
+    ],
+    examples: [
+      { question: "A true value is $80$; a measurement reads $96$. What is the percent error?", answer: "20", explanation: "$\\frac{|96 - 80|}{80} \\times 100 = \\frac{16}{80} \\times 100 = 20\\%$." },
+      { question: "A true value is $50$; an estimate is $55$. What is the percent error?", answer: "10", explanation: "$\\frac{5}{50} \\times 100 = 10\\%$ — divide by the TRUE value." }
+    ]
+  },
+
+  // ===========================================================================
+  // ADVANCED PROMOTIONS (calculus limits, number-theory divisor counting).
+  // ===========================================================================
+  limit: {
+    title: "Limits at Infinity",
+    formula: "\\lim_{n \\to \\infty} \\frac{a n + \\dots}{b n + \\dots} = \\frac{a}{b}",
+    oneLineSummary: "As n races to infinity, only the highest-degree terms matter — the limit of a rational expression is the ratio of its leading coefficients.",
+    intuitionHook: "Imagine $\\frac{2n + 5}{n + 100}$ as $n$ grows huge. At $n = 1000$ the $+5$ and $+100$ are rounding errors against the $2000$ and $1000$ — the fraction is essentially $\\frac{2n}{n} = 2$. The big terms drown out the small ones; the limit listens only to the loudest.",
+    whatItIs: "A limit at infinity describes the value a sequence or function approaches as its input grows without bound. For a ratio of polynomials of equal degree, that value is the ratio of the leading coefficients; lower-degree terms vanish in the limit.",
+    whyItWorks: "Divide top and bottom by the highest power of $n$: $\\frac{2n + 5}{n + 100} = \\frac{2 + 5/n}{1 + 100/n}$. As $n \\to \\infty$, every term with $n$ in the denominator decays to $0$ — $5/n$ and $100/n$ both vanish — leaving $\\frac{2 + 0}{1 + 0} = 2$. The lower-degree terms don't merely get small; they become negligible RELATIVE to the growing leading terms, which is exactly what a limit captures. This is also why a constant term alone is the wrong answer: the limit is governed by the dominant GROWTH, the coefficients on the fastest-growing terms, not by the fixed pieces.",
+    whenToUse: "End behavior of functions and sequences, convergence of series, horizontal asymptotes, stability analysis, and the foundational idea beneath derivatives and integrals.",
+    representations: [
+      { kind: "dominance", label: "Big terms drown small", body: "$\\frac{2n+5}{n+100}$ at $n = 10^6$: $\\approx \\frac{2{,}000{,}005}{1{,}000{,}100} \\approx 2$. The constants stop mattering." },
+      { kind: "divide", label: "Divide by the top power", body: "$\\frac{2 + 5/n}{1 + 100/n} \\to \\frac{2 + 0}{1 + 0} = 2$: the $/n$ terms decay to zero." },
+      { kind: "leading", label: "Just the leaders", body: "Equal degrees ⇒ limit is leading-coefficient over leading-coefficient: here $\\frac{2}{1} = 2$." }
+    ],
+    commonMistakes: [
+      { label: "Keeping a lower-degree term", why: "Letting the $+5$ or $+100$ influence the answer — they vanish as $n \\to \\infty$.", fix: "Divide through by the highest power of $n$: every leftover $1/n$ term goes to zero. Only the leaders survive." },
+      { label: "Reading off a constant", why: "Answering $5$ or $100$ — grabbing a fixed term instead of the leading-coefficient ratio.", fix: "The limit is set by GROWTH, not by the constants. Compare the highest-degree terms: $\\frac{2n}{n} = 2$." }
+    ],
+    connections: [
+      { concept: "derivative", note: "The derivative is itself a limit — of a difference quotient as the step shrinks." },
+      { concept: "rate_of_change", note: "Limits formalize 'approaches' — the instantaneous version of average rate." },
+      { concept: "exponent_quotient_rule", note: "Dividing by the top power of n uses exponent arithmetic to expose the leaders." }
+    ],
+    examples: [
+      { question: "Evaluate $\\lim_{n \\to \\infty} \\frac{3n + 7}{n + 2}$.", answer: "3", explanation: "Equal degrees: ratio of leading coefficients $\\frac{3}{1} = 3$ (the $+7$, $+2$ vanish)." },
+      { question: "Evaluate $\\lim_{n \\to \\infty} \\frac{6n + 1}{2n + 9}$.", answer: "3", explanation: "$\\frac{6}{2} = 3$." }
+    ]
+  },
+
+  divisor_count: {
+    title: "Counting Divisors",
+    formula: "n = p_1^{a_1} p_2^{a_2} \\cdots \\implies d(n) = (a_1 + 1)(a_2 + 1)\\cdots",
+    oneLineSummary: "Count a number's divisors without listing them: factor into primes, add one to each exponent, and multiply — each prime's exponent offers that many+1 choices.",
+    intuitionHook: "How many divisors does $12$ have? List them — $1, 2, 3, 4, 6, 12$ — six. But for $720$ you'd be there all day. The shortcut: $12 = 2^2 \\times 3^1$, and $(2+1)(1+1) = 6$. Every divisor is built by CHOOSING how many of each prime to include, and counting choices is multiplication.",
+    whatItIs: "The divisor function $d(n)$ counts the positive divisors of $n$. From the prime factorization $n = p_1^{a_1} \\cdots p_k^{a_k}$, it equals the product $(a_1 + 1)(a_2 + 1)\\cdots(a_k + 1)$ — no listing required.",
+    whyItWorks: "Every divisor of $n$ is made by picking, for each prime, how many copies to use — from $0$ up to its exponent $a_i$. That's $a_i + 1$ choices per prime (the $+1$ counts the option of using NONE). Since the choices are independent across primes, the total number of divisors is the PRODUCT of the per-prime choice counts: $(a_1 + 1)(a_2 + 1)\\cdots$ — the multiplication principle of counting. For $12 = 2^2 3^1$: $\\{2^0, 2^1, 2^2\\}$ (3 choices) times $\\{3^0, 3^1\\}$ (2 choices) = $6$ divisors. Counting the primes alone misses the combinations; multiplying the exponents (instead of exponent-plus-one) forgets the 'use none' option.",
+    whenToUse: "Number theory and competition math, perfect/abundant number analysis, cryptography (structure of moduli), and any 'how many factors' question — instantly, for any size.",
+    representations: [
+      { kind: "choices", label: "Choices per prime", body: "$12 = 2^2 \\cdot 3^1$: use $0,1$ or $2$ twos (3 ways) and $0$ or $1$ three (2 ways) → $3 \\times 2 = 6$." },
+      { kind: "grid", label: "A combination grid", body: "Each divisor is one cell of a $3 \\times 2$ grid of prime-power choices — six cells, six divisors." },
+      { kind: "exponent_plus_one", label: "Add one, then multiply", body: "Exponents $2$ and $1$ → $(2+1)(1+1) = 6$. The $+1$ is the 'include none of this prime' option." }
+    ],
+    commonMistakes: [
+      { label: "Counting only the primes", why: "Saying $12$ has $2$ divisors because it has primes $2$ and $3$ — ignoring composite divisors like $4$ and $6$.", fix: "Divisors include combinations and $1$ and $n$ itself. Build them from prime-power CHOICES: $(2+1)(1+1) = 6$." },
+      { label: "Multiplying the exponents", why: "Computing $2 \\times 1 = 2$ from the exponents directly — forgetting the $+1$ for 'use none'.", fix: "Add one to each exponent BEFORE multiplying: each prime offers (exponent + 1) choices, including zero copies." }
+    ],
+    connections: [
+      { concept: "gcd_lcm", note: "Both read structure straight off the prime factorization." },
+      { concept: "combinations", note: "Counting divisors IS a counting-principle product — independent choices multiply." },
+      { concept: "exponent_power", note: "Prime factorization and its exponents are the raw material." }
+    ],
+    examples: [
+      { question: "How many positive divisors does $18$ have?", answer: "6", explanation: "$18 = 2^1 \\cdot 3^2$, so $(1+1)(2+1) = 6$ (they are $1,2,3,6,9,18$)." },
+      { question: "How many positive divisors does $36$ have?", answer: "9", explanation: "$36 = 2^2 \\cdot 3^2$, so $(2+1)(2+1) = 9$." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -3027,13 +3235,14 @@ function levelToConceptId(category, level) {
   if (cat === 'calculus') {
     if (lvl <= 34) return 'derivative';
     if (lvl <= 37) return 'integral';
-    return null; // limits (L38-39) keep legacy
+    return 'limit'; // L38-39
   }
   if (cat === 'number_theory' || cat === 'number theory') {
     if (lvl <= 42) return 'gcd_lcm';
     if (lvl <= 46) return 'modular_arithmetic';
+    if (lvl === 47) return 'divisor_count';
     if (lvl === 48 || lvl === 49) return 'totient';
-    return null; // L47 divisors / L50,L60 milestones keep legacy
+    return null; // L50, L60 milestones keep legacy
   }
   if (cat === 'mental') {
     if (lvl <= 4) return 'percentage';
@@ -3093,7 +3302,9 @@ function levelToConceptId(category, level) {
     if (lvl <= 15) return 'proportion_solve';
     if (lvl <= 16) return 'percent_discount';
     if (lvl <= 17) return 'simple_interest';
-    return 'multi_step_word';
+    if (lvl <= 18) return 'multi_step_word';
+    if (lvl <= 19) return 'percent_markup';
+    return 'percent_error';
   }
   if (cat === 'statistics') {
     if (lvl <= 7) return 'stat_mode';
@@ -3102,7 +3313,8 @@ function levelToConceptId(category, level) {
     if (lvl <= 11) return 'stat_range';
     if (lvl <= 12) return 'mean_missing_value';
     if (lvl <= 13) return 'stat_probability';
-    return 'compound_probability';
+    if (lvl <= 14) return 'compound_probability';
+    return 'probability_complement';
   }
   if (cat === 'powers') {
     if (lvl <= 4) return 'square_root';
@@ -3118,7 +3330,9 @@ function levelToConceptId(category, level) {
     if (lvl <= 9) return 'slope_from_points';
     if (lvl <= 11) return 'slope_intercept_id';
     if (lvl <= 13) return 'midpoint';
-    return 'distance_formula';
+    if (lvl <= 15) return 'distance_formula';
+    if (lvl <= 16) return 'coord_reflect';
+    return 'coord_translate';
   }
   if (cat === 'inequalities') {
     if (lvl <= 7) return 'inequality_one_step_add';
