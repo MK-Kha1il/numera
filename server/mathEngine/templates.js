@@ -1386,6 +1386,48 @@ templates.geometry = {
       explanation: `Average the two parallel sides, then multiply by the height: $A = \\frac{${b1} + ${b2}}{2} \\times ${h} = ${(b1 + b2) / 2} \\times ${h} = ${answer}$. The average is what a trapezoid contributes that a rectangle (equal sides) does not — forgetting to halve doubles the area.`,
       type: "geo_area_trapezoid"
     };
+  },
+  // Volume of a cone: V = (1/3) pi r^2 h. h is a multiple of 3 so the pi-coefficient stays integer.
+  16: (_diffFactor, idx) => {
+    const r = 3 + (idx % 3);              // 3..5
+    const h = 3 * (1 + (idx % 2));        // 3 or 6 → h/3 is a whole number
+    const coef = (r * r * h) / 3;
+    return {
+      question: `What is the volume of a cone with radius $${r}$ and height $${h}$? Give your answer in terms of $\\pi$.`,
+      answer: `${coef}\\pi`,
+      distractors: [`${r * r * h}\\pi`, `${(r * h) / 3}\\pi`, `${(4 * r * r * h) / 3}\\pi`], // cylinder (no 1/3); forgot to square; used the diameter
+      explanation: `A cone is exactly one-third of the cylinder with the same base and height — pour three cones of water to fill the can. So $V = \\frac{1}{3}\\pi r^2 h = \\frac{1}{3}\\pi (${r})^2(${h}) = ${coef}\\pi$. Dropping the $\\frac{1}{3}$ gives the whole cylinder $${r * r * h}\\pi$.`,
+      type: "geo_volume_cone"
+    };
+  },
+  // Volume of a sphere: V = (4/3) pi r^3. r is a multiple of 3 so the pi-coefficient stays integer.
+  17: (_diffFactor, idx) => {
+    const r = 3 * (1 + (idx % 2));        // 3 or 6 → r^3 divisible by 3
+    const coef = (4 * r * r * r) / 3;
+    return {
+      question: `What is the volume of a sphere with radius $${r}$? Give your answer in terms of $\\pi$.`,
+      answer: `${coef}\\pi`,
+      distractors: [`${r * r * r}\\pi`, `${(4 * r * r) / 3}\\pi`, `${4 * r * r * r}\\pi`], // dropped 4/3; squared not cubed; forgot to divide by 3
+      explanation: `The volume of a sphere is $V = \\frac{4}{3}\\pi r^3 = \\frac{4}{3}\\pi (${r})^3 = \\frac{4}{3}\\pi (${r * r * r}) = ${coef}\\pi$. The radius is CUBED (volume is three-dimensional), and the $\\frac{4}{3}$ is essential — without it you under-count to $${r * r * r}\\pi$.`,
+      type: "geo_volume_sphere"
+    };
+  },
+  // Volume of a pyramid: V = (1/3) * base area * height. h is a multiple of 3 (>=6) for an integer answer.
+  18: (_diffFactor, idx) => {
+    const l = 3 + (idx % 3);              // 3..5
+    const w = 3 + ((idx + 1) % 3);        // 3..5
+    const h = 3 * (2 + (idx % 2));        // 6 or 9 → h/3 is 2 or 3 (never 1, so 'base only' stays distinct)
+    const base = l * w;
+    const prism = base * h;
+    const answer = prism / 3;
+    return {
+      question: `A pyramid has a $${l} \\times ${w}$ rectangular base and a height of $${h}$. What is its volume?`,
+      answer,
+      distractors: [prism, base, (2 * prism) / 3], // forgot the 1/3 (prism); gave the base area; used 2/3
+      explanation: `A pyramid fills one-third of the prism on the same base and height: $V = \\frac{1}{3} \\times (\\text{base area}) \\times h = \\frac{1}{3} \\times ${base} \\times ${h} = ${answer}$. The base area $${base}$ alone is two-dimensional; the prism $${prism}$ forgets the $\\frac{1}{3}$.`,
+      type: "geo_volume_pyramid",
+      prism, base
+    };
   }
 };
 

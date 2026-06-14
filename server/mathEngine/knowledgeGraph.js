@@ -1186,6 +1186,35 @@ const concepts = {
       { id: "added_factor", label: "Added the scale factor instead of multiplying by it", rule: (ans) => ans },
       { id: "scaled_one", label: "Scaled only one coordinate", rule: (ans) => ans }
     ]
+  },
+
+  // ---- Geometry volume II: cone, sphere, pyramid (8.G.C / HSG-GMD) ----
+  "geo_volume_cone": {
+    name: "Volume of a Cone",
+    prereqs: ["geo_volume_cylinder"],
+    baseElo: 1140,
+    misconceptions: [
+      { id: "forgot_third", label: "Used the cylinder volume — forgot the one-third factor", rule: (ans) => ans },
+      { id: "forgot_square", label: "Forgot to square the radius", rule: (ans) => ans }
+    ]
+  },
+  "geo_volume_sphere": {
+    name: "Volume of a Sphere",
+    prereqs: ["geo_volume_cylinder"],
+    baseElo: 1180,
+    misconceptions: [
+      { id: "forgot_four_thirds", label: "Dropped the 4/3 factor and reported r cubed alone", rule: (ans) => ans },
+      { id: "squared_not_cubed", label: "Squared the radius instead of cubing it", rule: (ans) => ans }
+    ]
+  },
+  "geo_volume_pyramid": {
+    name: "Volume of a Pyramid",
+    prereqs: ["geo_volume_rect"],
+    baseElo: 1100,
+    misconceptions: [
+      { id: "forgot_third", label: "Used the prism volume — forgot the one-third factor", rule: (ans, p) => p.prism },
+      { id: "base_only", label: "Reported the base area instead of the volume", rule: (ans, p) => p.base }
+    ]
   }
 };
 
@@ -1320,6 +1349,9 @@ const STANDARDS = {
   coord_rotate_180: "8.G.A.3",
   coord_rotate_90: "8.G.A.3",
   coord_dilate: "8.G.A.4",
+  geo_volume_cone: "8.G.C.9",
+  geo_volume_sphere: "8.G.C.9",
+  geo_volume_pyramid: "HSG-GMD.A.3",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

@@ -72,6 +72,10 @@ const TYPE_TO_CONCEPT = {
   geo_surface_area_rect:    'geo_surface_area_rect',
   geo_circumference:        'geo_circumference',
   geo_volume_cylinder:      'geo_volume_cylinder',
+  // Volume II — cone, sphere, pyramid.
+  geo_volume_cone:          'geo_volume_cone',
+  geo_volume_sphere:        'geo_volume_sphere',
+  geo_volume_pyramid:       'geo_volume_pyramid',
   // Algebra promotions + polynomial/measurement depth.
   linear_variable_both_sides: 'linear_variable_both_sides',
   linear_system:            'linear_system',
@@ -321,7 +325,7 @@ function getCategoryConceptIds(category, level) {
     // targeting silently stops working for the strand.
     geometry:      ['geo_perimeter_rect', 'geo_area_rect', 'geo_area_triangle', 'geo_angles_triangle', 'geo_circle_area',
                     'geo_volume_rect', 'geo_surface_area_rect', 'geo_circumference', 'geo_volume_cylinder', 'geo_composite', 'geo_angles_lines',
-                    'geo_area_parallelogram', 'geo_area_trapezoid'],
+                    'geo_area_parallelogram', 'geo_area_trapezoid', 'geo_volume_cone', 'geo_volume_sphere', 'geo_volume_pyramid'],
     integers:      ['absolute_value', 'integer_add', 'integer_sub', 'integer_compare', 'integer_mult', 'integer_div', 'integer_ops'],
     decimals:      ['decimal_add', 'percent_decimal_convert', 'decimal_sub', 'decimal_compare', 'decimal_mult', 'fraction_decimal_convert', 'decimal_round', 'decimal_div'],
     fractions:     ['fraction_simplify', 'fraction_add', 'mixed_number', 'fraction_sub', 'fraction_compare', 'fraction_mult', 'fraction_div', 'fraction_negative'],

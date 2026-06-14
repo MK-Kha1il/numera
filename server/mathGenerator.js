@@ -46,6 +46,10 @@ const CONCEPT_TO_LEVEL = {
   geo_angles_lines:     { category: 'geometry',      level: 13 },
   geo_area_parallelogram: { category: 'geometry',    level: 14 },
   geo_area_trapezoid:   { category: 'geometry',      level: 15 },
+  // Volume II — cone, sphere, pyramid (band extended to 18; the 8.G.C.9 / HSG-GMD family).
+  geo_volume_cone:      { category: 'geometry',      level: 16 },
+  geo_volume_sphere:    { category: 'geometry',      level: 17 },
+  geo_volume_pyramid:   { category: 'geometry',      level: 18 },
   // Integers strand (audit #1.1 — signed-number arithmetic; the negatives band).
   absolute_value:       { category: 'integers',      level: 4  },
   integer_add:          { category: 'integers',      level: 5  },

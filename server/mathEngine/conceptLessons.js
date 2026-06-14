@@ -3372,6 +3372,93 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // GEOMETRY VOLUME II — cone, sphere, pyramid (8.G.C.9 / HSG-GMD).
+  // ===========================================================================
+  geo_volume_cone: {
+    title: "Volume of a Cone",
+    formula: "V = \\dfrac{1}{3}\\pi r^2 h",
+    oneLineSummary: "A cone holds exactly one-third of the cylinder with the same base and height — so V = (1/3)πr²h.",
+    intuitionHook: "Fill an ice-cream cone with water and pour it into a can (cylinder) of the same radius and height. It takes exactly THREE conefuls to fill the can. That stubborn factor of 3 is the whole story: a cone is a third of its cylinder.",
+    whatItIs: "The volume of a cone: the area of its circular base, times its height, times one-third. It's the cylinder formula with a $\\frac{1}{3}$ attached.",
+    whyItWorks: "Start from the cylinder, $\\pi r^2 h$ — a stack of identical circular disks. A cone with the same base and height tapers from the full circle down to a point, so at every level it covers less area than the cylinder. Calculus (or three physical coneful-pours) shows the tapering removes exactly two-thirds of the cylinder's volume, leaving $\\frac{1}{3}$. The radius is still SQUARED because the base is a circle (a 2-D area swept through a height), and the answer is left 'in terms of $\\pi$' to stay exact. Drop the $\\frac{1}{3}$ and you've computed the can, not the cone.",
+    whenToUse: "Capacity of cone-shaped containers, funnels, piles of sand or grain, party hats, and any tapering circular solid.",
+    representations: [
+      { kind: "three_cones", label: "Three cones fill the cylinder", body: "Same base and height: $3 \\times (\\text{cone}) = \\text{cylinder}$, so a cone is $\\frac{1}{3}\\pi r^2 h$." },
+      { kind: "from_cylinder", label: "Cylinder, then thirded", body: "$r = 3, h = 6$: cylinder $= \\pi (9)(6) = 54\\pi$; cone $= \\frac{54\\pi}{3} = 18\\pi$." },
+      { kind: "square_the_radius", label: "Base is a circle", body: "The $r^2$ comes from the circular base area $\\pi r^2$; forgetting to square it sweeps a line, not a disk." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting the one-third", why: "Computing $\\pi r^2 h$ — that's the whole cylinder, three times too big.", fix: "A cone is a THIRD of its cylinder: multiply by $\\frac{1}{3}$ at the end." },
+      { label: "Not squaring the radius", why: "Using $\\pi r h$ instead of $\\pi r^2 h$.", fix: "The base is a circle of area $\\pi r^2$ — the radius is squared before the height multiplies." }
+    ],
+    connections: [
+      { concept: "geo_volume_cylinder", note: "A cone is exactly one-third of the cylinder with the same base and height." },
+      { concept: "geo_circle_area", note: "The base is a circle; its area πr² is the starting point." },
+      { concept: "geo_volume_sphere", note: "Both are curved solids whose volumes carry a fractional coefficient (1/3 vs 4/3)." }
+    ],
+    examples: [
+      { question: "Volume of a cone with radius 3 and height 6 (in terms of π)?", answer: "18\\pi", explanation: "$\\frac{1}{3}\\pi (3)^2(6) = \\frac{1}{3}\\pi (54) = 18\\pi$." },
+      { question: "Volume of a cone with radius 4 and height 3 (in terms of π)?", answer: "16\\pi", explanation: "$\\frac{1}{3}\\pi (4)^2(3) = \\frac{1}{3}\\pi (48) = 16\\pi$." }
+    ]
+  },
+
+  geo_volume_sphere: {
+    title: "Volume of a Sphere",
+    formula: "V = \\dfrac{4}{3}\\pi r^3",
+    oneLineSummary: "A sphere's volume is four-thirds π times the radius cubed — the radius is cubed because volume is three-dimensional.",
+    intuitionHook: "A ball wedged snugly in a can (a cylinder as tall as the ball is wide) fills exactly two-thirds of it. The radius gets CUBED, not squared, because a sphere is solid in all three directions at once — double the radius and you get eight times the ball.",
+    whatItIs: "The volume enclosed by a sphere of radius $r$: four-thirds of $\\pi r^3$. The single defining input is the radius.",
+    whyItWorks: "Volume grows with the cube of length: a shape twice as wide holds $2^3 = 8$ times as much, so any volume formula carries an $r^3$. The exact constant for a sphere is $\\frac{4}{3}\\pi$ — derivable by stacking infinitely many thin disks (calculus) or by Archimedes' result that a sphere is two-thirds of its circumscribing cylinder. Two errors hide here: squaring instead of cubing (that measures area, the wrong dimension) and dropping the $\\frac{4}{3}$ (which under-counts to a bare $r^3$). Keeping the answer in terms of $\\pi$ avoids rounding the irrational constant.",
+    whenToUse: "Capacity of balls, bubbles, planets, tanks, and droplets; comparing how volume scales when a round object's size changes.",
+    representations: [
+      { kind: "cube_the_radius", label: "Three dimensions → r³", body: "Double the radius, eight times the volume: $r^3$ is what makes that true." },
+      { kind: "two_thirds_cylinder", label: "Archimedes' ratio", body: "A sphere fills $\\frac{2}{3}$ of its snug cylinder; the algebra lands on $\\frac{4}{3}\\pi r^3$." },
+      { kind: "worked", label: "Plug and cube", body: "$r = 3$: $\\frac{4}{3}\\pi (3)^3 = \\frac{4}{3}\\pi (27) = 36\\pi$." }
+    ],
+    commonMistakes: [
+      { label: "Squaring instead of cubing", why: "Using $r^2$ — that's a 2-D area, not a 3-D volume.", fix: "Volume needs three factors of $r$: cube it, $r^3$." },
+      { label: "Dropping the 4/3", why: "Reporting $\\pi r^3$ and forgetting the coefficient.", fix: "The sphere constant is $\\frac{4}{3}\\pi$ — keep the $\\frac{4}{3}$ in front of $r^3$." }
+    ],
+    connections: [
+      { concept: "geo_volume_cylinder", note: "A sphere fills two-thirds of the cylinder that just contains it." },
+      { concept: "geo_volume_cone", note: "Curved-solid cousins; both volumes carry a fraction (4/3 here, 1/3 for the cone)." },
+      { concept: "cube_root", note: "Volume scales with r³, so recovering r from a volume is a cube root." }
+    ],
+    examples: [
+      { question: "Volume of a sphere with radius 3 (in terms of π)?", answer: "36\\pi", explanation: "$\\frac{4}{3}\\pi (3)^3 = \\frac{4}{3}\\pi (27) = 36\\pi$." },
+      { question: "Volume of a sphere with radius 6 (in terms of π)?", answer: "288\\pi", explanation: "$\\frac{4}{3}\\pi (6)^3 = \\frac{4}{3}\\pi (216) = 288\\pi$." }
+    ]
+  },
+
+  geo_volume_pyramid: {
+    title: "Volume of a Pyramid",
+    formula: "V = \\dfrac{1}{3} \\times (\\text{base area}) \\times h",
+    oneLineSummary: "A pyramid holds one-third of the prism with the same base and height — V = (1/3) × base area × height.",
+    intuitionHook: "Three identical pyramids snap together to form a box (prism) on the same base. So a pyramid is a third of its prism — the very same one-third that makes a cone a third of its cylinder. Tapering to a point always costs two-thirds of the volume.",
+    whatItIs: "The volume of a pyramid: the area of its base, times its height, times one-third. For a rectangular base that's $\\frac{1}{3} \\times l \\times w \\times h$.",
+    whyItWorks: "A prism is the base area stacked straight up through the height: $\\text{base} \\times h$. A pyramid on the same base shrinks from the full base down to a single apex, so each level higher covers less than the prism. The shrinkage removes exactly two-thirds, leaving $\\frac{1}{3}$ — the identical taper logic as the cone, just with a polygon base instead of a circle. The base area must be computed first (it's two-dimensional), then multiplied by the height and by $\\frac{1}{3}$. Reporting the base area alone, or the full prism, are the two halves of the same unfinished calculation.",
+    whenToUse: "Volume of pyramid-shaped roofs, tents, monuments, and crystal or packaging shapes with a flat base and a peak.",
+    representations: [
+      { kind: "three_pyramids", label: "Three pyramids fill the box", body: "Same base and height: $3 \\times (\\text{pyramid}) = \\text{prism}$, so a pyramid is $\\frac{1}{3} \\times \\text{base} \\times h$." },
+      { kind: "base_then_third", label: "Base area, height, third", body: "Base $3 \\times 4 = 12$, height $6$: prism $= 72$, pyramid $= \\frac{72}{3} = 24$." },
+      { kind: "same_as_cone", label: "Cone's polygon cousin", body: "Cone and pyramid share the $\\frac{1}{3}$ — a cone is just a pyramid with a circular base." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting the one-third", why: "Computing base × height — that's the full prism, three times too large.", fix: "A pyramid is a THIRD of its prism: multiply the prism volume by $\\frac{1}{3}$." },
+      { label: "Stopping at the base area", why: "Reporting $l \\times w$ and forgetting the height and the third.", fix: "Base area is only 2-D; multiply by the height and by $\\frac{1}{3}$ to get the volume." }
+    ],
+    connections: [
+      { concept: "geo_volume_rect", note: "A pyramid is one-third of the rectangular prism on the same base and height." },
+      { concept: "geo_volume_cone", note: "A cone IS a pyramid with a circular base — same 1/3 factor." },
+      { concept: "geo_area_rect", note: "The base area l × w is the first step before applying height and the third." }
+    ],
+    examples: [
+      { question: "Volume of a pyramid with a 3 × 4 base and height 6?", answer: "24", explanation: "Base area $= 12$; $\\frac{1}{3} \\times 12 \\times 6 = \\frac{72}{3} = 24$." },
+      { question: "Volume of a pyramid with a 5 × 3 base and height 6?", answer: "30", explanation: "Base area $= 15$; $\\frac{1}{3} \\times 15 \\times 6 = \\frac{90}{3} = 30$." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -3761,7 +3848,10 @@ function levelToConceptId(category, level) {
     if (lvl <= 12) return 'geo_circle_area';
     if (lvl <= 13) return 'geo_angles_lines';
     if (lvl <= 14) return 'geo_area_parallelogram';
-    return 'geo_area_trapezoid';
+    if (lvl <= 15) return 'geo_area_trapezoid';
+    if (lvl <= 16) return 'geo_volume_cone';
+    if (lvl <= 17) return 'geo_volume_sphere';
+    return 'geo_volume_pyramid';
   }
   if (cat === 'number_sense' || cat === 'number sense') {
     if (lvl <= 6) return 'percentage_of';
