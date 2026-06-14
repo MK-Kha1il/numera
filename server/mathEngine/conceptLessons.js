@@ -2843,6 +2843,158 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // FRACTIONS DEPTH III (signed rational arithmetic, 7.NS).
+  // ===========================================================================
+  fraction_negative: {
+    title: "Adding & Subtracting Signed Fractions",
+    formula: "-\\frac{a}{b} + \\frac{c}{d} = \\frac{-ad + cb}{bd}",
+    oneLineSummary: "Signed fractions combine in two stages: find a common denominator as usual, then let the integer sign rules govern the numerators.",
+    intuitionHook: "You owe a friend $\\frac{3}{4}$ of a pizza but they give you back $\\frac{1}{2}$: where do you stand? $-\\frac{3}{4} + \\frac{1}{2}$. Put both over quarters — $-\\frac{3}{4} + \\frac{2}{4}$ — and the debt and the gift combine like signed numbers: $-\\frac{1}{4}$. Still owe a quarter. Fractions and negatives are two skills you already have; this is just doing them together.",
+    whatItIs: "Adding and subtracting fractions that may be negative, including subtracting a negative. The denominator work is ordinary fraction arithmetic; the numerator work follows the integer sign rules.",
+    whyItWorks: "A common denominator only rewrites the fractions into the same-size pieces — it never touches their signs. Once both share a denominator, the problem becomes 'combine these signed numerators over the common bottom', which is pure integer addition: $-3 + 2 = -1$ gives $-\\frac{1}{4}$. The notorious case is subtracting a negative: $\\frac{1}{2} - (-\\frac{1}{4})$ becomes $\\frac{1}{2} + \\frac{1}{4}$, because removing a debt is the same as gaining — exactly the integer rule, now wearing a denominator. Keeping the sign on the right numerator through the common-denominator step is the whole discipline.",
+    whenToUse: "Temperature and elevation changes given as fractions, signed measurements, balancing accounts with fractional amounts, and all of pre-algebra where rationals and negatives meet.",
+    representations: [
+      { kind: "debt", label: "Debts and gifts", body: "$-\\frac{3}{4} + \\frac{2}{4}$: a $3$-quarter debt eased by a $2$-quarter gift leaves $-\\frac{1}{4}$ — still owed." },
+      { kind: "number_line", label: "Signed jumps in pieces", body: "Start at $-\\frac{3}{4}$, jump right $\\frac{1}{2}$ (two quarters): land on $-\\frac{1}{4}$. The jumps are fractional, the direction signed." },
+      { kind: "two_stage", label: "Denominator, then sign", body: "Stage 1: common denominator (sign-free). Stage 2: combine numerators by the integer rules." }
+    ],
+    commonMistakes: [
+      { label: "Losing a sign in the numerators", why: "Computing $-\\frac{3}{4} + \\frac{2}{4}$ as $\\frac{5}{4}$ — adding magnitudes and forgetting the minus.", fix: "After matching denominators, the numerators ARE signed integers: $-3 + 2 = -1$, not $5$. Carry every sign through the rewrite." },
+      { label: "Subtracting a negative as a subtraction", why: "Reading $\\frac{1}{2} - (-\\frac{1}{4})$ as $\\frac{1}{2} - \\frac{1}{4}$ — keeping the minus.", fix: "Two negatives make a plus: $-(-\\frac{1}{4}) = +\\frac{1}{4}$. Removing a debt adds. Rewrite the double sign FIRST, then find the common denominator." }
+    ],
+    connections: [
+      { concept: "fraction_add", note: "The common-denominator machinery is identical — only the signs are new." },
+      { concept: "integer_add", note: "The numerator step IS signed-integer addition." },
+      { concept: "integer_sub", note: "Subtracting a negative fraction reuses the 'add the opposite' rule." }
+    ],
+    examples: [
+      { question: "Calculate $-\\frac{2}{3} + \\frac{1}{6}$.", answer: "-1/2", explanation: "Common denominator $6$: $-\\frac{4}{6} + \\frac{1}{6} = -\\frac{3}{6} = -\\frac{1}{2}$." },
+      { question: "Calculate $\\frac{1}{2} - \\left(-\\frac{1}{4}\\right)$.", answer: "3/4", explanation: "Subtracting a negative adds: $\\frac{1}{2} + \\frac{1}{4} = \\frac{3}{4}$." }
+    ]
+  },
+
+  // ===========================================================================
+  // STATISTICS DEPTH IV (dependent events — without replacement).
+  // ===========================================================================
+  prob_without_replacement: {
+    title: "Probability Without Replacement",
+    formula: "P(\\text{both}) = \\frac{w}{n} \\times \\frac{w-1}{n-1}",
+    oneLineSummary: "When you don't replace the first item, the second draw sees a smaller bag — both the favorable count and the total drop by one.",
+    intuitionHook: "A bag has $5$ marbles, $2$ gold. Draw one gold ($\\frac{2}{5}$) and keep it. Now only $4$ marbles remain, just $1$ gold — so the next gold is $\\frac{1}{4}$, not $\\frac{2}{5}$ again. The bag remembers what you took. That memory is the whole difference between with and without replacement.",
+    whatItIs: "The probability that two (or more) draws all succeed when items are NOT returned between draws. Each successive draw uses updated counts: one fewer favorable item and one fewer total.",
+    whyItWorks: "Probability is favorable-over-total, and removing an item changes BOTH numbers for the next draw. After pulling one gold from $5$ marbles with $2$ gold, the second draw faces $4$ marbles with $1$ gold: $\\frac{1}{4}$. The events are DEPENDENT — the first outcome reshapes the second's odds — so you multiply the conditional probabilities: $\\frac{2}{5} \\times \\frac{1}{4} = \\frac{2}{20} = \\frac{1}{10}$. Treating the draws as independent (reusing $\\frac{2}{5}$ twice) pretends the marble was put back; that's the with-replacement answer to a without-replacement question.",
+    whenToUse: "Dealing cards, picking a committee or team, drawing names, quality sampling without restocking — any 'and then, without putting it back' scenario.",
+    representations: [
+      { kind: "shrinking_bag", label: "The bag shrinks", body: "$5$ marbles, $2$ gold → draw gold → $4$ marbles, $1$ gold. Both counts drop by one." },
+      { kind: "conditional", label: "Multiply the updated odds", body: "$\\frac{2}{5}$ then $\\frac{1}{4}$: $\\frac{2}{5} \\times \\frac{1}{4} = \\frac{1}{10}$. The second factor already knows the first happened." },
+      { kind: "contrast", label: "With vs without", body: "With replacement: $\\frac{2}{5} \\times \\frac{2}{5}$. Without: $\\frac{2}{5} \\times \\frac{1}{4}$. The dropped denominator is the tell." }
+    ],
+    commonMistakes: [
+      { label: "Treating the draws as independent", why: "Using $\\frac{2}{5} \\times \\frac{2}{5}$ — reusing the original odds as if the marble were replaced.", fix: "Ask: was it put back? If not, the second draw has one fewer favorable AND one fewer total: $\\frac{1}{4}$, not $\\frac{2}{5}$." },
+      { label: "Reporting a single draw", why: "Answering $\\frac{2}{5}$ — the first draw only, ignoring that BOTH must succeed.", fix: "Both events are required, so multiply both probabilities. One factor is half the question." }
+    ],
+    connections: [
+      { concept: "compound_probability", note: "The independent case — without replacement adds the dependency twist." },
+      { concept: "fraction_mult", note: "Combining the draws is fraction multiplication." },
+      { concept: "combinations", note: "Counting committees formalizes without-replacement selection." }
+    ],
+    examples: [
+      { question: "A bag has $6$ marbles, $3$ red. Draw two without replacement — probability both are red?", answer: "1/5", explanation: "$\\frac{3}{6} \\times \\frac{2}{5} = \\frac{6}{30} = \\frac{1}{5}$." },
+      { question: "A bag has $5$ marbles, $2$ blue. Draw two without replacement — probability both blue?", answer: "1/10", explanation: "$\\frac{2}{5} \\times \\frac{1}{4} = \\frac{1}{10}$." }
+    ]
+  },
+
+  // ===========================================================================
+  // GEOMETRY DEPTH IV (parallelogram & trapezoid areas).
+  // ===========================================================================
+  geo_area_parallelogram: {
+    title: "Area of a Parallelogram",
+    formula: "A = b \\times h \\;\\; (h = \\text{perpendicular height, not the slanted side})",
+    oneLineSummary: "A parallelogram has the same area as a rectangle with the same base and PERPENDICULAR height — slide the triangle from one end to the other and it becomes a rectangle.",
+    intuitionHook: "Lean a rectangle over into a parallelogram. Did its area change? No — you slid the top sideways but kept the same base and the same vertical height, so the same amount of floor is covered. The slant adds nothing to the area; only the straight-up height counts.",
+    whatItIs: "The area of a parallelogram is its base times its perpendicular height — the straight-line distance between the two parallel bases, measured at a right angle, NOT along the slanted side.",
+    whyItWorks: "Cut a right triangle off one end of a parallelogram and slide it to the other end: the shape becomes a rectangle with the same base and the same height, and rearranging pieces never changes area. So $A = b \\times h$, exactly the rectangle formula. The slanted side is longer than the height (it's the hypotenuse of that cut triangle), so using it overstates the area — the height is the only vertical measure that reflects how much floor is actually covered. The perpendicular height is what 'how tall' really means for area.",
+    whenToUse: "Land plots and tilted fields, structural panels, vector parallelograms (area = cross product), and as the stepping stone to triangle and trapezoid areas.",
+    representations: [
+      { kind: "shear", label: "Slide it into a rectangle", body: "Cut the end triangle, slide it across: a $b \\times h$ rectangle appears — same area, slant gone." },
+      { kind: "height", label: "Straight-up height only", body: "The height is the perpendicular gap between the parallel sides — drop a vertical line, not a slanted one." },
+      { kind: "compare", label: "Slant overstates", body: "The slanted side is the hypotenuse, longer than the height — using it claims more floor than exists." }
+    ],
+    commonMistakes: [
+      { label: "Using the slanted side", why: "Multiplying base by the slanted edge instead of the perpendicular height — counting the hypotenuse as the height.", fix: "Area needs the STRAIGHT-UP distance between the bases. The slanted side is longer; drop a right-angle height instead." },
+      { label: "Adding base and height", why: "Computing $b + h$ — confusing area with a perimeter-like sum.", fix: "Area is a product (square units): $b \\times h$. Adding gives a length, not an area." }
+    ],
+    connections: [
+      { concept: "geo_area_rect", note: "Same formula — a parallelogram is a sheared rectangle of equal area." },
+      { concept: "geo_area_triangle", note: "Half a parallelogram is a triangle: A = ½bh." },
+      { concept: "geo_area_trapezoid", note: "A trapezoid generalizes this to two different parallel sides." }
+    ],
+    examples: [
+      { question: "A parallelogram has base $7$ and perpendicular height $4$. What is its area?", answer: "28", explanation: "$A = b \\times h = 7 \\times 4 = 28$. The slanted side is irrelevant." },
+      { question: "A parallelogram has base $9$ and perpendicular height $5$. What is its area?", answer: "45", explanation: "$9 \\times 5 = 45$." }
+    ]
+  },
+
+  geo_area_trapezoid: {
+    title: "Area of a Trapezoid",
+    formula: "A = \\frac{b_1 + b_2}{2} \\times h",
+    oneLineSummary: "Average the two parallel sides, then multiply by the height — a trapezoid is a rectangle whose width is the average of its two bases.",
+    intuitionHook: "A trapezoid has a short top and a long bottom. What 'width' should you use? Neither extreme — the AVERAGE. A garden $4$ m across the top and $8$ m across the bottom behaves, for area, like a $6$ m-wide rectangle of the same height. The average base turns an awkward shape into a familiar one.",
+    whatItIs: "The area of a trapezoid (a quadrilateral with one pair of parallel sides) is the average of the two parallel sides times the perpendicular height between them.",
+    whyItWorks: "Take two identical trapezoids and rotate one to fit against the other: together they form a parallelogram whose base is $b_1 + b_2$ and whose height is $h$, with area $(b_1 + b_2)h$. One trapezoid is half of that: $\\frac{(b_1 + b_2)}{2} h$. The $\\frac{1}{2}$ — equivalently, AVERAGING the two bases — is exactly what makes a trapezoid not a rectangle; forgetting it doubles the area. When the two bases are equal the formula collapses to $b \\times h$, the rectangle, confirming it's the natural generalization.",
+    whenToUse: "Cross-sections of channels and dams, tapered plots, the area under a line between two points (the trapezoidal rule), and any four-sided figure with one parallel pair.",
+    representations: [
+      { kind: "average", label: "The average base", body: "Top $4$, bottom $8$ → average $6$: area is $6 \\times h$, as if the shape were a $6$-wide rectangle." },
+      { kind: "two_copies", label: "Two make a parallelogram", body: "Rotate a copy onto it: a parallelogram of base $b_1 + b_2$ appears. The trapezoid is half — hence the $\\frac{1}{2}$." },
+      { kind: "limit", label: "Equal bases → rectangle", body: "If $b_1 = b_2$, the average is just $b$, and $A = bh$: the rectangle is a trapezoid with matching sides." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting to average", why: "Computing $(b_1 + b_2) \\times h$ — the parallelogram of TWO trapezoids, double the real area.", fix: "Halve the base sum (average the two sides) before multiplying: $\\frac{b_1 + b_2}{2} \\times h$." },
+      { label: "Using one base only", why: "Multiplying a single parallel side by the height — ignoring the other base entirely.", fix: "A trapezoid has TWO different parallel sides; both shape the area. Average them, don't pick one." }
+    ],
+    connections: [
+      { concept: "geo_area_parallelogram", note: "Two trapezoids form a parallelogram — that pairing is the proof." },
+      { concept: "stat_mean", note: "Averaging the two bases is a two-value mean." },
+      { concept: "geo_area_rect", note: "Equal bases reduce the trapezoid to a rectangle — the formula's base case." }
+    ],
+    examples: [
+      { question: "A trapezoid has parallel sides $5$ and $9$ and height $4$. What is its area?", answer: "28", explanation: "$\\frac{5 + 9}{2} \\times 4 = 7 \\times 4 = 28$." },
+      { question: "A trapezoid has parallel sides $3$ and $7$ and height $6$. What is its area?", answer: "30", explanation: "$\\frac{3 + 7}{2} \\times 6 = 5 \\times 6 = 30$." }
+    ]
+  },
+
+  // ===========================================================================
+  // POWERS DEPTH III (power of a product).
+  // ===========================================================================
+  exponent_power_of_product: {
+    title: "Power of a Product",
+    formula: "(ab)^n = a^n b^n",
+    oneLineSummary: "Raising a product to a power raises EVERY factor inside — coefficients included; the exponent distributes over multiplication.",
+    intuitionHook: "$(3x)^2$ means $(3x)(3x)$ — gather like with like: $3 \\times 3 = 9$ and $x \\times x = x^2$, giving $9x^2$. The $3$ doesn't get a free pass just because it's a number; it's a factor, and the square hits every factor.",
+    whatItIs: "The power-of-a-product rule: when a product is raised to an exponent, each factor is raised to that exponent. Crucially, a numeric coefficient is a factor too, so it gets raised — not left alone, not multiplied by the exponent.",
+    whyItWorks: "An exponent is repeated multiplication of the WHOLE base: $(3x)^2 = (3x)(3x)$. Multiplication lets you regroup freely, so the $3$s collect into $3^2 = 9$ and the $x$s into $x^2$ — every factor copied the same number of times. This is why the coefficient is raised, not multiplied: $(3x)^2$ has two $3$s ($3^2 = 9$), not $3 \\times 2 = 6$. The rule distributes over multiplication only — it does NOT distribute over addition, which is why $(a+b)^2 \\ne a^2 + b^2$ but $(ab)^2 = a^2 b^2$.",
+    whenToUse: "Simplifying monomial powers, scientific notation ($(2 \\times 10^3)^2 = 4 \\times 10^6$), volume/area scaling (double every dimension → $2^3$ the volume), and all polynomial algebra.",
+    representations: [
+      { kind: "expand", label: "Write out the copies", body: "$(3x)^2 = (3x)(3x) = (3 \\cdot 3)(x \\cdot x) = 9x^2$. Regroup the like factors." },
+      { kind: "every_factor", label: "The power hits each factor", body: "$(2xy)^3 = 2^3 x^3 y^3 = 8x^3 y^3$ — coefficient and every variable, all cubed." },
+      { kind: "contrast", label: "Products, not sums", body: "$(ab)^2 = a^2 b^2$ works; $(a+b)^2 = a^2 b^2$ does NOT — distributing a power needs multiplication inside." }
+    ],
+    commonMistakes: [
+      { label: "Leaving the coefficient un-raised", why: "Writing $(3x)^2 = 3x^2$ — powering the variable but not the $3$.", fix: "The coefficient is a factor inside the parentheses: it gets raised too. $(3x)^2 = 3^2 x^2 = 9x^2$." },
+      { label: "Multiplying the coefficient by the exponent", why: "Computing $(3x)^2 = 6x^2$ — doing $3 \\times 2$ instead of $3^2$.", fix: "A power is repeated MULTIPLICATION: two $3$s is $3 \\times 3 = 9$, not $3 + 3$ or $3 \\times 2$." }
+    ],
+    connections: [
+      { concept: "exponent_power_rule", note: "Both distribute an outer exponent — one over a power, this one over a product." },
+      { concept: "square_binomial", note: "The warning sign: powers distribute over products, NOT over sums." },
+      { concept: "scientific_notation", note: "Squaring (2 × 10^3) raises both the mantissa and the power of ten." }
+    ],
+    examples: [
+      { question: "Simplify $(2x)^3$.", answer: "8x^3", explanation: "Every factor cubed: $2^3 x^3 = 8x^3$." },
+      { question: "Simplify $(4x)^2$.", answer: "16x^2", explanation: "$4^2 x^2 = 16x^2$ — the coefficient is squared too." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED PROMOTIONS (calculus limits, number-theory divisor counting).
   // ===========================================================================
   limit: {
@@ -3275,7 +3427,8 @@ function levelToConceptId(category, level) {
     if (lvl <= 6) return 'fraction_sub';
     if (lvl <= 7) return 'fraction_compare';
     if (lvl <= 8) return 'fraction_mult';
-    return 'fraction_div';
+    if (lvl <= 9) return 'fraction_div';
+    return 'fraction_negative';
   }
   if (cat === 'geometry') {
     if (lvl <= 2) return 'geo_perimeter_rect';
@@ -3288,7 +3441,9 @@ function levelToConceptId(category, level) {
     if (lvl <= 10) return 'geo_volume_cylinder'; // 10 has no template key; closest-below serves 9
     if (lvl <= 11) return 'geo_composite';
     if (lvl <= 12) return 'geo_circle_area';
-    return 'geo_angles_lines';
+    if (lvl <= 13) return 'geo_angles_lines';
+    if (lvl <= 14) return 'geo_area_parallelogram';
+    return 'geo_area_trapezoid';
   }
   if (cat === 'number_sense' || cat === 'number sense') {
     if (lvl <= 6) return 'percentage_of';
@@ -3314,11 +3469,13 @@ function levelToConceptId(category, level) {
     if (lvl <= 12) return 'mean_missing_value';
     if (lvl <= 13) return 'stat_probability';
     if (lvl <= 14) return 'compound_probability';
-    return 'probability_complement';
+    if (lvl <= 15) return 'probability_complement';
+    return 'prob_without_replacement';
   }
   if (cat === 'powers') {
     if (lvl <= 4) return 'square_root';
-    if (lvl <= 6) return 'cube_root'; // 6 has no template key; closest-below serves 5
+    if (lvl <= 5) return 'cube_root';
+    if (lvl <= 6) return 'exponent_power_of_product';
     if (lvl <= 7) return 'exponent_product_rule';
     if (lvl <= 8) return 'exponent_power_rule';
     if (lvl <= 9) return 'exponent_quotient_rule';

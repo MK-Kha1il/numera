@@ -1359,6 +1359,33 @@ templates.geometry = {
       explanation: `Neighboring angles at a crossing sit together on a STRAIGHT line, so they sum to $180^{\\circ}$: the neighbor is $180 - ${theta} = ${180 - theta}^{\\circ}$. The $90^{\\circ}$ rule belongs to right-angle corners, not straight lines.`,
       type: "geo_angles_lines"
     };
+  },
+  // Area of a parallelogram: base × PERPENDICULAR height (not the slanted side).
+  14: (_diffFactor, idx) => {
+    const base = 4 + (idx % 6);          // 4..9
+    const h = 3 + (idx % 5);             // 3..7
+    const slant = h + 2 + (idx % 3);     // the slanted side, always > h
+    return {
+      question: `A parallelogram has base $${base}$ and perpendicular height $${h}$ (its slanted side is $${slant}$). What is its area?`,
+      answer: base * h,
+      distractors: [base * slant, base + h, 2 * (base + h)], // used the slanted side; added; perimeter-ish
+      explanation: `A parallelogram is a rectangle with a triangle slid from one end to the other — same base, same HEIGHT, same area: $A = b \\times h = ${base} \\times ${h} = ${base * h}$. The slanted side ($${slant}$) is longer than the height and is never used for area.`,
+      type: "geo_area_parallelogram"
+    };
+  },
+  // Area of a trapezoid: average the two parallel sides, times the height.
+  15: (_diffFactor, idx) => {
+    const h = 2 * (2 + (idx % 4));        // even height 4,6,8,10 keeps the half integer
+    const b1 = 3 + (idx % 4);             // 3..6
+    const b2 = b1 + 2 + (idx % 4);        // strictly bigger
+    const answer = ((b1 + b2) / 2) * h;
+    return {
+      question: `A trapezoid has parallel sides $${b1}$ and $${b2}$ and height $${h}$. What is its area?`,
+      answer,
+      distractors: [b1 * b2, (b1 + b2) * h, b1 * h], // multiplied the bases; forgot to halve; used one base only
+      explanation: `Average the two parallel sides, then multiply by the height: $A = \\frac{${b1} + ${b2}}{2} \\times ${h} = ${(b1 + b2) / 2} \\times ${h} = ${answer}$. The average is what a trapezoid contributes that a rectangle (equal sides) does not — forgetting to halve doubles the area.`,
+      type: "geo_area_trapezoid"
+    };
   }
 };
 
@@ -1740,6 +1767,23 @@ templates.statistics = {
       distractors: [pct, fav, total - fav], // gave P(red); the red count; the non-red count (not a percent)
       explanation: `Every marble is red OR not red, and the two chances fill the whole $100\\%$: $P(\\text{red}) = \\frac{${fav}}{20} = ${pct}\\%$, so $P(\\text{not red}) = 100\\% - ${pct}\\% = ${100 - pct}\\%$. The complement is what's LEFT of certainty — subtract from $100$, not from the count.`,
       type: "probability_complement"
+    };
+  },
+  // Drawing TWO without replacement: the second draw sees a smaller bag. Answer as a fraction.
+  16: (_diffFactor, idx) => {
+    const total = [5, 6, 7][idx % 3];     // small bag
+    const win = 2 + (idx % 2);            // 2 or 3 winners
+    // P(both winners) = win/total × (win-1)/(total-1)
+    return {
+      question: `A bag has $${total}$ marbles, $${win}$ of them gold. You draw TWO without putting the first back. What is the probability BOTH are gold?`,
+      answer: `${win * (win - 1)}/${total * (total - 1)}`,
+      distractors: [
+        `${win * win}/${total * total}`,         // treated draws as independent (with replacement)
+        `${win}/${total}`,                        // only the first draw
+        `${(win - 1)}/${(total - 1)}`             // only the second draw
+      ],
+      explanation: `The first draw is $\\frac{${win}}{${total}}$ gold. Now the bag has ONE fewer gold and one fewer marble, so the second is $\\frac{${win - 1}}{${total - 1}}$. Multiply: $\\frac{${win}}{${total}} \\times \\frac{${win - 1}}{${total - 1}} = \\frac{${win * (win - 1)}}{${total * (total - 1)}}$. Without replacement, the second denominator DROPS — the draws are no longer independent.`,
+      type: "prob_without_replacement"
     };
   }
 };
@@ -2363,6 +2407,48 @@ templates.fractions = {
       explanation: `Dividing is multiplying by the reciprocal (keep–change–flip): $\\frac{${a}}{${b}} \\div \\frac{${c}}{${d}} = \\frac{${a}}{${b}} \\times \\frac{${d}}{${c}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
       type: "fraction_div"
     };
+  },
+  // Adding/subtracting SIGNED fractions — the rational-number band (7.NS). Common denominator
+  // first, then the integer sign rules govern the numerators.
+  11: (_diffFactor, idx) => {
+    const b = FRACTION_DENS[idx % FRACTION_DENS.length];
+    let d = FRACTION_DENS[(idx + 2) % FRACTION_DENS.length];
+    if (d === b) d = FRACTION_DENS[(idx + 3) % FRACTION_DENS.length];
+    const a = coprimeNumerator(b, idx);
+    const c = coprimeNumerator(d, idx + 2);
+    const cd = b * d;
+    if (idx % 2 === 0) {
+      // Negative plus positive.
+      const total = -a * d + c * b;
+      const answer = reduceFrac(total, cd);
+      return {
+        question: `Calculate: $-\\frac{${a}}{${b}} + \\frac{${c}}{${d}}$`,
+        answer,
+        distractors: fracDistractors(answer, [
+          [a * d + c * b, cd],         // dropped the negative sign
+          [-a * d - c * b, cd],        // made both terms negative
+          [total + 1, cd],             // near miss
+          [total - 1, cd]              // near miss
+        ]),
+        explanation: `Common denominator $${cd}$: $-\\frac{${a * d}}{${cd}} + \\frac{${c * b}}{${cd}} = \\frac{-${a * d} + ${c * b}}{${cd}} = \\frac{${total}}{${cd}} = ${answer}$. Rewrite over a common denominator first, THEN combine the signed numerators by the integer rules.`,
+        type: "fraction_negative"
+      };
+    }
+    // Positive minus a negative (subtracting a negative adds).
+    const total = a * d + c * b;
+    const answer = reduceFrac(total, cd);
+    return {
+      question: `Calculate: $\\frac{${a}}{${b}} - \\left(-\\frac{${c}}{${d}}\\right)$`,
+      answer,
+      distractors: fracDistractors(answer, [
+        [a * d - c * b, cd],           // treated −(−) as subtraction
+        [-a * d - c * b, cd],          // sign-flipped both terms
+        [total + 1, cd],               // near miss
+        [total - 1, cd]                // near miss
+      ]),
+      explanation: `Subtracting a negative ADDS: $\\frac{${a}}{${b}} - \\left(-\\frac{${c}}{${d}}\\right) = \\frac{${a}}{${b}} + \\frac{${c}}{${d}}$. Over the common denominator $${cd}$: $\\frac{${a * d} + ${c * b}}{${cd}} = \\frac{${total}}{${cd}} = ${answer}$.`,
+      type: "fraction_negative"
+    };
   }
 };
 
@@ -2395,6 +2481,20 @@ templates.powers = {
       distractors: [r * r, 2 * r, r + 1], // squared/cubed mix-up; doubled; neighboring root
       explanation: `$\\sqrt[3]{${n}}$ asks: which number used THREE times in a product makes $${n}$? Since $${r} \\times ${r} \\times ${r} = ${n}$, the cube root is $${r}$. The little $3$ counts the factors — it never divides anything.`,
       type: "cube_root"
+    };
+  },
+  // Power of a product: (kx)^n = k^n · x^n — the exponent reaches EVERY factor inside.
+  // k >= 3 so k^n, k·n and k stay three distinct coefficients (k=n=2 would collide).
+  6: (_diffFactor, idx) => {
+    const k = 3 + (idx % 3);             // coefficient 3..5
+    const n = 2 + (idx % 2);             // power 2..3
+    const kn = Math.pow(k, n);
+    return {
+      question: `Simplify: $(${k}x)^{${n}}$`,
+      answer: `${kn}x^${n}`,
+      distractors: [`${k}x^${n}`, `${k * n}x^${n}`, `${kn}x^${n + 1}`], // didn't raise the coefficient; multiplied k·n instead of k^n; wrong exponent
+      explanation: `The exponent applies to EVERY factor inside the parentheses: $(${k}x)^{${n}} = ${k}^{${n}} \\cdot x^{${n}} = ${kn}x^{${n}}$. The coefficient $${k}$ gets raised too — leaving it as $${k}$, or multiplying $${k} \\times ${n}$, forgets that the power means repeated MULTIPLICATION of the whole product.`,
+      type: "exponent_power_of_product"
     };
   },
   // Product rule: x^a · x^b = x^(a+b).

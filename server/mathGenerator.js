@@ -44,6 +44,8 @@ const CONCEPT_TO_LEVEL = {
   geo_volume_cylinder:  { category: 'geometry',      level: 9  },
   geo_composite:        { category: 'geometry',      level: 11 },
   geo_angles_lines:     { category: 'geometry',      level: 13 },
+  geo_area_parallelogram: { category: 'geometry',    level: 14 },
+  geo_area_trapezoid:   { category: 'geometry',      level: 15 },
   // Integers strand (audit #1.1 — signed-number arithmetic; the negatives band).
   absolute_value:       { category: 'integers',      level: 4  },
   integer_add:          { category: 'integers',      level: 5  },
@@ -69,6 +71,7 @@ const CONCEPT_TO_LEVEL = {
   fraction_compare:     { category: 'fractions',     level: 7  },
   fraction_mult:        { category: 'fractions',     level: 8  },
   fraction_div:         { category: 'fractions',     level: 9  },
+  fraction_negative:    { category: 'fractions',     level: 11 },
   // Number-sense / pre-algebra strand (audit #1.1 — the band the ladder used to skip).
   percentage_of:        { category: 'number_sense',  level: 6  },
   fraction_of:          { category: 'number_sense',  level: 7  },
@@ -94,6 +97,7 @@ const CONCEPT_TO_LEVEL = {
   stat_probability:     { category: 'statistics',    level: 13 },
   compound_probability: { category: 'statistics',    level: 14 },
   probability_complement: { category: 'statistics',  level: 15 },
+  prob_without_replacement: { category: 'statistics', level: 16 },
   // Algebraic-expressions strand (audit #1.1 — the bridge into algebra).
   eval_expression:      { category: 'expressions',   level: 11 },
   eval_two_var:         { category: 'expressions',   level: 12 },
@@ -107,6 +111,7 @@ const CONCEPT_TO_LEVEL = {
   // Powers strand (exponents & roots — the 8.EE band).
   square_root:            { category: 'powers',      level: 4  },
   cube_root:              { category: 'powers',      level: 5  },
+  exponent_power_of_product: { category: 'powers',   level: 6  },
   exponent_product_rule:  { category: 'powers',      level: 7  },
   exponent_power_rule:    { category: 'powers',      level: 8  },
   exponent_quotient_rule: { category: 'powers',      level: 9  },

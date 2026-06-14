@@ -112,7 +112,13 @@ const TYPE_TO_CONCEPT = {
   coord_reflect:            'coord_reflect',
   coord_translate:          'coord_translate',
   percent_markup:           'percent_markup',
-  percent_error:            'percent_error'
+  percent_error:            'percent_error',
+  // Rational / probability / geometry / powers depth (wave 8).
+  fraction_negative:        'fraction_negative',
+  prob_without_replacement: 'prob_without_replacement',
+  geo_area_parallelogram:   'geo_area_parallelogram',
+  geo_area_trapezoid:       'geo_area_trapezoid',
+  exponent_power_of_product: 'exponent_power_of_product'
 };
 
 // Resolve a concept from a template type string
@@ -300,15 +306,16 @@ function getCategoryConceptIds(category, level) {
     // category falls back to arithmetic and the orchestrator's misconception/SRS/weak-concept
     // targeting silently stops working for the strand.
     geometry:      ['geo_perimeter_rect', 'geo_area_rect', 'geo_area_triangle', 'geo_angles_triangle', 'geo_circle_area',
-                    'geo_volume_rect', 'geo_surface_area_rect', 'geo_circumference', 'geo_volume_cylinder', 'geo_composite', 'geo_angles_lines'],
+                    'geo_volume_rect', 'geo_surface_area_rect', 'geo_circumference', 'geo_volume_cylinder', 'geo_composite', 'geo_angles_lines',
+                    'geo_area_parallelogram', 'geo_area_trapezoid'],
     integers:      ['absolute_value', 'integer_add', 'integer_sub', 'integer_compare', 'integer_mult', 'integer_div', 'integer_ops'],
     decimals:      ['decimal_add', 'percent_decimal_convert', 'decimal_sub', 'decimal_compare', 'decimal_mult', 'fraction_decimal_convert', 'decimal_round', 'decimal_div'],
-    fractions:     ['fraction_simplify', 'fraction_add', 'mixed_number', 'fraction_sub', 'fraction_compare', 'fraction_mult', 'fraction_div'],
+    fractions:     ['fraction_simplify', 'fraction_add', 'mixed_number', 'fraction_sub', 'fraction_compare', 'fraction_mult', 'fraction_div', 'fraction_negative'],
     number_sense:  ['percentage_of', 'fraction_of', 'ratio_solve', 'percent_change', 'unit_convert_metric', 'unit_convert_time', 'unit_rate', 'exponent_power', 'proportion_solve',
                     'percent_discount', 'simple_interest', 'multi_step_word', 'percent_markup', 'percent_error'],
-    statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'mean_missing_value', 'stat_probability', 'compound_probability', 'probability_complement'],
+    statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'mean_missing_value', 'stat_probability', 'compound_probability', 'probability_complement', 'prob_without_replacement'],
     expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'translate_expression', 'distribute', 'foil_binomials', 'square_binomial', 'factor_trinomial'],
-    powers:        ['square_root', 'cube_root', 'exponent_product_rule', 'exponent_power_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation'],
+    powers:        ['square_root', 'cube_root', 'exponent_power_of_product', 'exponent_product_rule', 'exponent_power_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation'],
     graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula', 'coord_reflect', 'coord_translate'],
     inequalities:  ['inequality_one_step_add', 'inequality_one_step_mult', 'inequality_flip_negative', 'inequality_two_step', 'inequality_compound'],
     functions:     ['function_evaluate', 'function_table', 'rate_of_change', 'function_initial', 'function_solve']

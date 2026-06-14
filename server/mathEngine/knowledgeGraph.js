@@ -1028,6 +1028,59 @@ const concepts = {
       { id: "listed_primes_only", label: "Counted only the prime factors, not all divisors", rule: (ans) => ans },
       { id: "forgot_exponent_plus_one", label: "Multiplied the exponents instead of (exponent + 1)", rule: (ans) => ans }
     ]
+  },
+
+  // ---- Fractions depth III (signed rational arithmetic, 7.NS) ----
+  "fraction_negative": {
+    name: "Adding & Subtracting Signed Fractions",
+    prereqs: ["fraction_add", "integer_add"],
+    baseElo: 1010,
+    misconceptions: [
+      { id: "dropped_sign", label: "Lost a negative sign while combining the numerators", rule: (ans) => ans },
+      { id: "subtracted_a_negative_wrong", label: "Treated subtracting a negative as a subtraction", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Statistics depth IV (dependent events) ----
+  "prob_without_replacement": {
+    name: "Probability Without Replacement",
+    prereqs: ["compound_probability"],
+    baseElo: 1180,
+    misconceptions: [
+      { id: "treated_independent", label: "Multiplied as if the first item were replaced", rule: (ans) => ans },
+      { id: "one_draw_only", label: "Reported a single draw instead of both", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Geometry depth IV (parallelogram & trapezoid areas) ----
+  "geo_area_parallelogram": {
+    name: "Area of a Parallelogram",
+    prereqs: ["geo_area_rect"],
+    baseElo: 900,
+    misconceptions: [
+      { id: "used_slant", label: "Multiplied by the slanted side instead of the perpendicular height", rule: (ans) => ans },
+      { id: "added_sides", label: "Added base and height instead of multiplying", rule: (ans, p) => p.base + p.h }
+    ]
+  },
+  "geo_area_trapezoid": {
+    name: "Area of a Trapezoid",
+    prereqs: ["geo_area_parallelogram"],
+    baseElo: 1020,
+    misconceptions: [
+      { id: "forgot_to_average", label: "Multiplied the base sum by the height without halving", rule: (ans) => ans },
+      { id: "one_base_only", label: "Used only one of the two parallel sides", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Powers depth III (power of a product) ----
+  "exponent_power_of_product": {
+    name: "Power of a Product",
+    prereqs: ["exponent_power_rule"],
+    baseElo: 1080,
+    misconceptions: [
+      { id: "skipped_coefficient", label: "Raised x but left the coefficient un-powered", rule: (ans) => ans },
+      { id: "multiplied_coefficient", label: "Multiplied the coefficient by the exponent instead of raising it", rule: (ans) => ans }
+    ]
   }
 };
 
@@ -1146,6 +1199,11 @@ const STANDARDS = {
   percent_error: "7.RP.A.3",
   limit: "Calculus — Limits at Infinity (AP/IB)",
   divisor_count: "Number Theory — Divisor Function",
+  fraction_negative: "7.NS.A.1",
+  prob_without_replacement: "7.SP.C.8",
+  geo_area_parallelogram: "6.G.A.1",
+  geo_area_trapezoid: "6.G.A.1",
+  exponent_power_of_product: "8.EE.A.1",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

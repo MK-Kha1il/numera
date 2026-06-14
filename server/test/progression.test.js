@@ -37,7 +37,7 @@ test('strand categories band into their own template key ranges', () => {
   // must start there and climb with UI level, never escaping the range.
   assert.strictEqual(P.normalizeLevelForGenerator('fractions', 1), 3);   // band base
   assert.strictEqual(P.normalizeLevelForGenerator('fractions', 13), 5);  // climbs with UI level
-  assert.strictEqual(P.normalizeLevelForGenerator('fractions', 59), 9);  // capped at band max
+  assert.strictEqual(P.normalizeLevelForGenerator('fractions', 59), 11); // capped at band max (now [3,11])
   assert.strictEqual(P.normalizeLevelForGenerator('expressions', 1), 11); // starts at 11, not 1
   assert.strictEqual(P.normalizeLevelForGenerator('expressions', 59), 18); // cap follows the polynomial keys
   assert.strictEqual(P.normalizeLevelForGenerator('geometry', 7), 3);
@@ -54,7 +54,7 @@ test('strand bands never normalize onto a milestone template key', () => {
   // so a strand band landing on a multiple of 10 serves the WRONG category (statistics at UI
   // levels 21–24 used to get a pythagorean problem) and miscounts mastery.
   const strands = ['geometry', 'integers', 'decimals', 'fractions', 'number_sense',
-    'statistics', 'expressions', 'powers', 'graphing'];
+    'statistics', 'expressions', 'powers', 'graphing', 'inequalities', 'functions'];
   for (const cat of strands) {
     for (let lvl = 1; lvl <= 60; lvl++) {
       if (lvl % 10 === 0) continue; // real milestones pass through by design
