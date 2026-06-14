@@ -3054,6 +3054,150 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // SEQUENCES STRAND (arithmetic & geometric patterns — next term, common
+  // difference, the nth-term formula, then the multiplicative switch).
+  // ===========================================================================
+  arithmetic_next_term: {
+    title: "Next Term of an Arithmetic Sequence",
+    formula: "a_{n+1} = a_n + d \\quad (d = \\text{the constant step})",
+    oneLineSummary: "An arithmetic sequence adds the same amount every step, so the next term is just the last term plus that constant difference.",
+    intuitionHook: "Climbing stairs where every step is the same height: $3, 7, 11, 15, \\ldots$ rises by $4$ each time. You don't need a formula to find the next stair — stand on $15$ and take one more $+4$ step to $19$. The rhythm of 'same jump, every time' IS an arithmetic sequence.",
+    whatItIs: "A sequence is an ordered list of numbers; it's arithmetic when consecutive terms differ by a constant, called the common difference $d$. Finding the next term means spotting $d$ and adding it once more.",
+    whyItWorks: "The defining promise of an arithmetic sequence is that the gap never changes: $a_2 - a_1 = a_3 - a_2 = \\cdots = d$. So once you measure one gap, you've measured them all — extending the list is just repeating that single move. This is why checking a SECOND gap matters: it confirms the pattern really is arithmetic (constant step) and not something that merely looked steady at the start. The step $d$ can be negative (a decreasing sequence) — the rule is identical, you just add a negative.",
+    whenToUse: "Predicting evenly-spaced values: seats per row, savings that grow by a fixed amount, tile patterns, anything that increases or decreases by the same chunk each period.",
+    representations: [
+      { kind: "step_ladder", label: "Same jump each time", body: "$3, 7, 11, 15$: each $+4$. Next is $15 + 4 = 19$ — one more rung of the same height." },
+      { kind: "gap_check", label: "Confirm with a second gap", body: "$7 - 3 = 4$ AND $11 - 7 = 4$: two matching gaps say 'arithmetic', so $d = 4$ is trustworthy." },
+      { kind: "number_line", label: "Equal hops", body: "On a number line the terms sit at equal spacing; the next term is the next evenly-spaced point." }
+    ],
+    commonMistakes: [
+      { label: "Repeating the last term", why: "Writing $15$ again — naming the current term instead of taking the next step.", fix: "The question asks for the term AFTER $15$. Add the difference once: $15 + 4 = 19$." },
+      { label: "Multiplying instead of adding", why: "Treating 'common difference' like a ratio and doubling, e.g. $15 \\times 2 = 30$.", fix: "Arithmetic sequences ADD a fixed amount; only geometric ones multiply. Add $d$." }
+    ],
+    connections: [
+      { concept: "arithmetic_common_difference", note: "Finding the step d is the companion skill — here you use it, there you extract it." },
+      { concept: "arithmetic_nth_term", note: "Adding d repeatedly is what the nth-term formula does in one shot." },
+      { concept: "geometric_next_term", note: "The multiplicative twin: same idea, but the step is ×r instead of +d." }
+    ],
+    examples: [
+      { question: "What is the next term of $5, 9, 13, 17, \\ldots$?", answer: "21", explanation: "The common difference is $9 - 5 = 4$, so the next term is $17 + 4 = 21$." },
+      { question: "What is the next term of $20, 17, 14, 11, \\ldots$?", answer: "8", explanation: "The difference is $-3$ (decreasing), so $11 + (-3) = 8$." }
+    ]
+  },
+
+  arithmetic_common_difference: {
+    title: "Common Difference",
+    formula: "d = a_{n+1} - a_n \\quad (\\text{same for every neighbouring pair})",
+    oneLineSummary: "The common difference is the constant gap between neighbours — found by subtracting any term from the one after it.",
+    intuitionHook: "A sequence $11, 15, 19, 23, \\ldots$ is a staircase, and the common difference is the height of one stair. Subtract any step from the next — $15 - 11 = 4$ — and you've measured the whole staircase, because every stair is the same.",
+    whatItIs: "The single number $d$ that an arithmetic sequence adds at each step. It's the rate of the sequence, obtained by subtracting consecutive terms (later minus earlier).",
+    whyItWorks: "Because the gap is constant by definition, ANY adjacent pair reveals it: $a_2 - a_1$ gives the same $d$ as $a_4 - a_3$. The order matters — later minus earlier — so an increasing sequence yields a positive $d$ and a decreasing one a negative $d$; flipping the subtraction flips the sign and points the sequence the wrong way. A term of the sequence (like $15$) is a POSITION, not a STEP — confusing the two is the central trap, which is why the operation is subtraction, never just reading a value.",
+    whenToUse: "Identifying the rule behind evenly-spaced data, finding the slope of a linear pattern from a table, and as the first step before writing an nth-term formula.",
+    representations: [
+      { kind: "subtract_neighbours", label: "Later minus earlier", body: "$15 - 11 = 4$; check $19 - 15 = 4$. The matching results confirm $d = 4$." },
+      { kind: "sign_of_d", label: "Direction lives in the sign", body: "$20, 17, 14$: $17 - 20 = -3$, so $d = -3$ — the negative says 'decreasing'." },
+      { kind: "term_vs_step", label: "A term is not the step", body: "$15$ is where you ARE; $d = 4$ is how far you MOVE. The question asks for the move." }
+    ],
+    commonMistakes: [
+      { label: "Reporting a term instead of the gap", why: "Answering $15$ because it's prominent in the list — but that's a location, not a step.", fix: "Subtract two neighbours: $15 - 11 = 4$. The answer is the GAP, not a member of the sequence." },
+      { label: "Subtracting in the wrong order", why: "Computing earlier minus later ($11 - 15 = -4$) on an increasing sequence.", fix: "Always later term minus earlier term. A wrong sign means you flipped the subtraction." }
+    ],
+    connections: [
+      { concept: "arithmetic_next_term", note: "Once you have d, the next term is just last + d." },
+      { concept: "rate_of_change", note: "The common difference is the rate of change of a sequence — slope in list form." },
+      { concept: "arithmetic_nth_term", note: "d is the multiplier inside a_n = a_1 + (n-1)d." }
+    ],
+    examples: [
+      { question: "Find the common difference of $7, 12, 17, 22, \\ldots$.", answer: "5", explanation: "$12 - 7 = 5$, and $17 - 12 = 5$ confirms it. So $d = 5$." },
+      { question: "Find the common difference of $30, 24, 18, 12, \\ldots$.", answer: "-6", explanation: "$24 - 30 = -6$ (decreasing), so $d = -6$." }
+    ]
+  },
+
+  arithmetic_nth_term: {
+    title: "nth Term of an Arithmetic Sequence",
+    formula: "a_n = a_1 + (n - 1)\\,d",
+    oneLineSummary: "Jump straight to any term: start at the first term and add the common difference (n − 1) times — because reaching term n takes one fewer step than n.",
+    intuitionHook: "To find the $50$th term you won't write out $50$ numbers. From the first term, getting to the $50$th takes $49$ steps — not $50$ — because the first term is the starting line, not a step. So add $d$ exactly $49$ times: $a_{50} = a_1 + 49d$.",
+    whatItIs: "A closed formula that returns any term directly from its position $n$: the first term plus $(n-1)$ copies of the common difference. It turns 'count your way there' into one calculation.",
+    whyItWorks: "Term $1$ requires zero steps, term $2$ requires one step, term $3$ requires two — so term $n$ requires $n-1$ steps, each of size $d$. That single off-by-one ($n-1$, not $n$) is the whole subtlety: the first term is where you BEGIN, so it doesn't cost a step. Writing $a_1 + n\\,d$ adds one step too many and lands you on term $n+1$. The formula is just 'starting value plus rate times steps taken' — the same shape as $y = b + mx$, with $a_1$ the intercept and $d$ the slope.",
+    whenToUse: "Finding a far-off term without listing, writing the rule for a linear pattern, comparing sequences, and converting between a sequence and its line $y = a_1 + (x-1)d$.",
+    representations: [
+      { kind: "steps_taken", label: "Steps = n − 1", body: "Term $1$: 0 steps. Term $5$: 4 steps. Term $n$: $(n-1)$ steps of size $d$." },
+      { kind: "plug_in", label: "Substitute and simplify", body: "$a_1 = 3, d = 4, n = 10$: $a_{10} = 3 + (10-1)\\cdot 4 = 3 + 36 = 39$." },
+      { kind: "line_in_disguise", label: "It's a line", body: "$a_n = a_1 + (n-1)d$ is $y = mx + b$ with slope $d$ — sequences are linear functions of position." }
+    ],
+    commonMistakes: [
+      { label: "Using n instead of (n − 1)", why: "Writing $a_1 + n\\,d$ — counting the first term as a step it never was.", fix: "The first term is the starting line. Reaching term $n$ costs $n-1$ steps: use $(n-1)d$." },
+      { label: "Dropping the first term", why: "Computing $(n-1)d$ alone and forgetting to add $a_1$.", fix: "You must add the starting value back: $a_n = a_1 + (n-1)d$." }
+    ],
+    connections: [
+      { concept: "arithmetic_common_difference", note: "d, the step, is the multiplier in the formula." },
+      { concept: "slope_intercept_id", note: "a_1 plays the intercept, d plays the slope — the same two jobs as in y = mx + b." },
+      { concept: "function_evaluate", note: "Computing a_n is evaluating the sequence's rule at the input n." }
+    ],
+    examples: [
+      { question: "An arithmetic sequence has first term $4$ and common difference $3$. What is the $10$th term?", answer: "31", explanation: "$a_{10} = 4 + (10-1)\\cdot 3 = 4 + 27 = 31$." },
+      { question: "Find the $8$th term of $5, 9, 13, \\ldots$.", answer: "33", explanation: "$a_1 = 5, d = 4$: $a_8 = 5 + (8-1)\\cdot 4 = 5 + 28 = 33$." }
+    ]
+  },
+
+  geometric_next_term: {
+    title: "Next Term of a Geometric Sequence",
+    formula: "a_{n+1} = a_n \\times r \\quad (r = \\text{the constant ratio})",
+    oneLineSummary: "A geometric sequence multiplies by the same number every step, so the next term is the last term times the common ratio.",
+    intuitionHook: "Folding a paper doubles its thickness each time: $1, 2, 4, 8, \\ldots$. The gaps ($1, 2, 4$) keep growing, but the OPERATION never changes — always $\\times 2$. So after $8$ comes $8 \\times 2 = 16$. Growth that compounds is geometric.",
+    whatItIs: "A sequence where each term is a constant multiple of the previous one; that multiplier is the common ratio $r$. Finding the next term means multiplying the last term by $r$.",
+    whyItWorks: "The defining rule is a constant RATIO, not a constant difference: $a_2 / a_1 = a_3 / a_2 = r$. So the differences between terms keep changing (they scale up with the terms), which is exactly why treating a geometric sequence as arithmetic — adding the last gap — fails. The constant thing to grab is the ratio: divide any term by the one before it to find $r$, then multiply forward. Because each step multiplies, geometric sequences grow (or shrink, if $0 < r < 1$) far faster than arithmetic ones — this is the mathematics of compounding.",
+    whenToUse: "Doubling/halving, compound interest, population growth, repeated percentage change — any process that scales by a fixed factor each period.",
+    representations: [
+      { kind: "multiply_step", label: "Same multiplier each time", body: "$1, 2, 4, 8$: each $\\times 2$. Next is $8 \\times 2 = 16$." },
+      { kind: "ratio_check", label: "Confirm with a ratio", body: "$2 \\div 1 = 2$ and $4 \\div 2 = 2$: matching ratios say 'geometric', so $r = 2$." },
+      { kind: "gaps_grow", label: "Gaps aren't constant", body: "Differences $1, 2, 4$ keep growing — proof it's NOT arithmetic; only the ratio holds steady." }
+    ],
+    commonMistakes: [
+      { label: "Adding the last gap", why: "Doing $8 + (8-4) = 12$ — treating a geometric sequence as arithmetic.", fix: "The gaps grow; the RATIO is constant. Multiply: $8 \\times 2 = 16$." },
+      { label: "Adding the ratio instead of multiplying", why: "Computing $8 + 2 = 10$ — mistaking $r$ for a difference.", fix: "The ratio is a multiplier, not an addend: $8 \\times r$, not $8 + r$." }
+    ],
+    connections: [
+      { concept: "geometric_common_ratio", note: "Finding r is the companion skill — divide neighbours to get it." },
+      { concept: "arithmetic_next_term", note: "The additive twin: same idea of a constant step, but +d instead of ×r." },
+      { concept: "exponent_power", note: "Repeated multiplication is exponentiation — geometric terms are a_1 · r^(n-1)." }
+    ],
+    examples: [
+      { question: "What is the next term of $2, 6, 18, 54, \\ldots$?", answer: "162", explanation: "The ratio is $6 \\div 2 = 3$, so the next term is $54 \\times 3 = 162$." },
+      { question: "What is the next term of $3, 6, 12, 24, \\ldots$?", answer: "48", explanation: "Each term doubles ($r = 2$), so $24 \\times 2 = 48$." }
+    ]
+  },
+
+  geometric_common_ratio: {
+    title: "Common Ratio",
+    formula: "r = \\dfrac{a_{n+1}}{a_n} \\quad (\\text{same for every neighbouring pair})",
+    oneLineSummary: "The common ratio is the constant multiplier of a geometric sequence — found by dividing any term by the one before it.",
+    intuitionHook: "In $5, 15, 45, 135, \\ldots$ each term is $3$ times the last. To uncover that $3$, divide neighbours: $15 \\div 5 = 3$. Division is the inverse of the multiply-each-step rule, so it hands you back the multiplier.",
+    whatItIs: "The number $r$ a geometric sequence multiplies by at each step, obtained by dividing a term by its predecessor (later over earlier).",
+    whyItWorks: "Since every term is the previous one times $r$, dividing them cancels everything but $r$: $a_{n+1}/a_n = (a_n \\cdot r)/a_n = r$. Any adjacent pair gives the same answer, which is also how you VERIFY a sequence is geometric — compute two ratios and check they match. The dominant error is subtracting instead of dividing, importing the arithmetic habit; but in a geometric sequence the differences aren't constant, so subtraction yields a different number for every pair. Ratio is to geometric sequences what difference is to arithmetic ones.",
+    whenToUse: "Identifying the growth/decay factor behind multiplying data, finding the base of an exponential model, and before writing a geometric nth-term rule $a_n = a_1 r^{n-1}$.",
+    representations: [
+      { kind: "divide_neighbours", label: "Later over earlier", body: "$15 \\div 5 = 3$; check $45 \\div 15 = 3$. Matching results confirm $r = 3$." },
+      { kind: "ratio_not_difference", label: "Divide, don't subtract", body: "Subtracting gives $15 - 5 = 10$ then $45 - 15 = 30$ — not constant, so subtraction is wrong here." },
+      { kind: "decay_case", label: "r can be a fraction", body: "$80, 40, 20, \\ldots$: $40 \\div 80 = \\tfrac{1}{2}$, a shrinking sequence with $r = \\tfrac12$." }
+    ],
+    commonMistakes: [
+      { label: "Subtracting consecutive terms", why: "Computing $15 - 5 = 10$ as if the sequence were arithmetic.", fix: "Geometric sequences multiply, so DIVIDE: $15 \\div 5 = 3$. Subtraction won't give a constant here." },
+      { label: "Reporting a term instead of the ratio", why: "Answering $15$ because it's in the list — a term, not the multiplier.", fix: "The ratio is the result of a division, not a member of the sequence: $15 \\div 5 = 3$." }
+    ],
+    connections: [
+      { concept: "geometric_next_term", note: "Once you have r, the next term is just last × r." },
+      { concept: "arithmetic_common_difference", note: "The additive analogue — difference is to arithmetic what ratio is to geometric." },
+      { concept: "fraction_div", note: "Finding r is a division; for shrinking sequences r is a fraction." }
+    ],
+    examples: [
+      { question: "Find the common ratio of $4, 12, 36, 108, \\ldots$.", answer: "3", explanation: "$12 \\div 4 = 3$, and $36 \\div 12 = 3$ confirms it. So $r = 3$." },
+      { question: "Find the common ratio of $2, 10, 50, 250, \\ldots$.", answer: "5", explanation: "$10 \\div 2 = 5$, so $r = 5$." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -3504,6 +3648,13 @@ function levelToConceptId(category, level) {
     if (lvl <= 11) return 'rate_of_change';
     if (lvl <= 13) return 'function_initial';
     return 'function_solve';
+  }
+  if (cat === 'sequences') {
+    if (lvl <= 7) return 'arithmetic_next_term';
+    if (lvl <= 9) return 'arithmetic_common_difference';
+    if (lvl <= 11) return 'arithmetic_nth_term';
+    if (lvl <= 13) return 'geometric_next_term';
+    return 'geometric_common_ratio';
   }
   if (cat === 'expressions') {
     if (lvl <= 11) return 'eval_expression';

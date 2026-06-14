@@ -74,6 +74,7 @@ fun LevelNode(
         category == "graphing" -> Triple(Color(0xFFF87171), Color(0xFFDC2626), Color(0xFF991B1B))
         category == "inequalities" -> Triple(Color(0xFF6EE7B7), Color(0xFF10B981), Color(0xFF047857))
         category == "functions" -> Triple(Color(0xFFFACC15), Color(0xFFCA8A04), Color(0xFF713F12))
+        category == "sequences" -> Triple(Color(0xFF818CF8), Color(0xFF4F46E5), Color(0xFF3730A3))
         else -> Triple(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFF92400E))
     }
 

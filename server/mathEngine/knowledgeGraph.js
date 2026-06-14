@@ -1081,6 +1081,53 @@ const concepts = {
       { id: "skipped_coefficient", label: "Raised x but left the coefficient un-powered", rule: (ans) => ans },
       { id: "multiplied_coefficient", label: "Multiplied the coefficient by the exponent instead of raising it", rule: (ans) => ans }
     ]
+  },
+
+  // ---- Sequences strand (arithmetic & geometric patterns — 4.OA / HSF) ----
+  "arithmetic_next_term": {
+    name: "Next Term of an Arithmetic Sequence",
+    prereqs: ["integer_add"],
+    baseElo: 1000,
+    misconceptions: [
+      { id: "forgot_to_add", label: "Repeated the last term instead of adding the common difference", rule: (ans, p) => p.last },
+      { id: "doubled_last", label: "Doubled the last term", rule: (ans, p) => 2 * p.last }
+    ]
+  },
+  "arithmetic_common_difference": {
+    name: "Common Difference",
+    prereqs: ["arithmetic_next_term", "integer_sub"],
+    baseElo: 1040,
+    misconceptions: [
+      { id: "used_a_term", label: "Reported a term of the sequence instead of the gap between terms", rule: (ans, p) => p.t2 },
+      { id: "used_first_term", label: "Mistook the first term for the common difference", rule: (ans, p) => p.a }
+    ]
+  },
+  "arithmetic_nth_term": {
+    name: "nth Term of an Arithmetic Sequence",
+    prereqs: ["arithmetic_common_difference", "eval_expression"],
+    baseElo: 1140,
+    misconceptions: [
+      { id: "off_by_one_n", label: "Multiplied the difference by n instead of (n − 1)", rule: (ans, p) => p.a1 + p.n * p.d },
+      { id: "dropped_first_term", label: "Forgot to add the first term", rule: (ans, p) => (p.n - 1) * p.d }
+    ]
+  },
+  "geometric_next_term": {
+    name: "Next Term of a Geometric Sequence",
+    prereqs: ["arithmetic_next_term", "integer_mult"],
+    baseElo: 1180,
+    misconceptions: [
+      { id: "treated_arithmetic", label: "Added the last gap as if the sequence were arithmetic", rule: (ans, p) => 2 * p.last - p.prev },
+      { id: "added_ratio", label: "Added the common ratio instead of multiplying by it", rule: (ans, p) => p.last + p.r }
+    ]
+  },
+  "geometric_common_ratio": {
+    name: "Common Ratio",
+    prereqs: ["geometric_next_term", "integer_div"],
+    baseElo: 1220,
+    misconceptions: [
+      { id: "subtracted_terms", label: "Subtracted consecutive terms as if the sequence were arithmetic", rule: (ans, p) => p.diff },
+      { id: "read_a_term", label: "Reported a term instead of the ratio between terms", rule: (ans, p) => p.t2 }
+    ]
   }
 };
 
@@ -1204,6 +1251,11 @@ const STANDARDS = {
   geo_area_parallelogram: "6.G.A.1",
   geo_area_trapezoid: "6.G.A.1",
   exponent_power_of_product: "8.EE.A.1",
+  arithmetic_next_term: "4.OA.C.5",
+  arithmetic_common_difference: "HSF-LE.A.2",
+  arithmetic_nth_term: "HSF-BF.A.2",
+  geometric_next_term: "HSF-IF.A.3",
+  geometric_common_ratio: "HSF-BF.A.2",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

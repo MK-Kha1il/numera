@@ -490,6 +490,7 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
             else if (normCat === 'graphing') masteryCol = 'graphing_correct';
             else if (normCat === 'inequalities') masteryCol = 'inequalities_correct';
             else if (normCat === 'functions') masteryCol = 'functions_correct';
+            else if (normCat === 'sequences') masteryCol = 'sequences_correct';
 
             const finalizeResponse = () => {
               // Fire-and-forget: update competitive skill profile for the concepts practised this level

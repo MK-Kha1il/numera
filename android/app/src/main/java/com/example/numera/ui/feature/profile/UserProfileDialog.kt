@@ -282,6 +282,12 @@ fun UserProfileDialog(
                                 maxCount = 100,
                                 color = Color(0xFF26C6DA)
                             )
+                            MasteryBar(
+                                topicName = "Sequences",
+                                correctCount = profile.mastery.sequences_correct,
+                                maxCount = 100,
+                                color = Color(0xFF818CF8)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(Spacing.l))

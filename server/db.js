@@ -238,6 +238,7 @@ function initDb() {
           graphing_correct INTEGER DEFAULT 0,
           inequalities_correct INTEGER DEFAULT 0,
           functions_correct INTEGER DEFAULT 0,
+          sequences_correct INTEGER DEFAULT 0,
           FOREIGN KEY(user_id) REFERENCES users(id)
         )
       `);
@@ -926,6 +927,11 @@ function initDb() {
         { id: 'mastery_functions_2', name: 'Function Adept', description: 'Solve 20 Functions problems', icon: 'school', target_type: 'mastery_functions', target_value: 20, reward_coins: 150, category: 'Mastery', chain_id: 'mastery_functions', chain_order: 2, is_hidden: 0 },
         { id: 'mastery_functions_3', name: 'Function Expert', description: 'Solve 50 Functions problems', icon: 'school', target_type: 'mastery_functions', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_functions', chain_order: 3, is_hidden: 0 },
         { id: 'mastery_functions_4', name: 'Function Master', description: 'Solve 150 Functions problems', icon: 'school', target_type: 'mastery_functions', target_value: 150, reward_coins: 800, category: 'Mastery', chain_id: 'mastery_functions', chain_order: 4, is_hidden: 0 },
+
+        { id: 'mastery_sequences_1', name: 'Sequence Apprentice', description: 'Solve 5 Sequences problems', icon: 'school', target_type: 'mastery_sequences', target_value: 5, reward_coins: 50, category: 'Mastery', chain_id: 'mastery_sequences', chain_order: 1, is_hidden: 0 },
+        { id: 'mastery_sequences_2', name: 'Sequence Adept', description: 'Solve 20 Sequences problems', icon: 'school', target_type: 'mastery_sequences', target_value: 20, reward_coins: 150, category: 'Mastery', chain_id: 'mastery_sequences', chain_order: 2, is_hidden: 0 },
+        { id: 'mastery_sequences_3', name: 'Sequence Expert', description: 'Solve 50 Sequences problems', icon: 'school', target_type: 'mastery_sequences', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_sequences', chain_order: 3, is_hidden: 0 },
+        { id: 'mastery_sequences_4', name: 'Sequence Master', description: 'Solve 150 Sequences problems', icon: 'school', target_type: 'mastery_sequences', target_value: 150, reward_coins: 800, category: 'Mastery', chain_id: 'mastery_sequences', chain_order: 4, is_hidden: 0 },
 
         // 5. Social Chain
         { id: 'social_1', name: 'Friendly Greeting', description: 'Add your first friend', icon: 'group', target_type: 'friends_count', target_value: 1, reward_coins: 30, category: 'Social', chain_id: 'social_path', chain_order: 1, is_hidden: 0 },

@@ -2907,6 +2907,90 @@ templates.functions = {
   }
 };
 
+// -------------------------------------------------------------
+// SEQUENCES TEMPLATES — arithmetic & geometric patterns: next term, common difference,
+// the nth-term formula a_n = a_1 + (n-1)d (the off-by-one trap), then the multiplicative
+// switch (geometric next term + common ratio). Routed by the 'sequences' category. Keys
+// skip multiples of 10 (milestone boss keys). Params (a/d/n, last/prev/r, t2/diff) ride
+// along for the misconception classifier.
+// -------------------------------------------------------------
+templates.sequences = {
+  // Next term of an arithmetic sequence — spot the constant step, then take one more.
+  7: (_diffFactor, idx) => {
+    const a = 2 + (idx % 6);              // first term 2..7
+    const d = 2 + (idx % 5);              // common difference 2..6
+    const t2 = a + d, t3 = a + 2 * d, t4 = a + 3 * d;
+    const next = a + 4 * d;
+    return {
+      question: `What is the next term in the arithmetic sequence $${a}, ${t2}, ${t3}, ${t4}, \\ldots$?`,
+      answer: next,
+      distractors: [t4, t4 + d + 1, 2 * t4], // forgot to add the step; overshot the step; doubled the last term
+      explanation: `Each term jumps by the same amount: $${t2} - ${a} = ${d}$. The pattern is "add $${d}$", so the next term is $${t4} + ${d} = ${next}$. Repeating $${t4}$ forgets the step; doubling it confuses "add the difference" with "multiply".`,
+      type: "arithmetic_next_term",
+      last: t4, d, a
+    };
+  },
+  // Common difference — the constant gap, found by subtracting (not reading a term).
+  9: (_diffFactor, idx) => {
+    const a = 10 + (idx % 8);             // first term 10..17 (kept clear of the small step)
+    const d = 2 + (idx % 6);              // common difference 2..7
+    const t2 = a + d, t3 = a + 2 * d, t4 = a + 3 * d;
+    return {
+      question: `Find the common difference of the arithmetic sequence $${a}, ${t2}, ${t3}, ${t4}, \\ldots$.`,
+      answer: d,
+      distractors: [t2, a, a + t2], // read off a term; used the first term; added two terms
+      explanation: `The common difference is the constant GAP between neighbours: $${t2} - ${a} = ${d}$ (and $${t3} - ${t2} = ${d}$, so it checks out). A term like $${t2}$ or the start $${a}$ is not the gap — it's the distance you travel each step that defines the sequence.`,
+      type: "arithmetic_common_difference",
+      a, d, t2
+    };
+  },
+  // nth term — the formula a_n = a_1 + (n-1)d, with n large enough to force it (not extend-by-hand).
+  11: (_diffFactor, idx) => {
+    const a1 = 3 + (idx % 5);             // first term 3..7
+    const d = 2 + (idx % 4);              // common difference 2..5
+    const n = 8 + (idx % 5);             // the term index 8..12
+    const t2 = a1 + d, t3 = a1 + 2 * d;
+    const ans = a1 + (n - 1) * d;
+    return {
+      question: `An arithmetic sequence begins $${a1}, ${t2}, ${t3}, \\ldots$ with a common difference of $${d}$. What is the $${n}$th term?`,
+      answer: ans,
+      distractors: [a1 + n * d, (n - 1) * d, a1 + (n - 1)], // used n not (n-1); dropped the first term; treated d as 1
+      explanation: `Use $a_n = a_1 + (n-1)d$: the first term already counts as term 1, so reaching term $${n}$ takes $${n} - 1 = ${n - 1}$ steps of $${d}$. That gives $${a1} + ${n - 1} \\cdot ${d} = ${ans}$. Multiplying by $${n}$ instead adds one step too many — the classic off-by-one.`,
+      type: "arithmetic_nth_term",
+      a1, d, n
+    };
+  },
+  // Next term of a geometric sequence — the step is a MULTIPLY, not an add.
+  13: (_diffFactor, idx) => {
+    const a = 1 + (idx % 3);              // first term 1..3
+    const r = 2 + (idx % 2);              // common ratio 2..3
+    const t2 = a * r, t3 = a * r * r, t4 = a * r * r * r;
+    const next = t4 * r;
+    return {
+      question: `What is the next term in the geometric sequence $${a}, ${t2}, ${t3}, ${t4}, \\ldots$?`,
+      answer: next,
+      distractors: [2 * t4 - t3, t4 + r, t4 + t4 * r], // added the last gap (arithmetic); added the ratio; over-multiplied
+      explanation: `Here each term is MULTIPLIED by the same number: $${t2} \\div ${a} = ${r}$. So the next term is $${t4} \\times ${r} = ${next}$. Adding the gap $${t4 - t3}$ treats a geometric pattern as arithmetic — but the gaps grow, only the ratio stays constant.`,
+      type: "geometric_next_term",
+      last: t4, prev: t3, r
+    };
+  },
+  // Common ratio — divide neighbours (don't subtract them as if arithmetic).
+  15: (_diffFactor, idx) => {
+    const a = 3 + (idx % 3);              // first term 3..5
+    const r = 2 + ((idx + 1) % 3);        // common ratio 2..4 (offset cycle keeps r != a coincidences clear)
+    const t2 = a * r, t3 = a * r * r, t4 = a * r * r * r;
+    return {
+      question: `Find the common ratio of the geometric sequence $${a}, ${t2}, ${t3}, ${t4}, \\ldots$.`,
+      answer: r,
+      distractors: [t2 - a, t2, r + 1], // subtracted like arithmetic; read off a term; off by one
+      explanation: `A geometric sequence multiplies by a constant ratio, so DIVIDE neighbours: $${t2} \\div ${a} = ${r}$ (and $${t3} \\div ${t2} = ${r}$). Subtracting gives $${t2 - a}$, the kind of answer an arithmetic sequence would have — but here the gaps change while the ratio holds.`,
+      type: "geometric_common_ratio",
+      a, r, t2, diff: t2 - a
+    };
+  }
+};
+
 module.exports = {
   templates
 };

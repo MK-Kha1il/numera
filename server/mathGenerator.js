@@ -139,6 +139,12 @@ const CONCEPT_TO_LEVEL = {
   rate_of_change:           { category: 'functions',  level: 11 },
   function_initial:         { category: 'functions',  level: 13 },
   function_solve:           { category: 'functions',  level: 15 },
+  // Sequences strand (arithmetic & geometric patterns). Keys skip 10 (boss-routed).
+  arithmetic_next_term:         { category: 'sequences', level: 7  },
+  arithmetic_common_difference: { category: 'sequences', level: 9  },
+  arithmetic_nth_term:          { category: 'sequences', level: 11 },
+  geometric_next_term:          { category: 'sequences', level: 13 },
+  geometric_common_ratio:       { category: 'sequences', level: 15 },
   linear_one_step:      { category: 'algebra',       level: 11 },
   linear_two_step:      { category: 'algebra',       level: 13 },
   // Promoted from variety templates: the level-14/16 generators already produced these.
@@ -310,6 +316,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'inequalities';
   } else if (normalizedCat === 'functions') {
     catKey = 'functions';
+  } else if (normalizedCat === 'sequences') {
+    catKey = 'sequences';
   } else {
     catKey = 'arithmetic';
   }

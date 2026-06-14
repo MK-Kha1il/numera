@@ -118,7 +118,13 @@ const TYPE_TO_CONCEPT = {
   prob_without_replacement: 'prob_without_replacement',
   geo_area_parallelogram:   'geo_area_parallelogram',
   geo_area_trapezoid:       'geo_area_trapezoid',
-  exponent_power_of_product: 'exponent_power_of_product'
+  exponent_power_of_product: 'exponent_power_of_product',
+  // Sequences strand — template types equal conceptIds.
+  arithmetic_next_term:         'arithmetic_next_term',
+  arithmetic_common_difference: 'arithmetic_common_difference',
+  arithmetic_nth_term:          'arithmetic_nth_term',
+  geometric_next_term:          'geometric_next_term',
+  geometric_common_ratio:       'geometric_common_ratio'
 };
 
 // Resolve a concept from a template type string
@@ -318,7 +324,8 @@ function getCategoryConceptIds(category, level) {
     powers:        ['square_root', 'cube_root', 'exponent_power_of_product', 'exponent_product_rule', 'exponent_power_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation'],
     graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula', 'coord_reflect', 'coord_translate'],
     inequalities:  ['inequality_one_step_add', 'inequality_one_step_mult', 'inequality_flip_negative', 'inequality_two_step', 'inequality_compound'],
-    functions:     ['function_evaluate', 'function_table', 'rate_of_change', 'function_initial', 'function_solve']
+    functions:     ['function_evaluate', 'function_table', 'rate_of_change', 'function_initial', 'function_solve'],
+    sequences:     ['arithmetic_next_term', 'arithmetic_common_difference', 'arithmetic_nth_term', 'geometric_next_term', 'geometric_common_ratio']
   };
   const key = (category || 'arithmetic').toLowerCase();
   return map[key] || map.arithmetic;

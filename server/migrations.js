@@ -823,6 +823,18 @@ const migrations = [
       }
     },
   },
+  {
+    version: 33,
+    name: 'sequences_strand_mastery',
+    // Sequences strand (arithmetic & geometric patterns) — its mastery counter.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE user_mastery ADD COLUMN sequences_correct INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**
