@@ -1785,6 +1785,54 @@ templates.statistics = {
       explanation: `The first draw is $\\frac{${win}}{${total}}$ gold. Now the bag has ONE fewer gold and one fewer marble, so the second is $\\frac{${win - 1}}{${total - 1}}$. Multiply: $\\frac{${win}}{${total}} \\times \\frac{${win - 1}}{${total - 1}} = \\frac{${win * (win - 1)}}{${total * (total - 1)}}$. Without replacement, the second denominator DROPS — the draws are no longer independent.`,
       type: "prob_without_replacement"
     };
+  },
+  // ---- Statistics II: measures of spread (quartiles, IQR, MAD — 6.SP.B.5c) ----
+  // First quartile: the median of the lower half. 7 sorted values → Q1 = 2nd, median = 4th, Q3 = 6th.
+  17: (_diffFactor, idx) => {
+    const v0 = 2 + (idx % 6);
+    const g = [1 + (idx % 3), 1 + ((idx + 1) % 3), 2 + (idx % 2), 1 + ((idx + 2) % 3), 2 + ((idx + 1) % 2), 1 + (idx % 3)];
+    const v = [v0];
+    for (let k = 0; k < 6; k++) v.push(v[v.length - 1] + g[k]);
+    return {
+      question: `Find the first quartile (Q1) of the data set $${v.join(', ')}$.`,
+      answer: v[1],
+      distractors: [v[3], v[0], v[5]], // gave the overall median; gave the minimum; gave Q3 instead
+      explanation: `With $7$ values the median is the $4$th, $${v[3]}$, which splits off a lower half $${v[0]}, ${v[1]}, ${v[2]}$. Q1 is the median of THAT half — its middle value, $${v[1]}$. The lowest value $${v[0]}$ is the minimum, not the quartile; the overall median $${v[3]}$ is the center of all seven.`,
+      type: "stat_quartile",
+      median: v[3], min: v[0], q3: v[5], q1: v[1]
+    };
+  },
+  // Interquartile range: Q3 − Q1, the spread of the middle half (resists outliers).
+  18: (_diffFactor, idx) => {
+    const v0 = 2 + (idx % 6);
+    const g = [1 + (idx % 3), 1 + ((idx + 1) % 3), 2 + (idx % 2), 1 + ((idx + 2) % 3), 2 + ((idx + 1) % 2), 1 + (idx % 3)];
+    const v = [v0];
+    for (let k = 0; k < 6; k++) v.push(v[v.length - 1] + g[k]);
+    const q1 = v[1], q3 = v[5];
+    return {
+      question: `Find the interquartile range (IQR) of the data set $${v.join(', ')}$.`,
+      answer: q3 - q1,
+      distractors: [v[6] - v[0], q3, q1], // gave the full range; gave Q3 alone; gave Q1 alone
+      explanation: `The IQR measures the middle $50\\%$: $\\text{Q3} - \\text{Q1}$. Here Q1 $= ${q1}$ (median of the lower half) and Q3 $= ${q3}$ (median of the upper half), so IQR $= ${q3} - ${q1} = ${q3 - q1}$. The full range $${v[6]} - ${v[0]} = ${v[6] - v[0]}$ uses the extremes; the IQR deliberately ignores them.`,
+      type: "stat_iqr",
+      max: v[6], min: v[0], q3, q1
+    };
+  },
+  // Mean absolute deviation: the average distance from the mean. Symmetric data → integer MAD.
+  19: (_diffFactor, idx) => {
+    const m = 20 + (idx % 6);
+    const a = 2 + (idx % 3);
+    const b = a + 2;
+    const values = [m - b, m - a, m + a, m + b]; // mean is m by symmetry
+    const mad = a + 1;                            // (b + a + a + b) / 4 = (a + b) / 2 = a + 1
+    return {
+      question: `Find the mean absolute deviation (MAD) of the data set $${values.join(', ')}$.`,
+      answer: mad,
+      distractors: [4 * mad, 2 * b, m], // summed the deviations but never divided; gave the range; gave the mean
+      explanation: `The mean is $${m}$ (the data is balanced around it). The distances from $${m}$ are $${b}, ${a}, ${a}, ${b}$, which sum to $${4 * mad}$. MAD is the AVERAGE distance: $\\frac{${4 * mad}}{4} = ${mad}$. Forgetting to divide leaves the total $${4 * mad}$; the mean itself ($${m}$) is the center, not the spread.`,
+      type: "stat_mad",
+      mean: m, sumdev: 4 * mad, range: 2 * b
+    };
   }
 };
 

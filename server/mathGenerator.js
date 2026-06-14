@@ -98,6 +98,10 @@ const CONCEPT_TO_LEVEL = {
   compound_probability: { category: 'statistics',    level: 14 },
   probability_complement: { category: 'statistics',  level: 15 },
   prob_without_replacement: { category: 'statistics', level: 16 },
+  // Statistics II — measures of spread (depth on the existing strand, band extended to 19).
+  stat_quartile:        { category: 'statistics',    level: 17 },
+  stat_iqr:             { category: 'statistics',    level: 18 },
+  stat_mad:             { category: 'statistics',    level: 19 },
   // Algebraic-expressions strand (audit #1.1 — the bridge into algebra).
   eval_expression:      { category: 'expressions',   level: 11 },
   eval_two_var:         { category: 'expressions',   level: 12 },

@@ -1128,6 +1128,35 @@ const concepts = {
       { id: "subtracted_terms", label: "Subtracted consecutive terms as if the sequence were arithmetic", rule: (ans, p) => p.diff },
       { id: "read_a_term", label: "Reported a term instead of the ratio between terms", rule: (ans, p) => p.t2 }
     ]
+  },
+
+  // ---- Statistics II: measures of spread (quartiles, IQR, MAD — 6.SP) ----
+  "stat_quartile": {
+    name: "Quartiles",
+    prereqs: ["stat_median"],
+    baseElo: 1080,
+    misconceptions: [
+      { id: "gave_median", label: "Reported the overall median instead of the lower quartile", rule: (ans, p) => p.median },
+      { id: "gave_min", label: "Reported the minimum instead of the quartile", rule: (ans, p) => p.min }
+    ]
+  },
+  "stat_iqr": {
+    name: "Interquartile Range",
+    prereqs: ["stat_quartile", "stat_range"],
+    baseElo: 1140,
+    misconceptions: [
+      { id: "gave_range", label: "Reported the full range (max − min) instead of the interquartile range", rule: (ans, p) => p.max - p.min },
+      { id: "gave_q3_only", label: "Reported Q3 without subtracting Q1", rule: (ans, p) => p.q3 }
+    ]
+  },
+  "stat_mad": {
+    name: "Mean Absolute Deviation",
+    prereqs: ["stat_mean"],
+    baseElo: 1200,
+    misconceptions: [
+      { id: "forgot_to_divide", label: "Summed the absolute deviations but never divided by the count", rule: (ans, p) => p.sumdev },
+      { id: "gave_mean", label: "Reported the mean instead of the average distance from it", rule: (ans, p) => p.mean }
+    ]
   }
 };
 
@@ -1256,6 +1285,9 @@ const STANDARDS = {
   arithmetic_nth_term: "HSF-BF.A.2",
   geometric_next_term: "HSF-IF.A.3",
   geometric_common_ratio: "HSF-BF.A.2",
+  stat_quartile: "6.SP.B.5c",
+  stat_iqr: "6.SP.B.5c",
+  stat_mad: "6.SP.B.5c",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

@@ -119,6 +119,10 @@ const TYPE_TO_CONCEPT = {
   geo_area_parallelogram:   'geo_area_parallelogram',
   geo_area_trapezoid:       'geo_area_trapezoid',
   exponent_power_of_product: 'exponent_power_of_product',
+  // Statistics II — measures of spread.
+  stat_quartile:            'stat_quartile',
+  stat_iqr:                 'stat_iqr',
+  stat_mad:                 'stat_mad',
   // Sequences strand — template types equal conceptIds.
   arithmetic_next_term:         'arithmetic_next_term',
   arithmetic_common_difference: 'arithmetic_common_difference',
@@ -319,7 +323,7 @@ function getCategoryConceptIds(category, level) {
     fractions:     ['fraction_simplify', 'fraction_add', 'mixed_number', 'fraction_sub', 'fraction_compare', 'fraction_mult', 'fraction_div', 'fraction_negative'],
     number_sense:  ['percentage_of', 'fraction_of', 'ratio_solve', 'percent_change', 'unit_convert_metric', 'unit_convert_time', 'unit_rate', 'exponent_power', 'proportion_solve',
                     'percent_discount', 'simple_interest', 'multi_step_word', 'percent_markup', 'percent_error'],
-    statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'mean_missing_value', 'stat_probability', 'compound_probability', 'probability_complement', 'prob_without_replacement'],
+    statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'mean_missing_value', 'stat_probability', 'compound_probability', 'probability_complement', 'prob_without_replacement', 'stat_quartile', 'stat_iqr', 'stat_mad'],
     expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'translate_expression', 'distribute', 'foil_binomials', 'square_binomial', 'factor_trinomial'],
     powers:        ['square_root', 'cube_root', 'exponent_power_of_product', 'exponent_product_rule', 'exponent_power_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation'],
     graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula', 'coord_reflect', 'coord_translate'],

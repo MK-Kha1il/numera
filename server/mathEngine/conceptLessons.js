@@ -3198,6 +3198,93 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // STATISTICS II — measures of spread (quartiles, IQR, mean absolute deviation).
+  // ===========================================================================
+  stat_quartile: {
+    title: "Quartiles",
+    formula: "\\text{Q1} = \\text{median of the lower half}, \\quad \\text{Q3} = \\text{median of the upper half}",
+    oneLineSummary: "Quartiles cut sorted data into four equal-sized groups — Q1 is the median of the lower half, Q3 the median of the upper half.",
+    intuitionHook: "Line up a class by height and split them into four equal queues. The cut between the first and second queue is Q1: a quarter of the class is shorter than it. Q1 isn't the shortest kid — it's the 'typical shorty', the middle of the bottom half.",
+    whatItIs: "Quartiles are three values (Q1, the median Q2, and Q3) that divide an ordered data set into four parts each holding about a quarter of the values. Finding a quartile means taking the median of one half of the data.",
+    whyItWorks: "The median already splits sorted data into a lower and an upper half. Quartiles just repeat that move INSIDE each half: Q1 is the median of everything below the overall median, Q3 the median of everything above it. So quartiles inherit the median's resistance to extreme values — a single huge outlier barely moves them, because they depend on POSITION (which value sits in the middle of a half), not on the actual sizes of the far-out numbers. The data MUST be sorted first; quartiles are defined by order, and an unsorted list gives meaningless 'middles'.",
+    whenToUse: "Describing the shape of a distribution, building box plots, comparing two data sets' spreads fairly, and spotting outliers (which sit far beyond Q1 and Q3).",
+    representations: [
+      { kind: "four_groups", label: "Cut into quarters", body: "Seven sorted values: the $4$th is the median; Q1 is the middle of the first three, Q3 the middle of the last three." },
+      { kind: "median_of_a_half", label: "Median, recursed", body: "Q1 is just 'the median' applied to the lower half — the same skill, one level down." },
+      { kind: "not_the_extremes", label: "Not the smallest", body: "Q1 is a typical low value, not the minimum; about $25\\%$ of the data lies below it." }
+    ],
+    commonMistakes: [
+      { label: "Reporting the overall median", why: "Giving Q2 (the center of ALL the data) when asked for Q1.", fix: "Q1 lives in the lower half only. First find the median, then take the median of the values below it." },
+      { label: "Reporting the minimum", why: "Confusing 'lower quartile' with 'lowest value'.", fix: "Q1 is the MIDDLE of the lower half, not its smallest member — about a quarter of the data sits beneath it." }
+    ],
+    connections: [
+      { concept: "stat_median", note: "A quartile is a median taken on half the data — same procedure, smaller set." },
+      { concept: "stat_iqr", note: "Q3 − Q1 is the interquartile range, the next concept's whole subject." },
+      { concept: "stat_range", note: "Range uses the extremes; quartiles use positions and so ignore wild outliers." }
+    ],
+    examples: [
+      { question: "Find Q1 of $2, 4, 5, 8, 10, 12, 15$.", answer: "4", explanation: "The median is the 4th value, $8$. The lower half is $2, 4, 5$; its median is $4$." },
+      { question: "Find Q3 of $1, 3, 4, 6, 9, 10, 14$.", answer: "10", explanation: "Median is $6$; the upper half is $9, 10, 14$, whose median is $10$." }
+    ]
+  },
+
+  stat_iqr: {
+    title: "Interquartile Range",
+    formula: "\\text{IQR} = \\text{Q3} - \\text{Q1}",
+    oneLineSummary: "The interquartile range is Q3 minus Q1 — the width of the middle 50% of the data, a spread measure that ignores outliers.",
+    intuitionHook: "Forget the tallest and shortest kids — how spread out is the 'middle bunch'? The IQR answers exactly that: the distance from the typical-short (Q1) to the typical-tall (Q3). One freakishly tall newcomer doesn't change it at all, because they're outside the middle half.",
+    whatItIs: "A measure of variability equal to the gap between the third and first quartiles. It captures how wide the central half of the data is, deliberately excluding the top and bottom quarters.",
+    whyItWorks: "Range (max − min) is hostage to its two most extreme values — one outlier can blow it up and misrepresent a tight data set. The IQR fixes this by chopping off the outer quarters and measuring only what's left: Q1 and Q3 are positional, so the subtraction $Q3 - Q1$ reports the spread of the robust middle. That's why statisticians use the IQR to DEFINE outliers (points more than $1.5 \\times \\text{IQR}$ beyond a quartile) — it's a yardstick the outliers themselves can't distort.",
+    whenToUse: "Comparing spreads when data may contain outliers, drawing the box of a box plot (its length is the IQR), and flagging anomalies.",
+    representations: [
+      { kind: "middle_half", label: "Width of the center", body: "If Q1 $= 4$ and Q3 $= 11$, the middle $50\\%$ spans $11 - 4 = 7$." },
+      { kind: "vs_range", label: "Robust vs fragile", body: "Range uses min and max (outlier-sensitive); IQR uses Q1 and Q3 (outlier-resistant)." },
+      { kind: "box_length", label: "The box in a box plot", body: "On a box plot the box stretches from Q1 to Q3 — its length IS the IQR." }
+    ],
+    commonMistakes: [
+      { label: "Using the full range", why: "Computing max − min instead of Q3 − Q1.", fix: "The IQR is built from QUARTILES, not extremes: subtract Q1 from Q3, leaving the outer quarters out." },
+      { label: "Reporting a single quartile", why: "Giving Q3 (or Q1) and stopping, forgetting it's a difference.", fix: "IQR is a gap: you need both quartiles, then subtract — $\\text{Q3} - \\text{Q1}$." }
+    ],
+    connections: [
+      { concept: "stat_quartile", note: "You must find Q1 and Q3 first; the IQR is their difference." },
+      { concept: "stat_range", note: "Range is the extremes' spread; IQR is the middle's spread — robust where range is fragile." },
+      { concept: "stat_mad", note: "Both summarize variability; MAD averages distances, IQR measures the central band." }
+    ],
+    examples: [
+      { question: "Find the IQR of $2, 4, 5, 8, 10, 12, 15$.", answer: "8", explanation: "Q1 $= 4$, Q3 $= 12$ (medians of the halves), so IQR $= 12 - 4 = 8$." },
+      { question: "A data set has Q1 $= 6$ and Q3 $= 13$. What is the IQR?", answer: "7", explanation: "$\\text{Q3} - \\text{Q1} = 13 - 6 = 7$." }
+    ]
+  },
+
+  stat_mad: {
+    title: "Mean Absolute Deviation",
+    formula: "\\text{MAD} = \\dfrac{\\sum |x_i - \\bar{x}|}{n}",
+    oneLineSummary: "The mean absolute deviation is the average distance of the data from its mean — a single number for 'how spread out' the values are.",
+    intuitionHook: "Five friends stand at different points on a road; the mean is their meeting spot. On average, how far must each walk to get there? That average walking distance IS the MAD — a typical gap between a value and the center.",
+    whatItIs: "A measure of variability: compute the mean, find how far each value is from it (always a positive distance), then average those distances. Small MAD means tightly clustered data; large MAD means widely scattered.",
+    whyItWorks: "We want one number for 'typical distance from center'. The raw deviations $x_i - \\bar{x}$ can't just be averaged — they always sum to zero (the positives and negatives cancel, which is what makes the mean the balance point). Taking the ABSOLUTE value first removes the cancellation, so every distance counts as a real, positive gap. Averaging those gaps gives the typical spread in the data's own units. Two steps are essential and often skipped: take absolute values (or everything cancels) AND divide by the count (or you report a total, not an average).",
+    whenToUse: "Reporting consistency (test scores, manufacturing tolerances, daily temperatures), comparing how reliable two processes are, and introducing variability before standard deviation.",
+    representations: [
+      { kind: "average_distance", label: "Mean of the gaps", body: "Mean $= 20$; values $14, 18, 22, 26$ sit $6, 2, 2, 6$ away; average $= \\frac{16}{4} = 4$." },
+      { kind: "why_absolute", label: "Why absolute value", body: "Signed deviations sum to $0$ by definition — absolute values stop the cancellation so distances add up." },
+      { kind: "spread_meter", label: "Tight vs scattered", body: "A small MAD means values hug the mean; a large MAD means they sprawl far from it." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting to divide", why: "Adding up the distances and reporting the total instead of the average.", fix: "MAD is a MEAN of distances: after summing $|x_i - \\bar{x}|$, divide by the number of values." },
+      { label: "Reporting the mean instead", why: "Confusing the center (mean) with the spread (MAD).", fix: "The mean is where the data centers; the MAD is how far, on average, it strays from there — a different question." }
+    ],
+    connections: [
+      { concept: "stat_mean", note: "MAD is built on the mean — you must find the center before measuring distance from it." },
+      { concept: "stat_iqr", note: "Both quantify spread; MAD uses every point, IQR uses the quartiles." },
+      { concept: "absolute_value", note: "Absolute value turns each deviation into a positive distance so they don't cancel." }
+    ],
+    examples: [
+      { question: "Find the MAD of $14, 18, 22, 26$.", answer: "4", explanation: "Mean $= 20$. Distances $6, 2, 2, 6$ sum to $16$; $16 \\div 4 = 4$." },
+      { question: "Find the MAD of $3, 5, 7, 9$.", answer: "2", explanation: "Mean $= 6$. Distances $3, 1, 1, 3$ sum to $8$; $8 \\div 4 = 2$." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -3614,7 +3701,10 @@ function levelToConceptId(category, level) {
     if (lvl <= 13) return 'stat_probability';
     if (lvl <= 14) return 'compound_probability';
     if (lvl <= 15) return 'probability_complement';
-    return 'prob_without_replacement';
+    if (lvl <= 16) return 'prob_without_replacement';
+    if (lvl <= 17) return 'stat_quartile';
+    if (lvl <= 18) return 'stat_iqr';
+    return 'stat_mad';
   }
   if (cat === 'powers') {
     if (lvl <= 4) return 'square_root';
