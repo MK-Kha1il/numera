@@ -131,6 +131,10 @@ const CONCEPT_TO_LEVEL = {
   // Coordinate transformations (reflections & translations on the plane).
   coord_reflect:          { category: 'graphing',    level: 16 },
   coord_translate:        { category: 'graphing',    level: 17 },
+  // Transformations II — rotations & dilation about the origin (band extended to 21; 20 boss).
+  coord_rotate_180:       { category: 'graphing',    level: 18 },
+  coord_rotate_90:        { category: 'graphing',    level: 19 },
+  coord_dilate:           { category: 'graphing',    level: 21 },
   // Inequalities strand (order reasoning — the 6.EE/7.EE band). Keys skip 10 (boss-routed).
   inequality_one_step_add:  { category: 'inequalities', level: 7  },
   inequality_one_step_mult: { category: 'inequalities', level: 9  },

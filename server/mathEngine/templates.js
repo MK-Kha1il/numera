@@ -2770,6 +2770,45 @@ templates.graphing = {
       explanation: `Horizontal and vertical moves are independent: 'right $${dx}$' adds to the x-coordinate ($${x} + ${dx} = ${x + dx}$), 'up $${dy}$' adds to the y-coordinate ($${y} + ${dy} = ${y + dy}$). Each shift travels on its OWN axis — $(${x + dx}, ${y + dy})$.`,
       type: "coord_translate"
     };
+  },
+  // Rotate 180° about the origin: every point flips through the center, so BOTH signs change.
+  18: (_diffFactor, idx) => {
+    const x = 2 + (idx % 6);              // 2..7
+    const yRaw = 2 + ((idx + 2) % 6);     // 2..7
+    const y = yRaw === x ? yRaw + 1 : yRaw; // x != y keeps the 'swapped' distractor distinct
+    return {
+      question: `Rotate the point $(${x}, ${y})$ by $180°$ about the origin. What are its new coordinates?`,
+      answer: `(-${x}, -${y})`,
+      distractors: [`(-${x}, ${y})`, `(${x}, -${y})`, `(${y}, ${x})`], // negated only x; only y; swapped instead
+      explanation: `A $180°$ turn sends every point straight through the origin to the opposite side, so BOTH coordinates reverse sign: $(${x}, ${y}) \\to (-${x}, -${y})$. Flipping just one coordinate is a reflection across an axis, not a half-turn.`,
+      type: "coord_rotate_180"
+    };
+  },
+  // Rotate 90° counterclockwise about the origin: (x, y) -> (-y, x) — swap AND sign the new x.
+  19: (_diffFactor, idx) => {
+    const x = 2 + (idx % 6);              // 2..7
+    const yRaw = 2 + ((idx + 3) % 6);     // 2..7
+    const y = yRaw === x ? yRaw + 1 : yRaw; // x != y so the swapped/clockwise distractors stay distinct
+    return {
+      question: `Rotate the point $(${x}, ${y})$ by $90°$ counterclockwise about the origin. What are its new coordinates?`,
+      answer: `(-${y}, ${x})`,
+      distractors: [`(${y}, ${x})`, `(${y}, -${x})`, `(-${x}, -${y})`], // swapped, no sign; rotated clockwise; did 180° instead
+      explanation: `A quarter-turn counterclockwise swaps the coordinates and negates the new x: $(x, y) \\to (-y, x)$, so $(${x}, ${y}) \\to (-${y}, ${x})$. The point that pointed right-and-up now points up-and-left. Swapping without the sign change, or signing the wrong coordinate, sends it the wrong way ($90°$ clockwise is $(y, -x)$).`,
+      type: "coord_rotate_90"
+    };
+  },
+  // Dilate from the origin by an integer scale factor: (x, y) -> (kx, ky).
+  21: (_diffFactor, idx) => {
+    const k = 2 + (idx % 2);              // 2 or 3
+    const x = 3 + (idx % 4);              // 3..6 (>= 3 keeps the 'added factor' distractor distinct for k = 2)
+    const y = 3 + ((idx + 2) % 4);        // 3..6
+    return {
+      question: `Dilate the point $(${x}, ${y})$ by a scale factor of $${k}$, centered at the origin. What are its new coordinates?`,
+      answer: `(${k * x}, ${k * y})`,
+      distractors: [`(${x + k}, ${y + k})`, `(${k * x}, ${y})`, `(${x}, ${k * y})`], // added k; scaled only x; scaled only y
+      explanation: `A dilation from the origin multiplies BOTH coordinates by the scale factor: $(${x}, ${y}) \\to (${k} \\cdot ${x}, ${k} \\cdot ${y}) = (${k * x}, ${k * y})$. The point moves $${k}$ times farther from the origin along the same ray — the shape stays similar, only its size changes. Adding $${k}$ shifts the point instead of scaling it.`,
+      type: "coord_dilate"
+    };
   }
 };
 

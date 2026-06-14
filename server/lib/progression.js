@@ -88,7 +88,7 @@ const STRAND_BANDS = {
   statistics: [7, 19],
   expressions: [11, 18],
   powers: [4, 13],
-  graphing: [8, 17],
+  graphing: [8, 21],
   inequalities: [7, 15],
   functions: [7, 15],
   sequences: [7, 15],

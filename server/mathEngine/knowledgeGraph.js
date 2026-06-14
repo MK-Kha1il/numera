@@ -1157,6 +1157,35 @@ const concepts = {
       { id: "forgot_to_divide", label: "Summed the absolute deviations but never divided by the count", rule: (ans, p) => p.sumdev },
       { id: "gave_mean", label: "Reported the mean instead of the average distance from it", rule: (ans, p) => p.mean }
     ]
+  },
+
+  // ---- Transformations II: rotations & dilations about the origin (8.G.A) ----
+  "coord_rotate_180": {
+    name: "Rotating a Point 180°",
+    prereqs: ["coord_reflect", "integer_mult"],
+    baseElo: 1000,
+    misconceptions: [
+      { id: "negated_one", label: "Flipped the sign of only one coordinate", rule: (ans) => ans },
+      { id: "swapped", label: "Swapped the coordinates instead of negating them", rule: (ans) => ans }
+    ]
+  },
+  "coord_rotate_90": {
+    name: "Rotating a Point 90°",
+    prereqs: ["coord_rotate_180"],
+    baseElo: 1080,
+    misconceptions: [
+      { id: "swapped_no_sign", label: "Swapped the coordinates but forgot the sign change", rule: (ans) => ans },
+      { id: "wrong_direction", label: "Rotated clockwise instead of counterclockwise (negated the wrong coordinate)", rule: (ans) => ans }
+    ]
+  },
+  "coord_dilate": {
+    name: "Dilating a Point",
+    prereqs: ["coord_translate", "integer_mult"],
+    baseElo: 1120,
+    misconceptions: [
+      { id: "added_factor", label: "Added the scale factor instead of multiplying by it", rule: (ans) => ans },
+      { id: "scaled_one", label: "Scaled only one coordinate", rule: (ans) => ans }
+    ]
   }
 };
 
@@ -1288,6 +1317,9 @@ const STANDARDS = {
   stat_quartile: "6.SP.B.5c",
   stat_iqr: "6.SP.B.5c",
   stat_mad: "6.SP.B.5c",
+  coord_rotate_180: "8.G.A.3",
+  coord_rotate_90: "8.G.A.3",
+  coord_dilate: "8.G.A.4",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

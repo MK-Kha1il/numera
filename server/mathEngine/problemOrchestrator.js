@@ -111,6 +111,10 @@ const TYPE_TO_CONCEPT = {
   probability_complement:   'probability_complement',
   coord_reflect:            'coord_reflect',
   coord_translate:          'coord_translate',
+  // Transformations II — rotations & dilation.
+  coord_rotate_180:         'coord_rotate_180',
+  coord_rotate_90:          'coord_rotate_90',
+  coord_dilate:             'coord_dilate',
   percent_markup:           'percent_markup',
   percent_error:            'percent_error',
   // Rational / probability / geometry / powers depth (wave 8).
@@ -326,7 +330,7 @@ function getCategoryConceptIds(category, level) {
     statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'mean_missing_value', 'stat_probability', 'compound_probability', 'probability_complement', 'prob_without_replacement', 'stat_quartile', 'stat_iqr', 'stat_mad'],
     expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'translate_expression', 'distribute', 'foil_binomials', 'square_binomial', 'factor_trinomial'],
     powers:        ['square_root', 'cube_root', 'exponent_power_of_product', 'exponent_product_rule', 'exponent_power_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation'],
-    graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula', 'coord_reflect', 'coord_translate'],
+    graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula', 'coord_reflect', 'coord_translate', 'coord_rotate_180', 'coord_rotate_90', 'coord_dilate'],
     inequalities:  ['inequality_one_step_add', 'inequality_one_step_mult', 'inequality_flip_negative', 'inequality_two_step', 'inequality_compound'],
     functions:     ['function_evaluate', 'function_table', 'rate_of_change', 'function_initial', 'function_solve'],
     sequences:     ['arithmetic_next_term', 'arithmetic_common_difference', 'arithmetic_nth_term', 'geometric_next_term', 'geometric_common_ratio']

@@ -3285,6 +3285,93 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // TRANSFORMATIONS II — rotations and dilations about the origin (8.G.A).
+  // ===========================================================================
+  coord_rotate_180: {
+    title: "Rotating a Point 180°",
+    formula: "(x, y) \\to (-x, -y)",
+    oneLineSummary: "A 180° turn about the origin sends every point straight through the center to the opposite side, so both coordinates reverse sign.",
+    intuitionHook: "Pin a photo to a board through its center and spin it half a turn — top-right ends up bottom-left. The point $(3, 4)$ (right and up) lands at $(-3, -4)$ (left and down). A half-turn is the most symmetric move there is: everything goes to its exact opposite.",
+    whatItIs: "A rotation of 180° around the origin: each point travels along the line through itself and the origin, to the equally-distant point on the far side. Numerically, negate both coordinates.",
+    whyItWorks: "Every point and the origin define a line; a 180° rotation slides the point to the mirror-position through the origin on that same line, the same distance away. In coordinates, 'opposite side, same distance' is exactly $(x, y) \\to (-x, -y)$ — both signs flip together. This is why it differs from a reflection: a reflection flips only ONE coordinate (over an axis), leaving the other fixed, while a half-turn is two reflections at once and flips BOTH. A 180° rotation is also its own undo — do it twice and you're back home, since negating twice restores the original.",
+    whenToUse: "Point symmetry (a figure that looks identical after a half-turn), rotating shapes in graphics, and as the building block that combines a horizontal and a vertical reflection.",
+    representations: [
+      { kind: "through_origin", label: "Opposite side, same distance", body: "$(3, 4) \\to (-3, -4)$: same distance from the origin, exactly across it." },
+      { kind: "two_reflections", label: "Both axes at once", body: "Flip over the x-axis AND the y-axis: $(x, y) \\to (x, -y) \\to (-x, -y)$ — a half-turn." },
+      { kind: "self_inverse", label: "Undoes itself", body: "Two half-turns make a full turn: $(-(-x), -(-y)) = (x, y)$, back to start." }
+    ],
+    commonMistakes: [
+      { label: "Flipping only one coordinate", why: "Writing $(-x, y)$ — that's a reflection over the y-axis, not a rotation.", fix: "A half-turn changes BOTH signs: $(x, y) \\to (-x, -y)$. Changing one is a mirror, not a spin." },
+      { label: "Swapping the coordinates", why: "Confusing 180° with the 90° rule (which does swap).", fix: "A 180° turn keeps each coordinate in its place and only negates it; swapping belongs to quarter-turns." }
+    ],
+    connections: [
+      { concept: "coord_reflect", note: "A 180° rotation equals a reflection over the x-axis followed by one over the y-axis." },
+      { concept: "coord_rotate_90", note: "Two 90° turns make a 180° turn — apply the quarter-turn rule twice." },
+      { concept: "integer_mult", note: "Negating a coordinate is multiplying it by -1." }
+    ],
+    examples: [
+      { question: "Rotate $(5, 2)$ by 180° about the origin.", answer: "(-5, -2)", explanation: "Negate both coordinates: $(5, 2) \\to (-5, -2)$." },
+      { question: "Rotate $(-3, 7)$ by 180° about the origin.", answer: "(3, -7)", explanation: "Both signs flip: $-3 \\to 3$ and $7 \\to -7$, giving $(3, -7)$." }
+    ]
+  },
+
+  coord_rotate_90: {
+    title: "Rotating a Point 90°",
+    formula: "(x, y) \\to (-y, x) \\quad (\\text{90° counterclockwise})",
+    oneLineSummary: "A 90° counterclockwise turn about the origin swaps the coordinates and negates the new first one: (x, y) becomes (-y, x).",
+    intuitionHook: "Stand facing east and turn a quarter-turn left — now you face north. The point $(4, 1)$, mostly 'east', swings to $(-1, 4)$, mostly 'north'. A quarter-turn trades horizontal for vertical, and the direction of the turn decides which new coordinate picks up a minus sign.",
+    whatItIs: "A rotation of 90° counterclockwise around the origin. The horizontal and vertical roles swap, and one coordinate changes sign according to the turn direction: counterclockwise gives $(x, y) \\to (-y, x)$.",
+    whyItWorks: "A quarter-turn sends the rightward direction to the upward direction and the upward direction to the leftward direction. So a point's old x-amount (how far right) becomes a new y-amount (how far up), and its old y-amount (how far up) becomes a new x-amount pointing LEFT — hence negative. That's the swap-and-sign $(x, y) \\to (-y, x)$. The sign lives entirely in the direction: counterclockwise negates the new x, clockwise negates the new y ($(x, y) \\to (y, -x)$). Skipping the sign (just swapping to $(y, x)$) is actually a reflection across the diagonal line $y = x$, not a rotation — which is why the sign is the whole difference between a turn and a flip.",
+    whenToUse: "Rotating shapes a quarter-turn (screen rotation, tiling, tetromino-style games), building 270° turns (three 90°s), and understanding rotational symmetry of order 4.",
+    representations: [
+      { kind: "swap_and_sign", label: "Swap, then sign the new x", body: "$(4, 1) \\to$ swap $\\to (1, 4) \\to$ negate first $\\to (-1, 4)$ for counterclockwise." },
+      { kind: "direction_matters", label: "Which coordinate gets the minus", body: "Counterclockwise: $(-y, x)$. Clockwise: $(y, -x)$. The turn direction chooses the negative." },
+      { kind: "quarter_of_a_turn", label: "Do it four times", body: "Four 90° turns return the point home — each swap-and-sign composes into a full circle." }
+    ],
+    commonMistakes: [
+      { label: "Swapping without the sign", why: "Writing $(y, x)$ — that reflects across the line $y = x$ instead of rotating.", fix: "A rotation needs the sign change too: counterclockwise is $(-y, x)$. Pure swapping is a mirror." },
+      { label: "Signing the wrong coordinate", why: "Using $(y, -x)$ for a counterclockwise turn — that's actually the clockwise rule.", fix: "Counterclockwise negates the NEW x: $(x, y) \\to (-y, x)$. Match the sign to the turn direction." }
+    ],
+    connections: [
+      { concept: "coord_rotate_180", note: "Two 90° turns equal a 180° turn — apply (-y, x) twice to get (-x, -y)." },
+      { concept: "coord_reflect", note: "Swapping coordinates without a sign change is a reflection over y = x, not a rotation." },
+      { concept: "midpoint", note: "Both are coordinate operations on points in the plane; here the operation is a turn." }
+    ],
+    examples: [
+      { question: "Rotate $(4, 1)$ by 90° counterclockwise about the origin.", answer: "(-1, 4)", explanation: "Swap to $(1, 4)$, then negate the new x: $(-1, 4)$." },
+      { question: "Rotate $(2, 5)$ by 90° counterclockwise about the origin.", answer: "(-5, 2)", explanation: "$(x, y) \\to (-y, x)$ gives $(-5, 2)$." }
+    ]
+  },
+
+  coord_dilate: {
+    title: "Dilating a Point",
+    formula: "(x, y) \\to (kx, ky) \\quad (k = \\text{scale factor, center at origin})",
+    oneLineSummary: "A dilation from the origin multiplies both coordinates by the scale factor, moving the point that many times farther out along the same ray.",
+    intuitionHook: "Shine a projector from the origin: a slide twice as far away makes an image twice as big. The point $(3, 4)$ dilated by $2$ becomes $(6, 8)$ — same direction from the origin, double the distance. Dilation is the zoom knob of geometry.",
+    whatItIs: "A transformation that resizes by a scale factor $k$ from a center point (here the origin). Each coordinate is multiplied by $k$, so the figure keeps its shape (stays similar) while its size changes.",
+    whyItWorks: "A point's coordinates ARE its distances along the two axes, so to push the point $k$ times farther from the origin along the same ray you scale each distance by $k$: $(x, y) \\to (kx, ky)$. Both coordinates must scale by the SAME factor — that's what preserves the direction (the ray from the origin) and therefore the shape; scaling only one coordinate stretches the figure and distorts it. With $k > 1$ the point moves outward (enlargement); with $0 < k < 1$ it moves inward (reduction). Crucially, scaling is MULTIPLICATION, not addition: adding $k$ shifts the point a fixed step regardless of how far out it is, which neither preserves direction nor produces similar figures.",
+    whenToUse: "Scaling drawings and maps, similar-figure problems, zoom in graphics, and any 'resize about a center' operation.",
+    representations: [
+      { kind: "same_ray", label: "Farther along the same line", body: "$(3, 4)$ with $k = 2 \\to (6, 8)$: identical direction from the origin, twice as far." },
+      { kind: "both_scale", label: "Both coordinates, same factor", body: "Multiply each by $k$: scaling only one ($(6, 4)$) would distort the shape, not resize it." },
+      { kind: "enlarge_or_reduce", label: "k decides the size", body: "$k > 1$ enlarges, $0 < k < 1$ shrinks; the shape stays similar either way." }
+    ],
+    commonMistakes: [
+      { label: "Adding the factor instead of multiplying", why: "Writing $(x + k, y + k)$ — that's a translation, a fixed shift, not a resize.", fix: "Dilation MULTIPLIES: $(x, y) \\to (kx, ky)$. Adding moves the point; multiplying scales its distance." },
+      { label: "Scaling only one coordinate", why: "Multiplying just x (or just y), e.g. $(kx, y)$.", fix: "Both coordinates scale by the SAME factor, or the shape stretches out of proportion." }
+    ],
+    connections: [
+      { concept: "coord_translate", note: "Translation ADDS a fixed shift; dilation MULTIPLIES — the add-vs-multiply contrast is the core trap." },
+      { concept: "integer_mult", note: "Each new coordinate is a multiplication of the old by the scale factor." },
+      { concept: "ratio_solve", note: "A dilation is proportional scaling — the scale factor is the ratio of new size to old." }
+    ],
+    examples: [
+      { question: "Dilate $(3, 5)$ by a scale factor of 2 from the origin.", answer: "(6, 10)", explanation: "Multiply both coordinates by 2: $(3 \\cdot 2, 5 \\cdot 2) = (6, 10)$." },
+      { question: "Dilate $(4, 6)$ by a scale factor of 3 from the origin.", answer: "(12, 18)", explanation: "$(4 \\cdot 3, 6 \\cdot 3) = (12, 18)$." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -3723,7 +3810,10 @@ function levelToConceptId(category, level) {
     if (lvl <= 13) return 'midpoint';
     if (lvl <= 15) return 'distance_formula';
     if (lvl <= 16) return 'coord_reflect';
-    return 'coord_translate';
+    if (lvl <= 17) return 'coord_translate';
+    if (lvl <= 18) return 'coord_rotate_180';
+    if (lvl <= 19) return 'coord_rotate_90';
+    return 'coord_dilate';
   }
   if (cat === 'inequalities') {
     if (lvl <= 7) return 'inequality_one_step_add';
