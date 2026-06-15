@@ -50,6 +50,10 @@ const CONCEPT_TO_LEVEL = {
   geo_volume_cone:      { category: 'geometry',      level: 16 },
   geo_volume_sphere:    { category: 'geometry',      level: 17 },
   geo_volume_pyramid:   { category: 'geometry',      level: 18 },
+  // Surface area II — cylinder, sphere, cone (band extended to 22; 21/22 skip the 20 boss).
+  geo_surface_cylinder: { category: 'geometry',      level: 19 },
+  geo_surface_sphere:   { category: 'geometry',      level: 21 },
+  geo_surface_cone:     { category: 'geometry',      level: 22 },
   // Integers strand (audit #1.1 — signed-number arithmetic; the negatives band).
   absolute_value:       { category: 'integers',      level: 4  },
   integer_add:          { category: 'integers',      level: 5  },

@@ -3459,6 +3459,93 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // GEOMETRY SURFACE AREA II — cylinder, sphere, cone (7.G / HSG-GMD).
+  // ===========================================================================
+  geo_surface_cylinder: {
+    title: "Surface Area of a Cylinder",
+    formula: "S = 2\\pi r^2 + 2\\pi r h = 2\\pi r(r + h)",
+    oneLineSummary: "Unroll a cylinder into two circular caps plus a rectangle, so its surface area is 2πr² + 2πrh.",
+    intuitionHook: "Peel the label off a soup can and it flattens into a rectangle; the lid and base pop off as two circles. The whole skin of the can is just those three flat pieces — two circles and one rectangle — added together.",
+    whatItIs: "The total area of a cylinder's outside: the two circular ends plus the curved side. Together that's $2\\pi r^2$ (the two caps) plus $2\\pi r h$ (the unrolled side).",
+    whyItWorks: "Surface area is about COVERING, so break the surface into flat pieces you can measure. The two ends are circles, each $\\pi r^2$, giving $2\\pi r^2$. The curved side, slit and unrolled, is a rectangle: its height is the cylinder's height $h$, and its width is the distance around the circle — the circumference $2\\pi r$. So the side is $2\\pi r \\times h = 2\\pi r h$. Add them: $2\\pi r^2 + 2\\pi r h$. The width of that rectangle being the circumference is the key insight, and it's why surface area uses $2\\pi r$ while volume uses the area $\\pi r^2$ — covering the side needs its perimeter, filling the can needs its area.",
+    whenToUse: "How much metal makes a can, paper wraps a tube, or paint coats a cylindrical tank; any 'cover the outside' question for a cylinder.",
+    representations: [
+      { kind: "three_pieces", label: "Two circles + a rectangle", body: "Caps: $2\\pi r^2$. Side unrolled: a rectangle $2\\pi r$ wide by $h$ tall $= 2\\pi r h$." },
+      { kind: "circumference_width", label: "The label's width is the circumference", body: "Slit the side and flatten it: the width is $2\\pi r$, not $r$ — it wraps all the way around." },
+      { kind: "cover_vs_fill", label: "Surface vs volume", body: "Surface area covers ($2\\pi r$ around); volume fills ($\\pi r^2$ across). Different jobs, different formulas." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting the two caps", why: "Computing only the side $2\\pi r h$ — the lid and base are uncovered.", fix: "Add both circular ends: $+ 2\\pi r^2$. A closed cylinder has three pieces, not one." },
+      { label: "Computing the volume instead", why: "Using $\\pi r^2 h$ — that fills the can, it doesn't cover it.", fix: "Surface area sums flat areas of the skin; volume measures the space inside. Pick the covering formula." }
+    ],
+    connections: [
+      { concept: "geo_circle_area", note: "Each cap is a circle of area πr² — two of them." },
+      { concept: "geo_circumference", note: "The unrolled side's width is the circumference 2πr." },
+      { concept: "geo_volume_cylinder", note: "Same solid: surface area covers it (2πr around), volume fills it (πr² across)." }
+    ],
+    examples: [
+      { question: "Surface area of a cylinder with radius 3 and height 5 (in terms of π)?", answer: "48\\pi", explanation: "$2\\pi(3)^2 + 2\\pi(3)(5) = 18\\pi + 30\\pi = 48\\pi$." },
+      { question: "Surface area of a cylinder with radius 2 and height 5 (in terms of π)?", answer: "28\\pi", explanation: "$2\\pi(2)^2 + 2\\pi(2)(5) = 8\\pi + 20\\pi = 28\\pi$." }
+    ]
+  },
+
+  geo_surface_sphere: {
+    title: "Surface Area of a Sphere",
+    formula: "S = 4\\pi r^2",
+    oneLineSummary: "A sphere's surface area is 4πr² — exactly four times the area of a flat circle with the same radius.",
+    intuitionHook: "Peel an orange and flatten the rind: the scraps cover exactly four circles drawn around the orange's middle. A ball's skin is four times the area of its widest cross-section — a clean, surprising fact.",
+    whatItIs: "The area of a sphere's curved surface, which depends only on the radius: four times $\\pi r^2$.",
+    whyItWorks: "A flat circle through the sphere's center (a 'great circle') has area $\\pi r^2$. Archimedes proved the sphere's whole curved surface equals exactly FOUR of those circles — and equals the curved side of the cylinder that just contains the ball. So $S = 4\\pi r^2$. Two things to keep straight: the radius is SQUARED because area is two-dimensional (a common slip is leaving it as $r$), and the constant is $4$ (not $1$ like a flat circle, nor $2$). There's no separate 'base' to add — a sphere is all one smooth surface.",
+    whenToUse: "Material to cover a ball or dome, heat radiating from a spherical object, paint on a globe; any 'skin of a sphere' question.",
+    representations: [
+      { kind: "four_circles", label: "Four great circles", body: "Great circle area $\\pi r^2$; the sphere's surface is $4 \\times \\pi r^2 = 4\\pi r^2$." },
+      { kind: "square_the_radius", label: "Area is 2-D", body: "$r$ is squared: $r = 3 \\to 4\\pi(9) = 36\\pi$. Leaving it as $r$ measures a length, not an area." },
+      { kind: "one_surface", label: "No caps to add", body: "Unlike a cylinder or cone, a sphere is a single closed surface — nothing extra to tack on." }
+    ],
+    commonMistakes: [
+      { label: "Not squaring the radius", why: "Using $4\\pi r$ instead of $4\\pi r^2$.", fix: "Area is two-dimensional: square the radius, $4\\pi r^2$." },
+      { label: "Using the wrong coefficient", why: "Writing $\\pi r^2$ or $2\\pi r^2$ — the right constant is 4.", fix: "A sphere's surface is FOUR great circles: the leading number is $4$." }
+    ],
+    connections: [
+      { concept: "geo_circle_area", note: "A sphere's surface is exactly four flat circles of area πr²." },
+      { concept: "geo_volume_sphere", note: "Same ball: surface area is 4πr² (covering), volume is 4/3 πr³ (filling)." },
+      { concept: "geo_surface_cylinder", note: "A sphere's surface equals the curved side of its bounding cylinder." }
+    ],
+    examples: [
+      { question: "Surface area of a sphere with radius 3 (in terms of π)?", answer: "36\\pi", explanation: "$4\\pi r^2 = 4\\pi(3)^2 = 4\\pi(9) = 36\\pi$." },
+      { question: "Surface area of a sphere with radius 5 (in terms of π)?", answer: "100\\pi", explanation: "$4\\pi(5)^2 = 4\\pi(25) = 100\\pi$." }
+    ]
+  },
+
+  geo_surface_cone: {
+    title: "Surface Area of a Cone",
+    formula: "S = \\pi r^2 + \\pi r l = \\pi r(r + l) \\quad (l = \\text{slant height})",
+    oneLineSummary: "A cone's surface is its circular base plus its unrolled slanted side: πr² + πrl, where l is the slant height.",
+    intuitionHook: "A party hat has no base — just the slanted cone. Slit it and it unrolls into a flat pie-slice (a sector). Add the circular base back and you have the cone's whole surface: a circle plus a fan.",
+    whatItIs: "The total area of a cone's outside: the circular base ($\\pi r^2$) plus the curved lateral surface, which unrolls to a sector of area $\\pi r l$, using the SLANT height $l$ (not the vertical height).",
+    whyItWorks: "Split the surface into the two flat-able pieces. The base is a circle: $\\pi r^2$. The slanted side, slit and unrolled, becomes a sector of a big circle whose radius is the slant height $l$; that sector's area works out to $\\pi r l$ — the base circumference $2\\pi r$ sets how much of the big circle the sector spans. So $S = \\pi r^2 + \\pi r l$. The crucial detail is the SLANT height in the lateral term: it's the true distance along the surface from base edge to tip, longer than the vertical height. Using the vertical height (or forgetting the base) is where most errors live.",
+    whenToUse: "Material for a funnel, party hat, or cone-roof; any 'cover a cone' problem (often the slant height is given, or found by Pythagoras from r and the vertical height).",
+    representations: [
+      { kind: "circle_plus_sector", label: "Base + unrolled side", body: "Base $\\pi r^2$; the slit side flattens to a sector of area $\\pi r l$. Add them." },
+      { kind: "slant_not_height", label: "Use the slant height", body: "The lateral term uses $l$, the distance along the surface — longer than the vertical height $h$." },
+      { kind: "open_vs_closed", label: "Hat vs full cone", body: "A party hat (no base) is just $\\pi r l$; a closed cone adds the base $\\pi r^2$." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting the base", why: "Computing only $\\pi r l$ — that's an open hat, not a closed cone.", fix: "Add the circular base $\\pi r^2$ unless the problem says the cone is open." },
+      { label: "Using the vertical height for the slant", why: "Plugging the height $h$ into $\\pi r l$ instead of the slant height $l$.", fix: "The lateral surface follows the SLOPE: use the slant height $l$ (find it by $\\sqrt{r^2 + h^2}$ if only $h$ is given)." }
+    ],
+    connections: [
+      { concept: "geo_circle_area", note: "The base is a circle of area πr²." },
+      { concept: "geo_volume_cone", note: "Same cone: surface area covers it (πr² + πrl), volume fills it (1/3 πr²h)." },
+      { concept: "distance_formula", note: "The slant height is a hypotenuse: l = √(r² + h²) when only the vertical height is known." }
+    ],
+    examples: [
+      { question: "A cone has radius 3 and slant height 5. Total surface area (in terms of π)?", answer: "24\\pi", explanation: "$\\pi r^2 + \\pi r l = \\pi(9) + \\pi(3)(5) = 9\\pi + 15\\pi = 24\\pi$." },
+      { question: "A cone has radius 4 and slant height 6. Total surface area (in terms of π)?", answer: "40\\pi", explanation: "$\\pi(4)^2 + \\pi(4)(6) = 16\\pi + 24\\pi = 40\\pi$." }
+    ]
+  },
+
+  // ===========================================================================
   // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
   // rich concept-first shape, for concepts whose canonical-level template matches).
   // ===========================================================================
@@ -3851,7 +3938,10 @@ function levelToConceptId(category, level) {
     if (lvl <= 15) return 'geo_area_trapezoid';
     if (lvl <= 16) return 'geo_volume_cone';
     if (lvl <= 17) return 'geo_volume_sphere';
-    return 'geo_volume_pyramid';
+    if (lvl <= 18) return 'geo_volume_pyramid';
+    if (lvl <= 19) return 'geo_surface_cylinder';
+    if (lvl <= 21) return 'geo_surface_sphere';
+    return 'geo_surface_cone';
   }
   if (cat === 'number_sense' || cat === 'number sense') {
     if (lvl <= 6) return 'percentage_of';

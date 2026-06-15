@@ -1215,6 +1215,35 @@ const concepts = {
       { id: "forgot_third", label: "Used the prism volume — forgot the one-third factor", rule: (ans, p) => p.prism },
       { id: "base_only", label: "Reported the base area instead of the volume", rule: (ans, p) => p.base }
     ]
+  },
+
+  // ---- Geometry surface area II: cylinder, sphere, cone (7.G / HSG-GMD) ----
+  "geo_surface_cylinder": {
+    name: "Surface Area of a Cylinder",
+    prereqs: ["geo_volume_cylinder", "geo_circle_area"],
+    baseElo: 1160,
+    misconceptions: [
+      { id: "lateral_only", label: "Found the curved side but forgot the two circular caps", rule: (ans) => ans },
+      { id: "used_volume", label: "Computed the volume instead of the surface area", rule: (ans) => ans }
+    ]
+  },
+  "geo_surface_sphere": {
+    name: "Surface Area of a Sphere",
+    prereqs: ["geo_volume_sphere"],
+    baseElo: 1200,
+    misconceptions: [
+      { id: "forgot_square", label: "Forgot to square the radius", rule: (ans) => ans },
+      { id: "wrong_coefficient", label: "Used the wrong leading number instead of 4", rule: (ans) => ans }
+    ]
+  },
+  "geo_surface_cone": {
+    name: "Surface Area of a Cone",
+    prereqs: ["geo_volume_cone", "geo_circle_area"],
+    baseElo: 1220,
+    misconceptions: [
+      { id: "lateral_only", label: "Found the slanted side but forgot the circular base", rule: (ans) => ans },
+      { id: "base_only", label: "Found the base but forgot the slanted side", rule: (ans) => ans }
+    ]
   }
 };
 
@@ -1352,6 +1381,9 @@ const STANDARDS = {
   geo_volume_cone: "8.G.C.9",
   geo_volume_sphere: "8.G.C.9",
   geo_volume_pyramid: "HSG-GMD.A.3",
+  geo_surface_cylinder: "7.G.B.6",
+  geo_surface_sphere: "HSG-GMD.A.1",
+  geo_surface_cone: "HSG-GMD.A.1",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

@@ -1428,6 +1428,45 @@ templates.geometry = {
       type: "geo_volume_pyramid",
       prism, base
     };
+  },
+  // Surface area of a cylinder: 2πr² (two caps) + 2πrh (the unrolled label). r >= 3 and h > r
+  // keep every option distinct.
+  19: (_diffFactor, idx) => {
+    const r = 3 + (idx % 3);              // 3..5
+    const h = r + 1 + (idx % 5);          // r+1..r+5 (always > r)
+    const coef = 2 * r * r + 2 * r * h;   // 2πr(r + h)
+    return {
+      question: `What is the total surface area of a cylinder with radius $${r}$ and height $${h}$? Give your answer in terms of $\\pi$.`,
+      answer: `${coef}\\pi`,
+      distractors: [`${2 * r * h}\\pi`, `${2 * r * r}\\pi`, `${r * r * h}\\pi`], // lateral side only; two caps only; computed the volume
+      explanation: `Unroll the cylinder: two circular caps ($2 \\times \\pi r^2 = ${2 * r * r}\\pi$) plus a rectangular label whose width is the circumference $2\\pi r$ and height $${h}$ ($2\\pi r h = ${2 * r * h}\\pi$). Total $= ${2 * r * r}\\pi + ${2 * r * h}\\pi = ${coef}\\pi$. The label alone forgets the lids; the volume $${r * r * h}\\pi$ measures filling, not covering.`,
+      type: "geo_surface_cylinder"
+    };
+  },
+  // Surface area of a sphere: 4πr². r drawn from {3,5,6,7} so no two options collide.
+  21: (_diffFactor, idx) => {
+    const r = [3, 5, 6, 7][idx % 4];
+    return {
+      question: `What is the surface area of a sphere with radius $${r}$? Give your answer in terms of $\\pi$.`,
+      answer: `${4 * r * r}\\pi`,
+      distractors: [`${4 * r}\\pi`, `${r * r}\\pi`, `${2 * r * r}\\pi`], // forgot to square; dropped the 4; used 2 instead of 4
+      explanation: `A sphere's surface area is $4\\pi r^2 = 4\\pi (${r})^2 = ${4 * r * r}\\pi$ — exactly four times the area of a flat circle of the same radius (a remarkable fact, also the curved area of its bounding cylinder). The radius is squared (area is 2-D), and the leading number is $4$, not $1$ or $2$.`,
+      type: "geo_surface_sphere"
+    };
+  },
+  // Surface area of a cone: πr² (base) + πrl (unrolled slant sector). Slant height l is GIVEN
+  // and kept > r so the lateral/base distractors stay distinct.
+  22: (_diffFactor, idx) => {
+    const r = 3 + (idx % 3);              // 3..5
+    const l = r + 2 + (idx % 4);          // slant height r+2..r+5 (> r)
+    const coef = r * r + r * l;           // πr(r + l)
+    return {
+      question: `A cone has radius $${r}$ and slant height $${l}$. What is its total surface area? Give your answer in terms of $\\pi$.`,
+      answer: `${coef}\\pi`,
+      distractors: [`${r * l}\\pi`, `${r * r}\\pi`, `${2 * r * l}\\pi`], // slanted side only; base only; treated the side like a cylinder
+      explanation: `A cone's surface is its circular base ($\\pi r^2 = ${r * r}\\pi$) plus the curved side, which unrolls into a sector of area $\\pi r l = ${r * l}\\pi$ (slant height $l$ as the sector's radius). Total $= ${r * r}\\pi + ${r * l}\\pi = ${coef}\\pi$. The slanted side alone forgets the base; the base alone forgets the side.`,
+      type: "geo_surface_cone"
+    };
   }
 };
 
