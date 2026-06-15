@@ -859,6 +859,18 @@ const migrations = [
       }
     },
   },
+  {
+    version: 36,
+    name: 'factors_strand_mastery',
+    // Factors & multiples strand (middle-school number theory) — its mastery counter.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE user_mastery ADD COLUMN factors_correct INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**

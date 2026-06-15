@@ -1039,6 +1039,7 @@ fun ProfileScreen(
                                                     "mastery_sequences" -> "Sequences Mastery"
                                                     "mastery_equations" -> "Equations Mastery"
                                                     "mastery_rates" -> "Ratios & Rates Mastery"
+                                                    "mastery_factors" -> "Factors & Multiples Mastery"
                                                     "social_path" -> "Social Connections"
                                                     "gladiator_path" -> "Arena Victor Milestones"
                                                     "exploration_path" -> "Explorer Milestones"

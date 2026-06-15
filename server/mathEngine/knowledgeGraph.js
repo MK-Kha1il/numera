@@ -1338,6 +1338,53 @@ const concepts = {
       { id: "added_instead", label: "Added the scale and the measurement instead of multiplying", rule: (ans, p) => p.m + p.k },
       { id: "gave_scale", label: "Reported the scale instead of the actual distance", rule: (ans, p) => p.k }
     ]
+  },
+
+  // ---- Factors & multiples strand: middle-school number theory (4.OA / 6.NS) ----
+  "prime_factorization": {
+    name: "Prime Factorization",
+    prereqs: ["arithmetic_mult"],
+    baseElo: 920,
+    misconceptions: [
+      { id: "used_composite", label: "Left composite factors instead of breaking down to primes", rule: (ans) => ans },
+      { id: "incomplete", label: "Stopped before fully factoring", rule: (ans) => ans }
+    ]
+  },
+  "find_gcf": {
+    name: "Greatest Common Factor",
+    prereqs: ["prime_factorization", "fraction_simplify"],
+    baseElo: 980,
+    misconceptions: [
+      { id: "gave_lcm", label: "Reported the least common multiple instead of the greatest common factor", rule: (ans, p) => p.lcm },
+      { id: "gave_number", label: "Reported one of the original numbers", rule: (ans, p) => p.num }
+    ]
+  },
+  "find_lcm": {
+    name: "Least Common Multiple",
+    prereqs: ["prime_factorization"],
+    baseElo: 1020,
+    misconceptions: [
+      { id: "gave_product", label: "Multiplied the numbers without dividing by their GCF", rule: (ans, p) => p.prod },
+      { id: "gave_gcf", label: "Reported the greatest common factor instead of the multiple", rule: (ans, p) => p.gcf }
+    ]
+  },
+  "gcf_word": {
+    name: "GCF Word Problems",
+    prereqs: ["find_gcf"],
+    baseElo: 1060,
+    misconceptions: [
+      { id: "gave_lcm", label: "Used the LCM instead of the GCF for an equal-grouping problem", rule: (ans, p) => p.lcm },
+      { id: "gave_total", label: "Reported the total instead of the number of groups", rule: (ans, p) => p.total }
+    ]
+  },
+  "lcm_word": {
+    name: "LCM Word Problems",
+    prereqs: ["find_lcm"],
+    baseElo: 1100,
+    misconceptions: [
+      { id: "forgot_to_reduce", label: "Multiplied the two intervals instead of taking the least common multiple", rule: (ans, p) => p.prod },
+      { id: "added", label: "Added the two intervals", rule: (ans, p) => p.sum }
+    ]
   }
 };
 
@@ -1488,6 +1535,11 @@ const STANDARDS = {
   unit_price: "6.RP.A.2",
   speed_dist_time: "7.RP.A.1",
   scale_factor: "7.G.A.1",
+  prime_factorization: "4.OA.B.4",
+  find_gcf: "6.NS.B.4",
+  find_lcm: "6.NS.B.4",
+  gcf_word: "6.NS.B.4",
+  lcm_word: "6.NS.B.4",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

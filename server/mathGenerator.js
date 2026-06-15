@@ -161,6 +161,12 @@ const CONCEPT_TO_LEVEL = {
   eqn_clear_denom:          { category: 'equations',  level: 11 },
   eqn_proportion:           { category: 'equations',  level: 13 },
   eqn_two_step_fraction:    { category: 'equations',  level: 15 },
+  // Factors & multiples strand (middle-school number theory). Keys skip 10 (boss-routed).
+  prime_factorization:      { category: 'factors',    level: 7  },
+  find_gcf:                 { category: 'factors',    level: 9  },
+  find_lcm:                 { category: 'factors',    level: 11 },
+  gcf_word:                 { category: 'factors',    level: 13 },
+  lcm_word:                 { category: 'factors',    level: 15 },
   // Ratios & rates strand (applied proportional reasoning). Keys skip 10 (boss-routed).
   ratio_simplify:           { category: 'rates',      level: 7  },
   ratio_share:              { category: 'rates',      level: 9  },
@@ -350,6 +356,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'equations';
   } else if (normalizedCat === 'rates') {
     catKey = 'rates';
+  } else if (normalizedCat === 'factors') {
+    catKey = 'factors';
   } else {
     catKey = 'arithmetic';
   }

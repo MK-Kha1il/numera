@@ -200,8 +200,8 @@ fun LevelMapScreen(
             val stageCycle = when ((levelNum - 1) / 10) {
                 0 -> listOf("arithmetic", "mental", "integers", "decimals")              // Stage 1: number foundations
                 1 -> listOf("fractions", "number_sense", "decimals", "geometry")        // Stage 2: proportional reasoning
-                2 -> listOf("expressions", "powers", "graphing", "inequalities", "functions", "sequences", "equations", "rates", "algebra", "statistics")    // Stage 3: algebraic thinking
-                3 -> listOf("combinatorics", "algebra", "functions", "sequences", "equations", "rates", "inequalities", "graphing", "powers", "expressions") // Stage 4: discrete structures
+                2 -> listOf("expressions", "powers", "graphing", "inequalities", "functions", "sequences", "equations", "rates", "factors", "algebra", "statistics")    // Stage 3: algebraic thinking
+                3 -> listOf("combinatorics", "algebra", "functions", "sequences", "equations", "rates", "factors", "inequalities", "graphing", "powers", "expressions") // Stage 4: discrete structures
                 4 -> listOf("calculus", "algebra", "combinatorics", "number_sense")     // Stage 5: continuous math
                 else -> listOf("number_theory", "calculus", "combinatorics", "mental")  // Stage 6: the deep end
             }

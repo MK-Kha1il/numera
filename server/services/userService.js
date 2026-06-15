@@ -30,6 +30,7 @@ function getUserWithMastery(userId, callback) {
         sequences_correct: mastery ? mastery.sequences_correct || 0 : 0,
         equations_correct: mastery ? mastery.equations_correct || 0 : 0,
         rates_correct: mastery ? mastery.rates_correct || 0 : 0,
+        factors_correct: mastery ? mastery.factors_correct || 0 : 0,
       };
 
       const fullUser = {

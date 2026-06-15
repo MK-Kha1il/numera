@@ -3327,6 +3327,106 @@ templates.rates = {
   }
 };
 
+// -------------------------------------------------------------
+// FACTORS & MULTIPLES TEMPLATES — middle-school number theory (the 4.OA/6.NS band): prime
+// factorization (a "p^a × q^b" STRING answer from a curated set), GCF, LCM, and their classic
+// word-problem applications (equal grouping = GCF, coinciding events = LCM). Concept ids are
+// prefixed (find_gcf/find_lcm) to avoid substring-collision with the advanced gcd_lcm type.
+// Numeric setups built from a shared GCF g and coprime cofactors so answers are whole. Keys
+// skip multiples of 10. Params ride along for the misconception classifier.
+// -------------------------------------------------------------
+templates.factors = {
+  // Prime factorization — curated so every answer string is clean and the distractors are real
+  // (composite-factor or incomplete) factorizations.
+  7: (_diffFactor, idx) => {
+    const items = [
+      { n: 12, a: "2^2 × 3",   d: ["4 × 3", "2 × 6", "2 × 3"] },
+      { n: 18, a: "2 × 3^2",   d: ["3 × 6", "2 × 9", "2 × 3"] },
+      { n: 20, a: "2^2 × 5",   d: ["4 × 5", "2 × 10", "2 × 5"] },
+      { n: 24, a: "2^3 × 3",   d: ["4 × 6", "8 × 3", "2^2 × 3"] },
+      { n: 45, a: "3^2 × 5",   d: ["9 × 5", "3 × 15", "3 × 5"] },
+      { n: 50, a: "2 × 5^2",   d: ["5 × 10", "2 × 25", "2 × 5"] },
+      { n: 28, a: "2^2 × 7",   d: ["4 × 7", "2 × 14", "2 × 7"] },
+      { n: 36, a: "2^2 × 3^2", d: ["4 × 9", "6 × 6", "2 × 3^2"] },
+    ];
+    const it = items[idx % items.length];
+    return {
+      question: `Write $${it.n}$ as a product of its prime factors.`,
+      answer: it.a,
+      distractors: it.d, // composite factors left in, or an incomplete factorization
+      explanation: `Break $${it.n}$ down until every factor is prime: ${it.a}. A prime factorization may contain ONLY primes (2, 3, 5, 7, …) — the other options still hide composite numbers that can be split further.`,
+      type: "prime_factorization"
+    };
+  },
+  // GCF of two numbers built as g·m and g·n with m, n coprime, so the GCF is exactly g.
+  9: (_diffFactor, idx) => {
+    const g = 3 + (idx % 4);              // 3..6
+    const pairs = [[2, 3], [3, 4], [4, 5], [2, 5], [3, 5]];
+    const [m, n] = pairs[idx % 5];        // coprime, m < n
+    const a = g * m, b = g * n;
+    const lcm = g * m * n;
+    return {
+      question: `What is the greatest common factor (GCF) of $${a}$ and $${b}$?`,
+      answer: g,
+      distractors: [lcm, a, g + 1], // gave the LCM; gave one of the numbers; off by one
+      explanation: `Since $${a} = ${g} \\times ${m}$ and $${b} = ${g} \\times ${n}$, and $${m}, ${n}$ share no common factor, the largest factor of BOTH is $${g}$. The LCM $${lcm}$ is the smallest common MULTIPLE — the opposite idea.`,
+      type: "find_gcf",
+      lcm, num: a
+    };
+  },
+  // LCM of the same construction: lcm = g·m·n. The product a·b overshoots by exactly g.
+  11: (_diffFactor, idx) => {
+    const g = 2 + (idx % 4);              // 2..5
+    const pairs = [[2, 3], [3, 4], [4, 5], [2, 5], [3, 5]];
+    const [m, n] = pairs[idx % 5];
+    const a = g * m, b = g * n;
+    const lcm = g * m * n;
+    const prod = a * b;
+    return {
+      question: `What is the least common multiple (LCM) of $${a}$ and $${b}$?`,
+      answer: lcm,
+      distractors: [prod, g, a], // multiplied without dividing by the GCF; gave the GCF; gave a number
+      explanation: `LCM $= \\frac{${a} \\times ${b}}{\\gcd} = \\frac{${prod}}{${g}} = ${lcm}$. Multiplying $${a} \\times ${b} = ${prod}$ without removing the shared factor $${g}$ overshoots; $${g}$ itself is the smallest common FACTOR, not a multiple.`,
+      type: "find_lcm",
+      prod, gcf: g
+    };
+  },
+  // GCF applied: equal groups using ALL of both quantities -> the number of groups is the GCF.
+  13: (_diffFactor, idx) => {
+    const g = 3 + (idx % 4);
+    const pairs = [[2, 3], [3, 4], [4, 5], [2, 5], [3, 5]];
+    const [m, n] = pairs[idx % 5];
+    const a = g * m, b = g * n;
+    const lcm = g * m * n;
+    return {
+      question: `A florist has $${a}$ roses and $${b}$ tulips. She makes identical bouquets using ALL the flowers with none left over. What is the greatest number of bouquets she can make?`,
+      answer: g,
+      distractors: [lcm, a + b, a], // used the LCM; the total flowers; one of the counts
+      explanation: `Each bouquet must split both piles evenly, so the number of bouquets is the GCF of $${a}$ and $${b}$: $${g}$ (each holds $${m}$ roses and $${n}$ tulips). The total $${a + b}$ counts flowers, not bouquets.`,
+      type: "gcf_word",
+      lcm, total: a + b
+    };
+  },
+  // LCM applied: two repeating events coincide at their least common multiple.
+  15: (_diffFactor, idx) => {
+    const items = [
+      { x: 4, y: 6, l: 12 }, { x: 6, y: 8, l: 24 }, { x: 4, y: 10, l: 20 },
+      { x: 6, y: 9, l: 18 }, { x: 8, y: 12, l: 24 }, { x: 10, y: 15, l: 30 },
+      { x: 6, y: 10, l: 30 }, { x: 9, y: 12, l: 36 },
+    ];
+    const it = items[idx % items.length];
+    const prod = it.x * it.y, sum = it.x + it.y;
+    return {
+      question: `One bus leaves every $${it.x}$ minutes and another every $${it.y}$ minutes. They leave together now. In how many minutes will they next leave at the same time?`,
+      answer: it.l,
+      distractors: [prod, sum, Math.max(it.x, it.y)], // multiplied the intervals; added them; just the longer interval
+      explanation: `They coincide at common multiples of $${it.x}$ and $${it.y}$; the FIRST one is the least common multiple, $${it.l}$. Multiplying ($${prod}$) gives a common multiple but not the smallest, and the longer interval ($${Math.max(it.x, it.y)}$) is not a multiple of the shorter.`,
+      type: "lcm_word",
+      prod, sum
+    };
+  }
+};
+
 module.exports = {
   templates
 };

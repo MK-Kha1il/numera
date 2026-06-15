@@ -24,7 +24,8 @@ data class CategoryMastery(
     val functions_correct: Int = 0,
     val sequences_correct: Int = 0,
     val equations_correct: Int = 0,
-    val rates_correct: Int = 0
+    val rates_correct: Int = 0,
+    val factors_correct: Int = 0
 )
 
 // Multi-dimensional mastery (server mathEngine/masteryEngine.js). Each dimension is 0..1.

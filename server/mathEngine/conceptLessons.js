@@ -3484,6 +3484,149 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // FACTORS & MULTIPLES STRAND — middle-school number theory (4.OA / 6.NS).
+  // ===========================================================================
+  prime_factorization: {
+    title: "Prime Factorization",
+    formula: "N = p_1^{a_1} \\times p_2^{a_2} \\times \\cdots \\quad (\\text{all } p_i \\text{ prime})",
+    oneLineSummary: "Break a number into a product of prime numbers only — the unique 'atomic' recipe every whole number has.",
+    intuitionHook: "Think of a number as a molecule and primes as its atoms. $12$ splits into $4 \\times 3$, but $4$ isn't an atom — keep splitting: $2 \\times 2 \\times 3$. Now nothing breaks further. Every number has exactly ONE such atomic recipe.",
+    whatItIs: "Writing a whole number as a product of prime numbers (often using exponents for repeats), continuing until no factor can be broken down any more.",
+    whyItWorks: "A prime is a number with no factors but $1$ and itself, so it can't be split — primes are the indivisible building blocks. Any composite number can be broken into two smaller factors; repeat on each piece and you must eventually hit primes (the pieces only get smaller). The Fundamental Theorem of Arithmetic guarantees the result is UNIQUE no matter how you start splitting — $12$ is always $2^2 \\times 3$ whether you begin with $4 \\times 3$ or $2 \\times 6$. That uniqueness is exactly why prime factorization powers GCF, LCM, and fraction simplifying: it exposes the shared atoms. The trap is stopping early — leaving a composite like $4$ or $6$ in the answer.",
+    whenToUse: "Finding GCF and LCM, simplifying fractions, identifying perfect squares, and any problem about the divisor structure of a number.",
+    representations: [
+      { kind: "factor_tree", label: "Split until prime", body: "$12 \\to 4 \\times 3 \\to (2 \\times 2) \\times 3 = 2^2 \\times 3$. Branches end only on primes." },
+      { kind: "exponents", label: "Group the repeats", body: "$2 \\times 2 \\times 3 = 2^2 \\times 3$ — exponents tally how many of each prime." },
+      { kind: "unique", label: "One recipe per number", body: "Any starting split of $12$ lands on the same $2^2 \\times 3$." }
+    ],
+    commonMistakes: [
+      { label: "Leaving composite factors", why: "Writing $4 \\times 3$ for $12$ — but $4 = 2 \\times 2$ isn't prime.", fix: "Keep splitting every composite until ALL factors are prime: $2^2 \\times 3$." },
+      { label: "Stopping too early", why: "Giving $2 \\times 6$ and calling it done — $6$ still factors.", fix: "A factorization is complete only when no factor can break down further." }
+    ],
+    connections: [
+      { concept: "find_gcf", note: "GCF is the product of the primes two numbers share." },
+      { concept: "find_lcm", note: "LCM is built from the highest power of every prime that appears." },
+      { concept: "fraction_simplify", note: "Cancelling shared prime factors is how fractions reduce." }
+    ],
+    examples: [
+      { question: "Write $30$ as a product of primes.", answer: "2 × 3 × 5", explanation: "$30 = 2 \\times 15 = 2 \\times 3 \\times 5$ — all prime." },
+      { question: "Write $40$ as a product of primes.", answer: "2^3 × 5", explanation: "$40 = 8 \\times 5 = 2^3 \\times 5$." }
+    ]
+  },
+
+  find_gcf: {
+    title: "Greatest Common Factor",
+    formula: "\\gcd(a, b) = \\text{product of the prime factors } a \\text{ and } b \\text{ share}",
+    oneLineSummary: "The greatest common factor is the largest number that divides both — the shared part of their prime recipes.",
+    intuitionHook: "$12 = 2 \\times 2 \\times 3$ and $18 = 2 \\times 3 \\times 3$. What do they have in common? One $2$ and one $3$ — multiply those shared atoms: $6$. That's the biggest number dividing both.",
+    whatItIs: "The greatest common factor (GCF) of two numbers is the largest whole number that divides each of them exactly. It is the product of the prime factors they have in common.",
+    whyItWorks: "A common factor must be built only from primes that BOTH numbers contain, and only as many of each as both can supply. So line up the prime factorizations and take the overlap: for $12 = 2^2 \\times 3$ and $18 = 2 \\times 3^2$, both supply one $2$ and one $3$, giving $2 \\times 3 = 6$. Taking the highest shared powers makes it the GREATEST such factor. The classic confusion is with the LCM — the GCF is a FACTOR (it divides the numbers, so it's $\\le$ the smaller one), while the LCM is a MULTIPLE (the numbers divide it, so it's $\\ge$ the larger).",
+    whenToUse: "Simplifying fractions to lowest terms, splitting two quantities into the largest equal groups, and reducing ratios.",
+    representations: [
+      { kind: "shared_primes", label: "Overlap of the recipes", body: "$12 = 2^2\\cdot3$, $18 = 2\\cdot3^2$: shared is $2\\cdot3 = 6$." },
+      { kind: "divides_both", label: "Largest that divides both", body: "$6$ divides $12$ and $18$; nothing bigger does." },
+      { kind: "vs_lcm", label: "Factor, not multiple", body: "GCF $\\le$ the smaller number; the LCM is $\\ge$ the larger — opposite directions." }
+    ],
+    commonMistakes: [
+      { label: "Giving the LCM instead", why: "Reporting the smallest common multiple when asked for the greatest common factor.", fix: "GCF DIVIDES the numbers (it's small); LCM is a MULTIPLE (it's big). Match the word to the size." },
+      { label: "Reporting one of the numbers", why: "Choosing $12$ or $18$ — but those aren't factors of EACH other.", fix: "The GCF must divide BOTH; check it goes evenly into each." }
+    ],
+    connections: [
+      { concept: "prime_factorization", note: "The GCF is the product of the shared prime factors." },
+      { concept: "fraction_simplify", note: "Dividing numerator and denominator by their GCF gives lowest terms in one step." },
+      { concept: "find_lcm", note: "GCF and LCM are partners: gcd × lcm = the product of the two numbers." }
+    ],
+    examples: [
+      { question: "Find the GCF of $24$ and $36$.", answer: "12", explanation: "$24 = 2^3\\cdot3$, $36 = 2^2\\cdot3^2$; shared $2^2\\cdot3 = 12$." },
+      { question: "Find the GCF of $15$ and $20$.", answer: "5", explanation: "Both share a single factor of $5$." }
+    ]
+  },
+
+  find_lcm: {
+    title: "Least Common Multiple",
+    formula: "\\text{lcm}(a, b) = \\frac{a \\times b}{\\gcd(a, b)}",
+    oneLineSummary: "The least common multiple is the smallest number both divide into — take the highest power of every prime that appears.",
+    intuitionHook: "Multiples of $4$: $4, 8, 12, \\ldots$; of $6$: $6, 12, 18, \\ldots$. The first one in BOTH lists is $12$. That's the least common multiple — the earliest meeting point of the two counting patterns.",
+    whatItIs: "The least common multiple (LCM) of two numbers is the smallest whole number that both divide into evenly. It uses the highest power of each prime found in either number.",
+    whyItWorks: "A common multiple must contain enough of every prime to be divisible by BOTH numbers, so for each prime you take the higher of the two powers: $4 = 2^2$ and $6 = 2\\cdot3$ need $2^2$ (for the $4$) and $3$ (for the $6$), giving $2^2\\cdot3 = 12$. Taking only the highest powers — no more — makes it the LEAST such multiple. A handy shortcut: since the GCF holds the shared factors, multiplying $a \\times b$ double-counts them, so $\\text{lcm} = \\frac{a\\times b}{\\gcd}$ removes the duplication. Multiplying $a\\times b$ alone gives A common multiple, just not the smallest.",
+    whenToUse: "Adding fractions (the common denominator is the LCM), and timing problems where two repeating events line up.",
+    representations: [
+      { kind: "highest_powers", label: "Highest power of each prime", body: "$4 = 2^2$, $6 = 2\\cdot3 \\Rightarrow 2^2\\cdot3 = 12$." },
+      { kind: "first_shared", label: "First common multiple", body: "$4,8,\\mathbf{12}$ and $6,\\mathbf{12}$ meet first at $12$." },
+      { kind: "via_gcf", label: "Product over GCF", body: "$\\frac{4\\times6}{\\gcd(4,6)=2} = \\frac{24}{2} = 12$." }
+    ],
+    commonMistakes: [
+      { label: "Multiplying without reducing", why: "Giving $a\\times b$ — that's a common multiple but usually not the least.", fix: "Divide the product by the GCF (or take highest prime powers): $\\frac{a\\times b}{\\gcd}$." },
+      { label: "Giving the GCF instead", why: "Reporting the shared factor when the smallest multiple was asked.", fix: "LCM is a MULTIPLE (large); the GCF is a FACTOR (small). Don't swap them." }
+    ],
+    connections: [
+      { concept: "prime_factorization", note: "The LCM takes the highest power of every prime that appears." },
+      { concept: "find_gcf", note: "Partner identity: gcd × lcm = a × b." },
+      { concept: "fraction_add", note: "The least common denominator is the LCM of the denominators." }
+    ],
+    examples: [
+      { question: "Find the LCM of $4$ and $6$.", answer: "12", explanation: "$\\frac{4\\times6}{\\gcd=2} = 12$, the first shared multiple." },
+      { question: "Find the LCM of $6$ and $9$.", answer: "18", explanation: "$6 = 2\\cdot3$, $9 = 3^2 \\Rightarrow 2\\cdot3^2 = 18$." }
+    ]
+  },
+
+  gcf_word: {
+    title: "GCF Word Problems",
+    formula: "\\text{largest equal groups using all items} = \\gcd(\\text{the quantities})",
+    oneLineSummary: "When you split two amounts into the largest identical groups with nothing left over, the number of groups is their GCF.",
+    intuitionHook: "You have $12$ apples and $18$ oranges and want identical fruit baskets using every piece. The most baskets you can make is $6$ — the GCF — each holding $2$ apples and $3$ oranges. Push for $7$ baskets and the fruit won't divide evenly.",
+    whatItIs: "A real-world problem that hides a GCF: dividing two (or more) quantities into the greatest number of equal groups, with each quantity used up completely.",
+    whyItWorks: "Each group must contain a whole number of EACH item with none left over, so the number of groups has to divide both quantities exactly — it's a common factor. Wanting the GREATEST number of groups means the greatest common factor. Recognizing the signal is the real skill: 'largest/greatest', 'equal groups', 'no leftovers', 'split/share into identical' all point to GCF. (Contrast the LCM signals — 'next time both', 'smallest amount that works for both'.) Reporting the total amount answers 'how many items', not 'how many groups'.",
+    whenToUse: "'Greatest number of identical groups/teams/bags', cutting two lengths into the longest equal pieces, and arranging two sets into equal rows.",
+    representations: [
+      { kind: "equal_groups", label: "Groups divide both", body: "$12$ and $18$ into equal baskets: the count must divide both → a common factor." },
+      { kind: "greatest", label: "Most groups = GCF", body: "Greatest such count is $\\gcd(12,18) = 6$." },
+      { kind: "signal_words", label: "Spot the GCF cue", body: "'largest', 'equal groups', 'no leftovers' ⇒ GCF (not LCM)." }
+    ],
+    commonMistakes: [
+      { label: "Using the LCM", why: "Reaching for the LCM because the problem mentions both quantities.", fix: "'Largest equal groups from a fixed supply' is GCF; LCM is for 'when do they next coincide'." },
+      { label: "Reporting the total", why: "Adding the quantities and giving that.", fix: "The question asks for the number of GROUPS — the GCF — not the total items." }
+    ],
+    connections: [
+      { concept: "find_gcf", note: "The computation under the story is exactly the GCF." },
+      { concept: "lcm_word", note: "Its mirror: equal-groups ⇒ GCF, coinciding-events ⇒ LCM." },
+      { concept: "fraction_simplify", note: "Both reduce by the largest shared factor." }
+    ],
+    examples: [
+      { question: "$16$ pencils and $24$ erasers go into identical packs using everything. Greatest number of packs?", answer: "8", explanation: "$\\gcd(16,24) = 8$ packs (2 pencils, 3 erasers each)." },
+      { question: "Greatest number of identical bags from $18$ red and $30$ blue marbles?", answer: "6", explanation: "$\\gcd(18,30) = 6$." }
+    ]
+  },
+
+  lcm_word: {
+    title: "LCM Word Problems",
+    formula: "\\text{next time two cycles coincide} = \\text{lcm}(\\text{the cycle lengths})",
+    oneLineSummary: "When two repeating events start together, they next coincide after the least common multiple of their intervals.",
+    intuitionHook: "One bus comes every $4$ minutes, another every $6$. Leaving together now, when do they next leave together? List the times — $4,8,12$ and $6,12$ — they realign at $12$ minutes, the LCM. The cycles only sync at a shared multiple.",
+    whatItIs: "A real-world problem that hides an LCM: two (or more) repeating cycles that begin together and you want the next moment (or smallest amount) where they line up again.",
+    whyItWorks: "Event A recurs at multiples of its interval; event B at multiples of its. They coincide exactly at the numbers in BOTH lists — common multiples — and the NEXT coincidence is the smallest of those, the LCM. The signal words are the skill: 'next time both', 'again at the same time', 'smallest number that works for both', 'least amount' all point to LCM. (Contrast GCF cues — 'largest groups', 'split a fixed supply'.) Multiplying the intervals gives A coincidence time but usually not the soonest; adding them isn't a multiple of either.",
+    whenToUse: "'When will both happen together again', synchronizing repeating schedules, and the least quantity that packages evenly two different ways.",
+    representations: [
+      { kind: "two_cycles", label: "Lists overlap at multiples", body: "$4,8,\\mathbf{12}$ and $6,\\mathbf{12}$ first realign at $12$." },
+      { kind: "least", label: "Soonest = LCM", body: "Next coincidence is $\\text{lcm}(4,6) = 12$ minutes." },
+      { kind: "signal_words", label: "Spot the LCM cue", body: "'next time both', 'again together', 'smallest for both' ⇒ LCM (not GCF)." }
+    ],
+    commonMistakes: [
+      { label: "Multiplying the intervals", why: "Giving $4 \\times 6 = 24$ — a coincidence time, but not the first.", fix: "Take the LEAST common multiple, $12$; multiplying overshoots when the intervals share a factor." },
+      { label: "Adding the intervals", why: "Reporting $4 + 6 = 10$, which isn't a multiple of either.", fix: "Coincidences happen at common MULTIPLES — use the LCM, not the sum." }
+    ],
+    connections: [
+      { concept: "find_lcm", note: "The computation under the story is exactly the LCM." },
+      { concept: "gcf_word", note: "Its mirror: coinciding-events ⇒ LCM, equal-groups ⇒ GCF." },
+      { concept: "fraction_add", note: "Finding a common denominator is the same 'least common multiple' move." }
+    ],
+    examples: [
+      { question: "Lights flash every $6$ s and $8$ s, together now. Next together in how many seconds?", answer: "24", explanation: "$\\text{lcm}(6,8) = 24$ seconds." },
+      { question: "Two timers ring every $5$ and $10$ minutes, starting together. Next shared ring?", answer: "10", explanation: "$\\text{lcm}(5,10) = 10$ minutes." }
+    ]
+  },
+
+  // ===========================================================================
   // STATISTICS II — measures of spread (quartiles, IQR, mean absolute deviation).
   // ===========================================================================
   stat_quartile: {
@@ -4315,6 +4458,13 @@ function levelToConceptId(category, level) {
     if (lvl <= 11) return 'unit_price';
     if (lvl <= 13) return 'speed_dist_time';
     return 'scale_factor';
+  }
+  if (cat === 'factors') {
+    if (lvl <= 7) return 'prime_factorization';
+    if (lvl <= 9) return 'find_gcf';
+    if (lvl <= 11) return 'find_lcm';
+    if (lvl <= 13) return 'gcf_word';
+    return 'lcm_word';
   }
   if (cat === 'expressions') {
     if (lvl <= 11) return 'eval_expression';

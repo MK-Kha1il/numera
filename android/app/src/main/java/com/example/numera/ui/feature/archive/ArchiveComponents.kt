@@ -77,6 +77,7 @@ fun LevelNode(
         category == "sequences" -> Triple(Color(0xFF818CF8), Color(0xFF4F46E5), Color(0xFF3730A3))
         category == "equations" -> Triple(Color(0xFF2DD4BF), Color(0xFF0D9488), Color(0xFF115E59))
         category == "rates" -> Triple(Color(0xFFFB923C), Color(0xFFEA580C), Color(0xFF9A3412))
+        category == "factors" -> Triple(Color(0xFFF472B6), Color(0xFFDB2777), Color(0xFF9D174D))
         else -> Triple(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFF92400E))
     }
 

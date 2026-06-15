@@ -300,6 +300,12 @@ fun UserProfileDialog(
                                 maxCount = 100,
                                 color = Color(0xFFFB923C)
                             )
+                            MasteryBar(
+                                topicName = "Factors & Multiples",
+                                correctCount = profile.mastery.factors_correct,
+                                maxCount = 100,
+                                color = Color(0xFFF472B6)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(Spacing.l))

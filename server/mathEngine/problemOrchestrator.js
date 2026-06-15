@@ -135,6 +135,12 @@ const TYPE_TO_CONCEPT = {
   stat_quartile:            'stat_quartile',
   stat_iqr:                 'stat_iqr',
   stat_mad:                 'stat_mad',
+  // Factors & multiples strand — template types equal conceptIds (prefixed to dodge gcd_lcm).
+  prime_factorization:      'prime_factorization',
+  find_gcf:                 'find_gcf',
+  find_lcm:                 'find_lcm',
+  gcf_word:                 'gcf_word',
+  lcm_word:                 'lcm_word',
   // Ratios & rates strand — template types equal conceptIds.
   ratio_simplify:           'ratio_simplify',
   ratio_share:              'ratio_share',
@@ -356,7 +362,8 @@ function getCategoryConceptIds(category, level) {
     functions:     ['function_evaluate', 'function_table', 'rate_of_change', 'function_initial', 'function_solve'],
     sequences:     ['arithmetic_next_term', 'arithmetic_common_difference', 'arithmetic_nth_term', 'geometric_next_term', 'geometric_common_ratio'],
     equations:     ['eqn_onestep_div', 'eqn_fraction_coeff', 'eqn_clear_denom', 'eqn_proportion', 'eqn_two_step_fraction'],
-    rates:         ['ratio_simplify', 'ratio_share', 'unit_price', 'speed_dist_time', 'scale_factor']
+    rates:         ['ratio_simplify', 'ratio_share', 'unit_price', 'speed_dist_time', 'scale_factor'],
+    factors:       ['prime_factorization', 'find_gcf', 'find_lcm', 'gcf_word', 'lcm_word']
   };
   const key = (category || 'arithmetic').toLowerCase();
   return map[key] || map.arithmetic;

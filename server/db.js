@@ -241,6 +241,7 @@ function initDb() {
           sequences_correct INTEGER DEFAULT 0,
           equations_correct INTEGER DEFAULT 0,
           rates_correct INTEGER DEFAULT 0,
+          factors_correct INTEGER DEFAULT 0,
           FOREIGN KEY(user_id) REFERENCES users(id)
         )
       `);
@@ -944,6 +945,11 @@ function initDb() {
         { id: 'mastery_rates_2', name: 'Rate Adept', description: 'Solve 20 Ratios & Rates problems', icon: 'school', target_type: 'mastery_rates', target_value: 20, reward_coins: 150, category: 'Mastery', chain_id: 'mastery_rates', chain_order: 2, is_hidden: 0 },
         { id: 'mastery_rates_3', name: 'Rate Expert', description: 'Solve 50 Ratios & Rates problems', icon: 'school', target_type: 'mastery_rates', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_rates', chain_order: 3, is_hidden: 0 },
         { id: 'mastery_rates_4', name: 'Rate Master', description: 'Solve 150 Ratios & Rates problems', icon: 'school', target_type: 'mastery_rates', target_value: 150, reward_coins: 800, category: 'Mastery', chain_id: 'mastery_rates', chain_order: 4, is_hidden: 0 },
+
+        { id: 'mastery_factors_1', name: 'Factor Apprentice', description: 'Solve 5 Factors & Multiples problems', icon: 'school', target_type: 'mastery_factors', target_value: 5, reward_coins: 50, category: 'Mastery', chain_id: 'mastery_factors', chain_order: 1, is_hidden: 0 },
+        { id: 'mastery_factors_2', name: 'Factor Adept', description: 'Solve 20 Factors & Multiples problems', icon: 'school', target_type: 'mastery_factors', target_value: 20, reward_coins: 150, category: 'Mastery', chain_id: 'mastery_factors', chain_order: 2, is_hidden: 0 },
+        { id: 'mastery_factors_3', name: 'Factor Expert', description: 'Solve 50 Factors & Multiples problems', icon: 'school', target_type: 'mastery_factors', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_factors', chain_order: 3, is_hidden: 0 },
+        { id: 'mastery_factors_4', name: 'Factor Master', description: 'Solve 150 Factors & Multiples problems', icon: 'school', target_type: 'mastery_factors', target_value: 150, reward_coins: 800, category: 'Mastery', chain_id: 'mastery_factors', chain_order: 4, is_hidden: 0 },
 
         // 5. Social Chain
         { id: 'social_1', name: 'Friendly Greeting', description: 'Add your first friend', icon: 'group', target_type: 'friends_count', target_value: 1, reward_coins: 30, category: 'Social', chain_id: 'social_path', chain_order: 1, is_hidden: 0 },
