@@ -351,7 +351,10 @@ router.post('/api/onboarding/spotlights/seen', authenticateToken, (req, res) => 
 // Phase 14 — onboarding funnel analytics (admin only). Aggregates onboarding_events into a per-step
 // funnel: how many entered/completed each step, where people drop off, and median time per step
 // (derived from the gap between consecutive step-enter timestamps).
-const ONB_STEP_ORDER = ['welcome', 'goals', 'profile', 'diagnostic', 'roadmap', 'aha', 'celebrate', 'habit', 'notifications'];
+// Mirrors the client's streamlined 5-step flow (OnboardingFlow.OnbStep): Welcome → Aha (solve
+// now) → Diagnostic → Goals → Celebrate. Profile/Habit/Notifications were moved out of onboarding
+// into later week-1 moments to get a learner solving in seconds rather than after ~6 steps.
+const ONB_STEP_ORDER = ['welcome', 'aha', 'diagnostic', 'goals', 'celebrate'];
 
 router.get('/api/onboarding/analytics', authenticateToken, requireAdmin, (req, res) => {
   db.all('SELECT user_id, step, event, created_at FROM onboarding_events ORDER BY user_id, created_at', [], (err, rows) => {
@@ -390,11 +393,11 @@ router.get('/api/onboarding/analytics', authenticateToken, requireAdmin, (req, r
     };
 
     const totalStarted = enterUsers.welcome.size;
-    const totalCompleted = completeUsers.notifications.size;
+    const totalCompleted = completeUsers.celebrate.size;
     const steps = ONB_STEP_ORDER.map((s, i) => {
       const entered = enterUsers[s].size;
       const nextEntered =
-        i < ONB_STEP_ORDER.length - 1 ? enterUsers[ONB_STEP_ORDER[i + 1]].size : completeUsers.notifications.size;
+        i < ONB_STEP_ORDER.length - 1 ? enterUsers[ONB_STEP_ORDER[i + 1]].size : completeUsers.celebrate.size;
       return {
         step: s,
         entered,

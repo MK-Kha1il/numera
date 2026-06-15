@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.example.numera.data.network.AhaStartResponse
 import com.example.numera.data.network.ApiService
 import com.example.numera.data.network.OnboardingCatalogItem
 import com.example.numera.data.network.OnboardingCatalogs
@@ -35,7 +36,7 @@ class OnboardingFlowTest {
             OnboardingCatalogItem("improve_grades", "Improve my grades", "📈"),
             OnboardingCatalogItem("compete", "Compete with others", "🏆"),
         )
-        compose.setContent { GoalsStep(stepIndex = 1, totalSteps = 9, motivations = motivations, onContinue = {}) }
+        compose.setContent { GoalsStep(stepIndex = 3, totalSteps = 5, motivations = motivations, onContinue = {}) }
 
         compose.onNodeWithText("Improve my grades").assertIsDisplayed()
         // Nothing selected yet → CTA is the disabled prompt. (DuoButton renders its label uppercased,
@@ -48,9 +49,12 @@ class OnboardingFlowTest {
         compose.onNodeWithText("Select at least one", ignoreCase = true).assertDoesNotExist()
     }
 
-    /** The orchestrator greets the learner and advances Welcome → Goals against a mocked API. */
+    /**
+     * The orchestrator greets the learner and advances Welcome → Aha against a mocked API. The
+     * streamlined flow puts the "solve now" aha moment at step 2 (was ~step 6).
+     */
     @Test
-    fun flowAdvancesFromWelcomeToGoals() {
+    fun flowAdvancesFromWelcomeToAha() {
         val fakeApi = mockk<ApiService>(relaxed = true)
         coEvery { fakeApi.getOnboardingState(any()) } returns OnboardingStateResponse(
             onboardingComplete = false,
@@ -60,6 +64,8 @@ class OnboardingFlowTest {
         )
         coEvery { fakeApi.getProfile(any()) } returns
             User(id = 1, username = "ada", xp = 0, level = 1, coins = 0, rank = "Bronze", streak = 0)
+        coEvery { fakeApi.startOnboardingAha(any()) } returns
+            AhaStartResponse(question = "2 + 2", options = listOf("3", "4", "5"))
         RetrofitClient.authToken = "test-token"
         RetrofitClient.setApiServiceForTest(fakeApi)
 
@@ -71,9 +77,10 @@ class OnboardingFlowTest {
         }
         compose.onNodeWithText("begin", substring = true, ignoreCase = true).performClick()
 
+        // The aha step ("Your first win") is now what follows Welcome.
         compose.waitUntil(timeoutMillis = 5_000) {
-            compose.onAllNodesWithText("What brings you to Numera?").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText("Your first win").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("What brings you to Numera?").assertIsDisplayed()
+        compose.onNodeWithText("Your first win").assertIsDisplayed()
     }
 }

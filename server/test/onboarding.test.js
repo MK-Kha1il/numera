@@ -202,9 +202,9 @@ test('onboarding analytics is admin-only and builds a per-step funnel', async ()
   const ins = (uid, step, event, at) =>
     dbRun('INSERT INTO onboarding_events (user_id, step, event, ms, created_at) VALUES (?,?,?,?,?)', [uid, step, event, null, at]);
   await ins(uid1, 'welcome', 'enter', 1000);
-  await ins(uid1, 'goals', 'enter', 1030); // 30s on welcome, then dropped
+  await ins(uid1, 'aha', 'enter', 1030); // 30s on welcome, then dropped before finishing
   await ins(adminId, 'welcome', 'enter', 2000);
-  await ins(adminId, 'notifications', 'complete', 2500);
+  await ins(adminId, 'celebrate', 'complete', 2500);
 
   const r = await api(ctx.base, 'GET', '/api/onboarding/analytics', { token: admin.token });
   assert.equal(r.status, 200);
@@ -213,6 +213,6 @@ test('onboarding analytics is admin-only and builds a per-step funnel', async ()
   assert.equal(r.body.completionRate, 50);
   const welcome = r.body.steps.find((s) => s.step === 'welcome');
   assert.equal(welcome.entered, 2);
-  assert.equal(welcome.droppedAfter, 1, 'one of two who entered welcome did not reach goals');
+  assert.equal(welcome.droppedAfter, 1, 'one of two who entered welcome did not reach aha');
   assert.equal(welcome.medianSeconds, 30, 'median time on welcome derived from enter timestamps');
 });

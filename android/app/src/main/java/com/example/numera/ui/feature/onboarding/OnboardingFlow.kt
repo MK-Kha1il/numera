@@ -35,12 +35,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
-import com.example.numera.data.network.CommitmentRequest
 import com.example.numera.data.network.MotivationsRequest
-import com.example.numera.data.network.NotificationOptInRequest
 import com.example.numera.data.network.OnboardingCatalogs
 import com.example.numera.data.network.OnboardingEventRequest
-import com.example.numera.data.network.OnboardingProfileRequest
 import com.example.numera.data.network.RetrofitClient
 import com.example.numera.theme.AnimDuration
 import com.example.numera.theme.Spacing
@@ -52,10 +49,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 // The ordered onboarding steps. `ordinal` is the progress index; size is the total.
-private enum class OnbStep { Welcome, Goals, Profile, Diagnostic, Roadmap, Aha, Celebrate, Habit, Notifications }
+//
+// Streamlined to 5 steps (was 9) so a brand-new learner is *solving* within seconds rather than ~6
+// steps deep: Welcome → Aha (solve now) → Diagnostic → Goals → Celebrate. Profile, Habit, and
+// Notifications were deliberately moved OUT of onboarding into later week-1 moments (profile/avatar
+// stay editable in Settings; the practice-commitment system lives on the dashboard; the
+// notification opt-in waits until FCM push can actually deliver — see the prior pushAvailable gate).
+private enum class OnbStep { Welcome, Aha, Diagnostic, Goals, Celebrate }
 
 /**
- * The onboarding orchestrator: a step state-machine hosting all phases between signup and the app,
+ * The onboarding orchestrator: a step state-machine hosting the phases between signup and the app,
  * with one shared premium skin, animated transitions, funnel analytics, and server-owned completion.
  * Reuses the existing adaptive diagnostic ([PlacementTestScreen]) verbatim as the placement step.
  */
@@ -64,16 +67,11 @@ fun OnboardingFlow(onComplete: () -> Unit) {
     val api = RetrofitClient.apiService
     val token = RetrofitClient.authToken ?: ""
     val scope = rememberCoroutineScope()
-    val totalAll = OnbStep.values().size
+    val total = OnbStep.values().size
 
     var step by remember { mutableStateOf(OnbStep.Welcome) }
     var catalogs by remember { mutableStateOf(OnboardingCatalogs()) }
     var displayName by remember { mutableStateOf("") }
-    // Hidden until the server confirms push can actually deliver (FCM credentialed) —
-    // never ask a brand-new user to opt into notifications that cannot arrive.
-    var pushAvailable by remember { mutableStateOf(false) }
-    // Progress denominator excludes the notifications step while it's hidden.
-    val total = if (pushAvailable) totalAll else totalAll - 1
 
     // Fire-and-forget funnel analytics (Phase 14).
     fun logEvent(s: OnbStep, event: String) {
@@ -83,11 +81,10 @@ fun OnboardingFlow(onComplete: () -> Unit) {
     }
     LaunchedEffect(step) { logEvent(step, "enter") }
 
-    // Load catalogs + the learner's name once.
+    // Load the motivation catalog + the learner's name once.
     LaunchedEffect(Unit) {
         runCatching { withContext(Dispatchers.IO) { api.getOnboardingState(token) } }.getOrNull()?.let {
             catalogs = it.catalogs
-            pushAvailable = it.pushAvailable
         }
         runCatching { withContext(Dispatchers.IO) { api.getProfile(token) } }.getOrNull()?.let { displayName = it.display_name ?: it.username }
     }
@@ -101,20 +98,9 @@ fun OnboardingFlow(onComplete: () -> Unit) {
     fun persistMotivations(keys: List<String>) {
         scope.launch(Dispatchers.IO) { runCatching { api.saveMotivations(token, MotivationsRequest(keys)) } }
     }
-    fun persistProfile(name: String, avatar: String?, style: String?, interests: List<String>) {
-        scope.launch(Dispatchers.IO) { runCatching { api.saveOnboardingProfile(token, OnboardingProfileRequest(name, style, avatar, interests)) } }
-    }
-    fun persistCommitment(frequency: String, days: List<Int>) {
-        scope.launch(Dispatchers.IO) { runCatching { api.saveOnboardingCommitment(token, CommitmentRequest(frequency, days)) } }
-    }
-    // optIn == null means the notifications step was hidden (push not deliverable yet):
-    // complete onboarding without recording a choice the user never made.
-    fun finish(optIn: Boolean?) {
+    fun finish() {
         scope.launch(Dispatchers.IO) {
-            if (optIn != null) {
-                runCatching { api.saveOnboardingNotificationOptIn(token, NotificationOptInRequest(optIn)) }
-                logEvent(OnbStep.Notifications, "complete")
-            }
+            logEvent(OnbStep.Celebrate, "complete")
             runCatching { api.completeOnboarding(token) }
             withContext(Dispatchers.Main) { onComplete() }
         }
@@ -131,64 +117,34 @@ fun OnboardingFlow(onComplete: () -> Unit) {
     ) { s ->
         val idx = s.ordinal
         when (s) {
-            OnbStep.Welcome -> WelcomeStep(idx, total, displayName) { go(OnbStep.Goals) }
+            OnbStep.Welcome -> WelcomeStep(idx, total, displayName) { go(OnbStep.Aha) }
 
-            OnbStep.Goals -> GoalsStep(idx, total, catalogs.motivations) { keys ->
-                persistMotivations(keys)
-                go(OnbStep.Profile)
-            }
-
-            OnbStep.Profile -> ProfileStep(
-                stepIndex = idx,
-                totalSteps = total,
-                initialName = displayName,
-                avatars = catalogs.avatars,
-                styles = catalogs.profileStyles,
-                interests = catalogs.interests,
-                onBack = { step = OnbStep.Goals },
-            ) { name, avatar, style, interests ->
-                displayName = name
-                persistProfile(name, avatar, style, interests)
-                go(OnbStep.Diagnostic)
-            }
-
-            // Reuse the existing server-authoritative adaptive diagnostic verbatim. It writes
-            // users.level server-side, which the roadmap then reads.
-            OnbStep.Diagnostic -> PlacementTestScreen(
-                apiService = api,
-                token = token,
-                onComplete = { _, _ -> go(OnbStep.Roadmap) },
-                onCancel = { go(OnbStep.Roadmap) },
-            )
-
-            OnbStep.Roadmap -> RoadmapStep(idx, total, api, token) { go(OnbStep.Aha) }
-
+            // Solve-now first: the aha problem draws from the default level (deliberately
+            // achievable), so the very first thing a new user does is succeed — then we place them.
             OnbStep.Aha -> AhaStep(
                 stepIndex = idx,
                 totalSteps = total,
                 api = api,
                 token = token,
-                onSolved = { go(OnbStep.Celebrate) },
-                onSkip = { go(OnbStep.Habit) },
+                onSolved = { go(OnbStep.Diagnostic) },
+                onSkip = { go(OnbStep.Diagnostic) },
             )
 
-            OnbStep.Celebrate -> CelebrateStep { go(OnbStep.Habit) }
+            // Reuse the existing server-authoritative adaptive diagnostic verbatim. It writes
+            // users.level server-side for everything downstream.
+            OnbStep.Diagnostic -> PlacementTestScreen(
+                apiService = api,
+                token = token,
+                onComplete = { _, _ -> go(OnbStep.Goals) },
+                onCancel = { go(OnbStep.Goals) },
+            )
 
-            OnbStep.Habit -> HabitStep(
-                stepIndex = idx,
-                totalSteps = total,
-                onBack = { step = OnbStep.Roadmap },
-            ) { frequency, days ->
-                persistCommitment(frequency, days)
-                if (pushAvailable) {
-                    go(OnbStep.Notifications)
-                } else {
-                    logEvent(OnbStep.Habit, "complete")
-                    finish(null)
-                }
+            OnbStep.Goals -> GoalsStep(idx, total, catalogs.motivations) { keys ->
+                persistMotivations(keys)
+                go(OnbStep.Celebrate)
             }
 
-            OnbStep.Notifications -> NotificationsStep(idx, total) { optIn -> finish(optIn) }
+            OnbStep.Celebrate -> CelebrateStep { finish() }
         }
     }
 }
