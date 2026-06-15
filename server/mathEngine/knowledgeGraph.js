@@ -1244,6 +1244,53 @@ const concepts = {
       { id: "lateral_only", label: "Found the slanted side but forgot the circular base", rule: (ans) => ans },
       { id: "base_only", label: "Found the base but forgot the slanted side", rule: (ans) => ans }
     ]
+  },
+
+  // ---- Equations strand: solving equations with fractions (6.EE / 7.EE / 7.RP) ----
+  "eqn_onestep_div": {
+    name: "One-Step Equations (Division)",
+    prereqs: ["integer_div"],
+    baseElo: 980,
+    misconceptions: [
+      { id: "forgot_to_multiply", label: "Left the answer as the right side — forgot to multiply by the divisor", rule: (ans, p) => p.b },
+      { id: "gave_divisor", label: "Reported the divisor instead of solving for x", rule: (ans, p) => p.a }
+    ]
+  },
+  "eqn_fraction_coeff": {
+    name: "Fractional Coefficients",
+    prereqs: ["eqn_onestep_div", "fraction_mult"],
+    baseElo: 1080,
+    misconceptions: [
+      { id: "only_divided", label: "Divided by the numerator but never multiplied by the denominator", rule: (ans, p) => p.k },
+      { id: "only_multiplied", label: "Multiplied by the denominator but never divided by the numerator", rule: (ans, p) => p.abk }
+    ]
+  },
+  "eqn_clear_denom": {
+    name: "Clearing a Denominator",
+    prereqs: ["eqn_onestep_div", "linear_two_step"],
+    baseElo: 1100,
+    misconceptions: [
+      { id: "forgot_clear", label: "Solved the numerator without clearing the denominator", rule: (ans, p) => p.d - p.c },
+      { id: "forgot_subtract", label: "Cleared the denominator but never subtracted the constant", rule: (ans, p) => p.a * p.d }
+    ]
+  },
+  "eqn_proportion": {
+    name: "Solving Proportions",
+    prereqs: ["eqn_onestep_div", "proportion_solve"],
+    baseElo: 1040,
+    misconceptions: [
+      { id: "forgot_divide", label: "Cross-multiplied but never divided", rule: (ans, p) => p.ad },
+      { id: "copied_denominator", label: "Copied the denominator instead of solving", rule: (ans, p) => p.d }
+    ]
+  },
+  "eqn_two_step_fraction": {
+    name: "Two-Step Equations with a Fraction",
+    prereqs: ["eqn_clear_denom"],
+    baseElo: 1140,
+    misconceptions: [
+      { id: "forgot_to_multiply", label: "Isolated the fraction but never multiplied by the denominator", rule: (ans, p) => p.d + p.c },
+      { id: "forgot_to_add", label: "Cleared the denominator before undoing the subtraction", rule: (ans, p) => p.a * p.d }
+    ]
   }
 };
 
@@ -1384,6 +1431,11 @@ const STANDARDS = {
   geo_surface_cylinder: "7.G.B.6",
   geo_surface_sphere: "HSG-GMD.A.1",
   geo_surface_cone: "HSG-GMD.A.1",
+  eqn_onestep_div: "6.EE.B.7",
+  eqn_fraction_coeff: "7.EE.B.4a",
+  eqn_clear_denom: "7.EE.B.4a",
+  eqn_proportion: "7.RP.A.2c",
+  eqn_two_step_fraction: "7.EE.B.4a",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";

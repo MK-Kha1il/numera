@@ -28,6 +28,7 @@ function updateAchievements(userId, callback) {
       const masteryInequalities = mastery ? mastery.inequalities_correct || 0 : 0;
       const masteryFunctions = mastery ? mastery.functions_correct || 0 : 0;
       const masterySequences = mastery ? mastery.sequences_correct || 0 : 0;
+      const masteryEquations = mastery ? mastery.equations_correct || 0 : 0;
 
       db.get(
         "SELECT COUNT(*) AS count FROM friends WHERE (user_id = ? OR friend_id = ?) AND status = 'accepted'",
@@ -73,6 +74,7 @@ function updateAchievements(userId, callback) {
                 else if (type === 'mastery_inequalities') progress = masteryInequalities;
                 else if (type === 'mastery_functions') progress = masteryFunctions;
                 else if (type === 'mastery_sequences') progress = masterySequences;
+                else if (type === 'mastery_equations') progress = masteryEquations;
                 else if (type === 'friends_count') progress = friendsCount;
                 else if (type === 'daily_puzzles_solved') progress = user.daily_puzzles_solved || 0;
                 else if (type === 'archive_solved') progress = user.archive_solved || 0;

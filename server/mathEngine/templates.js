@@ -3159,6 +3159,93 @@ templates.sequences = {
   }
 };
 
+// -------------------------------------------------------------
+// EQUATIONS TEMPLATES — solving equations with fractions (the 6.EE/7.EE/7.RP band): undoing
+// division, fractional coefficients (multiply by the reciprocal), clearing a denominator,
+// proportions (cross-multiply then divide), and a two-step equation with a fraction. Numeric
+// answers; setups are built backwards from an integer solution so every answer is whole. Keys
+// skip multiples of 10 (milestone boss keys). Params ride along for the misconception classifier.
+// -------------------------------------------------------------
+templates.equations = {
+  // One-step: x/a = b  ->  x = ab. Undo division by multiplying.
+  7: (_diffFactor, idx) => {
+    const a = 2 + (idx % 4);              // divisor 2..5
+    const q = 3 + (idx % 4);              // a = q-1 by construction, so a != q
+    const b = q;                          // right-hand side
+    const x = a * q;                      // answer
+    return {
+      question: `Solve for $x$: $\\frac{x}{${a}} = ${b}$`,
+      answer: x,
+      distractors: [b, a, a + b], // forgot to multiply back; gave the divisor; added the two numbers
+      explanation: `Dividing by $${a}$ is undone by MULTIPLYING by $${a}$: $x = ${b} \\times ${a} = ${x}$. Leaving the answer as $${b}$ skips that step — the $${a}$ under $x$ has to move to the other side.`,
+      type: "eqn_onestep_div",
+      a, b
+    };
+  },
+  // Fractional coefficient: (a/b)x = c  ->  multiply by the reciprocal b/a. Built so x is whole.
+  9: (_diffFactor, idx) => {
+    const pairs = [[2, 3], [3, 4], [2, 5], [3, 5]];
+    const [a, b] = pairs[idx % 4];        // coefficient a/b with a < b
+    const k = 2 + (idx % 3);              // 2..4
+    const c = a * k;                      // right-hand side (integer)
+    const x = b * k;                      // answer
+    return {
+      question: `Solve for $x$: $\\frac{${a}}{${b}}x = ${c}$`,
+      answer: x,
+      distractors: [k, a * b * k, c], // only divided by a; only multiplied by b; never solved
+      explanation: `Multiply both sides by the reciprocal $\\frac{${b}}{${a}}$: $x = ${c} \\times \\frac{${b}}{${a}} = ${x}$. Dividing by $${a}$ alone gives $${k}$ — you still owe the $\\times ${b}$.`,
+      type: "eqn_fraction_coeff",
+      k, abk: a * b * k
+    };
+  },
+  // Clear the denominator first: (x + c)/a = d  ->  x = ad - c.
+  11: (_diffFactor, idx) => {
+    const a = 2 + (idx % 3);              // 2..4
+    const c = 2 + (idx % 2);              // 2..3
+    const d = c + 2 + (idx % 3);          // d = c+2..c+4 (> c)
+    const x = a * d - c;                  // answer
+    return {
+      question: `Solve for $x$: $\\frac{x + ${c}}{${a}} = ${d}$`,
+      answer: x,
+      distractors: [d - c, a * d, a * (d - c)], // never cleared the denominator; forgot to subtract c; distributed wrongly
+      explanation: `Clear the fraction first — multiply both sides by $${a}$: $x + ${c} = ${a} \\times ${d} = ${a * d}$. Then subtract $${c}$: $x = ${a * d} - ${c} = ${x}$. The whole numerator is multiplied by $${a}$, not just part of it.`,
+      type: "eqn_clear_denom",
+      a, c, d
+    };
+  },
+  // Proportion: a/b = x/d  ->  cross-multiply, then divide by b. d is a multiple of b so x is whole.
+  13: (_diffFactor, idx) => {
+    const b = 2 + (idx % 3);              // 2..4
+    const t = 2 + (idx % 2);              // 2..3
+    const a = b + 2 + (idx % 3);          // numerator a = b+2..b+4 (> b)
+    const d = b * t;                      // right-hand denominator
+    const x = a * t;                      // answer = a*d/b
+    return {
+      question: `Solve for $x$: $\\frac{${a}}{${b}} = \\frac{x}{${d}}$`,
+      answer: x,
+      distractors: [a * d, d, a * t + b], // cross-multiplied but never divided; copied the denominator; off by one step
+      explanation: `Cross-multiply: $${b}x = ${a} \\times ${d} = ${a * d}$, then divide by $${b}$: $x = \\frac{${a * d}}{${b}} = ${x}$. Stopping at $${a * d}$ does only half of the cross-multiplication — the $\\div ${b}$ is the rest.`,
+      type: "eqn_proportion",
+      ad: a * d, d
+    };
+  },
+  // Two-step with a fraction: x/a - c = d  ->  add c, then multiply by a.
+  15: (_diffFactor, idx) => {
+    const a = 2 + (idx % 3);              // 2..4
+    const c = 2 + ((idx + 1) % 3);        // 2..4 (decoupled from a for variety)
+    const d = c + 2 + (idx % 2);          // d = c+2..c+3 (> c)
+    const x = a * (d + c);                // answer
+    return {
+      question: `Solve for $x$: $\\frac{x}{${a}} - ${c} = ${d}$`,
+      answer: x,
+      distractors: [d + c, a * d, a * d + c], // forgot to multiply by a; forgot to add c first; cleared before adding
+      explanation: `Undo the subtraction first: $\\frac{x}{${a}} = ${d} + ${c} = ${d + c}$. Then multiply both sides by $${a}$: $x = ${a} \\times ${d + c} = ${x}$. Add $${c}$ back BEFORE clearing the denominator — order matters.`,
+      type: "eqn_two_step_fraction",
+      a, c, d
+    };
+  }
+};
+
 module.exports = {
   templates
 };

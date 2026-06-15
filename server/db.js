@@ -239,6 +239,7 @@ function initDb() {
           inequalities_correct INTEGER DEFAULT 0,
           functions_correct INTEGER DEFAULT 0,
           sequences_correct INTEGER DEFAULT 0,
+          equations_correct INTEGER DEFAULT 0,
           FOREIGN KEY(user_id) REFERENCES users(id)
         )
       `);
@@ -932,6 +933,11 @@ function initDb() {
         { id: 'mastery_sequences_2', name: 'Sequence Adept', description: 'Solve 20 Sequences problems', icon: 'school', target_type: 'mastery_sequences', target_value: 20, reward_coins: 150, category: 'Mastery', chain_id: 'mastery_sequences', chain_order: 2, is_hidden: 0 },
         { id: 'mastery_sequences_3', name: 'Sequence Expert', description: 'Solve 50 Sequences problems', icon: 'school', target_type: 'mastery_sequences', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_sequences', chain_order: 3, is_hidden: 0 },
         { id: 'mastery_sequences_4', name: 'Sequence Master', description: 'Solve 150 Sequences problems', icon: 'school', target_type: 'mastery_sequences', target_value: 150, reward_coins: 800, category: 'Mastery', chain_id: 'mastery_sequences', chain_order: 4, is_hidden: 0 },
+
+        { id: 'mastery_equations_1', name: 'Equation Apprentice', description: 'Solve 5 Equations problems', icon: 'school', target_type: 'mastery_equations', target_value: 5, reward_coins: 50, category: 'Mastery', chain_id: 'mastery_equations', chain_order: 1, is_hidden: 0 },
+        { id: 'mastery_equations_2', name: 'Equation Adept', description: 'Solve 20 Equations problems', icon: 'school', target_type: 'mastery_equations', target_value: 20, reward_coins: 150, category: 'Mastery', chain_id: 'mastery_equations', chain_order: 2, is_hidden: 0 },
+        { id: 'mastery_equations_3', name: 'Equation Expert', description: 'Solve 50 Equations problems', icon: 'school', target_type: 'mastery_equations', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_equations', chain_order: 3, is_hidden: 0 },
+        { id: 'mastery_equations_4', name: 'Equation Master', description: 'Solve 150 Equations problems', icon: 'school', target_type: 'mastery_equations', target_value: 150, reward_coins: 800, category: 'Mastery', chain_id: 'mastery_equations', chain_order: 4, is_hidden: 0 },
 
         // 5. Social Chain
         { id: 'social_1', name: 'Friendly Greeting', description: 'Add your first friend', icon: 'group', target_type: 'friends_count', target_value: 1, reward_coins: 30, category: 'Social', chain_id: 'social_path', chain_order: 1, is_hidden: 0 },

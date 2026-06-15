@@ -3198,6 +3198,149 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // EQUATIONS STRAND — solving equations with fractions (6.EE / 7.EE / 7.RP).
+  // ===========================================================================
+  eqn_onestep_div: {
+    title: "One-Step Equations (Division)",
+    formula: "\\frac{x}{a} = b \\implies x = a \\cdot b",
+    oneLineSummary: "When x is divided by a number, undo it by multiplying both sides by that same number.",
+    intuitionHook: "A balance scale holds $\\frac{x}{4}$ on one side and $5$ on the other. To find the whole $x$, scale BOTH pans up by $4$: the left becomes $x$, the right becomes $20$. Whatever you do to one side you must do to the other — that's how the scale stays balanced.",
+    whatItIs: "Solving an equation where the unknown has been divided by a number. The inverse of division is multiplication, so you multiply both sides by the divisor to free $x$.",
+    whyItWorks: "An equation is a balance: the two sides are equal, and they stay equal only if you do the SAME operation to both. Here $x$ has been divided by $a$, and division is undone by multiplication, so multiplying both sides by $a$ cancels the $\\frac{1}{a}$ on the left ($\\frac{x}{a} \\cdot a = x$) while scaling the right to $a \\cdot b$. The single most common slip is reporting $b$ as the answer — but $b$ is what $\\frac{x}{a}$ equals, a SHRUNKEN version of $x$, not $x$ itself. You must scale back up.",
+    whenToUse: "Any 'a part is known, find the whole' setup: $\\frac{1}{a}$ of a number is given, splitting into equal groups, or reversing a unit conversion.",
+    representations: [
+      { kind: "balance", label: "Scale both sides", body: "$\\frac{x}{4} = 5$: multiply both pans by $4 \\to x = 20$." },
+      { kind: "inverse_op", label: "Undo division with ×", body: "Divided by $a$? Multiply by $a$. The operations cancel: $\\frac{x}{a}\\cdot a = x$." },
+      { kind: "check", label: "Verify by substituting", body: "$x = 20$: $\\frac{20}{4} = 5$ ✓ — the answer must satisfy the original equation." }
+    ],
+    commonMistakes: [
+      { label: "Leaving the answer as b", why: "Reporting $5$ for $\\frac{x}{4} = 5$ — that's $\\frac{x}{4}$, not $x$.", fix: "Multiply by the divisor: $x = 5 \\times 4 = 20$. $b$ is a fraction of $x$, not $x$." },
+      { label: "Dividing instead of multiplying", why: "Computing $\\frac{b}{a}$ — that divides again, shrinking $x$ further.", fix: "$x$ was already divided; reverse it by MULTIPLYING both sides by $a$." }
+    ],
+    connections: [
+      { concept: "linear_one_step", note: "Same one-step idea — here the operation to undo is division." },
+      { concept: "integer_div", note: "Recognizing the division is what tells you to multiply to undo it." },
+      { concept: "eqn_fraction_coeff", note: "Next step up: a fractional coefficient needs both a multiply and a divide." }
+    ],
+    examples: [
+      { question: "Solve: $\\frac{x}{3} = 7$.", answer: "21", explanation: "Multiply both sides by $3$: $x = 7 \\times 3 = 21$." },
+      { question: "Solve: $\\frac{x}{5} = 4$.", answer: "20", explanation: "$x = 4 \\times 5 = 20$." }
+    ]
+  },
+
+  eqn_fraction_coeff: {
+    title: "Fractional Coefficients",
+    formula: "\\frac{a}{b}x = c \\implies x = c \\cdot \\frac{b}{a}",
+    oneLineSummary: "To undo multiplication by a fraction, multiply both sides by its reciprocal (flip it).",
+    intuitionHook: "If $\\frac{2}{3}$ of a number is $8$, the number is bigger than $8$. Flipping the fraction does both jobs at once: $8 \\times \\frac{3}{2} = 12$. The reciprocal divides by the $2$ and multiplies by the $3$ in a single clean move.",
+    whatItIs: "Solving an equation whose unknown is multiplied by a fraction $\\frac{a}{b}$. You isolate $x$ by multiplying both sides by the reciprocal $\\frac{b}{a}$.",
+    whyItWorks: "A number times its reciprocal is $1$: $\\frac{a}{b} \\cdot \\frac{b}{a} = 1$. So multiplying both sides of $\\frac{a}{b}x = c$ by $\\frac{b}{a}$ turns the left into $1 \\cdot x = x$ and the right into $c \\cdot \\frac{b}{a}$. The reciprocal packs TWO inverse operations into one: dividing by the numerator $a$ and multiplying by the denominator $b$. Doing only half — dividing by $a$ but forgetting to multiply by $b$ (or vice versa) — leaves the job unfinished, which is exactly the trap. Flipping the fraction guarantees you do both.",
+    whenToUse: "Solving for a variable scaled by a fraction or percent, reversing a 'fraction of' relationship, and rearranging rate or recipe problems.",
+    representations: [
+      { kind: "reciprocal", label: "Flip and multiply", body: "$\\frac{2}{3}x = 8$: multiply by $\\frac{3}{2} \\to x = \\frac{3}{2}\\cdot 8 = 12$." },
+      { kind: "two_moves", label: "Divide by a, times b", body: "$\\div 2$ then $\\times 3$: $8 \\div 2 = 4$, $4 \\times 3 = 12$. The reciprocal does both." },
+      { kind: "check", label: "Substitute back", body: "$\\frac{2}{3}(12) = 8$ ✓." }
+    ],
+    commonMistakes: [
+      { label: "Only dividing by the numerator", why: "Computing $8 \\div 2 = 4$ and stopping — the denominator $3$ was never used.", fix: "Multiply by the WHOLE reciprocal $\\frac{3}{2}$: divide by $2$ AND multiply by $3$." },
+      { label: "Only multiplying by the denominator", why: "Computing $8 \\times 3 = 24$ and stopping — the numerator $2$ was ignored.", fix: "The reciprocal is $\\frac{b}{a}$: you owe both the $\\times b$ and the $\\div a$." }
+    ],
+    connections: [
+      { concept: "eqn_onestep_div", note: "Builds on undoing one operation; a fraction needs the reciprocal (two at once)." },
+      { concept: "fraction_mult", note: "Multiplying by the reciprocal is fraction multiplication." },
+      { concept: "fraction_div", note: "Dividing by a fraction IS multiplying by its reciprocal — the same move." }
+    ],
+    examples: [
+      { question: "Solve: $\\frac{3}{4}x = 9$.", answer: "12", explanation: "Multiply by $\\frac{4}{3}$: $x = 9 \\times \\frac{4}{3} = 12$." },
+      { question: "Solve: $\\frac{2}{5}x = 6$.", answer: "15", explanation: "$x = 6 \\times \\frac{5}{2} = 15$." }
+    ]
+  },
+
+  eqn_clear_denom: {
+    title: "Clearing a Denominator",
+    formula: "\\frac{x + c}{a} = d \\implies x + c = a \\cdot d \\implies x = ad - c",
+    oneLineSummary: "When a whole expression sits over a denominator, multiply both sides by it first to clear the fraction, then solve normally.",
+    intuitionHook: "$\\frac{x + 2}{3} = 5$ looks scary until you clear the $3$: multiply both sides and it becomes $x + 2 = 15$, an ordinary two-step equation. The fraction is just a disguise — lift the denominator off the whole top and the problem turns plain.",
+    whatItIs: "Solving an equation where an entire expression (like $x + c$) is divided by a number. Multiply both sides by the denominator to clear it, then undo the remaining operations.",
+    whyItWorks: "The fraction bar groups the ENTIRE numerator — $\\frac{x+c}{a}$ means $(x + c)$ all divided by $a$. Multiplying both sides by $a$ undoes that division, but because the whole top was divided, the whole top reappears: $x + c = a \\cdot d$. (Distributing the $a$ only onto part of the numerator is the classic error.) Now it's a routine two-step equation: subtract $c$. Clearing the denominator FIRST keeps the grouping intact and turns a fraction equation into one you already know how to solve.",
+    whenToUse: "Equations with a sum or difference over a number, averages set equal to a value, and formula rearrangements with a fraction.",
+    representations: [
+      { kind: "clear_first", label: "Lift off the denominator", body: "$\\frac{x+2}{3} = 5 \\to x + 2 = 15$ (both sides $\\times 3$)." },
+      { kind: "then_solve", label: "Now it's two-step", body: "$x + 2 = 15 \\to x = 13$ (subtract $2$)." },
+      { kind: "whole_top", label: "The bar groups everything", body: "The $\\times a$ hits the WHOLE numerator $(x + c)$, not just $x$." }
+    ],
+    commonMistakes: [
+      { label: "Solving the numerator without clearing", why: "Treating $\\frac{x+c}{a} = d$ as $x + c = d$ — the denominator was ignored.", fix: "Multiply both sides by $a$ FIRST: $x + c = ad$, then continue." },
+      { label: "Forgetting to subtract c", why: "Stopping at $x + c = ad$ and reporting $ad$.", fix: "After clearing, undo the addition: $x = ad - c$." }
+    ],
+    connections: [
+      { concept: "eqn_onestep_div", note: "Clearing the denominator is the one-step multiply, applied to a whole expression." },
+      { concept: "linear_two_step", note: "After clearing, what remains is exactly a two-step equation." },
+      { concept: "eqn_two_step_fraction", note: "A sibling case where the fraction and the constant sit apart." }
+    ],
+    examples: [
+      { question: "Solve: $\\frac{x + 4}{2} = 6$.", answer: "8", explanation: "Multiply by $2$: $x + 4 = 12$; subtract $4$: $x = 8$." },
+      { question: "Solve: $\\frac{x + 3}{4} = 5$.", answer: "17", explanation: "$x + 3 = 20$, so $x = 17$." }
+    ]
+  },
+
+  eqn_proportion: {
+    title: "Solving Proportions",
+    formula: "\\frac{a}{b} = \\frac{x}{d} \\implies b \\cdot x = a \\cdot d \\implies x = \\frac{a \\cdot d}{b}",
+    oneLineSummary: "Two equal ratios let you cross-multiply, turning the proportion into a simple equation you finish by dividing.",
+    intuitionHook: "If $\\frac{3}{4} = \\frac{x}{8}$, the second ratio is the first one scaled up. Cross-multiplying — $4x = 3 \\times 8$ — trades the two fractions for one clean equation, and dividing by $4$ finishes it: $x = 6$.",
+    whatItIs: "Solving an equation stating two ratios are equal. Cross-multiplication converts it to a linear equation, which you then solve by dividing.",
+    whyItWorks: "A proportion $\\frac{a}{b} = \\frac{x}{d}$ is two fractions set equal. Multiply both sides by both denominators ($b$ and $d$) and the fractions clear, leaving $a \\cdot d = b \\cdot x$ — that shortcut is 'cross-multiplication', and it works because it's just clearing two denominators at once. The result is a one-step equation: divide by $b$ to isolate $x$. The two traps are cross-multiplying the wrong pairs and stopping after the multiply without the final divide — cross-multiplication is only HALF the solve.",
+    whenToUse: "Scaling recipes and maps, similar-figure side lengths, unit-rate and percent problems, and any 'this is to that as x is to the other' relationship.",
+    representations: [
+      { kind: "cross_multiply", label: "Multiply across the equals", body: "$\\frac{3}{4} = \\frac{x}{8}$: $4 \\cdot x = 3 \\cdot 8 = 24$." },
+      { kind: "then_divide", label: "Finish by dividing", body: "$4x = 24 \\to x = 6$. The divide is the second half." },
+      { kind: "scale_factor", label: "One ratio scaled", body: "$8$ is $4 \\times 2$, so $x = 3 \\times 2 = 6$ — same answer, scaling view." }
+    ],
+    commonMistakes: [
+      { label: "Cross-multiplying but not dividing", why: "Reporting $24$ for $\\frac{3}{4} = \\frac{x}{8}$ — that's $4x$, not $x$.", fix: "After $4x = 24$, divide by $4$: $x = 6$. The multiply is only step one." },
+      { label: "Copying the denominator", why: "Answering $8$ because it sits opposite $x$.", fix: "$x$ is unknown — solve for it; the denominator $8$ is given, not the answer." }
+    ],
+    connections: [
+      { concept: "proportion_solve", note: "The same proportional reasoning, here framed as a cross-multiply equation." },
+      { concept: "eqn_onestep_div", note: "After cross-multiplying you're left with a one-step divide." },
+      { concept: "ratio_solve", note: "Proportions are equal ratios; this solves for the missing term." }
+    ],
+    examples: [
+      { question: "Solve: $\\frac{2}{3} = \\frac{x}{9}$.", answer: "6", explanation: "Cross-multiply: $3x = 18$; divide by $3$: $x = 6$." },
+      { question: "Solve: $\\frac{5}{2} = \\frac{x}{4}$.", answer: "10", explanation: "$2x = 20$, so $x = 10$." }
+    ]
+  },
+
+  eqn_two_step_fraction: {
+    title: "Two-Step Equations with a Fraction",
+    formula: "\\frac{x}{a} - c = d \\implies \\frac{x}{a} = d + c \\implies x = a(d + c)",
+    oneLineSummary: "Undo the addition or subtraction first to isolate the fraction, then multiply by the denominator — reverse order of operations.",
+    intuitionHook: "$\\frac{x}{2} - 3 = 4$: first put the $3$ back ($\\frac{x}{2} = 7$), THEN scale up by $2$ ($x = 14$). You unwrap an equation like a package — outermost layer (the $-3$) comes off first, the division last.",
+    whatItIs: "Solving an equation with two operations on $x$: a division and an added/subtracted constant. You reverse them in opposite order — undo the constant, then undo the division.",
+    whyItWorks: "Building the left side, $x$ was first divided by $a$, THEN had $c$ subtracted. To unbuild it, reverse the steps in REVERSE order: undo the last operation first. So add $c$ to both sides to clear the constant, isolating $\\frac{x}{a} = d + c$; only then multiply by $a$ to clear the denominator. Multiplying first, before adding $c$ back, would scale the constant too and corrupt it — which is exactly why order matters. It's the same 'unwrap outermost-first' logic as any two-step equation.",
+    whenToUse: "Real-world setups where a quantity is split into parts and then adjusted by a fixed amount, and any equation mixing a fraction with a constant term.",
+    representations: [
+      { kind: "add_first", label: "Undo +/- first", body: "$\\frac{x}{2} - 3 = 4 \\to \\frac{x}{2} = 7$ (add $3$)." },
+      { kind: "then_multiply", label: "Clear the denominator last", body: "$\\frac{x}{2} = 7 \\to x = 14$ (multiply by $2$)." },
+      { kind: "reverse_order", label: "Unwrap outermost first", body: "Built: $\\div 2$ then $-3$. Undo: $+3$ then $\\times 2$ — reverse order." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting to multiply by the denominator", why: "Stopping at $\\frac{x}{2} = 7$ and reporting $7$.", fix: "Once the fraction is isolated, multiply both sides by the denominator: $x = 14$." },
+      { label: "Clearing the denominator before adding c", why: "Multiplying by $a$ while the $-c$ is still attached, so $c$ gets scaled too.", fix: "Add $c$ back FIRST to isolate the fraction, THEN multiply by $a$." }
+    ],
+    connections: [
+      { concept: "eqn_clear_denom", note: "Both clear a denominator; here the constant sits outside the fraction." },
+      { concept: "linear_two_step", note: "Same reverse-order, two-step logic, with division as one of the steps." },
+      { concept: "eqn_onestep_div", note: "The final move is the one-step multiply you already know." }
+    ],
+    examples: [
+      { question: "Solve: $\\frac{x}{3} - 2 = 4$.", answer: "18", explanation: "Add $2$: $\\frac{x}{3} = 6$; multiply by $3$: $x = 18$." },
+      { question: "Solve: $\\frac{x}{2} - 5 = 3$.", answer: "16", explanation: "$\\frac{x}{2} = 8$, so $x = 16$." }
+    ]
+  },
+
+  // ===========================================================================
   // STATISTICS II — measures of spread (quartiles, IQR, mean absolute deviation).
   // ===========================================================================
   stat_quartile: {
@@ -4015,6 +4158,13 @@ function levelToConceptId(category, level) {
     if (lvl <= 11) return 'arithmetic_nth_term';
     if (lvl <= 13) return 'geometric_next_term';
     return 'geometric_common_ratio';
+  }
+  if (cat === 'equations') {
+    if (lvl <= 7) return 'eqn_onestep_div';
+    if (lvl <= 9) return 'eqn_fraction_coeff';
+    if (lvl <= 11) return 'eqn_clear_denom';
+    if (lvl <= 13) return 'eqn_proportion';
+    return 'eqn_two_step_fraction';
   }
   if (cat === 'expressions') {
     if (lvl <= 11) return 'eval_expression';

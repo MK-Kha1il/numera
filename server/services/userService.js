@@ -28,6 +28,7 @@ function getUserWithMastery(userId, callback) {
         inequalities_correct: mastery ? mastery.inequalities_correct || 0 : 0,
         functions_correct: mastery ? mastery.functions_correct || 0 : 0,
         sequences_correct: mastery ? mastery.sequences_correct || 0 : 0,
+        equations_correct: mastery ? mastery.equations_correct || 0 : 0,
       };
 
       const fullUser = {

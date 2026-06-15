@@ -288,6 +288,12 @@ fun UserProfileDialog(
                                 maxCount = 100,
                                 color = Color(0xFF818CF8)
                             )
+                            MasteryBar(
+                                topicName = "Equations",
+                                correctCount = profile.mastery.equations_correct,
+                                maxCount = 100,
+                                color = Color(0xFF2DD4BF)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(Spacing.l))

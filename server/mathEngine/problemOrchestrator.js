@@ -135,6 +135,12 @@ const TYPE_TO_CONCEPT = {
   stat_quartile:            'stat_quartile',
   stat_iqr:                 'stat_iqr',
   stat_mad:                 'stat_mad',
+  // Equations strand — template types equal conceptIds.
+  eqn_onestep_div:          'eqn_onestep_div',
+  eqn_fraction_coeff:       'eqn_fraction_coeff',
+  eqn_clear_denom:          'eqn_clear_denom',
+  eqn_proportion:           'eqn_proportion',
+  eqn_two_step_fraction:    'eqn_two_step_fraction',
   // Sequences strand — template types equal conceptIds.
   arithmetic_next_term:         'arithmetic_next_term',
   arithmetic_common_difference: 'arithmetic_common_difference',
@@ -342,7 +348,8 @@ function getCategoryConceptIds(category, level) {
     graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula', 'coord_reflect', 'coord_translate', 'coord_rotate_180', 'coord_rotate_90', 'coord_dilate'],
     inequalities:  ['inequality_one_step_add', 'inequality_one_step_mult', 'inequality_flip_negative', 'inequality_two_step', 'inequality_compound'],
     functions:     ['function_evaluate', 'function_table', 'rate_of_change', 'function_initial', 'function_solve'],
-    sequences:     ['arithmetic_next_term', 'arithmetic_common_difference', 'arithmetic_nth_term', 'geometric_next_term', 'geometric_common_ratio']
+    sequences:     ['arithmetic_next_term', 'arithmetic_common_difference', 'arithmetic_nth_term', 'geometric_next_term', 'geometric_common_ratio'],
+    equations:     ['eqn_onestep_div', 'eqn_fraction_coeff', 'eqn_clear_denom', 'eqn_proportion', 'eqn_two_step_fraction']
   };
   const key = (category || 'arithmetic').toLowerCase();
   return map[key] || map.arithmetic;

@@ -9,7 +9,7 @@ const { getLessonAndExamples } = require('../mathEngine/lessons');
 const { CONCEPT_TO_LEVEL } = require('../mathGenerator');
 
 // Strands that are foundational enough to deserve authored (not legacy) lessons.
-const RICH_STRANDS = new Set(['integers', 'decimals', 'fractions', 'geometry', 'number_sense', 'statistics', 'expressions', 'powers', 'graphing', 'inequalities', 'functions', 'sequences']);
+const RICH_STRANDS = new Set(['integers', 'decimals', 'fractions', 'geometry', 'number_sense', 'statistics', 'expressions', 'powers', 'graphing', 'inequalities', 'functions', 'sequences', 'equations']);
 
 // Same control-char fingerprint as the generation sweep (tab/newline/CR are legitimate).
 const ALLOWED_CONTROLS = new Set([9, 10, 13]);

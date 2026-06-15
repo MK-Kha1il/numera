@@ -155,6 +155,12 @@ const CONCEPT_TO_LEVEL = {
   rate_of_change:           { category: 'functions',  level: 11 },
   function_initial:         { category: 'functions',  level: 13 },
   function_solve:           { category: 'functions',  level: 15 },
+  // Equations strand (solving equations with fractions). Keys skip 10 (boss-routed).
+  eqn_onestep_div:          { category: 'equations',  level: 7  },
+  eqn_fraction_coeff:       { category: 'equations',  level: 9  },
+  eqn_clear_denom:          { category: 'equations',  level: 11 },
+  eqn_proportion:           { category: 'equations',  level: 13 },
+  eqn_two_step_fraction:    { category: 'equations',  level: 15 },
   // Sequences strand (arithmetic & geometric patterns). Keys skip 10 (boss-routed).
   arithmetic_next_term:         { category: 'sequences', level: 7  },
   arithmetic_common_difference: { category: 'sequences', level: 9  },
@@ -334,6 +340,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'functions';
   } else if (normalizedCat === 'sequences') {
     catKey = 'sequences';
+  } else if (normalizedCat === 'equations') {
+    catKey = 'equations';
   } else {
     catKey = 'arithmetic';
   }

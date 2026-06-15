@@ -835,6 +835,18 @@ const migrations = [
       }
     },
   },
+  {
+    version: 34,
+    name: 'equations_strand_mastery',
+    // Equations strand (solving equations with fractions) — its mastery counter.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE user_mastery ADD COLUMN equations_correct INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**
