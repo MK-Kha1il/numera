@@ -79,6 +79,7 @@ fun SettingsScreen(
     var isDarkMode by remember { mutableStateOf(ThemeManager.isDarkMode) }
     var isHapticEnabled by remember { mutableStateOf(com.example.numera.haptic.HapticManager.isEnabled) }
     var isSoundMuted by remember { mutableStateOf(SoundManager.isMuted) }
+    var reduceMotion by remember { mutableStateOf(com.example.numera.motion.MotionManager.userReduceMotion) }
     var soundVolume by remember { mutableStateOf(SoundManager.volume) }
 
     var timerEnabled by remember { mutableStateOf(prefs.getBoolean("timer_enabled", true)) }
@@ -256,6 +257,27 @@ fun SettingsScreen(
                             )
                         }
                     }
+                }
+            },
+            SearchableSettingItem("Reduce Motion", "Calm the confetti and animated backgrounds", "accessibility motion animation confetti reduce calm a11y") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Reduce Motion", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Dial back confetti and looping backgrounds", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    }
+                    Switch(
+                        checked = reduceMotion,
+                        onCheckedChange = { checked ->
+                            reduceMotion = checked
+                            com.example.numera.motion.MotionManager.userReduceMotion = checked
+                            com.example.numera.motion.MotionManager.saveSettings(context)
+                            com.example.numera.haptic.HapticManager.playSoft()
+                        }
+                    )
                 }
             },
             SearchableSettingItem("Timer Preferences", "Toggle game round countdown timers", "time countdown limit speed gameplay") {

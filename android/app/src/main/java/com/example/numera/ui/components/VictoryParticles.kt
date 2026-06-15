@@ -30,6 +30,13 @@ fun VictoryParticles(
 ) {
     if (!trigger) return
 
+    // Accessibility (ultra review #76): skip the confetti burst entirely when reduce-motion is on,
+    // but still fire onFinished so the caller resets its trigger state.
+    if (com.example.numera.motion.MotionManager.reduceMotion) {
+        LaunchedEffect(trigger) { onFinished() }
+        return
+    }
+
     val particles = remember { mutableStateListOf<Particle>() }
     
     // Spawn particles on launch

@@ -25,6 +25,7 @@ class MainActivity : ComponentActivity() {
     ThemeManager.init(applicationContext)
     SoundManager.init(applicationContext)
     HapticManager.init(applicationContext)
+    com.example.numera.motion.MotionManager.init(applicationContext)
 
     enableEdgeToEdge()
     setContent {

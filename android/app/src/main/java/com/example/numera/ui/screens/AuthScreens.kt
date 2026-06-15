@@ -81,8 +81,11 @@ internal fun authErrorMessage(e: Throwable, fallback: String): String = when (e)
 
 @Composable
 fun CinematicMathBackground() {
+    // Accessibility (ultra review #76): when reduce-motion is on, render a still frame — the symbol
+    // field and rings stop drifting/rotating instead of looping forever.
+    val reduceMotion = com.example.numera.motion.MotionManager.reduceMotion
     val infiniteTransition = rememberInfiniteTransition(label = "mathBg")
-    val phase by infiniteTransition.animateFloat(
+    val animatedPhase by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
@@ -91,7 +94,7 @@ fun CinematicMathBackground() {
         ),
         label = "phase"
     )
-    val drift by infiniteTransition.animateFloat(
+    val animatedDrift by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -100,6 +103,8 @@ fun CinematicMathBackground() {
         ),
         label = "drift"
     )
+    val phase = if (reduceMotion) 0f else animatedPhase
+    val drift = if (reduceMotion) 0f else animatedDrift
 
     val symbols = remember {
         listOf(
