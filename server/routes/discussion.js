@@ -8,10 +8,53 @@ const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { rateLimiter } = require('../middleware/rateLimit');
 const { checkText } = require('../lib/contentFilter');
+const { DISCUSSION_SEEDS, SEED_AUTHOR_USERNAME } = require('../lib/discussionSeeds');
 const KnowledgeGraph = require('../mathEngine/knowledgeGraph');
 
 const router = express.Router();
 const MAX_BODY = 500;
+
+// Lazily plant the authored starter thread(s) for a concept the first time it's viewed with an
+// empty discussion (ultra review #5). One-time per concept (guarded on a zero-post count), so a
+// real conversation later replaces the seeds rather than stacking on them. Best-effort: any failure
+// just falls through to an empty list. Posts are attributed to the reserved NumeraGuide account.
+function ensureSeeded(conceptId, done) {
+  const seeds = DISCUSSION_SEEDS[conceptId];
+  if (!seeds || seeds.length === 0) return done();
+
+  db.get('SELECT COUNT(*) AS n FROM concept_posts WHERE concept_id = ?', [conceptId], (err, row) => {
+    if (err || (row && row.n > 0)) return done();
+    const now = Math.floor(Date.now() / 1000);
+    // Reserved system author; password_hash '' makes it non-loginable, profile_private hides it.
+    db.run(
+      "INSERT OR IGNORE INTO users (username, password_hash, last_active, avatar, is_guest, onboarding_complete, profile_private) VALUES (?, '', ?, 'avatar_owl', 0, 1, 1)",
+      [SEED_AUTHOR_USERNAME, now],
+      () => {
+        db.get('SELECT id FROM users WHERE username = ?', [SEED_AUTHOR_USERNAME], (uErr, u) => {
+          if (uErr || !u) return done();
+          const insertOne = (i) => {
+            if (i >= seeds.length) return done();
+            const s = seeds[i];
+            // Stagger created_at so ordering is stable and the question reads before its answer.
+            const base = now - (seeds.length - i) * 120;
+            db.run(
+              'INSERT INTO concept_posts (concept_id, user_id, body, hidden, parent_id, created_at) VALUES (?, ?, ?, 0, NULL, ?)',
+              [conceptId, u.id, s.q, base],
+              function () {
+                db.run(
+                  'INSERT INTO concept_posts (concept_id, user_id, body, hidden, parent_id, created_at) VALUES (?, ?, ?, 0, ?, ?)',
+                  [conceptId, u.id, s.a, this.lastID, base + 1],
+                  () => insertOne(i + 1)
+                );
+              }
+            );
+          };
+          insertOne(0);
+        });
+      }
+    );
+  });
+}
 
 // List recent posts for a concept, hiding moderated posts and anyone in a block relationship.
 router.get('/api/concepts/:conceptId/posts', authenticateToken, (req, res) => {
@@ -19,6 +62,7 @@ router.get('/api/concepts/:conceptId/posts', authenticateToken, (req, res) => {
   const concept = KnowledgeGraph.concepts[conceptId];
   if (!concept) return res.status(404).json({ error: 'Unknown concept' });
 
+  ensureSeeded(conceptId, () => {
   db.all(
     `SELECT p.id, p.parent_id AS parentId, p.user_id AS userId, u.username, p.body, p.created_at AS createdAt,
             (SELECT COUNT(*) FROM concept_post_votes v WHERE v.post_id = p.id) AS votes,
@@ -51,6 +95,7 @@ router.get('/api/concepts/:conceptId/posts', authenticateToken, (req, res) => {
       res.json({ conceptId, name: concept.name, posts: top.slice(0, 100) });
     }
   );
+  });
 });
 
 // Toggle an upvote on a post. You can't upvote your own post. Returns the fresh state.
