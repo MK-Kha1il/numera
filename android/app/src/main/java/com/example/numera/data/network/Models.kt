@@ -744,7 +744,24 @@ data class CommitmentStatusResponse(
     val message: String,
     val challengeQuestionsCount: Int,
     val relics: List<Relic>,
-    val activityHistory: List<ActivityDay>? = null
+    val activityHistory: List<ActivityDay>? = null,
+    // Non-null only while a just-lost streak can still be bought back (the repair grace window).
+    val streakRepair: StreakRepairOffer? = null
+)
+
+@Serializable
+data class StreakRepairOffer(
+    val lostStreak: Int,
+    val cost: Int,
+    val expiresAt: Long
+)
+
+@Serializable
+data class StreakRepairResponse(
+    val success: Boolean = false,
+    val message: String = "",
+    val restoredStreak: Int = 0,
+    val user: User? = null
 )
 
 @Serializable

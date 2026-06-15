@@ -553,6 +553,12 @@ interface ApiService {
         @Body request: RecommitRequest
     ): RecommitResponse
 
+    // Buy back a fully-lost streak within the grace window (streak repair — the second valve).
+    @POST("api/commitment/streak-repair")
+    suspend fun repairStreak(
+        @Header("Authorization") token: String
+    ): StreakRepairResponse
+
     @GET("api/favorites")
     suspend fun getFavorites(
         @Header("Authorization") token: String

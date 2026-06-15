@@ -395,9 +395,12 @@ function handleMissedDay(user, now, elapsed, done) {
     // No shield spent. Enter fading state (preserves the climb count for recovery); finally
     // reset to 0 only if already fading or more than 3 days have passed.
     if (user.commitment_state === 'fading' || elapsed > 3 * dayInSecs) {
+      // Full reset. Stash the lost streak so it can be repaired for coins within the grace window
+      // (streak repair — the second valve after the shield). Only worth offering for a real run.
+      const lostStreak = user.streak >= 2 ? user.streak : 0;
       await tx.run(
-        "UPDATE users SET streak = 0, commitment_state = 'active', last_active = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
-        [now, user.id]
+        "UPDATE users SET streak = 0, commitment_state = 'active', last_active = ?, lost_streak = ?, lost_streak_at = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
+        [now, lostStreak, lostStreak > 0 ? now : 0, user.id]
       );
     } else {
       await tx.run(

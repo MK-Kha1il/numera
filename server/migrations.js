@@ -911,6 +911,25 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_problem_reports_status ON problem_reports(status)');
     },
   },
+  {
+    version: 39,
+    name: 'streak_repair',
+    // Streak repair (ultra review #29): the "second valve" after the streak-freeze shield. When a
+    // streak fully resets, we stash what was lost + when, so the learner can pay coins to restore it
+    // within a short grace window instead of losing weeks of momentum to one bad day.
+    up: async (run) => {
+      for (const col of [
+        'ALTER TABLE users ADD COLUMN lost_streak INTEGER DEFAULT 0',
+        'ALTER TABLE users ADD COLUMN lost_streak_at INTEGER DEFAULT 0',
+      ]) {
+        try {
+          await run(col);
+        } catch (e) {
+          if (!/duplicate column name/i.test(e.message)) throw e;
+        }
+      }
+    },
+  },
 ];
 
 /**

@@ -100,6 +100,28 @@ fun CommitmentStatusDialog(
         }
     }
 
+    val handleStreakRepair = {
+        scope.launch(Dispatchers.IO) {
+            try {
+                isRestoring = true
+                val res = apiService.repairStreak(token)
+                withContext(Dispatchers.Main) {
+                    isRestoring = false
+                    restorationMessage = res.message
+                    onRefreshProfile()
+                    com.example.numera.sound.SoundManager.playRewardClaim()
+                    com.example.numera.haptic.HapticManager.playSuccess()
+                }
+            } catch (e: Exception) {
+                Log.e("CommitmentDialog", "Failed to repair streak: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    isRestoring = false
+                    showErrorMessage = e.message ?: "Couldn't repair your streak."
+                }
+            }
+        }
+    }
+
     androidx.compose.ui.window.Dialog(onDismissRequest = { if (!isSolvingChallenge) onDismissRequest() }) {
         DuoCard(
             modifier = Modifier
@@ -311,6 +333,42 @@ fun CommitmentStatusDialog(
                             modifier = Modifier.fillMaxWidth(),
                             enabled = (status?.coins ?: 0) >= 150
                         )
+                    }
+
+                    // Streak repair — the second valve, offered only after a full reset while still
+                    // inside the grace window. Distinct from the fading "recovery routes" above.
+                    status?.streakRepair?.let { offer ->
+                        Spacer(modifier = Modifier.height(Spacing.xs))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                        ) {
+                            Column(modifier = Modifier.padding(Spacing.m), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "💔 You lost a ${offer.lostStreak}-day streak",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Buy it back before the day's out — one bad day shouldn't cost you weeks.",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(Spacing.s))
+                                DuoButton(
+                                    text = "Repair streak — ${offer.cost} 🪙",
+                                    onClick = {
+                                        com.example.numera.sound.SoundManager.playClick()
+                                        handleStreakRepair()
+                                    },
+                                    color = if ((status?.coins ?: 0) >= offer.cost) Color(0xFFFFB300) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = (status?.coins ?: 0) >= offer.cost && !isRestoring
+                                )
+                            }
+                        }
                     }
 
                     if (showErrorMessage.isNotEmpty()) {
