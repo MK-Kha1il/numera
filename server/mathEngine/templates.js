@@ -3156,6 +3156,52 @@ templates.sequences = {
       type: "geometric_common_ratio",
       a, r, t2, diff: t2 - a
     };
+  },
+  // nth term of a geometric sequence: a_n = a1 · r^(n-1). Small a1/r/n keep the answer reasonable.
+  17: (_diffFactor, idx) => {
+    const a1 = 1 + (idx % 3);             // 1..3
+    const r = 2 + (idx % 2);              // 2..3
+    const n = 4 + (idx % 3);              // 4..6
+    const ans = a1 * Math.pow(r, n - 1);
+    const t2 = a1 * r, t3 = a1 * r * r;
+    return {
+      question: `A geometric sequence begins $${a1}, ${t2}, ${t3}, \\ldots$ with a common ratio of $${r}$. What is the $${n}$th term?`,
+      answer: ans,
+      distractors: [a1 * Math.pow(r, n), a1 * Math.pow(r, n - 2), a1 * r * (n - 1)], // exponent n not n-1; n-2; multiplied instead of powered
+      explanation: `Use $a_n = a_1 \\cdot r^{n-1}$: the first term is already term 1, so reaching term $${n}$ multiplies by $${r}$ exactly $${n} - 1 = ${n - 1}$ times: $${a1} \\cdot ${r}^{${n - 1}} = ${ans}$. Using the exponent $${n}$ multiplies one time too many.`,
+      type: "geometric_nth_term",
+      a1, r, n
+    };
+  },
+  // Sum of the first n terms of an arithmetic series: S = n·(first + last)/2.
+  18: (_diffFactor, idx) => {
+    const a1 = 1 + (idx % 4);             // 1..4
+    const d = 1 + (idx % 3);              // 1..3
+    const n = 4 + (idx % 3);              // 4..6
+    const last = a1 + (n - 1) * d;
+    const sum = (n * (a1 + last)) / 2;    // always an integer for these values
+    return {
+      question: `An arithmetic sequence starts at $${a1}$ with a common difference of $${d}$. What is the sum of its first $${n}$ terms?`,
+      answer: sum,
+      distractors: [n * (a1 + last), n * last, last], // forgot to halve; used the last term not the average; gave the last term
+      explanation: `Pair the first and last terms: their average is $\\frac{${a1} + ${last}}{2}$, and there are $${n}$ terms, so $S = ${n} \\cdot \\frac{${a1} + ${last}}{2} = ${sum}$. (The last term is $a_${n} = ${a1} + ${n - 1}\\cdot${d} = ${last}$.) Forgetting to halve doubles the sum.`,
+      type: "arithmetic_series",
+      doubled: n * (a1 + last), nlast: n * last
+    };
+  },
+  // Recursive (Fibonacci-like) sequence: each term is the sum of the two before it.
+  19: (_diffFactor, idx) => {
+    const t1 = 1 + (idx % 3);             // 1..3
+    const t2 = t1 + 1 + (idx % 2);        // > t1
+    const t3 = t1 + t2, t4 = t2 + t3, t5 = t3 + t4;
+    return {
+      question: `In the sequence $${t1}, ${t2}, ${t3}, ${t4}, \\ldots$ each term is the sum of the two before it. What is the next term?`,
+      answer: t5,
+      distractors: [2 * t4, t4 + t1, t4], // doubled the last; added the wrong earlier term; summed an earlier pair
+      explanation: `Add the two most recent terms: $${t3} + ${t4} = ${t5}$. Each step uses the LATEST pair — $${t3}$ and $${t4}$ — not the last term twice ($${2 * t4}$) or an older term.`,
+      type: "fibonacci_next",
+      t4, t1
+    };
   }
 };
 

@@ -3197,6 +3197,90 @@ const CONCEPT_LESSONS = {
     ]
   },
 
+  geometric_nth_term: {
+    title: "nth Term of a Geometric Sequence",
+    formula: "a_n = a_1 \\cdot r^{\\,n-1}",
+    oneLineSummary: "Reach any term of a geometric sequence by multiplying the first term by the common ratio (n − 1) times.",
+    intuitionHook: "Money doubling each year from $\\$1$: year 1 is $\\$1$, year 2 is $\\$2$, year 5 is $\\$1 \\times 2^4 = \\$16$ — four doublings, not five, because year 1 hasn't doubled yet. The exponent counts the JUMPS between terms, one fewer than the term number.",
+    whatItIs: "A closed formula for the $n$th term of a geometric sequence: the first term times the common ratio raised to the power $(n-1)$. It jumps straight to any term without listing.",
+    whyItWorks: "Each step multiplies by $r$, and getting from term 1 to term $n$ takes $n-1$ steps — the first term is the starting point, costing no multiplication. So you apply $r$ exactly $n-1$ times, which is $r^{n-1}$. This is the multiplicative twin of the arithmetic $a_1 + (n-1)d$: same off-by-one on the steps, but repeated multiplication (a power) instead of repeated addition. Using $r^n$ multiplies one extra time and lands on term $n+1$; multiplying by $r(n-1)$ confuses 'a power' with 'times the step count'.",
+    whenToUse: "Compound interest and growth, halving and decay, population models, and any quantity scaling by a fixed factor each period.",
+    representations: [
+      { kind: "count_jumps", label: "Exponent = n − 1 jumps", body: "Term 1: $r^0$. Term 5: $r^4$. Term $n$: $r^{n-1}$." },
+      { kind: "plug_in", label: "Substitute and power", body: "$a_1 = 3, r = 2, n = 4$: $3 \\cdot 2^{3} = 3 \\cdot 8 = 24$." },
+      { kind: "vs_arithmetic", label: "Power, not product", body: "Arithmetic adds $(n-1)d$; geometric MULTIPLIES by $r^{n-1}$." }
+    ],
+    commonMistakes: [
+      { label: "Using the exponent n", why: "Writing $a_1 r^n$ — one multiplication too many (that's term $n+1$).", fix: "The first term costs no jump: use $r^{n-1}$." },
+      { label: "Multiplying instead of powering", why: "Computing $a_1 \\cdot r \\cdot (n-1)$ — treating repeated multiplication like repeated addition.", fix: "Apply $r$ as a POWER: $r^{n-1}$, not $r \\times (n-1)$." }
+    ],
+    connections: [
+      { concept: "arithmetic_nth_term", note: "The additive twin: a_1 + (n-1)d adds where this multiplies." },
+      { concept: "geometric_common_ratio", note: "You need r first; this formula then reaches any term." },
+      { concept: "exponent_power", note: "r^(n-1) is repeated multiplication — exactly an exponent." }
+    ],
+    examples: [
+      { question: "A geometric sequence has first term $3$ and ratio $2$. What is the 4th term?", answer: "24", explanation: "$3 \\cdot 2^{4-1} = 3 \\cdot 8 = 24$." },
+      { question: "Find the 5th term of $2, 6, 18, \\ldots$ (ratio $3$).", answer: "162", explanation: "$2 \\cdot 3^{4} = 2 \\cdot 81 = 162$." }
+    ]
+  },
+
+  arithmetic_series: {
+    title: "Sum of an Arithmetic Series",
+    formula: "S_n = n \\cdot \\frac{a_1 + a_n}{2}",
+    oneLineSummary: "Add up an arithmetic sequence by multiplying how many terms there are by the average of the first and last.",
+    intuitionHook: "To add $1 + 2 + \\cdots + 100$, the young Gauss paired $1{+}100$, $2{+}99$, … — fifty pairs of $101$, total $5050$. Each pair has the same sum, so the whole series is just the count times the average of the ends.",
+    whatItIs: "A formula for the sum of the first $n$ terms of an arithmetic sequence: the number of terms times the average of the first and last term.",
+    whyItWorks: "In an arithmetic sequence the terms rise by a constant step, so they're symmetric about their middle — the first and last average to the same value as the second and second-to-last, and so on. That shared average is $\\frac{a_1 + a_n}{2}$, and there are $n$ terms, so the total is $n \\cdot \\frac{a_1 + a_n}{2}$. Writing it as 'pairs' explains the halving: pairing the ends gives $\\frac{n}{2}$ pairs each summing to $a_1 + a_n$. Forgetting the $\\div 2$ counts every term twice; using $n \\cdot a_n$ assumes every term equals the largest.",
+    whenToUse: "Totaling evenly-spaced values — seats in rows, stacked logs, cumulative savings — and any 'sum $1$ to $N$' problem.",
+    representations: [
+      { kind: "pair_the_ends", label: "Average of the ends", body: "$2,4,6,8$: ends average $\\frac{2+8}{2}=5$; $4$ terms $\\to 4\\cdot5 = 20$." },
+      { kind: "gauss_pairs", label: "Count × average", body: "$n$ terms, each pair sums to first + last → $S = n\\cdot\\frac{a_1+a_n}{2}$." },
+      { kind: "find_last_first", label: "You need the last term", body: "$a_n = a_1 + (n-1)d$ before averaging." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting to halve", why: "Computing $n(a_1 + a_n)$ — that's the doubled total (every term counted twice).", fix: "Divide by 2: pairing the ends gives $\\frac{n}{2}$ pairs, so $S = n\\cdot\\frac{a_1+a_n}{2}$." },
+      { label: "Multiplying by the last term", why: "Using $n \\cdot a_n$ assumes all terms equal the biggest one.", fix: "Use the AVERAGE of first and last, not the last alone." }
+    ],
+    connections: [
+      { concept: "arithmetic_nth_term", note: "You need the last term a_n = a_1 + (n-1)d before summing." },
+      { concept: "stat_mean", note: "The series sum is the count times the average term — a mean in disguise." },
+      { concept: "arithmetic_common_difference", note: "The constant step is what makes the terms symmetric about the middle." }
+    ],
+    examples: [
+      { question: "Sum the first 4 terms of $2, 4, 6, 8, \\ldots$.", answer: "20", explanation: "Last term $8$; $S = 4 \\cdot \\frac{2+8}{2} = 4 \\cdot 5 = 20$." },
+      { question: "Sum the first 5 terms of $3, 5, 7, \\ldots$.", answer: "35", explanation: "Last term $11$; $S = 5 \\cdot \\frac{3+11}{2} = 5 \\cdot 7 = 35$." }
+    ]
+  },
+
+  fibonacci_next: {
+    title: "Recursive Sequences",
+    formula: "a_{n} = a_{n-1} + a_{n-2} \\quad (\\text{each term from the two before})",
+    oneLineSummary: "In a recursive sequence each term is built from previous ones — Fibonacci-style, every term is the sum of the two before it.",
+    intuitionHook: "$1, 1, 2, 3, 5, 8, \\ldots$ — the Fibonacci numbers. Each one is just the two before it added together: $3 + 5 = 8$. You don't need a formula for $n$; you only need to look back two steps.",
+    whatItIs: "A sequence defined by a rule that builds each term from earlier terms (a recurrence), rather than from its position. The Fibonacci-style rule adds the two most recent terms.",
+    whyItWorks: "An explicit rule (like $a_n = a_1 + (n-1)d$) computes a term straight from its position $n$; a RECURSIVE rule instead says how to get the next term from the ones you already have. For the Fibonacci pattern that rule is 'add the latest two', so each new term needs only the two immediately before it — always the most recent pair, sliding forward one step at a time. The errors come from grabbing the wrong inputs: doubling the last term, or reusing an older term instead of the current two.",
+    whenToUse: "Patterns where growth depends on recent history — Fibonacci in nature, population with memory, and any 'each term depends on the previous ones' rule.",
+    representations: [
+      { kind: "look_back_two", label: "Add the latest two", body: "$2, 3, 5, 8$: next is $5 + 8 = 13$." },
+      { kind: "sliding_pair", label: "The pair slides forward", body: "Each step uses the two newest terms, then moves on by one." },
+      { kind: "recursive_vs_explicit", label: "Rule from history, not position", body: "No position formula needed — build forward from what you have." }
+    ],
+    commonMistakes: [
+      { label: "Doubling the last term", why: "Computing $2 \\times$ (last) instead of last + second-to-last.", fix: "Add the two DIFFERENT recent terms; they're usually not equal." },
+      { label: "Using an older term", why: "Adding the last term to one further back instead of the immediate pair.", fix: "Always the two MOST RECENT terms — slide the pair forward each step." }
+    ],
+    connections: [
+      { concept: "arithmetic_next_term", note: "Also extends a sequence step by step — there by adding a constant, here by adding history." },
+      { concept: "arithmetic_common_difference", note: "Arithmetic is the simplest recurrence: add the same number each time." },
+      { concept: "geometric_next_term", note: "Another recurrence: multiply by a constant instead of summing terms." }
+    ],
+    examples: [
+      { question: "Each term is the sum of the two before it: $2, 3, 5, 8, \\ldots$ What is next?", answer: "13", explanation: "$5 + 8 = 13$." },
+      { question: "Continue $1, 4, 5, 9, \\ldots$ (each = sum of previous two).", answer: "14", explanation: "$5 + 9 = 14$." }
+    ]
+  },
+
   // ===========================================================================
   // EQUATIONS STRAND — solving equations with fractions (6.EE / 7.EE / 7.RP).
   // ===========================================================================
@@ -4443,7 +4527,10 @@ function levelToConceptId(category, level) {
     if (lvl <= 9) return 'arithmetic_common_difference';
     if (lvl <= 11) return 'arithmetic_nth_term';
     if (lvl <= 13) return 'geometric_next_term';
-    return 'geometric_common_ratio';
+    if (lvl <= 15) return 'geometric_common_ratio';
+    if (lvl <= 17) return 'geometric_nth_term';
+    if (lvl <= 18) return 'arithmetic_series';
+    return 'fibonacci_next';
   }
   if (cat === 'equations') {
     if (lvl <= 7) return 'eqn_onestep_div';

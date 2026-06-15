@@ -1129,6 +1129,33 @@ const concepts = {
       { id: "read_a_term", label: "Reported a term instead of the ratio between terms", rule: (ans, p) => p.t2 }
     ]
   },
+  "geometric_nth_term": {
+    name: "nth Term of a Geometric Sequence",
+    prereqs: ["geometric_common_ratio", "exponent_power"],
+    baseElo: 1240,
+    misconceptions: [
+      { id: "off_by_one_exponent", label: "Raised the ratio to the n instead of (n − 1)", rule: (ans, p) => p.a1 * Math.pow(p.r, p.n) },
+      { id: "multiplied_not_powered", label: "Multiplied by the ratio instead of raising it to a power", rule: (ans, p) => p.a1 * p.r * (p.n - 1) }
+    ]
+  },
+  "arithmetic_series": {
+    name: "Sum of an Arithmetic Series",
+    prereqs: ["arithmetic_nth_term"],
+    baseElo: 1260,
+    misconceptions: [
+      { id: "forgot_to_halve", label: "Added all the terms but never halved (used the doubled total)", rule: (ans, p) => p.doubled },
+      { id: "used_last_not_average", label: "Multiplied the count by the last term instead of the average term", rule: (ans, p) => p.nlast }
+    ]
+  },
+  "fibonacci_next": {
+    name: "Recursive Sequences",
+    prereqs: ["arithmetic_next_term"],
+    baseElo: 1160,
+    misconceptions: [
+      { id: "doubled_last", label: "Doubled the last term instead of adding the two before it", rule: (ans, p) => 2 * p.t4 },
+      { id: "summed_earlier_pair", label: "Summed an earlier pair of terms", rule: (ans, p) => p.t4 }
+    ]
+  },
 
   // ---- Statistics II: measures of spread (quartiles, IQR, MAD — 6.SP) ----
   "stat_quartile": {
@@ -1535,6 +1562,9 @@ const STANDARDS = {
   unit_price: "6.RP.A.2",
   speed_dist_time: "7.RP.A.1",
   scale_factor: "7.G.A.1",
+  geometric_nth_term: "HSF-BF.A.2",
+  arithmetic_series: "HSF-BF.A.2",
+  fibonacci_next: "HSF-IF.A.3",
   prime_factorization: "4.OA.B.4",
   find_gcf: "6.NS.B.4",
   find_lcm: "6.NS.B.4",

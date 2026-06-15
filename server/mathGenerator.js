@@ -179,6 +179,10 @@ const CONCEPT_TO_LEVEL = {
   arithmetic_nth_term:          { category: 'sequences', level: 11 },
   geometric_next_term:          { category: 'sequences', level: 13 },
   geometric_common_ratio:       { category: 'sequences', level: 15 },
+  // Sequences II — explicit geometric term, arithmetic series, recursive (band extended to 19).
+  geometric_nth_term:           { category: 'sequences', level: 17 },
+  arithmetic_series:            { category: 'sequences', level: 18 },
+  fibonacci_next:               { category: 'sequences', level: 19 },
   linear_one_step:      { category: 'algebra',       level: 11 },
   linear_two_step:      { category: 'algebra',       level: 13 },
   // Promoted from variety templates: the level-14/16 generators already produced these.

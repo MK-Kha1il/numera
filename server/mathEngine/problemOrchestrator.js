@@ -158,7 +158,11 @@ const TYPE_TO_CONCEPT = {
   arithmetic_common_difference: 'arithmetic_common_difference',
   arithmetic_nth_term:          'arithmetic_nth_term',
   geometric_next_term:          'geometric_next_term',
-  geometric_common_ratio:       'geometric_common_ratio'
+  geometric_common_ratio:       'geometric_common_ratio',
+  // Sequences II.
+  geometric_nth_term:           'geometric_nth_term',
+  arithmetic_series:            'arithmetic_series',
+  fibonacci_next:               'fibonacci_next'
 };
 
 // Resolve a concept from a template type string
@@ -360,7 +364,7 @@ function getCategoryConceptIds(category, level) {
     graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula', 'coord_reflect', 'coord_translate', 'coord_rotate_180', 'coord_rotate_90', 'coord_dilate'],
     inequalities:  ['inequality_one_step_add', 'inequality_one_step_mult', 'inequality_flip_negative', 'inequality_two_step', 'inequality_compound'],
     functions:     ['function_evaluate', 'function_table', 'rate_of_change', 'function_initial', 'function_solve'],
-    sequences:     ['arithmetic_next_term', 'arithmetic_common_difference', 'arithmetic_nth_term', 'geometric_next_term', 'geometric_common_ratio'],
+    sequences:     ['arithmetic_next_term', 'arithmetic_common_difference', 'arithmetic_nth_term', 'geometric_next_term', 'geometric_common_ratio', 'geometric_nth_term', 'arithmetic_series', 'fibonacci_next'],
     equations:     ['eqn_onestep_div', 'eqn_fraction_coeff', 'eqn_clear_denom', 'eqn_proportion', 'eqn_two_step_fraction'],
     rates:         ['ratio_simplify', 'ratio_share', 'unit_price', 'speed_dist_time', 'scale_factor'],
     factors:       ['prime_factorization', 'find_gcf', 'find_lcm', 'gcf_word', 'lcm_word']

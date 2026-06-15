@@ -91,7 +91,7 @@ const STRAND_BANDS = {
   graphing: [8, 21],
   inequalities: [7, 15],
   functions: [7, 15],
-  sequences: [7, 15],
+  sequences: [7, 19],
   equations: [7, 15],
   rates: [7, 15],
   factors: [7, 15],
