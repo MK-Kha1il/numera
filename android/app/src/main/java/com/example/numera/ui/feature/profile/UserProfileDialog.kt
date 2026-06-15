@@ -294,6 +294,12 @@ fun UserProfileDialog(
                                 maxCount = 100,
                                 color = Color(0xFF2DD4BF)
                             )
+                            MasteryBar(
+                                topicName = "Ratios & Rates",
+                                correctCount = profile.mastery.rates_correct,
+                                maxCount = 100,
+                                color = Color(0xFFFB923C)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(Spacing.l))

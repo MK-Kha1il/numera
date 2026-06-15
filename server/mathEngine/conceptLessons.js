@@ -3341,6 +3341,149 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // RATIOS & RATES STRAND — applied proportional reasoning (6.RP / 7.RP / 7.G).
+  // ===========================================================================
+  ratio_simplify: {
+    title: "Simplifying Ratios",
+    formula: "a : b = \\frac{a}{g} : \\frac{b}{g} \\quad (g = \\gcd(a, b))",
+    oneLineSummary: "Divide both parts of a ratio by their greatest common factor to write it in lowest terms — like reducing a fraction, but keep the order.",
+    intuitionHook: "Twelve boys to eight girls, $12:8$, describes the same mix as $3:2$ — for every $3$ boys there are $2$ girls. Both ratios tell the identical story; $3:2$ just tells it with the smallest possible numbers.",
+    whatItIs: "Reducing a ratio to its simplest form by dividing both quantities by their greatest common factor, so the two numbers share no common factor larger than $1$.",
+    whyItWorks: "A ratio compares two quantities by division, so scaling both parts by the same number doesn't change the comparison — $12:8$, $6:4$, and $3:2$ are all the same relationship, just at different scales (exactly like equivalent fractions). Dividing both parts by their GCF strips out every shared factor at once, landing on the unique smallest whole-number form. Two cautions: divide BOTH parts by the same number (halving only one changes the ratio), and keep the ORDER — $3:2$ and $2:3$ describe opposite mixes.",
+    whenToUse: "Comparing quantities cleanly (recipes, mixtures, maps, odds), checking whether two ratios are equivalent, and as the first step before sharing in a ratio.",
+    representations: [
+      { kind: "like_fractions", label: "Reduce like a fraction", body: "$12:8$ → divide both by $4$ → $3:2$, the same way $\\frac{12}{8} = \\frac{3}{2}$." },
+      { kind: "both_parts", label: "Same divisor on both", body: "Halving only one part ($12:8 \\to 6:8$) changes the mix — divide BOTH by the GCF." },
+      { kind: "order_matters", label: "Keep the order", body: "$3:2$ (more of the first) is not $2:3$ (more of the second)." }
+    ],
+    commonMistakes: [
+      { label: "Not fully simplifying", why: "Dividing $12:8$ by $2$ to get $6:4$ and stopping — $6$ and $4$ still share a factor.", fix: "Divide by the GREATEST common factor ($4$), or keep reducing until the parts are coprime." },
+      { label: "Reversing the order", why: "Writing $2:3$ when the ratio was $12:8$.", fix: "The first quantity stays first: $12:8 \\to 3:2$." }
+    ],
+    connections: [
+      { concept: "fraction_simplify", note: "Same reduce-by-the-GCF move, written with a colon instead of a bar." },
+      { concept: "ratio_share", note: "Simplest form gives the fewest 'parts' to split a total into." },
+      { concept: "ratio_solve", note: "Equivalent ratios are the engine behind solving for a missing term." }
+    ],
+    examples: [
+      { question: "Simplify the ratio $10 : 15$.", answer: "2:3", explanation: "Divide both by their GCF $5$: $10 \\div 5 = 2$, $15 \\div 5 = 3$, giving $2:3$." },
+      { question: "Simplify the ratio $9 : 12$.", answer: "3:4", explanation: "GCF is $3$: $9 \\div 3 = 3$, $12 \\div 3 = 4$, so $3:4$." }
+    ]
+  },
+
+  ratio_share: {
+    title: "Sharing in a Ratio",
+    formula: "\\text{one part} = \\frac{\\text{total}}{\\text{sum of ratio terms}}; \\quad \\text{share} = (\\text{its terms}) \\times \\text{one part}",
+    oneLineSummary: "Add the ratio terms to get the number of equal parts, divide the total by that to size one part, then multiply by each person's terms.",
+    intuitionHook: "Split $\\$20$ between two people in a $2:3$ ratio. Think of $5$ equal envelopes ($2 + 3$): each holds $\\$4$. One person takes $2$ envelopes ($\\$8$), the other takes $3$ ($\\$12$). The ratio tells you how many envelopes each gets, not the dollars directly.",
+    whatItIs: "Dividing a total amount into shares that follow a given ratio. The ratio terms count how many equal 'parts' each share contains.",
+    whyItWorks: "A ratio $2:3$ means the total is cut into $2 + 3 = 5$ equal parts. Finding the size of ONE part — total $\\div 5$ — is the key move, because every share is just a whole number of those identical parts. Then each person's share is their term count times the part size. This is why you add the terms first: the sum is the denominator of the whole, and skipping it (e.g. treating the total as one person's share, or stopping at one part's value) answers a different question. The shares always add back to the total, a built-in check.",
+    whenToUse: "Splitting money, ingredients, profits, or time fairly by a ratio; mixing solutions; and any 'divide this among them in the ratio…' problem.",
+    representations: [
+      { kind: "equal_parts", label: "Count the parts", body: "$2:3$ → $5$ equal parts. $\\$20 \\div 5 = \\$4$ per part." },
+      { kind: "scale_each", label: "Multiply by each term", body: "Shares: $2 \\times \\$4 = \\$8$ and $3 \\times \\$4 = \\$12$." },
+      { kind: "adds_back", label: "Check: shares sum to the total", body: "$\\$8 + \\$12 = \\$20$ ✓ — the parts rebuild the whole." }
+    ],
+    commonMistakes: [
+      { label: "Reporting the wrong share", why: "Giving the smaller share when the larger was asked (or vice versa).", fix: "Match the term to the person: the larger share uses the bigger ratio number." },
+      { label: "Forgetting to add the terms", why: "Dividing by one term instead of the sum, or giving the whole total.", fix: "One part $=$ total $\\div$ (sum of ALL terms); then scale by each term." }
+    ],
+    connections: [
+      { concept: "ratio_simplify", note: "Simplest form gives the fewest parts to divide into." },
+      { concept: "fraction_of", note: "Each share is a fraction (its terms over the sum) of the total." },
+      { concept: "ratio_solve", note: "Both rest on equal parts; sharing distributes a known total across them." }
+    ],
+    examples: [
+      { question: "Share $\\$35$ in the ratio $3 : 4$. What is the larger share?", answer: "20", explanation: "$3 + 4 = 7$ parts; $\\$35 \\div 7 = \\$5$; larger $= 4 \\times \\$5 = \\$20$." },
+      { question: "Share $\\$24$ in the ratio $1 : 2$. What is the larger share?", answer: "16", explanation: "$3$ parts of $\\$8$; larger $= 2 \\times \\$8 = \\$16$." }
+    ]
+  },
+
+  unit_price: {
+    title: "Unit Price",
+    formula: "\\text{unit price} = \\frac{\\text{total cost}}{\\text{number of items}}",
+    oneLineSummary: "Divide the total cost by the number of items to get the price of one — the key to comparing 'which is the better buy'.",
+    intuitionHook: "Six notebooks for $\\$4.80$ sounds different from $\\$0.80$ each, but they're the same deal seen two ways. Dividing the total by how many you get collapses any package size down to one comparable number: the cost of a single item.",
+    whatItIs: "The cost of a single item, found by dividing the total price by the quantity. It turns differently-sized packages into a fair, head-to-head comparison.",
+    whyItWorks: "Price scales with quantity, so a total bundles together many items' costs; dividing by the count spreads that total evenly back over each item — the definition of 'per one'. Because every option is reduced to the SAME unit (one item), their unit prices are directly comparable, which is the whole point: the smaller unit price is the better buy regardless of package size. The classic slip is reporting the total (that's all the items) or the count (that's how many, not how much each).",
+    whenToUse: "Comparing deals at the store (the 'better buy'), reading per-unit pricing, and any 'cost per one' question — the everyday face of unit rates.",
+    representations: [
+      { kind: "divide_down", label: "Total over count", body: "$\\$4.80$ for $6$: $\\$4.80 \\div 6 = \\$0.80$ each." },
+      { kind: "compare", label: "Same unit, fair race", body: "Reduce every package to price-per-item, then the smallest wins." },
+      { kind: "scale_back_up", label: "Check by multiplying", body: "$\\$0.80 \\times 6 = \\$4.80$ ✓ — one item's price rebuilds the total." }
+    ],
+    commonMistakes: [
+      { label: "Reporting the total", why: "Giving the whole price instead of the per-item cost.", fix: "Divide the total by the number of items — the question asks for ONE." },
+      { label: "Dividing the wrong way", why: "Computing items $\\div$ cost, which gives items-per-dollar, not dollars-per-item.", fix: "Unit PRICE is dollars per item: cost on top, count on the bottom." }
+    ],
+    connections: [
+      { concept: "unit_rate", note: "Unit price is a unit rate measured in dollars per item." },
+      { concept: "speed_dist_time", note: "Same 'per one' division — there it's miles per hour, here dollars per item." },
+      { concept: "ratio_solve", note: "Comparing unit prices is comparing two rates." }
+    ],
+    examples: [
+      { question: "5 pens cost $\\$15$. What is the price of one pen?", answer: "3", explanation: "$\\$15 \\div 5 = \\$3$ per pen." },
+      { question: "4 apples cost $\\$12$. What is the price of one apple?", answer: "3", explanation: "$\\$12 \\div 4 = \\$3$ each." }
+    ]
+  },
+
+  speed_dist_time: {
+    title: "Speed, Distance & Time",
+    formula: "\\text{speed} = \\frac{\\text{distance}}{\\text{time}}",
+    oneLineSummary: "Speed is distance divided by time — how far you cover in one unit of time.",
+    intuitionHook: "Drive $150$ miles in $3$ hours and you average $50$ miles every hour. Dividing the whole trip by the hours it took spreads the distance evenly across the clock — that even pace is the speed.",
+    whatItIs: "The rate of travel: distance covered per unit of time, found by dividing distance by time. The same triangle relationship also gives distance ($= $ speed $\\times$ time) and time ($= $ distance $\\div$ speed).",
+    whyItWorks: "Speed answers 'how far per one hour?', and 'per one' always means divide: split the total distance across the total time and you get the distance for a single hour. The three quantities form one relationship — $d = s \\times t$ — so knowing any two gives the third by rearranging. The errors come from reporting a raw quantity instead of the rate: the distance alone says how far (not how fast), and the time alone says how long. Only the division produces a speed, and its units (miles per hour) name the operation.",
+    whenToUse: "Trip planning, comparing how fast things move, physics rate problems, and any of the three when you know the other two.",
+    representations: [
+      { kind: "per_hour", label: "Distance per one hour", body: "$150$ miles in $3$ hours: $150 \\div 3 = 50$ mph." },
+      { kind: "triangle", label: "One relationship, three forms", body: "$d = s \\cdot t$, $s = d / t$, $t = d / s$ — cover the unknown to see the formula." },
+      { kind: "units_name_it", label: "Units tell you to divide", body: "'Miles per hour' literally means miles $\\div$ hours." }
+    ],
+    commonMistakes: [
+      { label: "Reporting the distance", why: "Answering with the miles travelled when asked for the speed.", fix: "Speed is distance PER hour: divide the distance by the time." },
+      { label: "Dividing time by distance", why: "Computing time $\\div$ distance, which gives hours-per-mile.", fix: "For miles per hour, distance goes on top: $s = d / t$." }
+    ],
+    connections: [
+      { concept: "unit_rate", note: "Speed is a unit rate: distance per one unit of time." },
+      { concept: "unit_price", note: "Same 'per one' division, with miles and hours instead of dollars and items." },
+      { concept: "proportion_solve", note: "Steady speed means distance and time stay in proportion." }
+    ],
+    examples: [
+      { question: "A train travels $240$ miles in $4$ hours. What is its average speed in mph?", answer: "60", explanation: "$240 \\div 4 = 60$ mph." },
+      { question: "A runner covers $20$ km in $2$ hours. What is the average speed in km/h?", answer: "10", explanation: "$20 \\div 2 = 10$ km/h." }
+    ]
+  },
+
+  scale_factor: {
+    title: "Scale Drawings",
+    formula: "\\text{actual} = \\text{drawing measurement} \\times \\text{scale}",
+    oneLineSummary: "A scale tells you how many real units each drawing unit stands for, so multiply the map measurement by the scale to get the real distance.",
+    intuitionHook: "On a map where $1$ cm means $50$ km, two cities $4$ cm apart are really $200$ km apart. Each centimetre is a stand-in for $50$ real kilometres, so four of them carry $4 \\times 50$ kilometres of real ground.",
+    whatItIs: "Using a scale (like $1\\text{ cm} : 50\\text{ km}$) to convert between a drawing and reality. To find the real distance, multiply the drawing measurement by the scale; to go the other way, divide.",
+    whyItWorks: "A scale is a fixed rate: every single drawing-unit represents the same number of real units. So a drawing length of $m$ units stands for $m$ copies of that rate — $m \\times (\\text{real per drawing unit})$ — which is why you MULTIPLY to enlarge a map distance up to reality. Adding the scale to the measurement makes no sense dimensionally (it mixes centimetres with kilometres); the relationship is proportional, not additive. Going from real back to the drawing reverses it: divide by the scale.",
+    whenToUse: "Maps, blueprints, models, and floor plans — anywhere a small drawing represents something larger (or a model represents something tiny).",
+    representations: [
+      { kind: "each_unit", label: "Each unit stands for the scale", body: "$1$ cm $= 50$ km, so $4$ cm $= 4 \\times 50 = 200$ km." },
+      { kind: "multiply_up", label: "Drawing → real: multiply", body: "Map measurement $\\times$ scale $=$ real distance." },
+      { kind: "divide_back", label: "Real → drawing: divide", body: "Real distance $\\div$ scale $=$ how long to draw it." }
+    ],
+    commonMistakes: [
+      { label: "Adding instead of multiplying", why: "Computing $4 + 50$ — that mixes centimetres and kilometres.", fix: "A scale is a multiplier: real $=$ measurement $\\times$ scale, so $4 \\times 50 = 200$." },
+      { label: "Reporting the scale", why: "Giving the per-unit value ($50$) instead of the actual distance.", fix: "Multiply by how many units there are: $4 \\times 50 = 200$ km." }
+    ],
+    connections: [
+      { concept: "proportion_solve", note: "A scale is a proportion between drawing units and real units." },
+      { concept: "coord_dilate", note: "Both scale by a fixed factor; a dilation does it to coordinates." },
+      { concept: "unit_convert_metric", note: "Scale conversion is a units-style multiply by a fixed rate." }
+    ],
+    examples: [
+      { question: "A map scale is $1$ cm : $20$ km. A road is $5$ cm long on the map. How long is it in reality?", answer: "100", explanation: "$5 \\times 20 = 100$ km." },
+      { question: "A model uses $1$ cm : $8$ m. A wall is $3$ cm in the model. How tall is the real wall?", answer: "24", explanation: "$3 \\times 8 = 24$ m." }
+    ]
+  },
+
+  // ===========================================================================
   // STATISTICS II — measures of spread (quartiles, IQR, mean absolute deviation).
   // ===========================================================================
   stat_quartile: {
@@ -4165,6 +4308,13 @@ function levelToConceptId(category, level) {
     if (lvl <= 11) return 'eqn_clear_denom';
     if (lvl <= 13) return 'eqn_proportion';
     return 'eqn_two_step_fraction';
+  }
+  if (cat === 'rates') {
+    if (lvl <= 7) return 'ratio_simplify';
+    if (lvl <= 9) return 'ratio_share';
+    if (lvl <= 11) return 'unit_price';
+    if (lvl <= 13) return 'speed_dist_time';
+    return 'scale_factor';
   }
   if (cat === 'expressions') {
     if (lvl <= 11) return 'eval_expression';

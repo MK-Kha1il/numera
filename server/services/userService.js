@@ -29,6 +29,7 @@ function getUserWithMastery(userId, callback) {
         functions_correct: mastery ? mastery.functions_correct || 0 : 0,
         sequences_correct: mastery ? mastery.sequences_correct || 0 : 0,
         equations_correct: mastery ? mastery.equations_correct || 0 : 0,
+        rates_correct: mastery ? mastery.rates_correct || 0 : 0,
       };
 
       const fullUser = {

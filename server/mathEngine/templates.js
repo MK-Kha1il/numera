@@ -3246,6 +3246,87 @@ templates.equations = {
   }
 };
 
+// -------------------------------------------------------------
+// RATES TEMPLATES — applied proportional reasoning (the 6.RP/7.RP/7.G band): simplifying a
+// ratio, sharing an amount in a ratio, unit price, speed/distance/time, and scale drawings.
+// Built backwards from whole answers; the ratio_simplify answer is a STRING ("p:q"), the rest
+// are numeric. Keys skip multiples of 10. Params ride along for the misconception classifier.
+// -------------------------------------------------------------
+templates.rates = {
+  // Simplify a ratio by dividing both parts by their GCF. Answer is a "p:q" string.
+  7: (_diffFactor, idx) => {
+    const reduced = [[2, 3], [3, 4], [2, 5], [3, 5], [4, 5]];
+    const [p, q] = reduced[idx % 5];      // already coprime, p < q
+    const g = 2 + (idx % 4);              // common factor 2..5
+    const a = p * g, b = q * g;
+    return {
+      question: `Simplify the ratio $${a} : ${b}$ to its lowest terms.`,
+      answer: `${p}:${q}`,
+      distractors: [`${a}:${b}`, `${q}:${p}`, `${b}:${a}`], // didn't simplify; reversed; reversed and unsimplified
+      explanation: `Divide both parts by their greatest common factor, $${g}$: $${a} \\div ${g} = ${p}$ and $${b} \\div ${g} = ${q}$, giving $${p}:${q}$. A ratio is in lowest terms when the two numbers share no factor bigger than $1$ — and the order ($${p}$ then $${q}$) must be kept.`,
+      type: "ratio_simplify"
+    };
+  },
+  // Share a total in a ratio m:n; ask for the LARGER share. total = (m+n)*k keeps shares whole.
+  9: (_diffFactor, idx) => {
+    const m = 2 + (idx % 2);              // 2..3
+    const n = m + 1 + (idx % 2);          // m+1..m+2 (> m, so the n-part is larger)
+    const k = 3 + (idx % 4);              // value of one part, 3..6
+    const total = (m + n) * k;
+    const larger = n * k;
+    return {
+      question: `Two friends share $\\$${total}$ in the ratio $${m} : ${n}$. How much is the LARGER share?`,
+      answer: larger,
+      distractors: [m * k, k, total], // the smaller share; the value of one part; the whole amount
+      explanation: `The ratio has $${m} + ${n} = ${m + n}$ equal parts, so each part is $\\$${total} \\div ${m + n} = \\$${k}$. The larger share is $${n}$ parts: $${n} \\times ${k} = \\$${larger}$. The smaller share ($\\$${m * k}$) and the total ($\\$${total}$) answer different questions.`,
+      type: "ratio_share",
+      smaller: m * k, total
+    };
+  },
+  // Unit price: N items cost $C -> price per item C/N. C = N*p keeps it whole; p > N avoids collisions.
+  11: (_diffFactor, idx) => {
+    const count = 3 + (idx % 4);          // 3..6 items
+    const p = count + 1 + (idx % 3);      // price per item > count
+    const total = count * p;
+    return {
+      question: `${count} identical notebooks cost $\\$${total}$ in total. What is the price of ONE notebook?`,
+      answer: p,
+      distractors: [total, count, count + p], // gave the total; gave the count; added the two numbers
+      explanation: `Unit price is the total shared equally among the items: $\\$${total} \\div ${count} = \\$${p}$ per notebook. The total $\\$${total}$ is for all $${count}$ together — divide to bring it down to one.`,
+      type: "unit_price",
+      total, count
+    };
+  },
+  // Speed from distance and time: speed = distance / time. distance = time*speed keeps it whole.
+  13: (_diffFactor, idx) => {
+    const time = 2 + (idx % 4);           // 2..5 hours
+    const speed = 10 + 5 * (idx % 5);     // 10..30 mph
+    const dist = time * speed;
+    return {
+      question: `A car travels $${dist}$ miles in $${time}$ hours at a steady pace. What is its average speed in miles per hour?`,
+      answer: speed,
+      distractors: [dist, time, dist + time], // gave the distance; gave the time; added the two numbers
+      explanation: `Speed is distance PER hour: $${dist} \\div ${time} = ${speed}$ mph. Dividing spreads the $${dist}$ miles evenly across the $${time}$ hours — the distance alone ($${dist}$) tells you how far, not how fast.`,
+      type: "speed_dist_time",
+      dist, time
+    };
+  },
+  // Scale drawing: map distance m at scale 1:k (1 cm = k km) -> actual = m*k.
+  15: (_diffFactor, idx) => {
+    const k = 10 + 10 * (idx % 4);        // scale 10..40 km per cm
+    const m = 2 + (idx % 5);              // 2..6 cm on the map
+    const actual = m * k;
+    return {
+      question: `On a map, $1$ cm represents $${k}$ km. Two cities are $${m}$ cm apart on the map. What is the real distance between them, in km?`,
+      answer: actual,
+      distractors: [m + k, k, m], // added instead of multiplying; gave the scale; gave the map distance
+      explanation: `Each centimetre stands for $${k}$ km, so $${m}$ cm stand for $${m} \\times ${k} = ${actual}$ km. The scale is a MULTIPLIER, not something to add — $${m} + ${k}$ mixes centimetres with kilometres.`,
+      type: "scale_factor",
+      m, k
+    };
+  }
+};
+
 module.exports = {
   templates
 };

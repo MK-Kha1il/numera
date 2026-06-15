@@ -54,7 +54,7 @@ test('strand bands never normalize onto a milestone template key', () => {
   // so a strand band landing on a multiple of 10 serves the WRONG category (statistics at UI
   // levels 21–24 used to get a pythagorean problem) and miscounts mastery.
   const strands = ['geometry', 'integers', 'decimals', 'fractions', 'number_sense',
-    'statistics', 'expressions', 'powers', 'graphing', 'inequalities', 'functions', 'sequences', 'equations'];
+    'statistics', 'expressions', 'powers', 'graphing', 'inequalities', 'functions', 'sequences', 'equations', 'rates'];
   for (const cat of strands) {
     for (let lvl = 1; lvl <= 60; lvl++) {
       if (lvl % 10 === 0) continue; // real milestones pass through by design

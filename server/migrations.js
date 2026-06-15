@@ -847,6 +847,18 @@ const migrations = [
       }
     },
   },
+  {
+    version: 35,
+    name: 'rates_strand_mastery',
+    // Ratios & rates strand (applied proportional reasoning) — its mastery counter.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE user_mastery ADD COLUMN rates_correct INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**

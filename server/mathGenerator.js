@@ -161,6 +161,12 @@ const CONCEPT_TO_LEVEL = {
   eqn_clear_denom:          { category: 'equations',  level: 11 },
   eqn_proportion:           { category: 'equations',  level: 13 },
   eqn_two_step_fraction:    { category: 'equations',  level: 15 },
+  // Ratios & rates strand (applied proportional reasoning). Keys skip 10 (boss-routed).
+  ratio_simplify:           { category: 'rates',      level: 7  },
+  ratio_share:              { category: 'rates',      level: 9  },
+  unit_price:               { category: 'rates',      level: 11 },
+  speed_dist_time:          { category: 'rates',      level: 13 },
+  scale_factor:             { category: 'rates',      level: 15 },
   // Sequences strand (arithmetic & geometric patterns). Keys skip 10 (boss-routed).
   arithmetic_next_term:         { category: 'sequences', level: 7  },
   arithmetic_common_difference: { category: 'sequences', level: 9  },
@@ -342,6 +348,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     catKey = 'sequences';
   } else if (normalizedCat === 'equations') {
     catKey = 'equations';
+  } else if (normalizedCat === 'rates') {
+    catKey = 'rates';
   } else {
     catKey = 'arithmetic';
   }

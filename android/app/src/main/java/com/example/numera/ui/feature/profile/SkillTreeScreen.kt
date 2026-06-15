@@ -256,6 +256,7 @@ private fun categoryLabel(category: String): String = when (category) {
     "functions" -> "Functions"
     "sequences" -> "Sequences"
     "equations" -> "Equations"
+    "rates" -> "Ratios & Rates"
     "mental" -> "Mental Math"
     else -> category.replaceFirstChar { it.uppercase() }
 }

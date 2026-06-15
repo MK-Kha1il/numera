@@ -1291,6 +1291,53 @@ const concepts = {
       { id: "forgot_to_multiply", label: "Isolated the fraction but never multiplied by the denominator", rule: (ans, p) => p.d + p.c },
       { id: "forgot_to_add", label: "Cleared the denominator before undoing the subtraction", rule: (ans, p) => p.a * p.d }
     ]
+  },
+
+  // ---- Ratios & rates strand: applied proportional reasoning (6.RP / 7.RP / 7.G) ----
+  "ratio_simplify": {
+    name: "Simplifying Ratios",
+    prereqs: ["fraction_simplify"],
+    baseElo: 940,
+    misconceptions: [
+      { id: "didnt_simplify", label: "Left the ratio unreduced", rule: (ans) => ans },
+      { id: "reversed", label: "Wrote the two parts in the wrong order", rule: (ans) => ans }
+    ]
+  },
+  "ratio_share": {
+    name: "Sharing in a Ratio",
+    prereqs: ["ratio_simplify", "ratio_solve"],
+    baseElo: 1040,
+    misconceptions: [
+      { id: "gave_smaller", label: "Reported the smaller share instead of the one asked for", rule: (ans, p) => p.smaller },
+      { id: "gave_total", label: "Reported the whole amount instead of one share", rule: (ans, p) => p.total }
+    ]
+  },
+  "unit_price": {
+    name: "Unit Price",
+    prereqs: ["unit_rate"],
+    baseElo: 1000,
+    misconceptions: [
+      { id: "gave_total", label: "Reported the total cost instead of the price per item", rule: (ans, p) => p.total },
+      { id: "gave_count", label: "Reported the number of items instead of the price", rule: (ans, p) => p.count }
+    ]
+  },
+  "speed_dist_time": {
+    name: "Speed, Distance & Time",
+    prereqs: ["unit_rate"],
+    baseElo: 1060,
+    misconceptions: [
+      { id: "gave_distance", label: "Reported the distance instead of the speed", rule: (ans, p) => p.dist },
+      { id: "gave_time", label: "Reported the time instead of the speed", rule: (ans, p) => p.time }
+    ]
+  },
+  "scale_factor": {
+    name: "Scale Drawings",
+    prereqs: ["proportion_solve"],
+    baseElo: 1100,
+    misconceptions: [
+      { id: "added_instead", label: "Added the scale and the measurement instead of multiplying", rule: (ans, p) => p.m + p.k },
+      { id: "gave_scale", label: "Reported the scale instead of the actual distance", rule: (ans, p) => p.k }
+    ]
   }
 };
 
@@ -1436,6 +1483,11 @@ const STANDARDS = {
   eqn_clear_denom: "7.EE.B.4a",
   eqn_proportion: "7.RP.A.2c",
   eqn_two_step_fraction: "7.EE.B.4a",
+  ratio_simplify: "6.RP.A.1",
+  ratio_share: "6.RP.A.3",
+  unit_price: "6.RP.A.2",
+  speed_dist_time: "7.RP.A.1",
+  scale_factor: "7.G.A.1",
 };
 for (const id of Object.keys(concepts)) {
   concepts[id].standard = STANDARDS[id] || "Unmapped";
