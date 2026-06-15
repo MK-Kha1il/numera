@@ -73,6 +73,23 @@ data class SocraticFeedback(
 )
 
 /**
+ * Parsed shape of [com.example.numera.data.network.MathProblem.selfExplainJson], produced by the
+ * server's `mathEngine/selfExplainEngine.js`. After a CORRECT answer we ask the learner WHY it is
+ * right (the self-explanation effect): pick the real reason among plausible-but-wrong rationales.
+ * Exactly one [SelfExplainOption.correct] is true. Empty/absent when the concept has no authored set.
+ */
+data class SelfExplainOption(
+    val text: String? = null,
+    val correct: Boolean = false,
+)
+
+data class SelfExplainPrompt(
+    val question: String? = null,
+    val options: List<SelfExplainOption>? = null,
+    val explanation: String? = null,
+)
+
+/**
  * The per-problem gameplay UI carved out of SoloGameScreen (the old "Main Gameplay Screen" Box:
  * progress header + reference slide-over, the equation card with the favorite/save dialog and
  * tooltip, the Tip/Calc/Try-Paper tool buttons, the MCQ/typed/timed answer interface, the feedback
@@ -155,6 +172,19 @@ fun GameplayScreen(
             }
         }
     }
+    // Self-explanation prompt (shown after a CORRECT answer) parsed from the server JSON string.
+    val selfExplain = remember(currentProblem.selfExplainJson) {
+        currentProblem.selfExplainJson?.takeIf { it.isNotBlank() }?.let { json ->
+            try {
+                com.google.gson.Gson().fromJson(json, SelfExplainPrompt::class.java)
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+    // Which reason the learner tapped in the self-explanation prompt (null = unanswered). Resets
+    // per problem. Purely formative — it never changes the score, only deepens understanding.
+    var selfExplainChoice by remember(currentProblemIdx) { mutableStateOf<Int?>(null) }
     // Progressive-disclosure flag for the targeted hint: stays one tap behind the probe so the
     // learner gets a chance to self-correct first. Resets when the problem changes or the banner
     // is dismissed (e.g. Retry Exercise flips hasAnswered back to false).
@@ -909,6 +939,68 @@ fun GameplayScreen(
                         color = if (correct) CorrectGreen else MaterialTheme.colorScheme.primary,
                         letterSpacing = 1.sp
                     )
+
+                    // Self-explanation prompt (the self-explanation effect): after a CORRECT answer,
+                    // ask WHY it's right so the learner articulates the principle. Optional and purely
+                    // formative — it never changes the score; the learner can just tap Continue. Only
+                    // appears for concepts the server authored a reason-set for (selfExplainEngine.js).
+                    val seOptions = selfExplain?.options
+                    if (correct && !seOptions.isNullOrEmpty()) {
+                        Text(
+                            text = selfExplain.question ?: "Why is that the right answer?",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
+                            lineHeight = 19.sp
+                        )
+                        seOptions.forEachIndexed { i, opt ->
+                            val answered = selfExplainChoice != null
+                            val isThis = selfExplainChoice == i
+                            val bg = when {
+                                answered && opt.correct -> CorrectGreen.copy(alpha = 0.15f)
+                                answered && isThis -> WrongRed.copy(alpha = 0.15f)
+                                else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
+                                    .background(bg)
+                                    .then(
+                                        if (!answered) Modifier.clickable {
+                                            com.example.numera.haptic.HapticManager.playSoft()
+                                            selfExplainChoice = i
+                                        } else Modifier
+                                    )
+                                    .padding(horizontal = Spacing.m, vertical = Spacing.s),
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.s),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (answered && opt.correct) {
+                                    Text("✓", color = CorrectGreen, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                } else if (answered && isThis) {
+                                    Text("✗", color = WrongRed, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                                Text(
+                                    text = opt.text ?: "",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
+                                    lineHeight = 17.sp
+                                )
+                            }
+                        }
+                        if (selfExplainChoice != null && !selfExplain.explanation.isNullOrBlank()) {
+                            val gotIt = seOptions.getOrNull(selfExplainChoice!!)?.correct == true
+                            Text(
+                                text = (if (gotIt) "Exactly — " else "The key idea: ") + selfExplain.explanation,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
+                                lineHeight = 17.sp
+                            )
+                        }
+                    }
 
                     // Socratic guidance instead of an instant answer reveal: lead with a question
                     // targeted at the learner's chosen wrong option (productive struggle), keep the

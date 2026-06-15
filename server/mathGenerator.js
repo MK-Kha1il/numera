@@ -20,6 +20,7 @@ const {
 const { constructPersonalizedExplanation } = require('./mathEngine/explanationEngine');
 const { solveSymbolically } = require('./mathEngine/validation');
 const { buildSocraticJson } = require('./mathEngine/socraticEngine');
+const { buildSelfExplainJson } = require('./mathEngine/selfExplainEngine');
 const { conceptFromType } = require('./mathEngine/problemOrchestrator');
 
 // Maps knowledge-graph conceptId → the canonical template category + level
@@ -474,6 +475,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
 
     // Socratic feedback: misconception-targeted probe/hint per wrong option (JSON string).
     const socraticJson = buildSocraticJson(conceptFromType(selectedTemplate.type), correct, options, params);
+    // Self-explanation: a "why is that right?" reason-MCQ shown after a CORRECT answer ('' if none).
+    const selfExplainJson = buildSelfExplainJson(conceptFromType(selectedTemplate.type));
 
     return {
       question,
@@ -481,7 +484,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
       options,
       explanation: personalizedExplanation,
       templateType: selectedTemplate.type,
-      socraticJson
+      socraticJson,
+      selfExplainJson
     };
   }
 
@@ -548,6 +552,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
   // The raw template object doubles as the params bag for the misconception classifier
   // (it carries a/b/x1/x2/mod/etc. for the concept-specific rules).
   const socraticJson = buildSocraticJson(conceptFromType(rawProblem.type), correct, options, rawProblem);
+  // Self-explanation: a "why is that right?" reason-MCQ shown after a CORRECT answer ('' if none).
+  const selfExplainJson = buildSelfExplainJson(conceptFromType(rawProblem.type));
 
   return {
     question: rawProblem.question,
@@ -555,7 +561,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     options: options,
     explanation: personalizedExplanation,
     templateType: rawProblem.type,
-    socraticJson
+    socraticJson,
+    selfExplainJson
   };
 }
 

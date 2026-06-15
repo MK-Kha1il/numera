@@ -207,7 +207,11 @@ data class MathProblem(
     // Socratic wrong-answer feedback (JSON string) from the server's socraticEngine:
     // { byOption: { "<wrongOption>": {misconception, probe, hint} }, generic: {probe, hint} }.
     // Carried as a string for the same reason as interactiveVisualJson (Gson/kotlinx mix).
-    val socraticJson: String? = null
+    val socraticJson: String? = null,
+    // Self-explanation prompt (JSON string) from the server's selfExplainEngine, shown after a
+    // CORRECT answer: { question, options: [{text, correct}], explanation }. '' / null when the
+    // concept has no authored reason-set (the client renders nothing).
+    val selfExplainJson: String? = null
 )
 
 @Serializable
