@@ -47,6 +47,7 @@ function getUserWithMastery(userId, callback) {
         active_banner: user.active_banner || 'banner_default',
         assessment_taken: user.assessment_taken || 0,
         onboarding_complete: user.onboarding_complete || 0,
+        is_guest: user.is_guest || 0,
         display_name: user.display_name || null,
         reminders_opt_in: user.reminders_opt_in || 0,
         league: user.league || 'Bronze',

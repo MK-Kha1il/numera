@@ -176,6 +176,89 @@ router.post('/api/auth/register', checkFailedLogins, rateLimiter(5, 60000), asyn
   );
 });
 
+// Guest mode — the value-first front door. Creates an ephemeral, password-less account so a
+// first-time visitor can solve problems immediately, before any signup wall. Onboarding is
+// skipped (onboarding_complete = 1) so a guest lands straight in the app; all progress is real
+// and server-side, and is preserved when the guest later upgrades in place via /api/auth/convert.
+// No PII is collected for a guest — the age gate + date of birth are enforced at conversion time.
+// telemetry stays OFF by default, matching a normal signup.
+router.post('/api/auth/guest', rateLimiter(10, 60000), (req, res) => {
+  const username = `guest_${crypto.randomBytes(6).toString('hex')}`;
+  const now = Math.floor(Date.now() / 1000);
+  db.run(
+    `INSERT INTO users (username, password_hash, last_active, avatar, last_league_reset, is_guest, onboarding_complete, telemetry_enabled)
+     VALUES (?, '', ?, 'avatar_owl', ?, 1, 1, 0)`,
+    [username, now, now],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      const newUserId = this.lastID;
+      db.run('INSERT OR IGNORE INTO user_quests (user_id, last_quest_reset) VALUES (?, ?)', [newUserId, now], () => {
+        db.run('INSERT OR IGNORE INTO user_mastery (user_id) VALUES (?)', [newUserId], () => {
+          securityLog(newUserId, 'guest_created', req.ip, 'Guest session created.');
+          sendLoginResponse(newUserId, username, req, res);
+        });
+      });
+    }
+  );
+});
+
+// Convert a guest into a full account IN PLACE — same user row, so every bit of progress the
+// guest earned (XP, coins, streak, mastery) carries over. Mirrors register's validation exactly
+// (age gate, username rules, content filter, password strength, uniqueness) and issues a fresh
+// session whose token carries the chosen username.
+router.post('/api/auth/convert', authenticateToken, rateLimiter(5, 60000), (req, res) => {
+  db.get('SELECT is_guest FROM users WHERE id = ?', [req.user.id], async (gErr, row) => {
+    if (gErr) return res.status(500).json({ error: gErr.message });
+    if (!row || !row.is_guest) return res.status(400).json({ error: 'This account is already registered.' });
+
+    const { username, password, avatar, birthDate } = req.body || {};
+    if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+
+    const age = ageFromBirthDate(birthDate);
+    if (age === null) return res.status(400).json({ error: 'A valid date of birth (YYYY-MM-DD) is required.' });
+    if (age < MIN_AGE_YEARS) {
+      securityLog(req.user.id, 'registration_blocked_age', req.ip, `Guest conversion refused: under ${MIN_AGE_YEARS}.`);
+      return res.status(403).json({
+        error: `You must be at least ${MIN_AGE_YEARS} years old to create an account.`,
+        ageRestricted: true,
+      });
+    }
+    const birthYear = Number(birthDate.slice(0, 4));
+
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    if (!usernameRegex.test(username)) {
+      return res.status(400).json({
+        error: 'Username must be 3-20 characters long and contain only letters, numbers, and underscores.',
+      });
+    }
+    const nameCheck = checkText(username, 'Username');
+    if (!nameCheck.ok) return res.status(400).json({ error: nameCheck.error });
+    const strength = validatePasswordStrength(password, username);
+    if (!strength.ok) return res.status(400).json({ error: strength.error });
+
+    let hash;
+    try {
+      hash = await hashPassword(password);
+    } catch {
+      return res.status(500).json({ error: 'Failed to secure password.' });
+    }
+    const chosenAvatar = avatar || 'avatar_owl';
+
+    db.run(
+      'UPDATE users SET username = ?, password_hash = ?, avatar = ?, birth_year = ?, is_guest = 0 WHERE id = ?',
+      [username, hash, chosenAvatar, birthYear, req.user.id],
+      (err) => {
+        if (err) {
+          if (err.message.includes('UNIQUE')) return res.status(400).json({ error: 'Username already exists' });
+          return res.status(500).json({ error: err.message });
+        }
+        securityLog(req.user.id, 'guest_converted', req.ip, `Guest upgraded to full account: ${username}.`);
+        sendLoginResponse(req.user.id, username, req, res);
+      }
+    );
+  });
+});
+
 router.post('/api/auth/login', checkFailedLogins, checkAccountLockout, rateLimiter(10, 60000), (req, res) => {
   const { username, password } = req.body;
   const ipAddress = req.ip;

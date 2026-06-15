@@ -17,6 +17,17 @@ interface ApiService {
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): AuthResponse
 
+    // Value-first guest entry: an ephemeral account so a visitor can try Numera before signing up.
+    @POST("api/auth/guest")
+    suspend fun guestLogin(): AuthResponse
+
+    // Upgrade a guest into a full account in place (keeps all progress earned as a guest).
+    @POST("api/auth/convert")
+    suspend fun convertGuest(
+        @Header("Authorization") token: String,
+        @Body request: ConvertRequest
+    ): AuthResponse
+
     @GET("api/auth/me")
     suspend fun getProfile(@Header("Authorization") token: String): User
 
@@ -68,6 +79,13 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body request: CalculatorLogRequest
     ): CalculatorLogResponse
+
+    // Flag a generated exercise as wrong/confusing/etc. (content-quality feedback loop).
+    @POST("api/math/report")
+    suspend fun reportProblem(
+        @Header("Authorization") token: String,
+        @Body request: ProblemReportRequest
+    ): ProblemReportResponse
 
     @GET("api/math/srs/due")
     suspend fun getSrsDue(

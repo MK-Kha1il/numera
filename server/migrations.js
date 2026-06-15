@@ -871,6 +871,46 @@ const migrations = [
       }
     },
   },
+  {
+    version: 37,
+    name: 'guest_accounts',
+    // Guest mode: a value-first path that lets a learner try Numera before any signup wall.
+    // A guest is a real (ephemeral) user row with is_guest=1, no password, and no PII; it is
+    // upgraded in place into a full account by /api/auth/convert (which keeps all progress).
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE users ADD COLUMN is_guest INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
+  {
+    version: 38,
+    name: 'problem_reports',
+    // Content-quality feedback loop (ultra review #17/#90): let a learner flag a *generated*
+    // exercise as wrong/typo/confusing. Distinct from content_reports (UGC safety) — this captures
+    // the problem text + context so the catalog gets a human-review signal it never had before.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS problem_reports (
+          id           INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id      INTEGER,
+          question     TEXT NOT NULL,
+          correct_answer TEXT,
+          category     TEXT,
+          level        INTEGER,
+          game_mode    TEXT,
+          reason       TEXT NOT NULL,
+          note         TEXT,
+          status       TEXT NOT NULL DEFAULT 'open',
+          created_at   INTEGER NOT NULL,
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_problem_reports_status ON problem_reports(status)');
+    },
+  },
 ];
 
 /**

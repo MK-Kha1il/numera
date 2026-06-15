@@ -4,7 +4,8 @@
 // competitive rating).
 const express = require('express');
 const { db } = require('../db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { rateLimiter } = require('../middleware/rateLimit');
 const { idempotency } = require('../idempotency');
 const { securityLog } = require('../middleware/security');
 const { generateProblem, getLessonAndExamples } = require('../mathGenerator');
@@ -540,6 +541,79 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
         });
       }
     );
+  });
+});
+
+// ── Content-quality reports ───────────────────────────────────────────────────────────────────
+// The catalog is generated and only ever checked at generation time (ultra review #17): this is the
+// human-in-the-loop signal it was missing. A learner flags a specific exercise; we store the problem
+// text + context for a later expert audit. Rate-limited so it can't be used to spam-write the table.
+const REPORT_REASONS = new Set(['wrong_answer', 'typo', 'confusing', 'renders_wrong', 'too_easy', 'too_hard', 'other']);
+
+router.post('/api/math/report', authenticateToken, rateLimiter(20, 15 * 60 * 1000), (req, res) => {
+  const { question, correctAnswer, category, level, gameMode, reason, note } = req.body || {};
+  if (!question || typeof question !== 'string') {
+    return res.status(400).json({ error: 'A question is required to report a problem.' });
+  }
+  if (!REPORT_REASONS.has(reason)) {
+    return res.status(400).json({ error: 'A valid reason is required.' });
+  }
+  const lvl = Number.isInteger(level) ? level : null;
+  db.run(
+    `INSERT INTO problem_reports (user_id, question, correct_answer, category, level, game_mode, reason, note, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
+    [
+      req.user.id,
+      String(question).slice(0, 2000),
+      correctAnswer == null ? null : String(correctAnswer).slice(0, 500),
+      category ? String(category).slice(0, 60) : null,
+      lvl,
+      gameMode ? String(gameMode).slice(0, 40) : null,
+      reason,
+      note ? String(note).slice(0, 500) : null,
+      Math.floor(Date.now() / 1000),
+    ],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      securityLog(req.user.id, 'problem_reported', req.ip, `Reported a ${category || '?'} problem: ${reason}.`);
+      res.json({ success: true });
+    }
+  );
+});
+
+// Admin triage queue: open reports first, with a per-reason tally for spotting systemic generator
+// bugs (e.g. a whole category reported "wrong_answer").
+router.get('/api/math/reports', authenticateToken, requireAdmin, (req, res) => {
+  db.all(
+    `SELECT pr.id, pr.user_id, u.username, pr.question, pr.correct_answer, pr.category, pr.level,
+            pr.game_mode, pr.reason, pr.note, pr.status, pr.created_at
+     FROM problem_reports pr LEFT JOIN users u ON u.id = pr.user_id
+     ORDER BY CASE pr.status WHEN 'open' THEN 0 ELSE 1 END, pr.created_at DESC
+     LIMIT 500`,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      db.all(
+        "SELECT reason, COUNT(*) AS count FROM problem_reports WHERE status = 'open' GROUP BY reason",
+        [],
+        (e2, tally) => {
+          if (e2) return res.status(500).json({ error: e2.message });
+          res.json({ reports: rows || [], openByReason: tally || [] });
+        }
+      );
+    }
+  );
+});
+
+// Resolve (or dismiss) a report once it's been triaged.
+router.post('/api/math/reports/:id/resolve', authenticateToken, requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const status = req.body && req.body.status === 'dismissed' ? 'dismissed' : 'resolved';
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid report id.' });
+  db.run('UPDATE problem_reports SET status = ? WHERE id = ?', [status, id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Report not found.' });
+    res.json({ success: true, status });
   });
 });
 

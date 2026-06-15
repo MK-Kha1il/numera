@@ -85,6 +85,8 @@ fun MainTabsScreen(
     var showTournament by remember { mutableStateOf(false) }
     var showSeason by remember { mutableStateOf(false) }
     var showSolver by remember { mutableStateOf(false) }
+    // Guest-mode conversion prompt ("save your progress") — only meaningful while is_guest == 1.
+    var showSaveProgress by remember { mutableStateOf(false) }
     var discussConceptId by remember { mutableStateOf<String?>(null) }
     var discussConceptName by remember { mutableStateOf("") }
     var showMapTooltip by remember { mutableStateOf(false) }
@@ -629,7 +631,13 @@ fun MainTabsScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
         ) {
+          Column(modifier = Modifier.fillMaxSize()) {
+            // Guests see a persistent, gentle nudge to keep their progress by creating an account.
+            if (currentUser?.is_guest == 1) {
+                GuestBanner(onSave = { showSaveProgress = true })
+            }
             AnimatedContent(
+                modifier = Modifier.weight(1f),
                 targetState = selectedTab,
                 transitionSpec = {
                     if (targetState > initialState) {
@@ -685,6 +693,16 @@ fun MainTabsScreen(
                         onBack = { selectedTab = previousTab }
                     )
                 }
+            }
+          }
+            if (showSaveProgress) {
+                com.example.numera.ui.dialogs.SaveProgressDialog(
+                    onDismiss = { showSaveProgress = false },
+                    onConverted = {
+                        showSaveProgress = false
+                        refreshProfile()
+                    }
+                )
             }
             if (activeProfileDialogUserId != null) {
                 UserProfileDialog(
@@ -769,4 +787,39 @@ fun MainTabsScreen(
     }
 }
 
-data class NavigationItem(val label: String, val iconType: com.example.numera.ui.components.NumeraIconType, val index: Int)
+data class NavigationItem(val label: String, val iconType: com.example.numera.ui.components.NumeraIconType, val index: Int)
+
+/** A slim, persistent reminder shown to guest accounts to claim their progress before it's stranded. */
+@Composable
+private fun GuestBanner(onSave: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+            .clickable(onClick = onSave)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text("👋", fontSize = 18.sp)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "You're playing as a guest",
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = "Create an account to save your progress",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+            )
+        }
+        Text(
+            text = "Save",
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}

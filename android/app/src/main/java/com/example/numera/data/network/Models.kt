@@ -115,6 +115,7 @@ data class User(
     val active_banner: String? = null,
     val assessment_taken: Int? = null,
     val onboarding_complete: Int? = 0,
+    val is_guest: Int? = 0,
     val display_name: String? = null,
     val reminders_opt_in: Int? = 0,
     val league: String? = null,
@@ -464,6 +465,34 @@ data class AchievementClaimResponse(
 data class LoginRequest(
     val username: String,
     val password: String
+)
+
+// Flags a specific generated exercise as wrong/confusing/etc. — the content-quality feedback loop.
+// `reason` is one of: wrong_answer, typo, confusing, renders_wrong, too_easy, too_hard, other.
+@Serializable
+data class ProblemReportRequest(
+    val question: String,
+    val correctAnswer: String? = null,
+    val category: String? = null,
+    val level: Int? = null,
+    val gameMode: String? = null,
+    val reason: String,
+    val note: String? = null
+)
+
+@Serializable
+data class ProblemReportResponse(
+    val success: Boolean = false
+)
+
+// Upgrades a guest account in place into a full account (keeps all progress). Same shape as
+// RegisterRequest; sent to /api/auth/convert with the guest's bearer token.
+@Serializable
+data class ConvertRequest(
+    val username: String,
+    val password: String,
+    val avatar: String? = null,
+    val birthDate: String? = null
 )
 
 // token/user are absent when the server demands a second factor — then mfaRequired=true and a

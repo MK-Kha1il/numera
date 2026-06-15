@@ -367,6 +367,36 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.secondary
                     )
 
+                    // Value-first: let a visitor solve a problem before any signup wall. A guest is
+                    // a real (server-side) account; their progress is saved and can be claimed later.
+                    TextButton(
+                        onClick = {
+                            isLoading = true
+                            errorMessage = null
+                            scope.launch(Dispatchers.IO) {
+                                try {
+                                    val response = RetrofitClient.apiService.guestLogin()
+                                    applyAuthResponse(context, response)
+                                    withContext(Dispatchers.Main) {
+                                        isLoading = false
+                                        onLoginSuccess()
+                                    }
+                                } catch (e: Exception) {
+                                    withContext(Dispatchers.Main) {
+                                        isLoading = false
+                                        errorMessage = authErrorMessage(e, "Couldn't start a guest session. Please try again.")
+                                    }
+                                }
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = "Try it first — no account needed",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
                     TextButton(onClick = onNavigateToRegister) {
                         Text(
                             text = "New User? Create Account",

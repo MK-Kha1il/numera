@@ -192,6 +192,9 @@ fun GameplayScreen(
     // Productive struggle: in MCQ we withhold *which* option is correct until the learner either
     // answered correctly or chose to see the worked solution. Flipped by "Review Solution".
     var answerRevealed by remember(currentProblemIdx) { mutableStateOf(false) }
+    // Content-quality report dialog for the current exercise (ultra review #17/#90).
+    var showReport by remember { mutableStateOf(false) }
+    val reportContext = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(hasAnswered) {
         if (!hasAnswered) {
             showHint = false
@@ -1088,6 +1091,20 @@ fun GameplayScreen(
                             color = if (correct) CorrectGreen else MaterialTheme.colorScheme.primary
                         )
                     }
+
+                    // Quiet, always-available "report a problem" affordance — the content-quality
+                    // feedback loop, reachable after every answer regardless of correctness.
+                    Text(
+                        text = "⚐ Report a problem",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
+                            .clickable { showReport = true }
+                            .padding(horizontal = Spacing.m, vertical = Spacing.s)
+                    )
                 }
             }
         }
@@ -1130,5 +1147,19 @@ fun GameplayScreen(
             onClose = { showTip = false },
             problem = problemsList.getOrNull(currentProblemIdx),
         )
+
+        if (showReport) {
+            ReportProblemDialog(
+                problem = currentProblem,
+                category = category,
+                level = level,
+                gameMode = gameMode,
+                onDismiss = { showReport = false },
+                onSubmitted = {
+                    showReport = false
+                    android.widget.Toast.makeText(reportContext, "Thanks — report sent.", android.widget.Toast.LENGTH_SHORT).show()
+                },
+            )
+        }
     } // Closes the wrapping Box
 }
