@@ -71,6 +71,8 @@ router.post('/api/math/srs/review', authenticateToken, (req, res) => {
         [req.user.id, topic, ef, interval, reps, nextReview],
         (saveErr) => {
           if (saveErr) return res.status(500).json({ error: saveErr.message });
+          // Credit the "Memory Tune-Up" daily quest for clearing a review (best-effort).
+          db.run('UPDATE user_quests SET srs_review_today = srs_review_today + 1 WHERE user_id = ?', [req.user.id]);
           res.json({ topic, ease_factor: ef, interval, next_review: nextReview });
         }
       );

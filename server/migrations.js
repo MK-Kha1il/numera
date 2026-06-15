@@ -930,6 +930,26 @@ const migrations = [
       }
     },
   },
+  {
+    version: 40,
+    name: 'more_quest_types',
+    // Expand the daily quest pool beyond the original 4 (ultra review #63): add quests over the
+    // newer systems — a Puzzle Rush run and clearing spaced-review (SRS) items.
+    up: async (run) => {
+      for (const col of [
+        'ALTER TABLE user_quests ADD COLUMN puzzle_rush_today INTEGER DEFAULT 0',
+        'ALTER TABLE user_quests ADD COLUMN puzzle_rush_claimed INTEGER DEFAULT 0',
+        'ALTER TABLE user_quests ADD COLUMN srs_review_today INTEGER DEFAULT 0',
+        'ALTER TABLE user_quests ADD COLUMN srs_review_claimed INTEGER DEFAULT 0',
+      ]) {
+        try {
+          await run(col);
+        } catch (e) {
+          if (!/duplicate column name/i.test(e.message)) throw e;
+        }
+      }
+    },
+  },
 ];
 
 /**

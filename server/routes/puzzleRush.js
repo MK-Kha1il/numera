@@ -100,6 +100,8 @@ router.post('/api/puzzle-rush/submit', authenticateToken, idempotency, (req, res
       if (reward > 0) {
         await tx.run('UPDATE users SET coins = coins + ? WHERE id = ?', [reward, userId]);
       }
+      // Credit the "Rush Hour" daily quest for completing a run.
+      await tx.run('UPDATE user_quests SET puzzle_rush_today = puzzle_rush_today + 1 WHERE user_id = ?', [userId]);
       return { correct, gameOver: true, finalScore: score, correctAnswer: run.current_answer, reward, flagged: integrity > 0 };
     }
 

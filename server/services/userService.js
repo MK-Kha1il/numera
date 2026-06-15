@@ -107,10 +107,14 @@ function checkAndResetQuestsAndLeagues(userId, callback) {
                 duels_today = 0,
                 mistakes_today = 0,
                 daily_puzzle_today = 0,
+                puzzle_rush_today = 0,
+                srs_review_today = 0,
                 solved_claimed = 0,
                 duels_claimed = 0,
                 mistakes_claimed = 0,
                 daily_puzzle_claimed = 0,
+                puzzle_rush_claimed = 0,
+                srs_review_claimed = 0,
                 last_quest_reset = ?
               WHERE user_id = ?
             `,

@@ -42,6 +42,26 @@ const QUEST_DEFS = [
     rewardCoins: 40,
     rewardXp: 60,
   },
+  {
+    type: 'puzzle_rush',
+    name: 'Rush Hour',
+    description: 'Play a Puzzle Rush run.',
+    target: 1,
+    progressCol: 'puzzle_rush_today',
+    claimCol: 'puzzle_rush_claimed',
+    rewardCoins: 30,
+    rewardXp: 45,
+  },
+  {
+    type: 'srs_review',
+    name: 'Memory Tune-Up',
+    description: 'Clear 3 spaced reviews.',
+    target: 3,
+    progressCol: 'srs_review_today',
+    claimCol: 'srs_review_claimed',
+    rewardCoins: 25,
+    rewardXp: 40,
+  },
 ];
 
 module.exports = { QUEST_DEFS };

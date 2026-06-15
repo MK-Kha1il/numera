@@ -297,10 +297,12 @@ fun DashboardScreen(
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                             ) {
                                 val icon = when (quest.type) {
-                                    "solve" -> "✏️"
-                                    "duel" -> "⚔️"
-                                    "mistake" -> "❌"
+                                    "solved" -> "✏️"
+                                    "duels" -> "⚔️"
+                                    "mistakes" -> "❌"
                                     "daily_puzzle" -> "🧩"
+                                    "puzzle_rush" -> "⚡"
+                                    "srs_review" -> "🧠"
                                     else -> "🎯"
                                 }
 
