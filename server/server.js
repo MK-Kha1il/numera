@@ -16,7 +16,7 @@ const sympyCas = require('./mathEngine/cas/sympyClient'); // optional SymPy CAS 
 // Socket.IO duel/matchmaking logic; ALL REST domains live under routes/*, their helpers
 // under services/* and lib/*.
 const { JWT_SECRET, PORT, EXTRA_CORS_ORIGINS, TRUST_PROXY } = require('./config');
-const { securityHeaders, securityLog } = require('./middleware/security');
+const { securityHeaders, sanitizeServerErrors, securityLog } = require('./middleware/security');
 const { globalRateLimiter } = require('./middleware/rateLimit');
 const { calculateRankFromElo } = require('./lib/progression');
 const { updateAchievements } = require('./services/achievementService');
@@ -48,6 +48,9 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Defense-in-depth HTTP security headers (see middleware/security.js).
 app.use(securityHeaders);
+
+// Sanitize any 5xx error body so internal/DB details never reach the client (ultra review #71).
+app.use(sanitizeServerErrors);
 
 // Global per-IP API rate limiting (100 requests / minute). Loopback/LAN exempt.
 app.use(globalRateLimiter(100, 60000));
