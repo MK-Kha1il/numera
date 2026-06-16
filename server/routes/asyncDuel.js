@@ -20,6 +20,7 @@ const EXPIRY_MS = 24 * 60 * 60 * 1000;
 const FIXED_ELO = 1200;
 
 const { areEquivalent } = require('../mathEngine/answerEquivalence');
+const { feedEngineOutcome } = require('../services/engineFeed');
 const { personalLadder } = require('../lib/arenaDifficulty');
 
 // Both players race the SAME set (fair), but its difficulty centres on the average of their
@@ -28,7 +29,8 @@ function buildProblemSet(challengerLevel, opponentLevel) {
   const mid = Math.round(((challengerLevel || 1) + (opponentLevel || 1)) / 2);
   return personalLadder(mid, PROBLEM_COUNT).map(([category, level]) => {
     const p = generateProblem(category, level, Math.floor(Math.random() * 100), FIXED_ELO);
-    return { question: p.question, options: p.options, answer: p.correctAnswer };
+    // templateType is stored (never sent to the client) so a graded answer can feed the engine.
+    return { question: p.question, options: p.options, answer: p.correctAnswer, templateType: p.templateType };
   });
 }
 
@@ -158,6 +160,9 @@ router.post('/api/duel/async/:id/play', authenticateToken, idempotency, (req, re
   const answers = Array.isArray(req.body.answers) ? req.body.answers : null;
   if (!answers) return res.status(400).json({ error: 'answers array required' });
 
+  // This player's per-problem outcomes, recorded into the engine AFTER the transaction commits.
+  let feeds = [];
+
   withTransaction(async (tx) => {
     const m = await tx.get('SELECT * FROM async_matches WHERE id = ?', [id]);
     if (!m || (m.challenger_id !== uid && m.opponent_id !== uid)) throw httpError(404, 'Match not found');
@@ -169,8 +174,18 @@ router.post('/api/duel/async/:id/play', authenticateToken, idempotency, (req, re
 
     const problems = JSON.parse(m.problems_json);
     let score = 0;
+    feeds = [];
     for (let i = 0; i < problems.length; i++) {
-      if (areEquivalent(answers[i], problems[i].answer)) score += 1;
+      const correct = areEquivalent(answers[i], problems[i].answer);
+      if (correct) score += 1;
+      if (problems[i].templateType) {
+        feeds.push({
+          conceptKey: problems[i].templateType,
+          correct,
+          correctAnswer: problems[i].answer,
+          wrongAnswer: correct ? null : (answers[i] != null ? String(answers[i]) : null),
+        });
+      }
     }
 
     const myCol = isChallenger ? 'challenger_score' : 'opponent_score';
@@ -196,6 +211,17 @@ router.post('/api/duel/async/:id/play', authenticateToken, idempotency, (req, re
     return { score, resolved: true, match: m, result: { winnerId, challengerScore, opponentScore, reward } };
   })
     .then((payload) => {
+      // Feed this player's graded answers into the engine — sequential, fire-and-forget (so one
+      // playthrough's answers don't race each other on shared analytics tables).
+      (async () => {
+        for (const f of feeds) {
+          await feedEngineOutcome(db, uid, f.conceptKey, {
+            correct: f.correct,
+            correctAnswer: f.correctAnswer,
+            wrongAnswer: f.wrongAnswer,
+          });
+        }
+      })();
       // Notifications outside the transaction (fire-and-forget).
       if (payload.resolved) {
         notifyResult(payload.match, payload.result.winnerId);

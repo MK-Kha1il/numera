@@ -8,6 +8,7 @@ const path = require('path');
 const { db, initDb } = require('./db');
 const { runMigrations } = require('./migrations');
 const { generateProblem, CONCEPT_TO_LEVEL } = require('./mathGenerator'); // duel/bot socket problem generation
+const { feedEngineOutcome } = require('./services/engineFeed'); // feed graded duel answers into the learning engine
 const { areEquivalent } = require('./mathEngine/answerEquivalence'); // server-authoritative duel grading
 const sympyCas = require('./mathEngine/cas/sympyClient'); // optional SymPy CAS for high-level duel problems
 
@@ -676,6 +677,9 @@ async function buildDuelProblemSet(targetLevel = DUEL_PROBLEM_LEVEL, count = 5) 
             problems: r.problems.map((p) => ({ question: p.question, options: p.options })),
             answers: r.problems.map((p) => String(p.answer)),
             explanations: r.problems.map((p) => p.explanation || ''),
+            // CAS problems are generated beyond the catalog, so they carry no template/concept key
+            // to attribute to the learning engine — nulls mean "don't feed" for these rungs.
+            templateTypes: r.problems.map(() => null),
             level,
             source: 'cas'
           };
@@ -698,7 +702,8 @@ async function buildDuelProblemSet(targetLevel = DUEL_PROBLEM_LEVEL, count = 5) 
   const problems = full.map(({ correctAnswer, explanation, socraticJson, ...rest }) => rest);
   const answers = full.map((p) => p.correctAnswer);       // server-only answer key
   const explanations = full.map((p) => p.explanation || ''); // server-only; revealed post-answer
-  return { problems, answers, explanations, level, source: 'catalog' };
+  const templateTypes = full.map((p) => p.templateType);  // server-only; attributes each answer to the engine
+  return { problems, answers, explanations, templateTypes, level, source: 'catalog' };
 }
 
 // Grade + record one submitted duel answer SERVER-SIDE and advance the player. Exposed as a named
@@ -935,9 +940,9 @@ io.on('connection', (socket) => {
 
       // Start friend duel immediately (treated as casual, no Elo cost), at the two friends' shared level.
       const duelLevel = clampLevel(((lobby.level || DUEL_PROBLEM_LEVEL) + level) / 2);
-      let problems, answers, explanations;
+      let problems, answers, explanations, templateTypes;
       try {
-        ({ problems, answers, explanations } = await buildDuelProblemSet(duelLevel));
+        ({ problems, answers, explanations, templateTypes } = await buildDuelProblemSet(duelLevel));
       } catch (e) {
         logger.error(`friend duel: failed to build problem set: ${e.message}`);
         return;
@@ -951,6 +956,7 @@ io.on('connection', (socket) => {
         problems,
         answers,
         explanations,
+        templateTypes,
         isCasual: true,
         startTime: Date.now(),
         problemLevel: duelLevel
@@ -985,7 +991,21 @@ io.on('connection', (socket) => {
     else if (room.p2.id === userId) playerKey = 'p2';
     if (!playerKey) { if (typeof ack === 'function') ack({ error: 'not_a_player' }); return; }
 
+    // The index of the problem being graded — captured BEFORE applyDuelAnswer advances progress.
+    const answeredIndex = room[playerKey].progress;
     const { isCorrect, ended, correctAnswer, explanation } = applyDuelAnswer(room, playerKey, { answer });
+
+    // Feed the graded answer into the learning engine (fire-and-forget) so realtime duels now
+    // strengthen mastery/retention/Growth Insights too. Catalog rungs carry a template type;
+    // CAS-generated high-level rungs are null and skipped. Never for the bot (id 9999).
+    const conceptKey = room.templateTypes && room.templateTypes[answeredIndex];
+    if (conceptKey && userId !== 9999) {
+      feedEngineOutcome(db, userId, conceptKey, {
+        correct: isCorrect,
+        correctAnswer,
+        wrongAnswer: isCorrect ? null : answer,
+      });
+    }
 
     // Tell the submitting client the server's verdict + the canonical answer + the worked solution
     // so it can drive its reveal animation and its favorite/archive payload (safe: all disclosed
@@ -1023,9 +1043,9 @@ async function startDuel(p1, p2, isRanked) {
   const roomId = `duel_${p1.userId}_${p2.userId}_${Date.now()}`;
   // The shared duel level: the average of the two (matchmaking-paired, so already close) levels.
   const duelLevel = clampLevel(((p1.level || DUEL_PROBLEM_LEVEL) + (p2.level || DUEL_PROBLEM_LEVEL)) / 2);
-  let problems, answers, explanations;
+  let problems, answers, explanations, templateTypes;
   try {
-    ({ problems, answers, explanations } = await buildDuelProblemSet(duelLevel));
+    ({ problems, answers, explanations, templateTypes } = await buildDuelProblemSet(duelLevel));
   } catch (e) {
     logger.error(`startDuel: failed to build problem set: ${e.message}`);
     return;
@@ -1038,6 +1058,7 @@ async function startDuel(p1, p2, isRanked) {
     problems,
     answers,
     explanations,
+    templateTypes,
     isCasual: !isRanked,
     startTime: Date.now(),
     problemLevel: duelLevel
@@ -1057,9 +1078,9 @@ async function startDuel(p1, p2, isRanked) {
 async function startDuelWithBot(player, isRanked) {
   const roomId = `duel_bot_${player.userId}_${Date.now()}`;
   const duelLevel = clampLevel(player.level || DUEL_PROBLEM_LEVEL); // bot problems match the player's level
-  let problems, answers, explanations;
+  let problems, answers, explanations, templateTypes;
   try {
-    ({ problems, answers, explanations } = await buildDuelProblemSet(duelLevel));
+    ({ problems, answers, explanations, templateTypes } = await buildDuelProblemSet(duelLevel));
   } catch (e) {
     logger.error(`startDuelWithBot: failed to build problem set: ${e.message}`);
     return;
@@ -1075,6 +1096,7 @@ async function startDuelWithBot(player, isRanked) {
     problems,
     answers,
     explanations,
+    templateTypes,
     isCasual: !isRanked,
     startTime: Date.now(),
     problemLevel: duelLevel

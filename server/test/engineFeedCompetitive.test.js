@@ -11,6 +11,7 @@ before(async () => { ctx = await bootServer(); });
 after(async () => { await shutdown(ctx); });
 
 const dbGet = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.get(sql, p, (e, r) => (e ? rej(e) : res(r))));
+const dbRun = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.run(sql, p, (e) => (e ? rej(e) : res())));
 const idOf = (username) => new Promise((res, rej) => ctx.mod.db.get('SELECT id FROM users WHERE username = ?', [username], (e, r) => (e ? rej(e) : res(r.id))));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -63,4 +64,26 @@ test('a puzzle-rush answer feeds the learning engine', async () => {
 
   const n = await waitForAnalytics(userId);
   assert.ok(n > 0, 'the puzzle-rush answer was recorded into the engine');
+});
+
+test('an async duel feeds the learning engine for the player who answers', async () => {
+  const challenger = await registerUser(ctx.base);
+  const opponent = await registerUser(ctx.base);
+  const cId = await idOf(challenger.username);
+  const oId = await idOf(opponent.username);
+  // Async challenges are friends-only — establish the accepted friendship directly.
+  await dbRun("INSERT INTO friends (user_id, friend_id, status) VALUES (?, ?, 'accepted')", [cId, oId]);
+
+  const chal = await api(ctx.base, 'POST', '/api/duel/async/challenge', { token: challenger.token, body: { opponentId: oId } });
+  assert.equal(chal.status, 200, JSON.stringify(chal.body));
+  const matchId = chal.body.matchId;
+
+  // The opponent plays with the stored correct answers.
+  const stored = JSON.parse((await dbGet('SELECT problems_json FROM async_matches WHERE id = ?', [matchId])).problems_json);
+  const answers = stored.map((p) => p.answer);
+  const play = await api(ctx.base, 'POST', `/api/duel/async/${matchId}/play`, { token: opponent.token, body: { answers } });
+  assert.equal(play.status, 200);
+
+  const n = await waitForAnalytics(oId);
+  assert.ok(n > 0, 'the async-duel answers were recorded into the engine for the player');
 });
