@@ -485,6 +485,15 @@ data class ProblemReportResponse(
     val success: Boolean = false
 )
 
+// A mixed-strand cumulative checkpoint exam (problems interleave concepts across strands).
+@Serializable
+data class CheckpointExamResponse(
+    val count: Int = 0,
+    val level: Int = 1,
+    val strands: List<String> = emptyList(),
+    val problems: List<MathProblem> = emptyList()
+)
+
 // Upgrades a guest account in place into a full account (keeps all progress). Same shape as
 // RegisterRequest; sent to /api/auth/convert with the guest's bearer token.
 @Serializable

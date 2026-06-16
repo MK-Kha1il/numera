@@ -313,6 +313,9 @@ fun MainTabsScreen(
             CommandItem("Transfer Challenge", CommandCategory.QuickAction, NumeraIconType.Learn, "Apply a concept in a new context", "transfer apply depth understanding novel") {
                 onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "transfer_challenge"))
             },
+            CommandItem("Checkpoint Exam", CommandCategory.QuickAction, NumeraIconType.Trophy, "A mixed test across what you've learned", "exam test checkpoint cumulative mixed review prep practice") {
+                onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "checkpoint_exam"))
+            },
             CommandItem("Show me how", CommandCategory.QuickAction, NumeraIconType.Calculator, "Solve any equation step by step", "solve solver cas equation steps worked solution how help quadratic linear") {
                 showSolver = true
             },

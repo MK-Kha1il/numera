@@ -80,6 +80,13 @@ interface ApiService {
         @Body request: CalculatorLogRequest
     ): CalculatorLogResponse
 
+    // A mixed-strand cumulative checkpoint exam for exam-readiness practice.
+    @GET("api/math/checkpoint-exam")
+    suspend fun getCheckpointExam(
+        @Header("Authorization") token: String,
+        @Query("count") count: Int = 8
+    ): CheckpointExamResponse
+
     // Flag a generated exercise as wrong/confusing/etc. (content-quality feedback loop).
     @POST("api/math/report")
     suspend fun reportProblem(

@@ -544,6 +544,64 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
   });
 });
 
+// ── Checkpoint exam ───────────────────────────────────────────────────────────────────────────
+// A mixed-strand cumulative test for exam readiness (ultra review #16 / edu #46). It draws one
+// problem from each of several strands the learner has practiced, cycling strands so concepts are
+// INTERLEAVED (proven better for retention than blocked practice). Client-graded like other learn
+// modes; finishing grants a flat reward via /complete with category "mixed" (no single strand gets
+// mastery credit). Ordered by strand prominence so the foundational core leads.
+const EXAM_STRANDS = [
+  { col: 'arithmetic_correct', category: 'arithmetic' },
+  { col: 'fractions_correct', category: 'fractions' },
+  { col: 'decimals_correct', category: 'decimals' },
+  { col: 'integers_correct', category: 'integers' },
+  { col: 'algebra_correct', category: 'algebra' },
+  { col: 'geometry_correct', category: 'geometry' },
+  { col: 'number_theory_correct', category: 'number_theory' },
+  { col: 'statistics_correct', category: 'statistics' },
+];
+
+router.get('/api/math/checkpoint-exam', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const count = Math.min(12, Math.max(5, parseInt(req.query.count, 10) || 8));
+
+  db.get('SELECT level FROM users WHERE id = ?', [userId], (uErr, user) => {
+    if (uErr) return res.status(500).json({ error: uErr.message });
+    const level = user ? user.level || 1 : 1;
+
+    db.get('SELECT * FROM user_mastery WHERE user_id = ?', [userId], (mErr, mastery) => {
+      if (mErr) return res.status(500).json({ error: mErr.message });
+      // Test what they've actually studied; if that's too thin (0–1 strands), fall back to the
+      // foundational core so the exam still feels cumulative.
+      let chosen = EXAM_STRANDS.filter((s) => mastery && (mastery[s.col] || 0) > 0);
+      if (chosen.length < 2) chosen = EXAM_STRANDS.slice(0, 5);
+
+      const problems = [];
+      let i = 0;
+      const guard = count * 5;
+      while (problems.length < count && i < guard) {
+        const strand = chosen[i % chosen.length];
+        const lvl = normalizeLevelForGenerator(strand.category, level);
+        const seed = (Date.now() % 100000) + i * 13 + problems.length * 7;
+        const p = generateProblem(strand.category, lvl, seed, 1000);
+        if (p && p.question && Array.isArray(p.options) && p.options.length) {
+          problems.push({
+            question: p.question,
+            correctAnswer: p.correctAnswer,
+            options: p.options,
+            explanation: p.explanation || '',
+            category: strand.category,
+            level: lvl,
+          });
+        }
+        i++;
+      }
+
+      res.json({ count: problems.length, level, strands: chosen.map((s) => s.category), problems });
+    });
+  });
+});
+
 // ── Content-quality reports ───────────────────────────────────────────────────────────────────
 // The catalog is generated and only ever checked at generation time (ultra review #17): this is the
 // human-in-the-loop signal it was missing. A learner flags a specific exercise; we store the problem

@@ -416,6 +416,14 @@ fun SoloGameScreen(
                             }
                         }
                     }
+                    "checkpoint_exam" -> {
+                        // A mixed-strand cumulative exam (ultra review #16): play a server-assembled
+                        // interleaved set straight through, no lesson — this is a self-assessment.
+                        val exam = RetrofitClient.apiService.getCheckpointExam(token, count = 8)
+                        withContext(Dispatchers.Main) {
+                            problemsList = exam.problems
+                        }
+                    }
                     "transfer_challenge" -> {
                         // A single novel-context problem (Sprint 4). Deliberately no lesson — the
                         // point is to recognise the concept in an unfamiliar framing on your own.
@@ -690,6 +698,10 @@ fun SoloGameScreen(
             } else if (gameMode == "transfer_challenge") {
                 xpReward = 30
                 coinReward = 15
+            } else if (gameMode == "checkpoint_exam") {
+                // Scales with how many you got right across the mixed set.
+                xpReward = solvedCount * 12
+                coinReward = solvedCount * 6
             } else if (gameMode == "mistakes_practice") {
                 xpReward = solvedCount * 15
                 coinReward = solvedCount * 10
@@ -727,13 +739,14 @@ fun SoloGameScreen(
                         }
                     }
 
-                    if (gameMode == "level" || gameMode == "archive_puzzle" || gameMode == "legacy_puzzle" || gameMode == "daily_puzzle" || gameMode == "transfer_challenge") {
+                    if (gameMode == "level" || gameMode == "archive_puzzle" || gameMode == "legacy_puzzle" || gameMode == "daily_puzzle" || gameMode == "transfer_challenge" || gameMode == "checkpoint_exam") {
                         val saveRes = RetrofitClient.apiService.completeSession(
                             token, CompleteSessionRequest(
                                 xpGained = xpReward,
                                 coinsGained = coinReward,
                                 solvedCount = solvedCount,
-                                category = category,
+                                // "mixed" → server grants XP/coins but credits no single strand's mastery.
+                                category = if (gameMode == "checkpoint_exam") "mixed" else category,
                                 level = if (gameMode == "level") level else null,
                                 errorsCount = errorsCount,
                                 speedBonus = speedBonusGained,
