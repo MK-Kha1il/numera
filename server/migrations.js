@@ -950,6 +950,23 @@ const migrations = [
       }
     },
   },
+  {
+    version: 41,
+    name: 'analytics_daily',
+    // Self-hosted, privacy-first product analytics (ultra review #39): aggregate daily counts per
+    // event, with NO user/device/session linkage — the rows are not personal data and cannot be
+    // attributed to anyone, so they answer "what's used?" without the privacy cost of an SDK.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS analytics_daily (
+          day   TEXT NOT NULL,
+          event TEXT NOT NULL,
+          count INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (day, event)
+        )
+      `);
+    },
+  },
 ];
 
 /**

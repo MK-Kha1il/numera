@@ -80,6 +80,13 @@ interface ApiService {
         @Body request: CalculatorLogRequest
     ): CalculatorLogResponse
 
+    // Privacy-first product analytics: report one allowlisted event (aggregate count, no PII).
+    @POST("api/analytics/event")
+    suspend fun logAnalyticsEvent(
+        @Header("Authorization") token: String,
+        @Body request: AnalyticsEventRequest
+    ): AnalyticsEventResponse
+
     // A mixed-strand cumulative checkpoint exam for exam-readiness practice.
     @GET("api/math/checkpoint-exam")
     suspend fun getCheckpointExam(

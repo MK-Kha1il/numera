@@ -223,6 +223,10 @@ fun SoloGameScreen(
         }
     }
 
+    // Product analytics (aggregate, no PII): one game_start per session, and game_finish at recap.
+    LaunchedEffect(Unit) { com.example.numera.analytics.Analytics.log("game_start") }
+    LaunchedEffect(isGameOver) { if (isGameOver) com.example.numera.analytics.Analytics.log("game_finish") }
+
     LaunchedEffect(loadAttempt) {
         isLoading = true
         scope.launch(Dispatchers.IO) {

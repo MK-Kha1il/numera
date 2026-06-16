@@ -485,6 +485,19 @@ data class ProblemReportResponse(
     val success: Boolean = false
 )
 
+// Privacy-first product analytics: a single allowlisted event key, counted server-side in
+// aggregate (no user/device linkage is ever sent or stored).
+@Serializable
+data class AnalyticsEventRequest(
+    val event: String
+)
+
+@Serializable
+data class AnalyticsEventResponse(
+    val success: Boolean = false,
+    val recorded: Boolean = false
+)
+
 // A mixed-strand cumulative checkpoint exam (problems interleave concepts across strands).
 @Serializable
 data class CheckpointExamResponse(

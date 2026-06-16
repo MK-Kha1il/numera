@@ -97,6 +97,15 @@ fun MainTabsScreen(
         showMapTooltip = prefs.getBoolean("show_map_tooltip_v1", true)
     }
 
+    // Privacy-first product analytics: which tab is being used (aggregate count, no PII).
+    LaunchedEffect(selectedTab) {
+        when (selectedTab) {
+            0 -> "screen_learn"; 1 -> "screen_arena"; 2 -> "screen_quests"
+            3 -> "screen_shop"; 4 -> "screen_profile"; 5 -> "screen_settings"
+            else -> null
+        }?.let { com.example.numera.analytics.Analytics.log(it) }
+    }
+
     LaunchedEffect(activeProfileDialogUserId) {
         val id = activeProfileDialogUserId
         if (id != null) {
@@ -304,16 +313,20 @@ fun MainTabsScreen(
             CommandItem("Profile", CommandCategory.Navigate, NumeraIconType.Profile, "Stats, collections & progress", "me account collections saved") { goTab(4) },
             CommandItem("Continue Learning", CommandCategory.QuickAction, NumeraIconType.Learn, "Jump back into the level map", "resume keep going practice") { goTab(0) },
             CommandItem("Daily Puzzle", CommandCategory.QuickAction, NumeraIconType.Calculator, "Today's bonus challenge", "puzzle daily bonus") {
+                com.example.numera.analytics.Analytics.log("daily_puzzle_open")
                 onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "daily_puzzle"))
             },
             CommandItem("Ranked Match", CommandCategory.QuickAction, NumeraIconType.Arena, "Find a live opponent", "duel versus pvp compete") { goTab(1) },
             CommandItem("Practice Mistakes", CommandCategory.QuickAction, NumeraIconType.Warning, "Review what you got wrong", "errors review redo srs") {
+                com.example.numera.analytics.Analytics.log("mistakes_practice_open")
                 onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "mistakes_practice"))
             },
             CommandItem("Transfer Challenge", CommandCategory.QuickAction, NumeraIconType.Learn, "Apply a concept in a new context", "transfer apply depth understanding novel") {
+                com.example.numera.analytics.Analytics.log("transfer_challenge_start")
                 onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "transfer_challenge"))
             },
             CommandItem("Checkpoint Exam", CommandCategory.QuickAction, NumeraIconType.Trophy, "A mixed test across what you've learned", "exam test checkpoint cumulative mixed review prep practice") {
+                com.example.numera.analytics.Analytics.log("checkpoint_exam_start")
                 onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "checkpoint_exam"))
             },
             CommandItem("Show me how", CommandCategory.QuickAction, NumeraIconType.Calculator, "Solve any equation step by step", "solve solver cas equation steps worked solution how help quadratic linear") {
