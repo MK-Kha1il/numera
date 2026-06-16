@@ -359,6 +359,53 @@ router.get('/api/engine/misconceptions', authenticateToken, async (req, res) => 
   }
 });
 
+// GET /api/engine/growth-profile
+// Learner-facing "Growth Insights" (ultra review edu#44): turns the engine's per-concept
+// analytics + misconception tracking into a kid-friendly view — what you're strong at, and the
+// error *habits* worth watching — so the learner finally sees what the engine already knows.
+router.get('/api/engine/growth-profile', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const prettify = (s) => String(s || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  // Friendly concept name from either a template-type key (strengths) or a graph conceptId
+  // (misconceptions) — conceptFromType canonicalizes a template type; a raw conceptId falls
+  // through to the graph directly.
+  const conceptName = (key) => {
+    const cid = Orchestrator.conceptFromType(key) || key;
+    const c = KnowledgeGraph.concepts[cid];
+    return (c && c.name) || prettify(key);
+  };
+
+  db.all(
+    `SELECT concept, success_rate FROM user_concept_analytics
+       WHERE user_id = ? ORDER BY success_rate DESC`,
+    [userId],
+    async (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const practiced = rows ? rows.length : 0;
+      // Strengths: well-practiced concepts the learner reliably gets right (top 3 ≥ 80%).
+      const strengths = (rows || [])
+        .filter((r) => r.success_rate >= 0.8)
+        .slice(0, 3)
+        .map((r) => ({ name: conceptName(r.concept), successRate: Math.round(r.success_rate * 100) }));
+
+      let watchAreas = [];
+      try {
+        const ms = await MisconceptionEngine.getActiveMisconceptions(db, userId, 5);
+        watchAreas = ms.map((m) => ({
+          conceptName: conceptName(m.concept_id),
+          label: m.misconception_label,
+          severity: m.severity,
+          frequency: m.frequency,
+        }));
+      } catch (_) {
+        watchAreas = [];
+      }
+
+      res.json({ practiced, strengths, watchAreas });
+    }
+  );
+});
+
 // GET /api/engine/retention/due
 // Concepts due for review right now (overdue + decaying)
 router.get('/api/engine/retention/due', authenticateToken, async (req, res) => {

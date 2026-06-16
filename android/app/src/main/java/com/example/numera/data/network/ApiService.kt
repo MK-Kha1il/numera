@@ -80,6 +80,19 @@ interface ApiService {
         @Body request: CalculatorLogRequest
     ): CalculatorLogResponse
 
+    // Per-answer cognitive telemetry — fire-and-forget; feeds the learning-intelligence engine.
+    @POST("api/math/telemetry")
+    suspend fun logTelemetry(
+        @Header("Authorization") token: String,
+        @Body request: TelemetryRequest
+    ): TelemetryResponse
+
+    // Learner-facing Growth Insights (strengths + error habits to watch).
+    @GET("api/engine/growth-profile")
+    suspend fun getGrowthProfile(
+        @Header("Authorization") token: String
+    ): GrowthProfileResponse
+
     // School channel: create/join a class and read my classes / a class roster.
     @POST("api/classes")
     suspend fun createClass(

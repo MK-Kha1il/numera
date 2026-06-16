@@ -90,6 +90,16 @@ fun ProfileScreen(
             Log.e("Profile", "Failed to fetch mastery profile: ${e.message}")
         }
     }
+
+    // Growth Insights (edu#44): strengths + error habits the engine has observed.
+    var growthProfile by remember { mutableStateOf<com.example.numera.data.network.GrowthProfileResponse?>(null) }
+    LaunchedEffect(Unit) {
+        try {
+            growthProfile = RetrofitClient.apiService.getGrowthProfile(RetrofitClient.authToken ?: "")
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch growth profile: ${e.message}")
+        }
+    }
     
     // Sub-tab selection state inside ProfileScreen
     var selectedSubTab by remember { mutableStateOf(0) } // 0: Stats & Customize, 1: Achievements, 2: Friends, 3: Saved
@@ -388,6 +398,12 @@ fun ProfileScreen(
         // ── SKILL MASTERY (multi-dimensional) ──
         MasteryProfileCard(
             profile = masteryProfile,
+            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+        )
+
+        // ── GROWTH INSIGHTS (strengths + error habits to watch) ──
+        GrowthInsightsCard(
+            profile = growthProfile,
             modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
         )
 

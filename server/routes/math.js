@@ -24,6 +24,7 @@ const TeachingEngine = require('../mathEngine/teachingEngine');
 const AnalyticsEngine = require('../mathEngine/analyticsEngine');
 const CompetitiveEngine = require('../mathEngine/competitiveEngine');
 const Orchestrator = require('../mathEngine/problemOrchestrator');
+const MisconceptionEngine = require('../mathEngine/misconceptionEngine');
 const ExerciseMemory = require('../mathEngine/exerciseMemory');
 const LessonSafety = require('../mathEngine/lessonSafety');
 const { applyRemediation } = require('../mathEngine/remediationEngine');
@@ -139,7 +140,7 @@ router.get('/api/math/problems', authenticateToken, async (req, res) => {
 
 // Submit cognitive telemetry of player performance
 router.post('/api/math/telemetry', authenticateToken, (req, res) => {
-  const { concept, isCorrect, speed, hesitation, retries, templateType } = req.body;
+  const { concept, isCorrect, speed, hesitation, retries, templateType, wrongAnswer, correctAnswer, params } = req.body;
   if (!concept) {
     return res.status(400).json({ error: 'Missing concept parameter.' });
   }
@@ -257,6 +258,22 @@ router.post('/api/math/telemetry', authenticateToken, (req, res) => {
       const signals = TeachingEngine.inferSignalFromResult({ correct: !!isCorrectNumeric, responseMs, usedHint: inferredHint, wasRetry }, conceptId);
       for (const signal of signals) {
         await TeachingEngine.recordStyleSignal(db, userId, signal.style, signal.outcome);
+      }
+
+      // Misconception tracking — classify a wrong answer into a named error pattern (Sign error,
+      // Off-by-one, PEMDAS slip, concept-specific rules, …) and persist it; resolve known ones on a
+      // correct answer. This is what powers the learner-facing "Growth Insights" (ultra review
+      // edu#44). Only fires when the client reports the chosen wrong answer + correct answer.
+      if (!isCorrectNumeric && wrongAnswer != null && correctAnswer != null) {
+        const m = MisconceptionEngine.classifyMisconception(conceptId, correctAnswer, wrongAnswer, params || {});
+        if (m.id !== 'unclassified') {
+          await MisconceptionEngine.recordMisconception(db, userId, conceptId, m.id, m.label);
+        }
+      } else if (isCorrectNumeric) {
+        const active = await MisconceptionEngine.getConceptMisconceptions(db, userId, conceptId);
+        for (const mm of active) {
+          await MisconceptionEngine.resolveMisconception(db, userId, conceptId, mm.misconception_type);
+        }
       }
     } catch (e) {
       logger.error('[Telemetry-Engine]', e.message);

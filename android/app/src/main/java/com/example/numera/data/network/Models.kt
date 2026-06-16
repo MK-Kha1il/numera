@@ -216,7 +216,11 @@ data class MathProblem(
     // Worked example (JSON string) from the server's workedExampleEngine, offered after a WRONG
     // answer: { problem, steps: [{action, math, why}] }. The example uses its OWN numbers (not the
     // live problem), so it teaches the method without leaking the answer. '' / null when unauthored.
-    val workedExampleJson: String? = null
+    val workedExampleJson: String? = null,
+    // The generator's template/concept key for this problem. Reported back in per-answer telemetry
+    // so the server's learning-intelligence engine (mastery, retention, misconceptions) can attribute
+    // the outcome to the right concept. Server-supplied; absent on client-built fixtures.
+    val templateType: String? = null
 )
 
 @Serializable
@@ -651,6 +655,42 @@ data class ResetPasswordRequest(
     val username: String,
     val code: String,
     val newPassword: String
+)
+
+// Per-answer cognitive telemetry. Fire-and-forget after each solved/missed problem; revives the
+// server's learning-intelligence engine (mastery, retention, teaching-style, and — when the chosen
+// wrong answer is included — misconception tracking that powers Growth Insights). PII-free.
+@Serializable
+data class TelemetryRequest(
+    val concept: String,
+    val isCorrect: Boolean,
+    val speed: Float? = null,
+    val templateType: String? = null,
+    val correctAnswer: String? = null,
+    val wrongAnswer: String? = null
+)
+
+@Serializable
+data class TelemetryResponse(val success: Boolean? = null)
+
+// Learner-facing "Growth Insights" (ultra review edu#44): what you're strong at, and the error
+// habits worth watching — the engine's view, made visible.
+@Serializable
+data class GrowthStrength(val name: String, val successRate: Int)
+
+@Serializable
+data class GrowthWatchArea(
+    val conceptName: String? = null,
+    val label: String,
+    val severity: String? = null,
+    val frequency: Int? = null
+)
+
+@Serializable
+data class GrowthProfileResponse(
+    val practiced: Int = 0,
+    val strengths: List<GrowthStrength> = emptyList(),
+    val watchAreas: List<GrowthWatchArea> = emptyList()
 )
 
 @Serializable

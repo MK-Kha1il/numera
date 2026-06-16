@@ -576,6 +576,35 @@ fun SoloGameScreen(
     val currentProblem = problemsList[currentProblemIdx]
 
     fun handleAnswer(isCorrect: Boolean) {
+        // Per-answer cognitive telemetry — fire-and-forget. This single call revives the server's
+        // learning-intelligence engine (mastery, retention, teaching-style) and, by reporting the
+        // chosen wrong answer, the misconception tracking that powers Growth Insights (edu#44).
+        // Sent for every solo answer; never blocks the feedback UI.
+        run {
+            val conceptKey = currentProblem.templateType ?: category.ifEmpty { "General" }
+            // Typed and MCQ inputs are mutually exclusive per problem, so whichever is non-blank is
+            // the learner's choice (avoids depending on currentExerciseType, declared further down).
+            val chosenWrong = if (!isCorrect) {
+                typedInput.trim().ifEmpty { selectedAnswer }.takeIf { it.isNotBlank() }
+            } else null
+            scope.launch(Dispatchers.IO) {
+                try {
+                    RetrofitClient.apiService.logTelemetry(
+                        token = RetrofitClient.authToken ?: "",
+                        request = com.example.numera.data.network.TelemetryRequest(
+                            concept = conceptKey,
+                            isCorrect = isCorrect,
+                            templateType = currentProblem.templateType,
+                            correctAnswer = currentProblem.correctAnswer,
+                            wrongAnswer = chosenWrong
+                        )
+                    )
+                } catch (e: Exception) {
+                    Log.e("SoloGame", "Failed to log telemetry: ${e.message}")
+                }
+            }
+        }
+
         // Transfer challenge: record the out-of-context outcome (feeds the `transfer` mastery
         // dimension). Fire-and-forget so it never blocks the feedback UI.
         if (gameMode == "transfer_challenge") {
