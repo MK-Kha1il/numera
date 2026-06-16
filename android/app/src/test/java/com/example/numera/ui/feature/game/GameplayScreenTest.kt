@@ -69,6 +69,11 @@ class GameplayScreenTest {
           socraticJson = """{"byOption":{"alpha":{"misconception":"test_slip",""" +
             """"probe":"What made alpha look right to you?","hint":"Re-check the first step."}},""" +
             """"generic":{"probe":"Walk back through your steps.","hint":"Redo it slowly."}}""",
+          // Worked example (server JSON-string contract): a 2-step model on different numbers,
+          // offered after a wrong answer and revealed step-by-step. Used by the worked-example test.
+          workedExampleJson = """{"problem":"Example problem here.","steps":[""" +
+            """{"action":"First do this","math":"1 + 1","why":"because reasons one"},""" +
+            """{"action":"Then do that","math":"2","why":"because reasons two"}]}""",
         ),
         MathProblem(
           question = q1,
@@ -188,6 +193,35 @@ class GameplayScreenTest {
       compose.onAllNodesWithText("Re-check the first step.").fetchSemanticsNodes().isNotEmpty()
     }
     compose.onNodeWithText("Re-check the first step.").assertIsDisplayed()
+  }
+
+  /**
+   * Worked-example scaffold: after a wrong answer a "📝 See a worked example" affordance is offered;
+   * tapping it reveals the example problem and the FIRST step, with later steps faded behind
+   * "Reveal next step" (predict-then-reveal). The example uses its own numbers, not the live answer.
+   */
+  @Test
+  fun wrongMcqAnswer_workedExample_revealsStepsProgressively() {
+    launchAndAwaitGameplay()
+    compose.onNodeWithText("alpha").performClick()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose.onAllNodesWithText("📝 See a worked example").fetchSemanticsNodes().isNotEmpty()
+    }
+    // Steps are hidden until requested.
+    compose.onAllNodesWithText("1. First do this").assertCountEquals(0)
+    compose.waitForIdle()
+    compose.onNodeWithText("📝 See a worked example").performClick()
+    // First step appears; the second stays faded behind "Reveal next step".
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose.onAllNodesWithText("1. First do this").fetchSemanticsNodes().isNotEmpty()
+    }
+    compose.onAllNodesWithText("2. Then do that").assertCountEquals(0)
+    compose.waitForIdle()
+    compose.onNodeWithText("Reveal next step").performClick()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose.onAllNodesWithText("2. Then do that").fetchSemanticsNodes().isNotEmpty()
+    }
+    compose.onNodeWithText("2. Then do that").assertIsDisplayed()
   }
 
   @Test

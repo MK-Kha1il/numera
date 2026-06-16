@@ -21,6 +21,7 @@ const { constructPersonalizedExplanation } = require('./mathEngine/explanationEn
 const { solveSymbolically } = require('./mathEngine/validation');
 const { buildSocraticJson } = require('./mathEngine/socraticEngine');
 const { buildSelfExplainJson } = require('./mathEngine/selfExplainEngine');
+const { buildWorkedExampleJson } = require('./mathEngine/workedExampleEngine');
 const { conceptFromType } = require('./mathEngine/problemOrchestrator');
 
 // Maps knowledge-graph conceptId → the canonical template category + level
@@ -477,6 +478,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     const socraticJson = buildSocraticJson(conceptFromType(selectedTemplate.type), correct, options, params);
     // Self-explanation: a "why is that right?" reason-MCQ shown after a CORRECT answer ('' if none).
     const selfExplainJson = buildSelfExplainJson(conceptFromType(selectedTemplate.type));
+    // Worked example: a faded step-by-step model of the method, offered after a WRONG answer ('' if none).
+    const workedExampleJson = buildWorkedExampleJson(conceptFromType(selectedTemplate.type));
 
     return {
       question,
@@ -485,7 +488,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
       explanation: personalizedExplanation,
       templateType: selectedTemplate.type,
       socraticJson,
-      selfExplainJson
+      selfExplainJson,
+      workedExampleJson
     };
   }
 
@@ -554,6 +558,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
   const socraticJson = buildSocraticJson(conceptFromType(rawProblem.type), correct, options, rawProblem);
   // Self-explanation: a "why is that right?" reason-MCQ shown after a CORRECT answer ('' if none).
   const selfExplainJson = buildSelfExplainJson(conceptFromType(rawProblem.type));
+  // Worked example: a faded step-by-step model of the method, offered after a WRONG answer ('' if none).
+  const workedExampleJson = buildWorkedExampleJson(conceptFromType(rawProblem.type));
 
   return {
     question: rawProblem.question,
@@ -562,7 +568,8 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     explanation: personalizedExplanation,
     templateType: rawProblem.type,
     socraticJson,
-    selfExplainJson
+    selfExplainJson,
+    workedExampleJson
   };
 }
 

@@ -28,6 +28,7 @@ are small and mostly pure (deterministic where possible — see `test/symbolic.t
 | `tips.js` | Per-concept hints with safety checks (don't leak the answer). |
 | `visualEngine.js` | Builds declarative specs for interactive manipulatives (see below). |
 | `explanationEngine.js` | Step-by-step worked explanations. |
+| `socraticEngine.js` / `selfExplainEngine.js` / `workedExampleEngine.js` | **Formative-feedback trio**, each emitting a JSON-string payload attached to the problem (`socraticJson` / `selfExplainJson` / `workedExampleJson`). Socratic = misconception-targeted probe/hint on a WRONG answer; self-explanation = "why is that right?" reason-MCQ on a CORRECT answer; worked example = a faded step-by-step model of the method (on its OWN numbers, so it never leaks the live answer) offered on a WRONG answer. All pure, author-only coverage (`''` ⇒ client shows nothing), each guarded by a tripwire test. |
 | `knowledgeIngestion.js` | Pipeline to ingest/seed curriculum data. |
 
 `mathGenerator.js` is the **facade** the routes call (`generateProblem`,

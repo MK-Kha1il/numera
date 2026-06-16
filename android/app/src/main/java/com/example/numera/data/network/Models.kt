@@ -212,7 +212,11 @@ data class MathProblem(
     // Self-explanation prompt (JSON string) from the server's selfExplainEngine, shown after a
     // CORRECT answer: { question, options: [{text, correct}], explanation }. '' / null when the
     // concept has no authored reason-set (the client renders nothing).
-    val selfExplainJson: String? = null
+    val selfExplainJson: String? = null,
+    // Worked example (JSON string) from the server's workedExampleEngine, offered after a WRONG
+    // answer: { problem, steps: [{action, math, why}] }. The example uses its OWN numbers (not the
+    // live problem), so it teaches the method without leaking the answer. '' / null when unauthored.
+    val workedExampleJson: String? = null
 )
 
 @Serializable

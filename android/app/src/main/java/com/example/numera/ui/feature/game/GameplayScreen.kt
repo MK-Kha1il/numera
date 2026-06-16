@@ -90,6 +90,24 @@ data class SelfExplainPrompt(
 )
 
 /**
+ * Parsed shape of [com.example.numera.data.network.MathProblem.workedExampleJson], produced by the
+ * server's `mathEngine/workedExampleEngine.js`. After a WRONG answer we offer a fully worked model
+ * of the *method* on a DIFFERENT instance ([problem] has its own numbers, so the live answer is not
+ * leaked). [steps] are revealed one at a time (predict-then-reveal "fading"). Empty/absent when the
+ * concept has no authored example.
+ */
+data class WorkedExampleStep(
+    val action: String? = null,
+    val math: String? = null,
+    val why: String? = null,
+)
+
+data class WorkedExample(
+    val problem: String? = null,
+    val steps: List<WorkedExampleStep>? = null,
+)
+
+/**
  * The per-problem gameplay UI carved out of SoloGameScreen (the old "Main Gameplay Screen" Box:
  * progress header + reference slide-over, the equation card with the favorite/save dialog and
  * tooltip, the Tip/Calc/Try-Paper tool buttons, the MCQ/typed/timed answer interface, the feedback
@@ -185,6 +203,19 @@ fun GameplayScreen(
     // Which reason the learner tapped in the self-explanation prompt (null = unanswered). Resets
     // per problem. Purely formative — it never changes the score, only deepens understanding.
     var selfExplainChoice by remember(currentProblemIdx) { mutableStateOf<Int?>(null) }
+    // Worked example (shown on demand after a WRONG answer) parsed from the server JSON string.
+    val workedExample = remember(currentProblem.workedExampleJson) {
+        currentProblem.workedExampleJson?.takeIf { it.isNotBlank() }?.let { json ->
+            try {
+                com.google.gson.Gson().fromJson(json, WorkedExample::class.java)
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+    // Faded reveal: how many worked-example steps the learner has uncovered (0 = collapsed). Each
+    // tap predicts-then-reveals the next step. Resets per problem. Purely formative.
+    var workedStepsShown by remember(currentProblemIdx) { mutableStateOf(0) }
     // Progressive-disclosure flag for the targeted hint: stays one tap behind the probe so the
     // learner gets a chance to self-correct first. Resets when the problem changes or the banner
     // is dismissed (e.g. Retry Exercise flips hasAnswered back to false).
@@ -1060,6 +1091,112 @@ fun GameplayScreen(
                                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
                                         lineHeight = 19.sp
                                     )
+                                }
+                            }
+                        }
+
+                        // Worked example (the worked-example effect): a fully solved model of the
+                        // METHOD on a DIFFERENT instance (its own numbers — never the live answer),
+                        // offered at the moment of struggle. Faded: steps reveal one at a time so the
+                        // learner predicts each next move. Optional, formative — never changes score.
+                        // Only appears for concepts the server authored an example for.
+                        val weSteps = workedExample?.steps
+                        if (!weSteps.isNullOrEmpty()) {
+                            if (workedStepsShown == 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                                        .clickable {
+                                            com.example.numera.haptic.HapticManager.playSoft()
+                                            workedStepsShown = 1
+                                        }
+                                        .padding(horizontal = Spacing.m, vertical = Spacing.s)
+                                ) {
+                                    Text(
+                                        text = "📝 See a worked example",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            } else {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.06f))
+                                        .padding(Spacing.m),
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.s)
+                                ) {
+                                    Text(
+                                        text = "Worked example — different numbers, same method:",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
+                                    )
+                                    workedExample.problem?.takeIf { it.isNotBlank() }?.let { p ->
+                                        MathText(
+                                            text = p,
+                                            fontSizePx = 16,
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                    weSteps.take(workedStepsShown).forEachIndexed { i, step ->
+                                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                            Text(
+                                                text = "${i + 1}. ${step.action ?: ""}",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
+                                                lineHeight = 17.sp
+                                            )
+                                            step.math?.takeIf { it.isNotBlank() }?.let { m ->
+                                                MathText(
+                                                    text = m,
+                                                    fontSizePx = 15,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.fillMaxWidth()
+                                                )
+                                            }
+                                            step.why?.takeIf { it.isNotBlank() }?.let { w ->
+                                                Text(
+                                                    text = w,
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Normal,
+                                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                                    lineHeight = 15.sp
+                                                )
+                                            }
+                                        }
+                                    }
+                                    if (workedStepsShown < weSteps.size) {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
+                                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                                                .clickable {
+                                                    com.example.numera.haptic.HapticManager.playSoft()
+                                                    workedStepsShown += 1
+                                                }
+                                                .padding(horizontal = Spacing.m, vertical = Spacing.s)
+                                        ) {
+                                            Text(
+                                                text = "Reveal next step",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    } else {
+                                        Text(
+                                            text = "Now try yours the same way 👆",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
                             }
                         }
