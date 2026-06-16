@@ -80,6 +80,30 @@ interface ApiService {
         @Body request: CalculatorLogRequest
     ): CalculatorLogResponse
 
+    // School channel: create/join a class and read my classes / a class roster.
+    @POST("api/classes")
+    suspend fun createClass(
+        @Header("Authorization") token: String,
+        @Body request: ClassCreateRequest
+    ): ClassCreateResponse
+
+    @POST("api/classes/join")
+    suspend fun joinClass(
+        @Header("Authorization") token: String,
+        @Body request: ClassJoinRequest
+    ): ClassJoinResponse
+
+    @GET("api/classes/mine")
+    suspend fun getMyClasses(
+        @Header("Authorization") token: String
+    ): MyClassesResponse
+
+    @GET("api/classes/{id}/roster")
+    suspend fun getClassRoster(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): ClassRosterResponse
+
     // Parent channel: set/clear the guardian email, preview the report, and send it.
     @POST("api/account/guardian")
     suspend fun setGuardian(

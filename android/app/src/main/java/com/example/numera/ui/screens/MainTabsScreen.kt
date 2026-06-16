@@ -87,6 +87,7 @@ fun MainTabsScreen(
     var showSolver by remember { mutableStateOf(false) }
     // Guest-mode conversion prompt ("save your progress") — only meaningful while is_guest == 1.
     var showSaveProgress by remember { mutableStateOf(false) }
+    var showClasses by remember { mutableStateOf(false) }
     var discussConceptId by remember { mutableStateOf<String?>(null) }
     var discussConceptName by remember { mutableStateOf("") }
     var showMapTooltip by remember { mutableStateOf(false) }
@@ -328,6 +329,9 @@ fun MainTabsScreen(
             CommandItem("Checkpoint Exam", CommandCategory.QuickAction, NumeraIconType.Trophy, "A mixed test across what you've learned", "exam test checkpoint cumulative mixed review prep practice") {
                 com.example.numera.analytics.Analytics.log("checkpoint_exam_start")
                 onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "checkpoint_exam"))
+            },
+            CommandItem("Classes", CommandCategory.QuickAction, NumeraIconType.Profile, "Create or join a class", "class classroom teacher join code school student roster") {
+                showClasses = true
             },
             CommandItem("Show me how", CommandCategory.QuickAction, NumeraIconType.Calculator, "Solve any equation step by step", "solve solver cas equation steps worked solution how help quadratic linear") {
                 showSolver = true
@@ -719,6 +723,9 @@ fun MainTabsScreen(
                         refreshProfile()
                     }
                 )
+            }
+            if (showClasses) {
+                com.example.numera.ui.dialogs.ClassesDialog(onDismiss = { showClasses = false })
             }
             if (activeProfileDialogUserId != null) {
                 UserProfileDialog(

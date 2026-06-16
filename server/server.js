@@ -67,6 +67,7 @@ app.use(require('./routes/quests'));
 app.use(require('./routes/today'));
 app.use(require('./routes/crash'));
 app.use(require('./routes/analytics'));
+app.use(require('./routes/classes'));
 app.use(require('./routes/dailyPuzzle'));
 app.use(require('./routes/shop'));
 // account.js is mounted here (ahead of the inline /api/user/:userId route) so its specific

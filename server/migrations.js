@@ -1002,6 +1002,34 @@ const migrations = [
       }
     },
   },
+  {
+    version: 44,
+    name: 'classes',
+    // School channel (ultra review #52/#86): the class-code join flow. Any user can create a class
+    // (becoming its teacher) and share the join code; students join with the code and the teacher
+    // sees a roster of plain-language progress (reusing services/progressReport). No new role —
+    // "teacher" just means "created this class".
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS classes (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          code       TEXT NOT NULL UNIQUE,
+          name       TEXT NOT NULL,
+          teacher_id INTEGER NOT NULL,
+          created_at INTEGER NOT NULL
+        )
+      `);
+      await run(`
+        CREATE TABLE IF NOT EXISTS class_members (
+          class_id  INTEGER NOT NULL,
+          user_id   INTEGER NOT NULL,
+          joined_at INTEGER NOT NULL,
+          PRIMARY KEY (class_id, user_id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_class_members_user ON class_members(user_id)');
+    },
+  },
 ];
 
 /**

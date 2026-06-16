@@ -485,6 +485,45 @@ data class ProblemReportResponse(
     val success: Boolean = false
 )
 
+// School channel: class-code create/join + teacher roster.
+@Serializable
+data class ClassCreateRequest(val name: String)
+
+@Serializable
+data class ClassCreateResponse(val id: Int = 0, val code: String = "", val name: String = "")
+
+@Serializable
+data class ClassJoinRequest(val code: String)
+
+@Serializable
+data class ClassJoinResponse(val id: Int = 0, val name: String = "")
+
+@Serializable
+data class TaughtClass(val id: Int = 0, val code: String = "", val name: String = "", val memberCount: Int = 0)
+
+@Serializable
+data class JoinedClass(val id: Int = 0, val name: String = "", val teacher: String = "")
+
+@Serializable
+data class MyClassesResponse(val teaching: List<TaughtClass> = emptyList(), val joined: List<JoinedClass> = emptyList())
+
+@Serializable
+data class RosterMember(
+    val name: String = "",
+    val level: Int = 1,
+    val streak: Int = 0,
+    val totalSolved: Int = 0,
+    val topStrength: String? = null
+)
+
+@Serializable
+data class ClassRosterResponse(
+    val id: Int = 0,
+    val name: String = "",
+    val code: String = "",
+    val members: List<RosterMember> = emptyList()
+)
+
 // Parent channel: a learner-set guardian email + a plain-language progress report to share.
 @Serializable
 data class GuardianRequest(val email: String)
