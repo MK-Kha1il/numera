@@ -485,6 +485,36 @@ data class ProblemReportResponse(
     val success: Boolean = false
 )
 
+// Parent channel: a learner-set guardian email + a plain-language progress report to share.
+@Serializable
+data class GuardianRequest(val email: String)
+
+@Serializable
+data class GuardianResponse(val success: Boolean = false, val sharing: Boolean = false)
+
+@Serializable
+data class ProgressStrength(val label: String = "", val solved: Int = 0)
+
+@Serializable
+data class ProgressReport(
+    val name: String = "",
+    val level: Int = 1,
+    val rank: String = "",
+    val streak: Int = 0,
+    val maxStreak: Int = 0,
+    val totalSolved: Int = 0,
+    val strengths: List<ProgressStrength> = emptyList()
+)
+
+@Serializable
+data class ProgressReportResponse(
+    val report: ProgressReport = ProgressReport(),
+    val guardianEmail: String = ""
+)
+
+@Serializable
+data class SendProgressResponse(val success: Boolean = false)
+
 // Privacy-first product analytics: a single allowlisted event key, counted server-side in
 // aggregate (no user/device linkage is ever sent or stored).
 @Serializable

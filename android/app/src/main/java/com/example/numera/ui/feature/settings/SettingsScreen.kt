@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.example.numera.data.network.*
 import com.example.numera.sound.SoundManager
 import com.example.numera.theme.*
+import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.NumeraIcon
 import com.example.numera.ui.components.NumeraIconType
 import com.example.numera.ui.components.LocalToast
@@ -81,6 +82,18 @@ fun SettingsScreen(
     var isSoundMuted by remember { mutableStateOf(SoundManager.isMuted) }
     var reduceMotion by remember { mutableStateOf(com.example.numera.motion.MotionManager.userReduceMotion) }
     var soundVolume by remember { mutableStateOf(SoundManager.volume) }
+
+    // Parent channel: the learner-set guardian email for progress sharing (loaded once).
+    var guardianEmail by remember { mutableStateOf("") }
+    var guardianSavedEmail by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        runCatching {
+            withContext(Dispatchers.IO) { RetrofitClient.apiService.getProgressReport(RetrofitClient.authToken ?: "") }
+        }.getOrNull()?.let {
+            guardianEmail = it.guardianEmail
+            guardianSavedEmail = it.guardianEmail
+        }
+    }
 
     var timerEnabled by remember { mutableStateOf(prefs.getBoolean("timer_enabled", true)) }
     var autoClearWhiteboard by remember { mutableStateOf(prefs.getBoolean("auto_clear_whiteboard", true)) }
@@ -278,6 +291,63 @@ fun SettingsScreen(
                             com.example.numera.haptic.HapticManager.playSoft()
                         }
                     )
+                }
+            },
+            SearchableSettingItem("Share progress with a parent", "Email a progress summary to a parent or guardian", "parent guardian family progress report email share school") {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text("Share progress with a parent", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(
+                        "Add a parent or guardian's email, then send them a plain-language summary of how you're doing. You're in control — clear it anytime.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.height(Spacing.s))
+                    OutlinedTextField(
+                        value = guardianEmail,
+                        onValueChange = { guardianEmail = it },
+                        label = { Text("Parent / guardian email") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(Spacing.s))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                        DuoButton(
+                            text = "Save",
+                            onClick = {
+                                scope.launch {
+                                    val res = runCatching {
+                                        withContext(Dispatchers.IO) {
+                                            RetrofitClient.apiService.setGuardian(RetrofitClient.authToken ?: "", GuardianRequest(guardianEmail.trim()))
+                                        }
+                                    }.getOrNull()
+                                    if (res != null) {
+                                        guardianSavedEmail = guardianEmail.trim()
+                                        toast.show(if (res.sharing) "Saved — progress sharing on" else "Sharing turned off")
+                                    } else {
+                                        toast.show("Couldn't save. Check the email and try again.")
+                                    }
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        DuoButton(
+                            text = "Send report",
+                            enabled = guardianSavedEmail.isNotBlank(),
+                            onClick = {
+                                scope.launch {
+                                    val ok = runCatching {
+                                        withContext(Dispatchers.IO) {
+                                            RetrofitClient.apiService.sendProgressReport(RetrofitClient.authToken ?: "")
+                                        }
+                                    }.getOrNull()?.success == true
+                                    toast.show(if (ok) "Progress report sent ✉️" else "Couldn't send right now.")
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
                 }
             },
             SearchableSettingItem("Timer Preferences", "Toggle game round countdown timers", "time countdown limit speed gameplay") {

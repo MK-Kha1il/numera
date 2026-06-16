@@ -80,6 +80,23 @@ interface ApiService {
         @Body request: CalculatorLogRequest
     ): CalculatorLogResponse
 
+    // Parent channel: set/clear the guardian email, preview the report, and send it.
+    @POST("api/account/guardian")
+    suspend fun setGuardian(
+        @Header("Authorization") token: String,
+        @Body request: GuardianRequest
+    ): GuardianResponse
+
+    @GET("api/account/progress-report")
+    suspend fun getProgressReport(
+        @Header("Authorization") token: String
+    ): ProgressReportResponse
+
+    @POST("api/account/progress-report/send")
+    suspend fun sendProgressReport(
+        @Header("Authorization") token: String
+    ): SendProgressResponse
+
     // Privacy-first product analytics: report one allowlisted event (aggregate count, no PII).
     @POST("api/analytics/event")
     suspend fun logAnalyticsEvent(

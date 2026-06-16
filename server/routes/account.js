@@ -13,6 +13,7 @@ const { rateLimiter } = require('../middleware/rateLimit');
 const { hashPassword, verifyPassword, validatePasswordStrength } = require('../lib/passwords');
 const { checkText } = require('../lib/contentFilter');
 const { sendMail } = require('../services/mailer');
+const { buildProgressReport, renderReportText } = require('../services/progressReport');
 const logger = require('../logger');
 
 // Every table that holds rows keyed to a user. The single source of truth for "delete-account"
@@ -147,6 +148,59 @@ router.delete('/api/account/goal', authenticateToken, (req, res) => {
   db.run('DELETE FROM user_goals WHERE user_id = ?', [req.user.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true });
+  });
+});
+
+// ── Parent channel: progress sharing (ultra review #51/#78) ─────────────────────────────────────
+// Learner-initiated and opt-in. The learner sets a guardian/parent email; they (and only they) can
+// trigger a plain-language progress summary to it. No parent account, no covert tracking — the
+// child controls the share and can clear it at any time.
+const GUARDIAN_EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Set or clear the guardian email. Pass an empty/absent email to stop sharing.
+router.post('/api/account/guardian', authenticateToken, (req, res) => {
+  const raw = req.body && typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  if (raw && !GUARDIAN_EMAIL_RX.test(raw)) {
+    return res.status(400).json({ error: 'Please enter a valid email address.' });
+  }
+  db.run('UPDATE users SET guardian_email = ? WHERE id = ?', [raw, req.user.id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    securityLog(req.user.id, raw ? 'guardian_set' : 'guardian_cleared', req.ip, 'Guardian progress-sharing updated.');
+    res.json({ success: true, sharing: !!raw });
+  });
+});
+
+// Preview the report the learner would share (no send).
+router.get('/api/account/progress-report', authenticateToken, async (req, res) => {
+  try {
+    const report = await buildProgressReport(req.user.id);
+    db.get('SELECT guardian_email FROM users WHERE id = ?', [req.user.id], (err, row) => {
+      res.json({ report, guardianEmail: (row && row.guardian_email) || '' });
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Send the progress report to the saved guardian email. Best-effort (the mailer is a no-op/log
+// transport without SMTP configured); rate-limited so it can't be used to spam an address.
+router.post('/api/account/progress-report/send', authenticateToken, rateLimiter(5, 60 * 60 * 1000), (req, res) => {
+  db.get('SELECT guardian_email FROM users WHERE id = ?', [req.user.id], async (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    const to = row && row.guardian_email;
+    if (!to) return res.status(400).json({ error: 'No guardian email is set. Add one first.' });
+    try {
+      const report = await buildProgressReport(req.user.id);
+      await sendMail({
+        to,
+        subject: `${report.name}'s progress on Numera`,
+        text: renderReportText(report),
+      });
+      securityLog(req.user.id, 'progress_report_sent', req.ip, 'Progress report emailed to guardian.');
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 });
 

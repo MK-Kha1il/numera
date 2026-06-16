@@ -988,6 +988,20 @@ const migrations = [
       await run('UPDATE users SET created_at = last_active WHERE (created_at = 0 OR created_at IS NULL) AND last_active > 0');
     },
   },
+  {
+    version: 43,
+    name: 'guardian_email',
+    // Parent channel (ultra review #51/#78): a learner-set guardian/parent address to receive
+    // progress summaries. Learner-initiated and opt-in (no covert parent account); cleared with the
+    // account on deletion since it lives on the user row.
+    up: async (run) => {
+      try {
+        await run("ALTER TABLE users ADD COLUMN guardian_email TEXT DEFAULT ''");
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**
