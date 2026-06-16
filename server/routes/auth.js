@@ -149,9 +149,9 @@ router.post('/api/auth/register', checkFailedLogins, rateLimiter(5, 60000), asyn
   // telemetry_enabled = 0: behavioral analytics are OFF by default (opt-in), per GDPR Art 25
   // privacy-by-default and the Children's Code. The user can enable it later in privacy settings.
   db.run(
-    `INSERT INTO users (username, password_hash, last_active, avatar, last_league_reset, birth_year, telemetry_enabled)
-     VALUES (?, ?, ?, ?, ?, ?, 0)`,
-    [username, hash, now, chosenAvatar, now, birthYear],
+    `INSERT INTO users (username, password_hash, last_active, avatar, last_league_reset, birth_year, telemetry_enabled, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
+    [username, hash, now, chosenAvatar, now, birthYear, now],
     function (err) {
       if (err) {
         if (err.message.includes('UNIQUE')) {
@@ -186,9 +186,9 @@ router.post('/api/auth/guest', rateLimiter(10, 60000), (req, res) => {
   const username = `guest_${crypto.randomBytes(6).toString('hex')}`;
   const now = Math.floor(Date.now() / 1000);
   db.run(
-    `INSERT INTO users (username, password_hash, last_active, avatar, last_league_reset, is_guest, onboarding_complete, telemetry_enabled)
-     VALUES (?, '', ?, 'avatar_owl', ?, 1, 1, 0)`,
-    [username, now, now],
+    `INSERT INTO users (username, password_hash, last_active, avatar, last_league_reset, is_guest, onboarding_complete, telemetry_enabled, created_at)
+     VALUES (?, '', ?, 'avatar_owl', ?, 1, 1, 0, ?)`,
+    [username, now, now, now],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       const newUserId = this.lastID;

@@ -16,6 +16,7 @@ const { attachTipToProblem } = require('../services/tipService');
 const { updateAchievements } = require('../services/achievementService');
 const { updateCommitmentAndBurnout } = require('../services/commitmentService');
 const { grantRankRewards } = require('../services/rankRewardService');
+const { ACTIVATION_THRESHOLD, ACTIVATION_WINDOW_DAYS } = require('../lib/activation');
 
 const LearnerModel = require('../mathEngine/learnerModel');
 const RetentionEngine = require('../mathEngine/retentionEngine');
@@ -457,6 +458,14 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
       ],
       (updateErr) => {
         if (updateErr) return res.status(500).json({ error: updateErr.message });
+
+        // Activation marker (ultra review #23): stamp activated_at the first time the learner clears
+        // the bar (N solves) inside the signup window. Conditional UPDATE so it fires at most once and
+        // needs no read-back; fire-and-forget so it never delays the reward response.
+        db.run(
+          'UPDATE users SET activated_at = ? WHERE id = ? AND activated_at = 0 AND created_at > 0 AND solved_count >= ? AND (? - created_at) <= ?',
+          [now, req.user.id, ACTIVATION_THRESHOLD, now, ACTIVATION_WINDOW_DAYS * 86400]
+        );
 
         if (newLevel > user.level) {
           notify(req.user.id, {

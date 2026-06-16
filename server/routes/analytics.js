@@ -8,6 +8,7 @@ const express = require('express');
 const { db } = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { rateLimiter } = require('../middleware/rateLimit');
+const { ACTIVATION_THRESHOLD, ACTIVATION_WINDOW_DAYS } = require('../lib/activation');
 
 const router = express.Router();
 
@@ -79,6 +80,34 @@ router.get('/api/analytics/summary', authenticateToken, requireAdmin, (req, res)
           res.json(result);
         }
       );
+    }
+  );
+});
+
+// Activation funnel (ultra review #23): of real (non-guest, non-system) accounts in the cohort,
+// how many cleared the activation bar (N solves within the signup window), and how fast. Admin-only.
+router.get('/api/analytics/activation', authenticateToken, requireAdmin, (req, res) => {
+  // Cohort = real signups with a known creation time. Exclude guests and the password-less system
+  // account so the rate reflects genuine new users.
+  const cohortWhere = "created_at > 0 AND is_guest = 0 AND password_hash != ''";
+  db.get(
+    `SELECT
+        COUNT(*) AS cohort,
+        SUM(CASE WHEN activated_at > 0 THEN 1 ELSE 0 END) AS activated,
+        AVG(CASE WHEN activated_at > 0 THEN activated_at - created_at END) AS avgSecondsToActivate
+     FROM users WHERE ${cohortWhere}`,
+    [],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const cohort = (row && row.cohort) || 0;
+      const activated = (row && row.activated) || 0;
+      res.json({
+        definition: { threshold: ACTIVATION_THRESHOLD, windowDays: ACTIVATION_WINDOW_DAYS },
+        cohort,
+        activated,
+        activationRate: cohort ? Math.round((activated / cohort) * 100) : 0,
+        avgSecondsToActivate: row && row.avgSecondsToActivate != null ? Math.round(row.avgSecondsToActivate) : null,
+      });
     }
   );
 });

@@ -53,3 +53,43 @@ test('the summary rollup is admin-only and aggregates totals', async () => {
   assert.equal(start.total, 2);
   assert.ok(sum.body.totals.find((t) => t.event === 'game_finish').total === 1);
 });
+
+// /complete clamps solvedCount to 5, so pre-seed solved_count to cross the threshold in one call.
+const complete = (token, body) => api(ctx.base, 'POST', '/api/math/complete', { token, body: { solvedCount: 5, category: 'arithmetic', level: 1, gameMode: 'level', xpGained: 0, coinsGained: 0, errorsCount: 1, ...body } });
+
+test('a learner who clears the bar within the window is marked activated', async () => {
+  const u = await registerUser(ctx.base); // registration stamps created_at = now
+  const id = await idOf(u.username);
+  await dbRun('UPDATE users SET solved_count = 9 WHERE id = ?', [id]); // +5 from one complete → 14 ≥ 10
+
+  const r = await complete(u.token);
+  assert.equal(r.status, 200);
+
+  const row = await dbGet('SELECT activated_at FROM users WHERE id = ?', [id]);
+  assert.ok(row.activated_at > 0, 'activated_at stamped');
+});
+
+test('clearing the bar outside the signup window does NOT activate', async () => {
+  const u = await registerUser(ctx.base);
+  const id = await idOf(u.username);
+  const tenDaysAgo = Math.floor(Date.now() / 1000) - 10 * 86400;
+  await dbRun('UPDATE users SET solved_count = 50, created_at = ? WHERE id = ?', [tenDaysAgo, id]);
+
+  await complete(u.token);
+  const row = await dbGet('SELECT activated_at FROM users WHERE id = ?', [id]);
+  assert.equal(row.activated_at, 0, 'too late to count as activation');
+});
+
+test('the activation funnel is admin-only and reports a rate', async () => {
+  const normal = await registerUser(ctx.base);
+  const denied = await api(ctx.base, 'GET', '/api/analytics/activation', { token: normal.token });
+  assert.equal(denied.status, 403);
+
+  const admin = await registerUser(ctx.base);
+  await dbRun("UPDATE users SET role = 'admin' WHERE id = ?", [await idOf(admin.username)]);
+  const r = await api(ctx.base, 'GET', '/api/analytics/activation', { token: admin.token });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.definition.threshold, 10);
+  assert.ok(typeof r.body.cohort === 'number' && r.body.cohort >= 1);
+  assert.ok(r.body.activationRate >= 0 && r.body.activationRate <= 100);
+});

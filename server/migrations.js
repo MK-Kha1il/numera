@@ -967,6 +967,27 @@ const migrations = [
       `);
     },
   },
+  {
+    version: 42,
+    name: 'activation_tracking',
+    // Activation metric (ultra review #23): define + log whether a new account reaches the
+    // activation bar (N problems within the first few days). created_at anchors the window;
+    // activated_at is stamped once when the bar is cleared. Existing rows backfill created_at from
+    // last_active (best available signal) so they're not all excluded from the cohort.
+    up: async (run) => {
+      for (const col of [
+        'ALTER TABLE users ADD COLUMN created_at INTEGER DEFAULT 0',
+        'ALTER TABLE users ADD COLUMN activated_at INTEGER DEFAULT 0',
+      ]) {
+        try {
+          await run(col);
+        } catch (e) {
+          if (!/duplicate column name/i.test(e.message)) throw e;
+        }
+      }
+      await run('UPDATE users SET created_at = last_active WHERE (created_at = 0 OR created_at IS NULL) AND last_active > 0');
+    },
+  },
 ];
 
 /**
