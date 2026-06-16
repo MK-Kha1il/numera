@@ -112,7 +112,11 @@ app.get('/', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Numera - Math Quest Arena Backend</title>
+    <title>Numera — The competitive home of math</title>
+    <meta name="description" content="Numera is a competitive math platform with a tutor's brain — it adapts to how you think, teaches the why behind every concept, and is private by design: no ads, no trackers, no data sold.">
+    <meta property="og:title" content="Numera — The competitive home of math">
+    <meta property="og:description" content="Adaptive math practice that watches how you think. Concept-first lessons, live duels, and privacy by design.">
+    <meta property="og:type" content="website">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -310,12 +314,60 @@ app.get('/', (req, res) => {
     <div class="container">
         <header>
             <h1 class="glow-title">NUMERA</h1>
-            <p class="subtitle">Math Quest Arena Backend Services</p>
+            <p class="subtitle">Where math becomes a sport you actually want to practice.</p>
             <div class="pulse-badge">
                 <div class="pulse-dot"></div>
-                LIVE DEPLOYMENT ACTIVE
+                PRIVACY-FIRST · FREE TO LEARN
             </div>
         </header>
+
+        <section style="text-align: center; max-width: 720px; margin: 0 auto;">
+            <p style="font-size: 1.15rem; color: var(--text); line-height: 1.65;">
+                Numera is a competitive math platform with a tutor's brain. It watches <em>how</em> you
+                think &mdash; not just whether you're right &mdash; and adapts every problem, lesson, and
+                hint to you. Then it lets you put those skills to the test in the arena.
+            </p>
+        </section>
+
+        <section class="stats-grid">
+            <div class="glass-card">
+                <h3 style="color: var(--secondary); margin-bottom: 8px;">🧠 An engine that learns you</h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;">
+                    Adaptive difficulty, misconception diagnosis, Socratic hints, and spaced review &mdash;
+                    it pinpoints <em>why</em> you slipped and targets the fix.
+                </p>
+            </div>
+            <div class="glass-card">
+                <h3 style="color: var(--secondary); margin-bottom: 8px;">💡 Understand, don't just drill</h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;">
+                    Concept-first lessons, faded worked examples, and interactive manipulatives build the
+                    intuition behind every rule &mdash; not just the steps.
+                </p>
+            </div>
+            <div class="glass-card">
+                <h3 style="color: var(--secondary); margin-bottom: 8px;">⚔️ Compete for real</h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;">
+                    Live duels, tournaments, puzzle rush, and a real skill rating &mdash; the thrill that
+                    keeps you coming back, with anti-cheat built in.
+                </p>
+            </div>
+            <div class="glass-card">
+                <h3 style="color: var(--secondary); margin-bottom: 8px;">🔒 Private by design</h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;">
+                    No ads. No third-party trackers. No data sold. The math runs on our own servers, never
+                    shared with any AI or advertiser.
+                </p>
+            </div>
+        </section>
+
+        <section class="glass-card" style="border-color: rgba(0, 240, 255, 0.4); text-align: center;">
+            <h2 style="font-weight: 700; margin-bottom: 12px;">🛡️ A learning app parents can actually trust</h2>
+            <p style="color: var(--text-muted); max-width: 640px; margin: 0 auto; font-size: 1rem; line-height: 1.6;">
+                Most "free" kids' apps pay the bills by harvesting data. Numera doesn't. There are no ad SDKs,
+                no analytics trackers, and nothing about your child is sold or handed to a third party. You can
+                export everything we hold &mdash; or delete the account and erase all of it &mdash; at any time.
+            </p>
+        </section>
 
         <main class="glass-card">
             <div class="stats-grid">
@@ -335,9 +387,10 @@ app.get('/', (req, res) => {
         </main>
 
         <section class="glass-card action-area">
-            <h2 style="font-weight: 600; margin-bottom: 5px;">Download Android Client</h2>
+            <h2 style="font-weight: 700; margin-bottom: 5px;">Start learning &mdash; free</h2>
             <p style="color: var(--text-muted); text-align: center; max-width: 500px; font-size: 0.95rem;">
-                Get the premium native Android client. Install the APK to start playing, solving mathematical equations using spaced repetition, and competing in the live arena.
+                Install the Android app and solve your first problem in under a minute. No account required to
+                try it &mdash; jump straight in as a guest and save your progress whenever you're ready.
             </p>
             <a href="/download-apk" class="download-btn">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -346,7 +399,7 @@ app.get('/', (req, res) => {
         </section>
 
         <section class="glass-card">
-            <h2 style="font-weight: 600; margin-bottom: 15px; color: var(--text);">API Specifications</h2>
+            <h2 style="font-weight: 600; margin-bottom: 15px; color: var(--text);">For developers · API</h2>
             <div style="overflow-x: auto;">
                 <table class="endpoints-table">
                     <thead>
