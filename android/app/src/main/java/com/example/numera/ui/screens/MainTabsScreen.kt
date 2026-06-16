@@ -334,6 +334,10 @@ fun MainTabsScreen(
                 com.example.numera.analytics.Analytics.log("word_problems_start")
                 onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "word_problems"))
             },
+            CommandItem("Estimation", CommandCategory.QuickAction, NumeraIconType.Learn, "Build number sense: about how big?", "estimation estimate number sense rounding magnitude about how big mental approximate practice") {
+                com.example.numera.analytics.Analytics.log("estimation_start")
+                onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "estimation"))
+            },
             CommandItem("Classes", CommandCategory.QuickAction, NumeraIconType.Profile, "Create or join a class", "class classroom teacher join code school student roster") {
                 showClasses = true
             },

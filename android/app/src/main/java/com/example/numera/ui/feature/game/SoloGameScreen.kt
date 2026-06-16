@@ -436,6 +436,14 @@ fun SoloGameScreen(
                             problemsList = set.problems
                         }
                     }
+                    "estimation" -> {
+                        // Number sense (ultra review edu#16): "about how big?" — a server-assembled MCQ
+                        // set, no lesson; the skill is judging magnitude by rounding to friendly numbers.
+                        val set = RetrofitClient.apiService.getEstimation(token, count = 5)
+                        withContext(Dispatchers.Main) {
+                            problemsList = set.problems
+                        }
+                    }
                     "transfer_challenge" -> {
                         // A single novel-context problem (Sprint 4). Deliberately no lesson — the
                         // point is to recognise the concept in an unfamiliar framing on your own.
@@ -743,8 +751,8 @@ fun SoloGameScreen(
                 // Scales with how many you got right across the mixed set.
                 xpReward = solvedCount * 12
                 coinReward = solvedCount * 6
-            } else if (gameMode == "word_problems") {
-                // Applied practice: reward scales with how many real-world problems you solved.
+            } else if (gameMode == "word_problems" || gameMode == "estimation") {
+                // Applied / number-sense practice: reward scales with how many you solved.
                 xpReward = solvedCount * 12
                 coinReward = solvedCount * 6
             } else if (gameMode == "mistakes_practice") {
@@ -784,14 +792,14 @@ fun SoloGameScreen(
                         }
                     }
 
-                    if (gameMode == "level" || gameMode == "archive_puzzle" || gameMode == "legacy_puzzle" || gameMode == "daily_puzzle" || gameMode == "transfer_challenge" || gameMode == "checkpoint_exam" || gameMode == "word_problems") {
+                    if (gameMode == "level" || gameMode == "archive_puzzle" || gameMode == "legacy_puzzle" || gameMode == "daily_puzzle" || gameMode == "transfer_challenge" || gameMode == "checkpoint_exam" || gameMode == "word_problems" || gameMode == "estimation") {
                         val saveRes = RetrofitClient.apiService.completeSession(
                             token, CompleteSessionRequest(
                                 xpGained = xpReward,
                                 coinsGained = coinReward,
                                 solvedCount = solvedCount,
                                 // "mixed" → server grants XP/coins but credits no single strand's mastery.
-                                category = if (gameMode == "checkpoint_exam" || gameMode == "word_problems") "mixed" else category,
+                                category = if (gameMode == "checkpoint_exam" || gameMode == "word_problems" || gameMode == "estimation") "mixed" else category,
                                 level = if (gameMode == "level") level else null,
                                 errorsCount = errorsCount,
                                 speedBonus = speedBonusGained,

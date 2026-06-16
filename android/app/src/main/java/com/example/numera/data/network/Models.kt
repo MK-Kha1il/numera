@@ -592,6 +592,14 @@ data class WordProblemResponse(
     val problems: List<MathProblem> = emptyList()
 )
 
+// Estimation / number-sense (ultra review edu#16): a server-assembled "best estimate" MCQ set.
+@Serializable
+data class EstimationResponse(
+    val count: Int = 0,
+    val level: Int = 1,
+    val problems: List<MathProblem> = emptyList()
+)
+
 // Upgrades a guest account in place into a full account (keeps all progress). Same shape as
 // RegisterRequest; sent to /api/auth/convert with the guest's bearer token.
 @Serializable

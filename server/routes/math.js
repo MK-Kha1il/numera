@@ -25,6 +25,7 @@ const ExerciseMemory = require('../mathEngine/exerciseMemory');
 const LessonSafety = require('../mathEngine/lessonSafety');
 const { applyRemediation } = require('../mathEngine/remediationEngine');
 const { buildWordProblemSet } = require('../mathEngine/wordProblems');
+const { buildEstimationSet } = require('../mathEngine/estimation');
 const { feedEngineOutcome } = require('../services/engineFeed');
 const logger = require('../logger');
 
@@ -564,6 +565,21 @@ router.get('/api/math/word-problems', authenticateToken, (req, res) => {
     if (uErr) return res.status(500).json({ error: uErr.message });
     const level = user ? user.level || 1 : 1;
     const problems = buildWordProblemSet(count, level);
+    res.json({ count: problems.length, level, problems });
+  });
+});
+
+// ── Estimation / number sense (ultra review edu#16) ───────────────────────────────────────────
+// "About how big should this be?" — the foundational skill the symbolic catalog never trained.
+// MCQ, graded by the existing gameplay; difficulty (which estimation skills appear) scales with
+// the learner's level.
+router.get('/api/math/estimation', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const count = Math.min(10, Math.max(3, parseInt(req.query.count, 10) || 5));
+  db.get('SELECT level FROM users WHERE id = ?', [userId], (uErr, user) => {
+    if (uErr) return res.status(500).json({ error: uErr.message });
+    const level = user ? user.level || 1 : 1;
+    const problems = buildEstimationSet(count, level);
     res.json({ count: problems.length, level, problems });
   });
 });

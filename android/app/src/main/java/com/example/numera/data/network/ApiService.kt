@@ -155,6 +155,13 @@ interface ApiService {
         @Query("count") count: Int = 5
     ): WordProblemResponse
 
+    // Estimation / number-sense problems ("about how big is …?").
+    @GET("api/math/estimation")
+    suspend fun getEstimation(
+        @Header("Authorization") token: String,
+        @Query("count") count: Int = 5
+    ): EstimationResponse
+
     // Flag a generated exercise as wrong/confusing/etc. (content-quality feedback loop).
     @POST("api/math/report")
     suspend fun reportProblem(
