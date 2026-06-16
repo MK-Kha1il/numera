@@ -28,6 +28,7 @@ const MisconceptionEngine = require('../mathEngine/misconceptionEngine');
 const ExerciseMemory = require('../mathEngine/exerciseMemory');
 const LessonSafety = require('../mathEngine/lessonSafety');
 const { applyRemediation } = require('../mathEngine/remediationEngine');
+const { buildWordProblemSet } = require('../mathEngine/wordProblems');
 const logger = require('../logger');
 
 const router = express.Router();
@@ -625,6 +626,22 @@ router.get('/api/math/checkpoint-exam', authenticateToken, (req, res) => {
 
       res.json({ count: problems.length, level, strands: chosen.map((s) => s.category), problems });
     });
+  });
+});
+
+// ── Word problems (ultra review #9 / edu#5) ───────────────────────────────────────────────────
+// Applied, real-world contexts (shopping, change, discounts, rates, tips) — the catalog was
+// entirely symbolic. The hard part is choosing the operation, so distractors are operation-choice
+// slips. Difficulty (which contexts appear) scales with the learner's level; problems are MCQ and
+// graded by the existing gameplay just like the checkpoint exam.
+router.get('/api/math/word-problems', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const count = Math.min(10, Math.max(3, parseInt(req.query.count, 10) || 5));
+  db.get('SELECT level FROM users WHERE id = ?', [userId], (uErr, user) => {
+    if (uErr) return res.status(500).json({ error: uErr.message });
+    const level = user ? user.level || 1 : 1;
+    const problems = buildWordProblemSet(count, level);
+    res.json({ count: problems.length, level, problems });
   });
 });
 

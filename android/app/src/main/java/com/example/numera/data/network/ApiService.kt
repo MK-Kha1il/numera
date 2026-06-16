@@ -148,6 +148,13 @@ interface ApiService {
         @Query("count") count: Int = 8
     ): CheckpointExamResponse
 
+    // Applied, real-world word problems (shopping, discounts, rates, tips).
+    @GET("api/math/word-problems")
+    suspend fun getWordProblems(
+        @Header("Authorization") token: String,
+        @Query("count") count: Int = 5
+    ): WordProblemResponse
+
     // Flag a generated exercise as wrong/confusing/etc. (content-quality feedback loop).
     @POST("api/math/report")
     suspend fun reportProblem(

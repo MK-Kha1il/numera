@@ -584,6 +584,14 @@ data class CheckpointExamResponse(
     val problems: List<MathProblem> = emptyList()
 )
 
+// Applied word problems (ultra review #9): a server-assembled MCQ set of real-world contexts.
+@Serializable
+data class WordProblemResponse(
+    val count: Int = 0,
+    val level: Int = 1,
+    val problems: List<MathProblem> = emptyList()
+)
+
 // Upgrades a guest account in place into a full account (keeps all progress). Same shape as
 // RegisterRequest; sent to /api/auth/convert with the guest's bearer token.
 @Serializable

@@ -330,6 +330,10 @@ fun MainTabsScreen(
                 com.example.numera.analytics.Analytics.log("checkpoint_exam_start")
                 onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "checkpoint_exam"))
             },
+            CommandItem("Word Problems", CommandCategory.QuickAction, NumeraIconType.Learn, "Real-world math: shopping, discounts, rates", "word problems applied real world story money shopping discount rate tip percentage practice") {
+                com.example.numera.analytics.Analytics.log("word_problems_start")
+                onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "word_problems"))
+            },
             CommandItem("Classes", CommandCategory.QuickAction, NumeraIconType.Profile, "Create or join a class", "class classroom teacher join code school student roster") {
                 showClasses = true
             },
