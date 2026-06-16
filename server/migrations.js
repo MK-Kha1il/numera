@@ -1030,6 +1030,20 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_class_members_user ON class_members(user_id)');
     },
   },
+  {
+    version: 45,
+    name: 'puzzle_rush_template_type',
+    // Feed the learning engine from competitive play: persist the current problem's template/concept
+    // on the run row so a graded puzzle-rush answer can be attributed to the right concept (mastery,
+    // retention, misconceptions) via services/engineFeed — previously only solo play fed the engine.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE puzzle_rush_runs ADD COLUMN current_template_type TEXT');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**

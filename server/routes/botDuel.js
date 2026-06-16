@@ -24,6 +24,7 @@ const TIERS = {
 };
 
 const { areEquivalent } = require('../mathEngine/answerEquivalence');
+const { feedEngineOutcome } = require('../services/engineFeed');
 const { personalLadder } = require('../lib/arenaDifficulty');
 const dayStart = () => Math.floor(Date.now() / 86400000) * 86400000;
 
@@ -33,7 +34,8 @@ const dayStart = () => Math.floor(Date.now() / 86400000) * 86400000;
 function buildProblemSet(playerLevel) {
   return personalLadder(playerLevel, PROBLEM_COUNT).map(([category, level]) => {
     const p = generateProblem(category, level, Math.floor(Math.random() * 100), FIXED_ELO);
-    return { question: p.question, options: p.options, answer: p.correctAnswer };
+    // templateType is stored (never sent to the client) so a graded answer can feed the engine.
+    return { question: p.question, options: p.options, answer: p.correctAnswer, templateType: p.templateType };
   });
 }
 
@@ -81,6 +83,9 @@ router.post('/api/duel/bot/:id/play', authenticateToken, idempotency, (req, res)
   const answers = Array.isArray(req.body.answers) ? req.body.answers : null;
   if (!answers) return res.status(400).json({ error: 'answers array required' });
 
+  // Per-problem outcomes, recorded into the learning engine AFTER the reward transaction commits.
+  let feeds = [];
+
   withTransaction(async (tx) => {
     const m = await tx.get('SELECT * FROM bot_matches WHERE id = ? AND user_id = ?', [id, uid]);
     if (!m) throw httpError(404, 'Match not found');
@@ -88,8 +93,18 @@ router.post('/api/duel/bot/:id/play', authenticateToken, idempotency, (req, res)
 
     const problems = JSON.parse(m.problems_json);
     let userScore = 0;
+    feeds = [];
     for (let i = 0; i < problems.length; i++) {
-      if (areEquivalent(answers[i], problems[i].answer)) userScore += 1;
+      const correct = areEquivalent(answers[i], problems[i].answer);
+      if (correct) userScore += 1;
+      if (problems[i].templateType) {
+        feeds.push({
+          conceptKey: problems[i].templateType,
+          correct,
+          correctAnswer: problems[i].answer,
+          wrongAnswer: correct ? null : (answers[i] != null ? String(answers[i]) : null),
+        });
+      }
     }
 
     let winner = 'draw';
@@ -112,7 +127,21 @@ router.post('/api/duel/bot/:id/play', authenticateToken, idempotency, (req, res)
 
     return { userScore, botScore: m.bot_score, winner, reward };
   })
-    .then((payload) => res.json({ success: true, ...payload }))
+    .then((payload) => {
+      // Feed each graded answer into the engine — fire-and-forget overall, but SEQUENTIAL so the
+      // duel's own answers (which can share a template type) don't race each other on the shared
+      // system-level analytics tables. Bot duels now strengthen mastery/retention/Growth Insights.
+      (async () => {
+        for (const f of feeds) {
+          await feedEngineOutcome(db, uid, f.conceptKey, {
+            correct: f.correct,
+            correctAnswer: f.correctAnswer,
+            wrongAnswer: f.wrongAnswer,
+          });
+        }
+      })();
+      res.json({ success: true, ...payload });
+    })
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));
 });
 

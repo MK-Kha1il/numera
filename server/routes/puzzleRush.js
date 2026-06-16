@@ -11,6 +11,7 @@ const { idempotency } = require('../idempotency');
 const { withTransaction, httpError } = require('../dbx');
 const { generateProblem } = require('../mathGenerator');
 const { assessAnswer, verdictForRun } = require('../services/integrityEngine');
+const { feedEngineOutcome } = require('../services/engineFeed');
 
 const router = express.Router();
 
@@ -41,9 +42,9 @@ router.post('/api/puzzle-rush/start', authenticateToken, idempotency, (req, res)
     const { category, level, prob } = nextProblem((userRow && userRow.level) || 1, 0);
     db.run(
       `INSERT INTO puzzle_rush_runs
-         (user_id, score, strikes, current_index, current_answer, current_category, current_level, status, started_at, last_action_at)
-       VALUES (?, 0, 0, 0, ?, ?, ?, 'active', ?, ?)`,
-      [userId, prob.correctAnswer, category, level, now, now],
+         (user_id, score, strikes, current_index, current_answer, current_category, current_level, current_template_type, status, started_at, last_action_at)
+       VALUES (?, 0, 0, 0, ?, ?, ?, ?, 'active', ?, ?)`,
+      [userId, prob.correctAnswer, category, level, prob.templateType, now, now],
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({
@@ -68,6 +69,10 @@ router.post('/api/puzzle-rush/submit', authenticateToken, idempotency, (req, res
     return res.status(400).json({ error: 'runId and index are required' });
   }
 
+  // Captured inside the transaction, recorded into the learning engine AFTER it commits (so an
+  // analytics write never entangles or delays the reward transaction).
+  let feed = null;
+
   withTransaction(async (tx) => {
     const run = await tx.get('SELECT * FROM puzzle_rush_runs WHERE id = ? AND user_id = ?', [runId, userId]);
     if (!run) throw httpError(404, 'Run not found');
@@ -78,6 +83,13 @@ router.post('/api/puzzle-rush/submit', authenticateToken, idempotency, (req, res
     const now = Date.now();
     const elapsed = now - (run.last_action_at || now);
     const correct = areEquivalent(answer, run.current_answer);
+    feed = {
+      conceptKey: run.current_template_type,
+      correct,
+      correctAnswer: run.current_answer,
+      wrongAnswer: correct ? null : (answer != null ? String(answer) : null),
+      speedSec: elapsed > 0 ? elapsed / 1000 : 0,
+    };
     // Integrity: the difficulty-scaled timing scorer flags superhuman-fast correct answers.
     // integrity_flag holds the running COUNT of flagged answers (0 = clean → eligible for boards).
     const assessment = assessAnswer({ elapsedMs: elapsed, correct, level: run.current_level });
@@ -112,9 +124,9 @@ router.post('/api/puzzle-rush/submit', authenticateToken, idempotency, (req, res
     const { category, level, prob } = nextProblem(baseLevel, score);
     await tx.run(
       `UPDATE puzzle_rush_runs
-         SET score = ?, strikes = ?, current_index = ?, current_answer = ?, current_category = ?, current_level = ?, integrity_flag = ?, last_action_at = ?
+         SET score = ?, strikes = ?, current_index = ?, current_answer = ?, current_category = ?, current_level = ?, current_template_type = ?, integrity_flag = ?, last_action_at = ?
        WHERE id = ?`,
-      [score, strikes, nextIndex, prob.correctAnswer, category, level, integrity, now, runId]
+      [score, strikes, nextIndex, prob.correctAnswer, category, level, prob.templateType, integrity, now, runId]
     );
     return {
       correct,
@@ -127,7 +139,19 @@ router.post('/api/puzzle-rush/submit', authenticateToken, idempotency, (req, res
       problem: { question: prob.question, options: prob.options },
     };
   })
-    .then((payload) => res.json(payload))
+    .then((payload) => {
+      // Feed the engine fire-and-forget (concept attributed via the stored template type) so
+      // competitive play now strengthens mastery/retention/Growth Insights just like solo play.
+      if (feed && feed.conceptKey) {
+        feedEngineOutcome(db, userId, feed.conceptKey, {
+          correct: feed.correct,
+          correctAnswer: feed.correctAnswer,
+          wrongAnswer: feed.wrongAnswer,
+          speedSec: feed.speedSec,
+        });
+      }
+      res.json(payload);
+    })
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));
 });
 

@@ -19,16 +19,13 @@ const { grantRankRewards } = require('../services/rankRewardService');
 const { ACTIVATION_THRESHOLD, ACTIVATION_WINDOW_DAYS } = require('../lib/activation');
 
 const LearnerModel = require('../mathEngine/learnerModel');
-const RetentionEngine = require('../mathEngine/retentionEngine');
-const TeachingEngine = require('../mathEngine/teachingEngine');
-const AnalyticsEngine = require('../mathEngine/analyticsEngine');
 const CompetitiveEngine = require('../mathEngine/competitiveEngine');
 const Orchestrator = require('../mathEngine/problemOrchestrator');
-const MisconceptionEngine = require('../mathEngine/misconceptionEngine');
 const ExerciseMemory = require('../mathEngine/exerciseMemory');
 const LessonSafety = require('../mathEngine/lessonSafety');
 const { applyRemediation } = require('../mathEngine/remediationEngine');
 const { buildWordProblemSet } = require('../mathEngine/wordProblems');
+const { feedEngineOutcome } = require('../services/engineFeed');
 const logger = require('../logger');
 
 const router = express.Router();
@@ -151,31 +148,19 @@ router.post('/api/math/telemetry', authenticateToken, (req, res) => {
   const speedVal = parseFloat(speed) || 0;
   const hesitationVal = parseFloat(hesitation) || 0;
   const retriesVal = parseInt(retries, 10) || 0;
-  const now = Math.floor(Date.now() / 1000);
 
-  // 1. Update User Concept Analytics (moving averages)
-  db.get('SELECT * FROM user_concept_analytics WHERE user_id = ? AND concept = ?', [userId, concept], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-
-    if (row) {
-      const newSuccessRate = row.success_rate * 0.7 + isCorrectNumeric * 0.3;
-      const newSpeed = row.average_speed * 0.7 + speedVal * 0.3;
-      const newHesitation = row.hesitation_index * 0.7 + hesitationVal * 0.3;
-      const newStreak = isCorrectNumeric ? row.streak + 1 : 0;
-
-      db.run(
-        `UPDATE user_concept_analytics
-           SET success_rate = ?, average_speed = ?, hesitation_index = ?, streak = ?, last_tested = ?
-           WHERE user_id = ? AND concept = ?`,
-        [newSuccessRate, newSpeed, newHesitation, newStreak, now, userId, concept]
-      );
-    } else {
-      db.run(
-        `INSERT INTO user_concept_analytics (user_id, concept, success_rate, average_speed, hesitation_index, streak, last_tested)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [userId, concept, isCorrectNumeric, speedVal, hesitationVal, isCorrectNumeric ? 1 : 0, now]
-      );
-    }
+  // 1. Feed the learning-intelligence engine (concept analytics + retention + learner model +
+  //    teaching style + misconceptions) via the shared recorder — fire-and-forget, never blocks the
+  //    response, and identical to the path every other mode now uses (services/engineFeed).
+  feedEngineOutcome(db, userId, concept, {
+    correct: !!isCorrectNumeric,
+    correctAnswer,
+    wrongAnswer,
+    speedSec: speedVal,
+    hesitation: hesitationVal,
+    retries: retriesVal,
+    templateType,
+    params,
   });
 
   // 2. Update Template Pedagogical Feedback
@@ -218,68 +203,6 @@ router.post('/api/math/telemetry', authenticateToken, (req, res) => {
       })
       .catch((err) => logger.error('[Telemetry-Ingestion] Ingestion pipeline failed:', err.message));
   }
-
-  // 4. Feed the Intelligence Engine — fire-and-forget, never blocks the response
-  (async () => {
-    try {
-      // Map old concept/template string → knowledge-graph conceptId
-      const conceptId = Orchestrator.conceptFromType(concept) || concept;
-      const retentionScore = await RetentionEngine.getRetentionForProfile(db, userId, conceptId);
-
-      // Speed from legacy API arrives in seconds — convert to ms
-      const responseMs = speedVal > 0 ? speedVal * 1000 : 0;
-      const wasRetry = retriesVal > 0;
-      const inferredHint = hesitationVal > 2.0;
-
-      // Retention record (rating: 4=fast correct, 3=correct, 1=wrong)
-      const rating = isCorrectNumeric ? (speedVal > 0 && speedVal < 8 ? 4 : 3) : 1;
-      await RetentionEngine.recordReview(db, userId, conceptId, rating);
-
-      // Learner profile update
-      await LearnerModel.updateProfile(db, userId, conceptId, {
-        correct: !!isCorrectNumeric,
-        responseMs,
-        usedHint: inferredHint,
-        usedCalculator: false,
-        wasRetry,
-        retentionScore,
-      });
-
-      // Lesson analytics
-      if (templateType) {
-        await AnalyticsEngine.recordLessonEvent(db, templateType, {
-          correct: !!isCorrectNumeric,
-          timeTaken: responseMs,
-          usedHint: inferredHint,
-          abandoned: false,
-        });
-      }
-
-      // Teaching style signals
-      const signals = TeachingEngine.inferSignalFromResult({ correct: !!isCorrectNumeric, responseMs, usedHint: inferredHint, wasRetry }, conceptId);
-      for (const signal of signals) {
-        await TeachingEngine.recordStyleSignal(db, userId, signal.style, signal.outcome);
-      }
-
-      // Misconception tracking — classify a wrong answer into a named error pattern (Sign error,
-      // Off-by-one, PEMDAS slip, concept-specific rules, …) and persist it; resolve known ones on a
-      // correct answer. This is what powers the learner-facing "Growth Insights" (ultra review
-      // edu#44). Only fires when the client reports the chosen wrong answer + correct answer.
-      if (!isCorrectNumeric && wrongAnswer != null && correctAnswer != null) {
-        const m = MisconceptionEngine.classifyMisconception(conceptId, correctAnswer, wrongAnswer, params || {});
-        if (m.id !== 'unclassified') {
-          await MisconceptionEngine.recordMisconception(db, userId, conceptId, m.id, m.label);
-        }
-      } else if (isCorrectNumeric) {
-        const active = await MisconceptionEngine.getConceptMisconceptions(db, userId, conceptId);
-        for (const mm of active) {
-          await MisconceptionEngine.resolveMisconception(db, userId, conceptId, mm.misconception_type);
-        }
-      }
-    } catch (e) {
-      logger.error('[Telemetry-Engine]', e.message);
-    }
-  })();
 
   res.json({ success: true });
 });
