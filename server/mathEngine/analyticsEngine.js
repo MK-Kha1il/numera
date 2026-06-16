@@ -1,54 +1,50 @@
 // Analytics Engine — self-improving lesson quality scoring and system recommendations
 // Tracks completion/abandonment, error patterns, difficulty spikes, ineffective explanations
 
-// Record a lesson interaction event (called on every problem answer or abandonment)
+// Record a lesson interaction event (called on every problem answer or abandonment).
+//
+// Single atomic UPSERT: a fresh template_type is seeded by the INSERT; an existing one folds the
+// event into the running EWMA in the ON CONFLICT branch. Doing it in one statement (rather than a
+// get-then-insert/update) is what makes it race-safe — concurrent calls for the same template_type
+// (e.g. several bot-duel answers feeding the engine in parallel) can no longer both find no row and
+// both INSERT, which used to fail the second with a UNIQUE-constraint error and drop the increment.
+//
+// The ON CONFLICT expressions reference the table's columns (pre-update values) and `excluded.*`
+// (the values this event proposed in VALUES), reproducing exactly the old JS EWMA/confusion math:
+//   n              = attempt_count + 1
+//   alpha          = 1/n
+//   avg_time_ms   += alpha * (timeTaken      - avg_time_ms)
+//   hint_rate     += alpha * (usedHint?1:0   - hint_rate)
+//   confusion      = 0.4 * newHintRate + 0.6 * (newAbandonCount / n)
 function recordLessonEvent(db, templateType, event) {
   // event: { correct, timeTaken, usedHint, abandoned }
   return new Promise((resolve, reject) => {
-    db.get(
-      `SELECT * FROM lesson_analytics WHERE template_type=?`,
-      [templateType],
-      (err, row) => {
-        if (err) return reject(err);
-        const now = Date.now();
-        if (!row) {
-          db.run(
-            `INSERT INTO lesson_analytics
-               (template_type, attempt_count, success_count, abandon_count,
-                avg_time_ms, hint_rate, confusion_score, last_updated)
-             VALUES (?,1,?,?,?,?,?,?)`,
-            [
-              templateType,
-              event.correct ? 1 : 0,
-              event.abandoned ? 1 : 0,
-              event.timeTaken || 0,
-              event.usedHint ? 1 : 0,
-              event.abandoned ? 1 : (event.usedHint ? 0.5 : 0),
-              now
-            ],
-            (e) => e ? reject(e) : resolve()
-          );
-        } else {
-          const n = row.attempt_count + 1;
-          const alpha = 1 / n;
-          const newSuccessCount  = row.success_count + (event.correct ? 1 : 0);
-          const newAbandonCount  = row.abandon_count + (event.abandoned ? 1 : 0);
-          const newAvgTime       = row.avg_time_ms + alpha * ((event.timeTaken || 0) - row.avg_time_ms);
-          const newHintRate      = row.hint_rate + alpha * ((event.usedHint ? 1 : 0) - row.hint_rate);
-          // Confusion score: hint usage + abandon rate weighted
-          const abandonRate      = newAbandonCount / n;
-          const newConfusion     = 0.4 * newHintRate + 0.6 * abandonRate;
-          db.run(
-            `UPDATE lesson_analytics SET
-               attempt_count=?, success_count=?, abandon_count=?,
-               avg_time_ms=?, hint_rate=?, confusion_score=?, last_updated=?
-             WHERE template_type=?`,
-            [n, newSuccessCount, newAbandonCount, newAvgTime,
-             newHintRate, newConfusion, now, templateType],
-            (e) => e ? reject(e) : resolve()
-          );
-        }
-      }
+    const now = Date.now();
+    db.run(
+      `INSERT INTO lesson_analytics
+         (template_type, attempt_count, success_count, abandon_count,
+          avg_time_ms, hint_rate, confusion_score, last_updated)
+       VALUES (?,1,?,?,?,?,?,?)
+       ON CONFLICT(template_type) DO UPDATE SET
+         attempt_count  = attempt_count + 1,
+         success_count  = success_count + excluded.success_count,
+         abandon_count  = abandon_count + excluded.abandon_count,
+         avg_time_ms    = avg_time_ms + (1.0 / (attempt_count + 1)) * (excluded.avg_time_ms - avg_time_ms),
+         hint_rate      = hint_rate   + (1.0 / (attempt_count + 1)) * (excluded.hint_rate   - hint_rate),
+         confusion_score =
+             0.4 * (hint_rate + (1.0 / (attempt_count + 1)) * (excluded.hint_rate - hint_rate))
+           + 0.6 * ((abandon_count + excluded.abandon_count) * 1.0 / (attempt_count + 1)),
+         last_updated   = excluded.last_updated`,
+      [
+        templateType,
+        event.correct ? 1 : 0,
+        event.abandoned ? 1 : 0,
+        event.timeTaken || 0,
+        event.usedHint ? 1 : 0,
+        event.abandoned ? 1 : (event.usedHint ? 0.5 : 0),
+        now
+      ],
+      (e) => e ? reject(e) : resolve()
     );
   });
 }
