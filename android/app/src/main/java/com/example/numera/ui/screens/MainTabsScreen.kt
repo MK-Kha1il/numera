@@ -709,7 +709,10 @@ fun MainTabsScreen(
                         onReviewNow = { pendingLearnSubTab = 1; goTab(0) }
                     )
                     3 -> ShopScreen(currentUser, { refreshProfile() })
-                    4 -> ProfileScreen(currentUser, onLogout, onRefreshProfile = { refreshProfile() }, onShowUserProfile = { activeProfileDialogUserId = it }, unlockedRelicIds = unlockedRelicIds)
+                    4 -> ProfileScreen(currentUser, onLogout, onRefreshProfile = { refreshProfile() }, onShowUserProfile = { activeProfileDialogUserId = it }, unlockedRelicIds = unlockedRelicIds, onPracticeMistakes = {
+                        com.example.numera.analytics.Analytics.log("growth_practice_mistakes")
+                        onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "mistakes_practice"))
+                    })
                     5 -> SettingsScreen(
                         currentUser,
                         onLogout,

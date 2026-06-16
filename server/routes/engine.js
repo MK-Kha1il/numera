@@ -396,6 +396,8 @@ router.get('/api/engine/growth-profile', authenticateToken, (req, res) => {
           label: m.misconception_label,
           severity: m.severity,
           frequency: m.frequency,
+          // The fix, not just the diagnosis (ultra review opp#21) — actionable corrective guidance.
+          tip: MisconceptionEngine.tipForMisconception(m.misconception_type),
         }));
       } catch (_) {
         watchAreas = [];

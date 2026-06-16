@@ -160,6 +160,37 @@ function getConceptMisconceptions(db, userId, conceptId) {
   });
 }
 
+// Learner-facing remediation guidance, keyed by misconception type. The label NAMES the error
+// ("Sign error"); this is the FIX — a short, kid-friendly correction the learner can act on. Used
+// by the Growth Insights "habits to watch" (ultra review edu#44/opp#21) to turn a diagnosis into a
+// next step. Unknown types fall back to a sensible generic nudge.
+const REMEDIATION_TIPS = {
+  // Global structural patterns
+  sign_error: 'Watch the signs. Two negatives make a positive — decide the sign first, then the number.',
+  forgot_negative: "Carry the negative sign through every step; it's the easiest thing to drop. Circle it as a reminder.",
+  off_by_one: 'Recount the endpoints — an off-by-one usually means you counted one too many or too few. Go slowly.',
+  order_of_operations: 'Use PEMDAS: brackets, then × and ÷, then + and −. Work left-to-right only within the same level.',
+  fraction_addition: "You can't add denominators. Find a common denominator first, then add only the numerators.",
+  // Concept-specific rules (knowledgeGraph)
+  inverse_op: 'Re-read the operation — that problem asked you to subtract, not add (or vice-versa).',
+  add_instead_mult: "'Groups of' means multiply, not add. Picture the equal groups stacking up.",
+  mult_instead_div: 'Sharing equally means divide, not multiply. Split the total into equal parts.',
+  remainder_ignore: "Don't drop the remainder — decide whether to round up, round down, or keep it as a fraction.",
+  off_by_factor: 'Double-check the times-table fact — you landed on a neighbouring multiple.',
+  wrong_borrow: 'When you borrow, reduce the next column by 1 and line up the place values carefully.',
+  left_to_right: 'Multiplication and division come before addition and subtraction — even when they sit further right.',
+  linear_sum: "Pythagoras squares the sides: a² + b² = c². You can't just add a + b.",
+  sub_hypotenuse: 'Square the two sides and add them, then take the square root — not the difference.',
+  inverse_sign_slip: 'To move a term across the equals sign, flip its operation (+ becomes −, × becomes ÷).',
+};
+
+function tipForMisconception(type) {
+  return (
+    REMEDIATION_TIPS[type] ||
+    'Slow down and double-check this step. If it keeps happening, revisit the concept lesson for a refresher.'
+  );
+}
+
 // Build a targeted explanation warning based on known misconceptions
 function buildMisconceptionWarning(misconceptions) {
   if (!misconceptions || misconceptions.length === 0) return null;
@@ -181,5 +212,7 @@ module.exports = {
   resolveMisconception,
   getActiveMisconceptions,
   getConceptMisconceptions,
-  buildMisconceptionWarning
+  buildMisconceptionWarning,
+  tipForMisconception,
+  REMEDIATION_TIPS
 };

@@ -57,7 +57,8 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     onRefreshProfile: () -> Unit,
     onShowUserProfile: (Int) -> Unit,
-    unlockedRelicIds: Set<String>
+    unlockedRelicIds: Set<String>,
+    onPracticeMistakes: (() -> Unit)? = null
 ) {
     val scope = rememberCoroutineScope()
     val toast = LocalToast.current
@@ -404,7 +405,8 @@ fun ProfileScreen(
         // ── GROWTH INSIGHTS (strengths + error habits to watch) ──
         GrowthInsightsCard(
             profile = growthProfile,
-            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp),
+            onPracticeMistakes = onPracticeMistakes
         )
 
         // ── INVENTORY CUSTOMIZER ──

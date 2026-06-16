@@ -49,6 +49,9 @@ test('a wrong answer is classified into a named misconception "habit to watch"',
   assert.match(wa.label, /[Ss]ign/, 'classified as a sign error');
   assert.ok(wa.conceptName && wa.conceptName.length > 0, 'has a friendly concept name');
   assert.ok(['low', 'medium', 'high'].includes(wa.severity), 'has a severity');
+  // The fix, not just the diagnosis: actionable remediation guidance accompanies the habit.
+  assert.ok(wa.tip && wa.tip.trim().length > 0, 'carries a remediation tip');
+  assert.match(wa.tip, /sign/i, 'the tip targets the sign-error fix');
 });
 
 test('a correct answer on a concept surfaces it as a strength', async () => {

@@ -691,7 +691,9 @@ data class GrowthWatchArea(
     val conceptName: String? = null,
     val label: String,
     val severity: String? = null,
-    val frequency: Int? = null
+    val frequency: Int? = null,
+    // Actionable corrective guidance (the fix, not just the diagnosis) — revealed on tap.
+    val tip: String? = null
 )
 
 @Serializable

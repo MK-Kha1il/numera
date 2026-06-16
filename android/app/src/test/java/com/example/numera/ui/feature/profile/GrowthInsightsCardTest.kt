@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.example.numera.data.network.GrowthProfileResponse
 import com.example.numera.data.network.GrowthStrength
 import com.example.numera.data.network.GrowthWatchArea
@@ -36,6 +37,7 @@ class GrowthInsightsCardTest {
           label = "Sign error — positive/negative confusion",
           severity = "high",
           frequency = 6,
+          tip = "Watch the signs. Two negatives make a positive.",
         )
       ),
     )
@@ -48,6 +50,34 @@ class GrowthInsightsCardTest {
     // Concept context + a non-colour severity signal (accessibility #75).
     compose.onNodeWithText("Integer Addition", substring = true).assertIsDisplayed()
     compose.onNodeWithText("Keeps coming up", substring = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun tappingHabitRevealsTheFix_andPracticeCtaFires() {
+    var practiced = false
+    val profile = GrowthProfileResponse(
+      practiced = 3,
+      strengths = emptyList(),
+      watchAreas = listOf(
+        GrowthWatchArea(
+          conceptName = "Integer Addition",
+          label = "Sign error — positive/negative confusion",
+          severity = "medium",
+          frequency = 3,
+          tip = "Two negatives make a positive — decide the sign first.",
+        )
+      ),
+    )
+    compose.setContent { GrowthInsightsCard(profile = profile, onPracticeMistakes = { practiced = true }) }
+
+    // The fix is hidden until the habit is tapped.
+    compose.onAllNodesWithText("decide the sign first", substring = true).assertCountEquals(0)
+    compose.onNodeWithText("Sign error", substring = true).performClick()
+    compose.onNodeWithText("decide the sign first", substring = true).assertIsDisplayed()
+
+    // The practice CTA routes to targeted practice.
+    compose.onNodeWithText("Practice these now", substring = true).performClick()
+    assert(practiced)
   }
 
   @Test

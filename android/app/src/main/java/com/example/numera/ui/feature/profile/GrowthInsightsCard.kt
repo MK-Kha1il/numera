@@ -1,13 +1,14 @@
 package com.example.numera.ui.feature.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +31,7 @@ import com.example.numera.theme.*
 fun GrowthInsightsCard(
     profile: GrowthProfileResponse?,
     modifier: Modifier = Modifier,
+    onPracticeMistakes: (() -> Unit)? = null,
 ) {
     if (profile == null) return
     if (profile.strengths.isEmpty() && profile.watchAreas.isEmpty()) return
@@ -97,11 +99,29 @@ fun GrowthInsightsCard(
                 )
                 profile.watchAreas.forEach { w -> WatchAreaRow(w) }
                 Text(
-                    text = "These aren't failures — they're your fastest wins. Spotting a habit is the first step to fixing it.",
+                    text = "Tap any habit for the fix. These aren't failures — they're your fastest wins.",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
                     lineHeight = 15.sp,
                 )
+                if (onPracticeMistakes != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(CornerRadius.m))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
+                            .clickable { onPracticeMistakes() }
+                            .padding(vertical = Spacing.m),
+                    ) {
+                        Text(
+                            text = "🎯 Practice these now",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.align(Alignment.Center),
+                        )
+                    }
+                }
             }
         }
     }
@@ -119,24 +139,42 @@ private fun severityMeta(severity: String?): SeverityMeta = when (severity) {
 @Composable
 private fun WatchAreaRow(w: GrowthWatchArea) {
     val meta = severityMeta(w.severity)
+    val hasTip = !w.tip.isNullOrBlank()
+    var expanded by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(CornerRadius.m))
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.06f))
+            .then(if (hasTip) Modifier.clickable { expanded = !expanded } else Modifier)
             .padding(horizontal = Spacing.m, vertical = Spacing.s),
         horizontalArrangement = Arrangement.spacedBy(Spacing.s),
         verticalAlignment = Alignment.Top,
     ) {
         Text(text = meta.icon, fontSize = 13.sp)
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Text(
-                text = w.label,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
-                lineHeight = 16.sp,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
+            ) {
+                Text(
+                    text = w.label,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
+                    lineHeight = 16.sp,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (hasTip) {
+                    Text(
+                        text = if (expanded) "▲ fix" else "▼ fix",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
             val context = buildString {
                 w.conceptName?.takeIf { it.isNotBlank() }?.let { append("in $it · ") }
                 append(meta.phrase)
@@ -146,6 +184,15 @@ private fun WatchAreaRow(w: GrowthWatchArea) {
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
             )
+            if (expanded && hasTip) {
+                Text(
+                    text = "💡 ${w.tip}",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                    lineHeight = 15.sp,
+                )
+            }
         }
     }
 }
