@@ -12,6 +12,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.example.numera.theme.MedalGold
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
@@ -23,13 +25,42 @@ enum class NumeraIconType {
     Check, ChevronRight, ChevronUp, ChevronDown
 }
 
+// Default screen-reader label per icon type (accessibility — ultra review #74). Action/nav icons
+// get a spoken name; purely decorative or text-accompanied icons (chevrons, stat glyphs sitting
+// next to their own number) return null so TalkBack isn't made noisy. Any caller can override via
+// the [NumeraIcon] contentDescription parameter (e.g. "" to silence, or a context-specific label).
+private fun defaultIconLabel(type: NumeraIconType): String? = when (type) {
+    NumeraIconType.Learn -> "Learn"
+    NumeraIconType.Arena -> "Arena"
+    NumeraIconType.Quests -> "Quests"
+    NumeraIconType.Shop -> "Shop"
+    NumeraIconType.Profile -> "Profile"
+    NumeraIconType.Settings -> "Settings"
+    NumeraIconType.Lock -> "Locked"
+    NumeraIconType.Warning -> "Warning"
+    NumeraIconType.Back -> "Back"
+    NumeraIconType.Close -> "Close"
+    NumeraIconType.Search -> "Search"
+    NumeraIconType.Scratchpad -> "Scratchpad"
+    NumeraIconType.Favorite -> "Favorite"
+    NumeraIconType.Notification -> "Notifications"
+    NumeraIconType.Calculator -> "Calculator"
+    NumeraIconType.Tip -> "Hint"
+    NumeraIconType.Check -> "Done"
+    // Decorative or always text-accompanied → no auto-label.
+    NumeraIconType.Streak, NumeraIconType.Trophy, NumeraIconType.XP, NumeraIconType.Coins,
+    NumeraIconType.ChevronRight, NumeraIconType.ChevronUp, NumeraIconType.ChevronDown -> null
+}
+
 @Composable
 fun NumeraIcon(
     type: NumeraIconType,
     modifier: Modifier = Modifier,
     tint: Color = MaterialTheme.colorScheme.onSurface,
     animate: Boolean = true,
-    filled: Boolean = false
+    filled: Boolean = false,
+    // null → use the per-type default; "" → explicitly silent (decorative in this context).
+    contentDescription: String? = null,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "PremiumIconTransition")
     
@@ -108,7 +139,14 @@ fun NumeraIcon(
         remember { mutableStateOf(0f) }
     }
 
-    Canvas(modifier = modifier.size(24.dp)) {
+    val spokenLabel = contentDescription ?: defaultIconLabel(type)
+    val a11yModifier = if (!spokenLabel.isNullOrBlank()) {
+        modifier.semantics { this.contentDescription = spokenLabel }
+    } else {
+        modifier
+    }
+
+    Canvas(modifier = a11yModifier.size(24.dp)) {
         val w = size.width
         val h = size.height
         val strokeWidth = 2.5f.dp.toPx()
