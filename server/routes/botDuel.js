@@ -111,7 +111,11 @@ router.post('/api/duel/bot/:id/play', authenticateToken, idempotency, (req, res)
     if (userScore > m.bot_score) winner = 'user';
     else if (m.bot_score > userScore) winner = 'bot';
 
-    // Anti-farm: only the first DAILY_REWARD_CAP bot wins each UTC day pay out.
+    // Anti-farm: only the first DAILY_REWARD_CAP bot wins each UTC day pay out, AND the payout
+    // decays as the day's wins pile up. Bots are infinite and always available, so a flat reward
+    // made them the app's biggest coin faucet (~280/day) and an inflation driver
+    // (docs/EconomyModel.md / ultra-review #28). The first wins pay full; later ones taper toward
+    // a floor, so casual play stays rewarding but grinding bots for coins does not pay.
     let reward = 0;
     if (winner === 'user') {
       const tier = TIERS[m.tier] || TIERS.medium;
@@ -119,7 +123,11 @@ router.post('/api/duel/bot/:id/play', authenticateToken, idempotency, (req, res)
         "SELECT COUNT(*) AS wins FROM bot_matches WHERE user_id = ? AND winner = 'user' AND reward > 0 AND finished_at >= ?",
         [uid, dayStart()]
       );
-      if ((row.wins || 0) < DAILY_REWARD_CAP) reward = tier.reward;
+      const priorWins = row.wins || 0;
+      if (priorWins < DAILY_REWARD_CAP) {
+        const decay = Math.max(0.3, 1 - priorWins * 0.1); // 1.0, 0.9, … floored at 0.3
+        reward = Math.max(1, Math.round(tier.reward * decay));
+      }
     }
 
     await tx.run('UPDATE bot_matches SET user_score = ?, winner = ?, reward = ?, status = \'finished\', finished_at = ? WHERE id = ?', [userScore, winner, reward, Date.now(), id]);

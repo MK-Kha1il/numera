@@ -118,7 +118,9 @@ ladder (review #61): the 3,500–4,000 "mythic" tier should feel like a multi-we
 ## Follow-up tasks (discrete)
 
 - [ ] Add a seasonal-rotation cosmetic sink (+ end-of-season coin conversion).
-- [ ] Decay/cap the bot-duel faucet; add a Puzzle Rush per-run coin cap.
+- [x] Decay the bot-duel faucet. **Done** — per-win reward now decays as the day's wins pile
+      up (`routes/botDuel.js`), cutting the hard-tier ceiling from ~280 to ~160/day; first wins
+      still pay full. Puzzle Rush already has a per-run cap (`MAX_COIN_REWARD`).
 - [x] Remove or flatten the inverse shop discount (`routes/shop.js`). **Done** — hoarder
       discount removed, affordability discount kept (`affordabilityDiscount` + test).
 - [ ] Re-price the cosmetic ladder against the tamed earn rate.
