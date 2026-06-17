@@ -36,6 +36,7 @@ import com.example.numera.sound.SoundManager
 import com.example.numera.theme.*
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.DuoCard
+import com.example.numera.ui.components.MathKeyboard
 import com.example.numera.ui.components.VictoryParticles
 import com.example.numera.ui.components.MathText
 import kotlinx.coroutines.Dispatchers
@@ -804,6 +805,16 @@ fun GameplayScreen(
                                 }
                             )
                         )
+
+                        // Math-symbol pad: the tokens the stock keyboard makes painful
+                        // (fraction / exponent / π / parens) — all grader-understood (#16).
+                        if (!hasAnswered) {
+                            MathKeyboard(
+                                value = typedInput,
+                                onValueChange = { typedInput = it },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
 
                         if (!hasAnswered) {
                             DuoButton(
