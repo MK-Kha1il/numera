@@ -31,6 +31,16 @@ const logger = require('../logger');
 
 const router = express.Router();
 
+// Lifetime-correct counts at which a category earns a celebrated "mastery-up" (ultra-review #20).
+// Crossing one of these on a level-complete returns a `masteryMilestone` the client celebrates.
+const MASTERY_MILESTONES = [
+  { count: 10, label: 'Apprentice' },
+  { count: 25, label: 'Practitioner' },
+  { count: 50, label: 'Skilled' },
+  { count: 100, label: 'Mastered' },
+  { count: 250, label: 'Virtuoso' },
+];
+
 // Procedural problems for specific category & level — engine-integrated
 router.get('/api/math/problems', authenticateToken, async (req, res) => {
   try {
@@ -422,6 +432,10 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
           // Update user_quests and user_mastery
           db.run('UPDATE user_quests SET solved_today = solved_today + ? WHERE user_id = ?', [solvedCount, req.user.id], () => {
             let masteryCol = null;
+            // Set when this level's solves push the category's lifetime-correct count across a
+            // mastery milestone — the client turns it into the signature "mastery-up" moment
+            // (ultra-review #20: learning events deserve celebration at parity with activity).
+            let masteryMilestone = null;
             const normCat = (category || 'arithmetic').toLowerCase();
             if (normCat === 'arithmetic') masteryCol = 'arithmetic_correct';
             else if (normCat === 'mental') masteryCol = 'mental_correct';
@@ -476,14 +490,29 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
                     criticalBonusActive,
                     xpBoosterActive,
                     xpBoosterUsesLeft: newXpBoosterUses,
+                    masteryMilestone,
                   });
                 });
               });
             };
 
             if (masteryCol) {
-              db.run(`UPDATE user_mastery SET ${masteryCol} = ${masteryCol} + ? WHERE user_id = ?`, [solvedCount, req.user.id], () => {
-                finalizeResponse();
+              // Read the pre-solve count so we can detect a milestone *crossing* (not just a
+              // threshold being met repeatedly). masteryCol comes from the fixed allowlist above,
+              // never user input, so the interpolation is safe.
+              db.get(`SELECT ${masteryCol} AS c FROM user_mastery WHERE user_id = ?`, [req.user.id], (selErr, mrow) => {
+                const oldCount = (mrow && mrow.c) || 0;
+                const newCount = oldCount + solvedCount;
+                for (let i = MASTERY_MILESTONES.length - 1; i >= 0; i--) {
+                  const m = MASTERY_MILESTONES[i];
+                  if (oldCount < m.count && newCount >= m.count) {
+                    masteryMilestone = { category: normCat, label: m.label, count: m.count };
+                    break;
+                  }
+                }
+                db.run(`UPDATE user_mastery SET ${masteryCol} = ${masteryCol} + ? WHERE user_id = ?`, [solvedCount, req.user.id], () => {
+                  finalizeResponse();
+                });
               });
             } else {
               finalizeResponse();

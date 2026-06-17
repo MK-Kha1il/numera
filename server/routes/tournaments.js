@@ -78,8 +78,43 @@ async function ensureCurrent(tx, now) {
   return { tournament: active, winners };
 }
 
-// Top finished entries for the board, ranked score DESC then fastest.
-function leaderboard(tournamentId) {
+// Calibrated "pace-setter" bots so the board is never an empty room at low population
+// (ultra-review #3 / #19 / #46: seed with labeled entries; design for tiny population). These are
+// benchmark racers, not real users: deterministic per event (seeded by tournament id, so the board
+// is stable across refreshes), always labeled `isBot`, never stored, and NEVER eligible for the
+// coin rewards — finalizeIfEnded only ever touches real `tournament_entries`. They are beatable:
+// the top pace-setter sits below a perfect run, so a strong human still tops the board and wins.
+const PACE_SETTERS = [
+  { name: 'Sigma',   scoreFrac: 0.9 },
+  { name: 'Hypatia', scoreFrac: 0.8 },
+  { name: 'Gauss',   scoreFrac: 0.7 },
+  { name: 'Euler',   scoreFrac: 0.55 },
+];
+
+// Small deterministic PRNG (mulberry32) so a given tournament always yields the same ghost times.
+function seededRand(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function paceSetterEntries(tournamentId, problemCount) {
+  const rand = seededRand(tournamentId * 2654435761);
+  return PACE_SETTERS.map((g) => {
+    const score = Math.round(g.scoreFrac * problemCount);
+    // Slower the fewer they got right, plus a little per-event jitter — feels human, stays stable.
+    const elapsedMs = 55000 + (problemCount - score) * 7000 + Math.floor(rand() * 14000);
+    return { username: g.name, userId: 0, score, elapsedMs, reward: 0, isBot: true };
+  });
+}
+
+// Top finished entries for the board, ranked score DESC then fastest. Real human entries are
+// merged with the labeled pace-setter bots so the competition reads as populated from day one.
+function leaderboard(tournamentId, problemCount = PROBLEM_COUNT) {
   return new Promise((resolve, reject) => {
     db.all(
       `SELECT u.username, e.user_id, e.score, e.elapsed_ms, e.reward
@@ -88,10 +123,17 @@ function leaderboard(tournamentId) {
         ORDER BY e.score DESC, e.elapsed_ms ASC
         LIMIT 50`,
       [tournamentId],
-      (err, rows) =>
-        err
-          ? reject(err)
-          : resolve((rows || []).map((r, i) => ({ position: i + 1, username: r.username, userId: r.user_id, score: r.score, elapsedMs: r.elapsed_ms, reward: r.reward })))
+      (err, rows) => {
+        if (err) return reject(err);
+        const humans = (rows || []).map((r) => ({
+          username: r.username, userId: r.user_id, score: r.score, elapsedMs: r.elapsed_ms, reward: r.reward, isBot: false,
+        }));
+        const merged = humans
+          .concat(paceSetterEntries(tournamentId, problemCount))
+          .sort((a, b) => (b.score - a.score) || (a.elapsedMs - b.elapsedMs))
+          .map((e, i) => ({ position: i + 1, ...e }));
+        resolve(merged);
+      }
     );
   });
 }
@@ -112,11 +154,11 @@ router.get('/api/tournaments/current', authenticateToken, async (req, res) => {
         dedupKey: `tournament:${w.tournamentId}`,
       });
     }
-    const board = await leaderboard(t.id);
+    const board = await leaderboard(t.id, t.problem_count);
     const mine = await new Promise((resolve, reject) =>
       db.get('SELECT status, score, elapsed_ms, reward FROM tournament_entries WHERE tournament_id = ? AND user_id = ?', [t.id, req.user.id], (e, r) => (e ? reject(e) : resolve(r)))
     );
-    const yourRank = mine && mine.status === 'done' ? (board.find((b) => b.userId === req.user.id) || {}).position || null : null;
+    const yourRank = mine && mine.status === 'done' ? (board.find((b) => !b.isBot && b.userId === req.user.id) || {}).position || null : null;
     res.json({
       tournament: {
         id: t.id,
@@ -182,8 +224,8 @@ router.post('/api/tournaments/:id/play', authenticateToken, (req, res) => {
     return { tournamentId: id, score, elapsedMs, total: problems.length };
   })
     .then(async (payload) => {
-      const board = await leaderboard(payload.tournamentId);
-      const yourRank = (board.find((b) => b.userId === req.user.id) || {}).position || null;
+      const board = await leaderboard(payload.tournamentId, payload.total);
+      const yourRank = (board.find((b) => !b.isBot && b.userId === req.user.id) || {}).position || null;
       const { tournamentId, ...rest } = payload;
       res.json({ ...rest, yourRank, leaderboard: board });
     })

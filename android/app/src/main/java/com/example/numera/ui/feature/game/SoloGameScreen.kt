@@ -114,6 +114,9 @@ fun SoloGameScreen(
     
     var errorsCount by remember { mutableIntStateOf(0) }
     var heartsLeft by remember { mutableIntStateOf(3) }
+    // Set from the /complete response when a category crosses a mastery milestone; shows the
+    // signature mastery-up celebration over the recap, then clears to reveal the recap (#20).
+    var masteryMilestone by remember { mutableStateOf<MasteryMilestone?>(null) }
     var retryTokensLeft by remember { mutableIntStateOf(0) }
     var showRetryDialogPrompt by remember { mutableStateOf(false) }
     var streakBonusActive by remember { mutableStateOf(false) }
@@ -819,6 +822,7 @@ fun SoloGameScreen(
                             userLevel = saveRes.level
                             userCoins = saveRes.coins
                             userRank = saveRes.rank
+                            masteryMilestone = saveRes.masteryMilestone
 
                             if (levelUpOccurred) {
                                 SoundManager.playLevelUp()
@@ -922,6 +926,16 @@ fun SoloGameScreen(
     }
 
     if (isGameOver) {
+        // The mastery-up moment takes over the screen before the recap — the learning event is
+        // celebrated first and biggest, then dismissing it reveals the normal reward recap (#20).
+        masteryMilestone?.let { milestone ->
+            MasteryUpCelebration(
+                category = milestone.category,
+                label = milestone.label,
+                onContinue = { masteryMilestone = null },
+            )
+            return
+        }
         RecapScreen(
             level = level,
             gameMode = gameMode,
@@ -991,8 +1005,16 @@ fun SoloGameScreen(
     )
 
     if (showRetryDialogPrompt) {
-        OutOfHeartsDialog(
+        KeepGoingDialog(
             retryTokensLeft = retryTokensLeft,
+            // Free, primary path: errors never tax a learner in a learning mode. Restore the
+            // hearts and continue with no progress lost, no resource spent (ultra-review #15).
+            onKeepGoing = {
+                errorsCount = 0
+                heartsLeft = 3
+                showRetryDialogPrompt = false
+            },
+            // Optional convenience kept only for players who already own a token.
             onUseRetryToken = {
                 scope.launch(Dispatchers.IO) {
                     try {

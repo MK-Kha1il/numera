@@ -737,7 +737,17 @@ data class CompleteSessionResponse(
     val xpGained: Int? = null,
     val criticalBonusActive: Boolean? = null,
     val xpBoosterActive: Boolean? = null,
-    val xpBoosterUsesLeft: Int? = null
+    val xpBoosterUsesLeft: Int? = null,
+    // Present when this level's solves pushed the category across a mastery milestone — the
+    // client turns it into the signature mastery-up celebration (ultra-review #20).
+    val masteryMilestone: MasteryMilestone? = null
+)
+
+@Serializable
+data class MasteryMilestone(
+    val category: String = "",
+    val label: String = "",
+    val count: Int = 0
 )
 
 @Serializable
@@ -1283,7 +1293,10 @@ data class TournamentLeaderboardEntry(
     val userId: Int = 0,
     val score: Int = 0,
     val elapsedMs: Long = 0,
-    val reward: Int = 0
+    val reward: Int = 0,
+    // A calibrated pace-setter bot (never a real user, never paid) — labeled in the UI so a
+    // player always knows who's human (ultra-review #46).
+    val isBot: Boolean = false
 )
 
 @Serializable

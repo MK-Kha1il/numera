@@ -43,6 +43,24 @@ test('start serves answer-stripped problems and play scores them server-side', a
   assert.ok(play.body.leaderboard.some((r) => r.username === u.username && r.score === play.body.score));
 });
 
+test('the board is seeded with labeled pace-setter bots so it is never an empty room', async () => {
+  const u = await registerUser(ctx.base);
+  const res = await api(ctx.base, 'GET', '/api/tournaments/current', { token: u.token });
+  const board = res.body.leaderboard;
+  const bots = board.filter((r) => r.isBot);
+  assert.ok(bots.length >= 3, 'expected several pace-setter bots on the board');
+  // Bots are labeled, never real users, and never carry a coin reward.
+  assert.ok(bots.every((b) => b.userId === 0 && b.reward === 0));
+  // Positions are contiguous across the merged (human + bot) board.
+  board.forEach((r, i) => assert.equal(r.position, i + 1));
+
+  // Deterministic per event: a second read yields the same bot scores/times (no flicker).
+  const again = await api(ctx.base, 'GET', '/api/tournaments/current', { token: u.token });
+  const botsAgain = again.body.leaderboard.filter((r) => r.isBot);
+  assert.deepEqual(botsAgain.map((b) => [b.username, b.score, b.elapsedMs]),
+                   bots.map((b) => [b.username, b.score, b.elapsedMs]));
+});
+
 test('a player gets only one attempt', async () => {
   const u = await registerUser(ctx.base);
   const tid = (await api(ctx.base, 'GET', '/api/tournaments/current', { token: u.token })).body.tournament.id;

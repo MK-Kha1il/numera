@@ -169,17 +169,26 @@ fun TournamentScreen(user: User?, onExit: () -> Unit) {
             Text("No finishers yet — be the first to set a score!", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
         } else {
             cur.leaderboard.forEach { row ->
-                val isMe = row.username == user?.username
+                val isMe = !row.isBot && row.username == user?.username
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xs),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        "#${row.position}  ${row.username}" + (if (isMe) "  (you)" else ""),
+                        // Bots are always labeled so a player knows who's human (#46).
+                        "#${row.position}  ${row.username}" + when {
+                            isMe -> "  (you)"
+                            row.isBot -> "  🤖 bot"
+                            else -> ""
+                        },
                         fontWeight = if (isMe) FontWeight.ExtraBold else FontWeight.Medium,
                         fontSize = 14.sp,
-                        color = if (isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        color = when {
+                            isMe -> MaterialTheme.colorScheme.primary
+                            row.isBot -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            else -> MaterialTheme.colorScheme.onSurface
+                        },
                         modifier = Modifier.weight(1f)
                     )
                     Text(

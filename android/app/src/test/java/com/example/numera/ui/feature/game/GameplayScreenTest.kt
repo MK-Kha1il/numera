@@ -273,13 +273,14 @@ class GameplayScreenTest {
   }
 
   /**
-   * In level mode, three mistakes empties the 3 hearts and triggers the out-of-hearts retry
+   * In level mode, three mistakes empties the 3 hearts and triggers the kind "keep going"
    * prompt. Drives that deterministically WITHOUT the TIMED problem's countdown: stay on the MCQ
    * (idx 0), answer wrong, reset via Review Solution -> Retry Exercise, repeat. The third wrong
-   * pushes errorsCount to 3 and the dialog appears. This guards the OutOfHeartsDialog carve.
+   * pushes errorsCount to 3 and the dialog appears. This guards the KeepGoingDialog carve
+   * (ultra-review #15: errors must not paywall/fail a learner in a learning mode).
    */
   @Test
-  fun threeMistakes_inLevelMode_showsOutOfHeartsDialog() {
+  fun threeMistakes_inLevelMode_showsKeepGoingDialog() {
     stubSingleMcqLevel()
     compose.setContent {
       SoloGameScreen(category = "Algebra", level = 1, gameMode = "level", onFinishGame = {})
@@ -302,11 +303,13 @@ class GameplayScreenTest {
       compose.onNodeWithText("RETRY EXERCISE").performClick()
       compose.waitForIdle()
     }
-    // Third mistake empties the hearts -> out-of-hearts dialog.
+    // Third mistake empties the hearts -> kind, free "keep going" dialog (no failure/paywall).
     compose.onNodeWithText("wrong").performClick()
     compose.waitUntil(timeoutMillis = 5_000) {
-      compose.onAllNodesWithText("💔 OUT OF HEARTS").fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithText("🌱 Let's slow down").fetchSemanticsNodes().isNotEmpty()
     }
-    compose.onNodeWithText("💔 OUT OF HEARTS").assertIsDisplayed()
+    compose.onNodeWithText("🌱 Let's slow down").assertIsDisplayed()
+    // The way forward is always free — never gated behind a purchase.
+    compose.onNodeWithText("Keep going").assertIsDisplayed()
   }
 }
