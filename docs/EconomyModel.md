@@ -64,10 +64,11 @@ nowhere to go.**
    consumable a healthy player *wants* to keep buying. Every new mode added a faucet (quests
    for puzzle-rush/SRS, bot-duel payouts, tournament prizes) and **zero** matching sink.
 
-2. **The discount runs backwards.** `routes/shop.js:36` gives a discount when
-   `saveRate > 0.7 && coins > 600` — i.e. **the richer you are, the cheaper things get.** A
-   sink should do the opposite (or be flat). This both accelerates inflation and is a
-   dark-pattern presentation (review #32: "honest pricing").
+2. ~~**The discount runs backwards.**~~ **FIXED.** `routes/shop.js` used to give a discount
+   when `saveRate > 0.7 && coins > 600` — i.e. *the richer you are, the cheaper things get*,
+   which accelerated inflation and was a dark pattern (review #32). Removed; the only remaining
+   discount is a gentle affordability help for low-coin engaged players (`affordabilityDiscount`,
+   shared by the display + charge paths, guarded by `test/shopDiscount.test.js`).
 
 ---
 
@@ -118,7 +119,8 @@ ladder (review #61): the 3,500–4,000 "mythic" tier should feel like a multi-we
 
 - [ ] Add a seasonal-rotation cosmetic sink (+ end-of-season coin conversion).
 - [ ] Decay/cap the bot-duel faucet; add a Puzzle Rush per-run coin cap.
-- [ ] Remove or flatten the inverse shop discount (`routes/shop.js`).
+- [x] Remove or flatten the inverse shop discount (`routes/shop.js`). **Done** — hoarder
+      discount removed, affordability discount kept (`affordabilityDiscount` + test).
 - [ ] Re-price the cosmetic ladder against the tamed earn rate.
 - [ ] Wire coin faucet/sink counters into `product_analytics` so this model can be validated
       against real behavior instead of estimated.

@@ -12,6 +12,16 @@ const { securityLog } = require('../middleware/security');
 
 const router = express.Router();
 
+// Cosmetic price multiplier (1.0 = full price). The ONLY discount is a gentle affordability
+// help for engaged players who are low on coins. The old "hoarder discount" (cheaper the richer
+// you are) was removed: it accelerated coin inflation and was a dark pattern (ultra-review #32 /
+// docs/EconomyModel.md). Shared by the catalog (display) and purchase (charge) paths so the two
+// can never drift — they used to be hand-duplicated.
+function affordabilityDiscount(currentCoins, solvedCount) {
+  if (currentCoins < 200 && solvedCount > 50) return 0.9;
+  return 1.0;
+}
+
 router.get('/api/shop', authenticateToken, (req, res) => {
   // The shop catalog (shop_items) is identical for every user and only changes
   // on a server restart re-seed, so cache it. Everything below (inventory,
@@ -32,12 +42,7 @@ router.get('/api/shop', authenticateToken, (req, res) => {
           const currentCoins = user.coins || 0;
           const saveRate = currentCoins / totalEarned;
 
-          let discountFactor = 1.0;
-          if (saveRate > 0.7 && currentCoins > 600) {
-            discountFactor = 0.85;
-          } else if (currentCoins < 200 && user.solved_count > 50) {
-            discountFactor = 0.9;
-          }
+          const discountFactor = affordabilityDiscount(currentCoins, user.solved_count);
 
           const nowMs = Date.now();
           const todayStamp = Math.floor(nowMs / (86400 * 1000));
@@ -170,17 +175,9 @@ router.post('/api/shop/purchase', authenticateToken, idempotency, (req, res) => 
       throw httpError(400, `Locked: Requires competitive rank ${requiredRank}`);
     }
 
-    // Cost with potential dynamic spending discount
-    const totalEarned = user.total_coins_earned || 100;
+    // Cost with the affordability discount (the only discount; see affordabilityDiscount).
     const currentCoins = user.coins || 0;
-    const saveRate = currentCoins / totalEarned;
-
-    let discountFactor = 1.0;
-    if (saveRate > 0.7 && currentCoins > 600) {
-      discountFactor = 0.85;
-    } else if (currentCoins < 200 && user.solved_count > 50) {
-      discountFactor = 0.9;
-    }
+    const discountFactor = affordabilityDiscount(currentCoins, user.solved_count);
 
     const finalCost = item.is_utility ? item.cost : Math.round(item.cost * discountFactor);
 
