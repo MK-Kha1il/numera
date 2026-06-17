@@ -608,6 +608,43 @@ templates.algebra = {
       type: "discriminant_roots"
     };
   },
+  27: (_diffFactor, idx) => {
+    // COMPLETE THE SQUARE (HSA-REI.B.4a). The canonical quadratic-solving method the strand was
+    // still missing (factoring/formula/discriminant already shipped). Solve a monic
+    // x² + bx + c = 0 by completing the square: halve b, square it, add to both sides to make a
+    // perfect square (x + b/2)² = (b/2)² − c, then take ±√ of both sides. Built from [b, k] with
+    // b EVEN and NONZERO so b/2 is an integer, and c = (b/2)² − k² so the right side is the perfect
+    // square k² and the roots −b/2 ± k are clean integers. The answer is the LARGER root (a single
+    // integer — no vertex-form string, so no algebraically-equal re-expression can sneak in as a
+    // second correct option under the equivalence-aware competitive grader). Each numeric distractor
+    // is a genuinely DIFFERENT integer modelling a real completing-the-square slip (curated so all
+    // four options are distinct — verified in test/completingSquare.test.js).
+    const cases = [
+      [-6, 1], [-4, 3], [2, 4], [-8, 2], [6, 1], [-2, 5],
+      [10, 3], [-10, 4], [4, 5], [-12, 2], [8, 5], [-6, 4],
+    ];
+    const [b, k] = cases[idx % cases.length];
+    const half = b / 2;              // b/2 (integer by construction)
+    const c = half * half - k * k;   // makes (x + b/2)² = k², a perfect square
+    const larger = -half + k;        // the LARGER root (−b/2 + k, since k ≥ 1)
+    const smaller = -half - k;       // the other root
+    const bStr = b < 0 ? `- ${Math.abs(b)}` : `+ ${b}`;
+    const cStr = c < 0 ? `- ${Math.abs(c)}` : `+ ${c}`;
+    const halfSq = half * half;      // (b/2)² added to both sides
+    // Distractors, each a real completing-the-square slip, all genuinely DIFFERENT integers:
+    //  • forgotPm = −b/2: stopped at the vertex x-value, forgetting the $\pm\sqrt{\;}$ step.
+    //  • usedB    = −b + k: completed with $b$ instead of $b/2$ (didn't halve the coefficient).
+    //  • smaller  = −b/2 − k: solved correctly but reported the smaller root, not the larger.
+    const forgotPm = -half;
+    const usedB = -b + k;
+    return {
+      question: `Solve by completing the square. What is the LARGER root of $$x^2 ${bStr}x ${cStr} = 0?$$`,
+      answer: larger,
+      distractors: [forgotPm, usedB, smaller],
+      explanation: `Move the constant: $x^2 ${bStr}x = ${-c}$. Half of the $x$-coefficient is $\\dfrac{${b}}{2} = ${half}$, and $(${half})^2 = ${halfSq}$. Add $${halfSq}$ to both sides to complete the square: $(x ${half < 0 ? `- ${Math.abs(half)}` : `+ ${half}`})^2 = ${-c} + ${halfSq} = ${k * k}$. Take the square root of both sides: $x ${half < 0 ? `- ${Math.abs(half)}` : `+ ${half}`} = \\pm${k}$, so $x = ${-half} \\pm ${k}$. The roots are $${larger}$ and $${smaller}$; the larger is $${larger}$. (Forgetting the $\\pm$ leaves only $x = ${-half}$; halving wrongly — using $b$ instead of $b/2$ — is the other classic slip.)`,
+      type: "complete_the_square"
+    };
+  },
   20: (diffFactor, idx) => {
     // Fermat's Little Theorem Milestone
     const primes = [7, 11, 13, 17, 19];

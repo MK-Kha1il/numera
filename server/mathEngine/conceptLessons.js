@@ -1994,6 +1994,35 @@ const CONCEPT_LESSONS = {
     ]
   },
 
+  complete_the_square: {
+    title: "Completing the Square",
+    formula: "x^2 + bx + c = 0 \\;\\Rightarrow\\; \\left(x + \\tfrac{b}{2}\\right)^2 = \\left(\\tfrac{b}{2}\\right)^2 - c \\;\\Rightarrow\\; x = -\\tfrac{b}{2} \\pm \\sqrt{\\left(\\tfrac{b}{2}\\right)^2 - c}",
+    oneLineSummary: "Reshape the quadratic so one side is a perfect square $(x + \\tfrac{b}{2})^2$, then take the square root of both sides to solve.",
+    intuitionHook: "Some quadratics don't factor with nice integers — but EVERY quadratic can be bent into a perfect square. Take $x^2 - 6x + 8 = 0$. Move the $8$ over: $x^2 - 6x = -8$. Now ask: what constant turns $x^2 - 6x$ into a perfect square? Halve the $-6$ to get $-3$, square it to get $9$, and add $9$ to BOTH sides: $x^2 - 6x + 9 = 1$, i.e. $(x - 3)^2 = 1$. Square-root both sides — and here's the move everyone forgets — with a $\\pm$: $x - 3 = \\pm 1$, so $x = 4$ or $x = 2$. You manufactured the square that wasn't there.",
+    whatItIs: "Completing the square solves $x^2 + bx + c = 0$ by rewriting the left side as a perfect square. You move the constant to the right, add $(b/2)^2$ to both sides so the left becomes $(x + b/2)^2$, then take the square root of both sides (keeping the $\\pm$) to isolate $x$. It works on ANY quadratic — even those with no integer factors — and it's the method the quadratic formula is built from.",
+    whyItWorks: "The identity behind it is $(x + p)^2 = x^2 + 2px + p^2$. To make $x^2 + bx$ into the front of a perfect square, match $2p = b$, so $p = b/2$ — that is why you HALVE the coefficient. The missing piece is then $p^2 = (b/2)^2$, which you add to both sides to keep the equation balanced. Once the left is $(x + b/2)^2$, the equation says 'a square equals a number'; taking the square root undoes the square, but a square root has TWO branches — $+\\sqrt{\\;}$ and $-\\sqrt{\\;}$ — which is exactly why a quadratic has two roots. Drop the $\\pm$ and you keep only $x = -b/2$, the x-coordinate of the vertex, not a root. Forget to halve and add $b^2$ instead of $(b/2)^2$, and the left side is no longer a perfect square at all.",
+    whenToUse: "Solving any quadratic — especially when it won't factor over the integers — deriving the quadratic formula, and (its biggest payoff) rewriting $ax^2 + bx + c$ into vertex form $a(x - h)^2 + k$ to read off the parabola's vertex and graph it.",
+    representations: [
+      { kind: "symbolic", label: "Build the square", body: "$x^2 - 6x + 8 = 0 \\to x^2 - 6x = -8 \\to (x - 3)^2 = -8 + 9 = 1$." },
+      { kind: "take_root", label: "Square-root with ±", body: "$(x - 3)^2 = 1 \\Rightarrow x - 3 = \\pm 1 \\Rightarrow x = 3 \\pm 1$, giving $4$ and $2$." },
+      { kind: "geometric", label: "Literally completing a square", body: "An $x \\times x$ square plus two $\\tfrac{b}{2} \\times x$ strips leaves an $\\tfrac{b}{2} \\times \\tfrac{b}{2}$ corner missing — adding $(b/2)^2$ fills it in." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting the ± when taking the root", why: "Writing $x + b/2 = \\sqrt{\\ldots}$ with only the positive branch, so only one (often wrong) root survives.", fix: "A square root of both sides yields $\\pm$: $x + b/2 = \\pm\\sqrt{(b/2)^2 - c}$. The two signs are the two roots." },
+      { label: "Adding b² instead of (b/2)²", why: "Adding the square of the whole coefficient (or forgetting to halve it), so the left side is not actually a perfect square.", fix: "Always HALVE $b$ first, THEN square: the number to add is $(b/2)^2$. Check that $x^2 + bx + (b/2)^2 = (x + b/2)^2$." },
+      { label: "Adding to only one side", why: "Adding $(b/2)^2$ to the left to make the square but not to the right, breaking the equation's balance.", fix: "Whatever you add to complete the square must be added to BOTH sides — it's still an equation." }
+    ],
+    connections: [
+      { concept: "square_binomial", note: "Completing the square is running $(x + p)^2 = x^2 + 2px + p^2$ backwards — you supply the $p^2$ that's missing." },
+      { concept: "quadratic_formula", note: "The formula IS completing the square done once on the general $ax^2 + bx + c = 0$; this is where it comes from." },
+      { concept: "quadratic_factoring", note: "Factoring is faster when integer factors exist; completing the square always works, factors or not." }
+    ],
+    examples: [
+      { question: "Solve by completing the square; give the larger root: $x^2 - 6x + 8 = 0$.", answer: "4", explanation: "$x^2 - 6x = -8$. Half of $-6$ is $-3$, $(-3)^2 = 9$: $(x - 3)^2 = -8 + 9 = 1$. So $x - 3 = \\pm 1$, $x = 4$ or $2$; the larger is $4$." },
+      { question: "Solve by completing the square; give the larger root: $x^2 + 2x - 15 = 0$.", answer: "3", explanation: "$x^2 + 2x = 15$. Half of $2$ is $1$, $1^2 = 1$: $(x + 1)^2 = 15 + 1 = 16$. So $x + 1 = \\pm 4$, $x = 3$ or $-5$; the larger is $3$." }
+    ]
+  },
+
   // ===========================================================================
   // POLYNOMIAL DEPTH (expressions strand — multiply and factor binomials).
   // ===========================================================================
@@ -4658,13 +4687,15 @@ function levelToConceptId(category, level) {
     if (lvl === 17) return 'matrix_trace';
     if (lvl === 18 || lvl === 19) return 'matrix_determinant';
     // L20 Fermat milestone keeps legacy; 21-23 are Systems II (depth on linear_system);
-    // 24-26 are Quadratics II (depth on quadratic): factoring, formula, discriminant.
+    // 24-26 are Quadratics II (depth on quadratic): factoring, formula, discriminant;
+    // 27 completes the quadratic-solving toolkit with completing the square.
     if (lvl === 21) return 'linear_system_substitution';
     if (lvl === 22) return 'linear_system_elimination';
     if (lvl === 23) return 'linear_system_solution_types';
     if (lvl === 24) return 'quadratic_factoring';
     if (lvl === 25) return 'quadratic_formula';
     if (lvl === 26) return 'discriminant_roots';
+    if (lvl === 27) return 'complete_the_square';
     return null;
   }
   if (cat === 'combinatorics') {

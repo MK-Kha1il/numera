@@ -87,10 +87,11 @@ const TYPE_TO_CONCEPT = {
   linear_system_substitution:   'linear_system_substitution',
   linear_system_elimination:    'linear_system_elimination',
   linear_system_solution_types: 'linear_system_solution_types',
-  // Quadratics II — solving methods (factoring, formula, discriminant).
+  // Quadratics II — solving methods (factoring, formula, discriminant, completing the square).
   quadratic_factoring:      'quadratic_factoring',
   quadratic_formula:        'quadratic_formula',
   discriminant_roots:       'discriminant_roots',
+  complete_the_square:      'complete_the_square',
   factor_trinomial:         'factor_trinomial',
   unit_convert_metric:      'unit_convert_metric',
   unit_convert_time:        'unit_convert_time',
@@ -351,7 +352,7 @@ async function selectNextConcept(db, userId, currentCategory, currentLevel) {
 function getCategoryConceptIds(category, level) {
   const map = {
     arithmetic:    ['arithmetic_add', 'arithmetic_sub', 'arithmetic_mult', 'arithmetic_div', 'pemdas'],
-    algebra:       ['linear_one_step', 'linear_two_step', 'linear_variable_both_sides', 'quadratic', 'linear_system', 'matrix_trace', 'matrix_determinant', 'linear_system_substitution', 'linear_system_elimination', 'linear_system_solution_types', 'quadratic_factoring', 'quadratic_formula', 'discriminant_roots'],
+    algebra:       ['linear_one_step', 'linear_two_step', 'linear_variable_both_sides', 'quadratic', 'linear_system', 'matrix_trace', 'matrix_determinant', 'linear_system_substitution', 'linear_system_elimination', 'linear_system_solution_types', 'quadratic_factoring', 'quadratic_formula', 'discriminant_roots', 'complete_the_square'],
     combinatorics: ['pigeonhole', 'permutations', 'combinations', 'binomial'],
     calculus:      ['derivative', 'integral', 'limit'],
     number_theory: ['gcd_lcm', 'modular_arithmetic', 'totient', 'divisor_count'],

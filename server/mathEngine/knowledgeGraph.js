@@ -717,6 +717,16 @@ const concepts = {
       { id: "confused_zero_and_negative", label: "Confused a zero discriminant (one root) with a negative one (none)", rule: (ans) => (ans === "no real solutions" ? "one real solution" : "no real solutions") }
     ]
   },
+  "complete_the_square": {
+    name: "Completing the Square",
+    prereqs: ["quadratic_factoring", "square_binomial"],
+    baseElo: 1350,
+    misconceptions: [
+      { id: "forgot_plus_minus", label: "Stopped at the vertex x-value, forgetting the ± when taking the square root", rule: (ans) => ans },
+      { id: "used_b_not_half", label: "Completed the square with b instead of b/2 (didn't halve the coefficient)", rule: (ans) => ans },
+      { id: "reported_smaller_root", label: "Reported the smaller root when the larger was asked", rule: (ans) => ans }
+    ]
+  },
 
   // ---- Polynomials (expressions depth — multiply and factor binomials) ----
   "foil_binomials": {
@@ -1592,6 +1602,7 @@ const STANDARDS = {
   quadratic_factoring: "HSA-REI.B.4b",
   quadratic_formula: "HSA-REI.B.4b",
   discriminant_roots: "HSA-REI.B.4b",
+  complete_the_square: "HSA-REI.B.4a",
   foil_binomials: "HSA-APR.A.1",
   square_binomial: "HSA-APR.A.1",
   factor_trinomial: "HSA-SSE.B.3a",
