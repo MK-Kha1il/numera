@@ -95,6 +95,7 @@ app.use(require('./routes/asyncDuel'));
 app.use(require('./routes/botDuel'));
 app.use(require('./routes/challenges'));
 app.use(require('./routes/worksheet'));
+app.use(require('./routes/learn'));
 app.use(require('./routes/tournaments'));
 app.use(require('./routes/cas'));
 // publicProfile owns /api/user/:userId — mount LAST so it doesn't shadow account.js routes.
@@ -370,8 +371,12 @@ app.get('/', (req, res) => {
                 export everything we hold &mdash; or delete the account and erase all of it &mdash; at any time.
             </p>
             <p style="margin-top: 16px; font-size: 0.95rem;">
+                <a href="/learn" style="color: var(--secondary); font-weight: 600; text-decoration: none;">
+                    📚 Browse free concept lessons &rarr;
+                </a>
+                <span style="color: var(--text-muted); font-size: 0.85rem;"> &middot; </span>
                 <a href="/worksheet" style="color: var(--secondary); font-weight: 600; text-decoration: none;">
-                    🖨️ Print free practice worksheets &rarr;
+                    🖨️ Print practice worksheets &rarr;
                 </a>
                 <span style="color: var(--text-muted); font-size: 0.85rem;"> &mdash; no sign-up needed</span>
             </p>

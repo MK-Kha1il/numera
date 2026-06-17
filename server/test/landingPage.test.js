@@ -27,6 +27,7 @@ test('the landing page makes the privacy story public', async () => {
   assert.match(html, /trackers/i, 'states the no-trackers stance');
   assert.match(html, /parents can actually trust/i, 'addresses the parent persona');
   assert.match(html, /\/worksheet/, 'links parents to free printable worksheets');
+  assert.match(html, /\/learn/, 'links to the free concept lessons (SEO/discovery)');
 });
 
 test('the landing page still serves live stats and the developer API section', async () => {
