@@ -309,7 +309,7 @@ class GameplayScreenTest {
       compose.onAllNodesWithText("🌱 Let's slow down").fetchSemanticsNodes().isNotEmpty()
     }
     compose.onNodeWithText("🌱 Let's slow down").assertIsDisplayed()
-    // The way forward is always free — never gated behind a purchase.
-    compose.onNodeWithText("Keep going").assertIsDisplayed()
+    // The way forward is always free — never gated behind a purchase. (DuoButton uppercases.)
+    compose.onNodeWithText("KEEP GOING").assertIsDisplayed()
   }
 }
