@@ -125,7 +125,9 @@ function initDb() {
           required_rank TEXT DEFAULT NULL,
           is_animated INTEGER DEFAULT 0,
           particle_effect TEXT DEFAULT NULL,
-          is_utility INTEGER DEFAULT 0
+          is_utility INTEGER DEFAULT 0,
+          season_slot INTEGER DEFAULT NULL,
+          token_cost INTEGER DEFAULT 0
         )
       `);
 
@@ -770,7 +772,23 @@ function initDb() {
         { id: 'item_streak_shield', name: 'Streak Shield', cost: 300, type: 'utility', value: 'streak_shield', rarity: 'Epic', description: 'Auto-deploys if you miss a day, freezing your streak instead of breaking it. One day, one shield, zero regrets.', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 1 },
         { id: 'item_retry_token', name: 'Retry Token', cost: 150, type: 'utility', value: 'retry_token', rarity: 'Rare', description: 'Rewind a failed level and walk back in like nothing happened. No penalty, no judgment.', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 1 },
         { id: 'item_xp_booster', name: 'XP Booster (2x)', cost: 200, type: 'utility', value: 'xp_booster', rarity: 'Rare', description: 'Doubles all XP for your next 3 sessions. Turn a good day into a great one.', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 1 },
-        { id: 'item_challenge_ticket', name: 'Arena Gold Ticket', cost: 100, type: 'utility', value: 'challenge_ticket', rarity: 'Rare', description: 'Doubles the Elo stakes of your next Ranked Duel — for days when you feel sharp.', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 1 }
+        { id: 'item_challenge_ticket', name: 'Arena Gold Ticket', cost: 100, type: 'utility', value: 'challenge_ticket', rarity: 'Rare', description: 'Doubles the Elo stakes of your next Ranked Duel — for days when you feel sharp.', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 1 },
+
+        // Season-exclusive cosmetics (ultra-review #66 / docs/EconomyModel.md). Coin-priced, but only
+        // buyable while their `season_slot` matches the active ranked season (slot = seasonId % 3), so
+        // they rotate and are scarce — a recurring coin sink that never goes stale. Owned forever once
+        // bought. Each slot pairs an avatar + a banner.
+        { id: 'avatar_comet', name: 'Comet Avatar', cost: 800, type: 'avatar', value: 'avatar_comet', rarity: 'Epic', description: 'A streak of light that only crosses the sky once a season. Blink and it is gone.', required_rank: null, is_animated: 1, particle_effect: 'star_drift', is_utility: 0, season_slot: 0 },
+        { id: 'banner_aurora_veil', name: 'Aurora Veil Banner', cost: 700, type: 'banner', value: 'banner_aurora_veil', rarity: 'Epic', description: 'Curtains of seasonal light, drawn behind your name for this season only.', required_rank: null, is_animated: 1, particle_effect: 'star_drift', is_utility: 0, season_slot: 0 },
+        { id: 'avatar_solstice', name: 'Solstice Avatar', cost: 800, type: 'avatar', value: 'avatar_solstice', rarity: 'Epic', description: 'The turning point of the year, captured at its brightest. A mark of perfect timing.', required_rank: null, is_animated: 1, particle_effect: 'gold_halos', is_utility: 0, season_slot: 1 },
+        { id: 'banner_eclipse', name: 'Eclipse Banner', cost: 700, type: 'banner', value: 'banner_eclipse', rarity: 'Epic', description: 'A rare alignment, shadow over light. Here this season, then not.', required_rank: null, is_animated: 1, particle_effect: 'cosmic_sparkle', is_utility: 0, season_slot: 1 },
+        { id: 'avatar_frost', name: 'Frostfall Avatar', cost: 800, type: 'avatar', value: 'avatar_frost', rarity: 'Epic', description: 'Crystalline and exacting. The cold clarity of a season spent sharpening.', required_rank: null, is_animated: 1, particle_effect: 'star_drift', is_utility: 0, season_slot: 2 },
+        { id: 'banner_meteor', name: 'Meteor Shower Banner', cost: 700, type: 'banner', value: 'banner_meteor', rarity: 'Epic', description: 'A sky full of falling light for the length of one season.', required_rank: null, is_animated: 1, particle_effect: 'fire_sparkle', is_utility: 0, season_slot: 2 },
+
+        // Token-only prestige cosmetics (cost 0 coins, paid in Season Tokens). Tokens come from
+        // converting surplus coins — the deep end-game sink for the wealthiest collectors.
+        { id: 'avatar_celestial', name: 'Celestial Avatar', cost: 0, token_cost: 3, type: 'avatar', value: 'avatar_celestial', rarity: 'Mythic', description: 'Forged from seasons of surplus. The rarest face in Numera — it cannot be bought with coins at all.', required_rank: null, is_animated: 1, particle_effect: 'cosmic_sparkle', is_utility: 0 },
+        { id: 'banner_eternal', name: 'Eternal Banner', cost: 0, token_cost: 2, type: 'banner', value: 'banner_eternal', rarity: 'Mythic', description: 'A horizon that outlasts every season. Worn only by those who converted a fortune to claim it.', required_rank: null, is_animated: 1, particle_effect: 'infinity_glow', is_utility: 0 }
       ];
 
       // Insert/ignore badges that are unlocked dynamically by achievements, ranks, etc.
@@ -811,9 +829,9 @@ function initDb() {
 
       const allInitialItems = [...shopItems, ...rawBadges];
 
-      const stmtShop = db.prepare(`INSERT OR IGNORE INTO shop_items (id, name, cost, type, value, rarity, description, required_rank, is_animated, particle_effect, is_utility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+      const stmtShop = db.prepare(`INSERT OR IGNORE INTO shop_items (id, name, cost, type, value, rarity, description, required_rank, is_animated, particle_effect, is_utility, season_slot, token_cost) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
       allInitialItems.forEach(item => {
-        stmtShop.run(item.id, item.name, item.cost, item.type, item.value, item.rarity, item.description, item.required_rank, item.is_animated, item.particle_effect, item.is_utility);
+        stmtShop.run(item.id, item.name, item.cost, item.type, item.value, item.rarity, item.description, item.required_rank, item.is_animated, item.particle_effect, item.is_utility, item.season_slot ?? null, item.token_cost ?? 0);
       });
       stmtShop.finalize();
 

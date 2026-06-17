@@ -22,6 +22,26 @@ function affordabilityDiscount(currentCoins, solvedCount) {
   return 1.0;
 }
 
+// --- Seasonal sink (ultra-review #66/#75 / docs/EconomyModel.md) -----------------------------
+// A fixed pool of season-exclusive cosmetics rotates across ranked seasons: the slot on sale is
+// `activeSeasonId % SEASON_SLOTS`, so each season surfaces a different set and they are scarce.
+// Surplus coins also convert into Season Tokens (a deep end-game sink) that buy token-only items.
+const SEASON_SLOTS = 3;
+const COIN_TO_TOKEN_RATE = 500;   // coins per 1 season token
+const MAX_TOKENS_PER_CONVERT = 20; // anti-fat-finger cap per request
+
+// The active ranked season, or null if none has started yet. Read-only (never rolls over — that
+// is rating.js's job); the shop only needs the id (→ current slot) and the end time.
+function activeSeason() {
+  return new Promise((resolve, reject) => {
+    db.get('SELECT id, name, end_at FROM seasons WHERE is_active = 1 LIMIT 1', (err, row) =>
+      err ? reject(err) : resolve(row || null)
+    );
+  });
+}
+
+const currentSeasonSlot = (season) => (season ? season.id % SEASON_SLOTS : null);
+
 router.get('/api/shop', authenticateToken, (req, res) => {
   // The shop catalog (shop_items) is identical for every user and only changes
   // on a server restart re-seed, so cache it. Everything below (inventory,
@@ -35,9 +55,11 @@ router.get('/api/shop', authenticateToken, (req, res) => {
         if (errUtil) return res.status(500).json({ error: errUtil.message });
         const utilities = utilityRows.map((u) => ({ item_id: u.item_id, quantity: u.quantity }));
 
-        db.get(`SELECT coins, total_coins_earned, solved_count, rank FROM users WHERE id = ?`, [req.user.id], (errUser, user) => {
+        db.get(`SELECT coins, total_coins_earned, solved_count, rank, season_tokens FROM users WHERE id = ?`, [req.user.id], (errUser, user) => {
           if (errUser || !user) return res.status(500).json({ error: 'User data not found' });
 
+          activeSeason().then((season) => {
+          const slot = currentSeasonSlot(season);
           const totalEarned = user.total_coins_earned || 100;
           const currentCoins = user.coins || 0;
           const saveRate = currentCoins / totalEarned;
@@ -51,7 +73,8 @@ router.get('/api/shop', authenticateToken, (req, res) => {
           const secondsUntilMidnight = Math.ceil((new Date().setHours(24, 0, 0, 0) - nowMs) / 1000);
           const secondsUntilThreeDays = Math.ceil((((threeDayStamp + 1) * 3 * 86400 * 1000) - nowMs) / 1000);
 
-          const purchaseableItems = allItems.filter((item) => item.cost > 0);
+          // Season-exclusive and token-only items live in their own rows, never the normal catalog.
+          const purchaseableItems = allItems.filter((item) => item.cost > 0 && item.season_slot == null);
 
           const featuredPool = purchaseableItems.filter((item) => !item.is_utility && (item.rarity === 'Epic' || item.rarity === 'Legendary' || item.rarity === 'Mythic'));
           const dailyPool = purchaseableItems.filter((item) => !item.is_utility && (item.rarity === 'Common' || item.rarity === 'Rare' || item.rarity === 'Epic'));
@@ -120,12 +143,30 @@ router.get('/api/shop', authenticateToken, (req, res) => {
           // Concatenate all active items for backward compatibility
           const items = [...featuredItems, ...dailyItems, ...utilityItems];
 
+          // This season's rotating cosmetics (coin-priced, discount applies), minus what's owned.
+          const seasonItems = slot == null
+            ? []
+            : allItems
+                .filter((item) => item.season_slot === slot && !inventory.includes(item.id))
+                .map((item) => processRotatedItem(item));
+
+          // Token-only prestige cosmetics (paid in season tokens), minus what's owned.
+          const tokenItems = allItems
+            .filter((item) => item.token_cost > 0 && !inventory.includes(item.id))
+            .map((item) => ({ ...item, originalCost: item.cost, discountActive: false }));
+
           res.json({
             items,
             featuredItems,
             dailyItems,
             utilityItems,
             catalogItems,
+            seasonItems,
+            tokenItems,
+            seasonInfo: season
+              ? { seasonId: season.id, seasonName: season.name, slot, endsAt: season.end_at }
+              : null,
+            seasonTokens: user.season_tokens || 0,
             inventory,
             utilities,
             expiresInSeconds: secondsUntilMidnight,
@@ -133,6 +174,7 @@ router.get('/api/shop', authenticateToken, (req, res) => {
             saveRate,
             discountApplied: discountFactor < 1.0,
           });
+          }).catch((e) => res.status(500).json({ error: e.message }));
         });
       });
     });
@@ -159,6 +201,26 @@ router.post('/api/shop/purchase', authenticateToken, idempotency, (req, res) => 
     const item = await tx.get(`SELECT * FROM shop_items WHERE id = ?`, [itemId]);
     if (!item) throw httpError(404, 'Item not found');
 
+    const user = await tx.get(`SELECT * FROM users WHERE id = ?`, [userId]);
+    if (!user) throw httpError(404, 'User not found');
+
+    // Token-only prestige cosmetics: paid in Season Tokens, not coins. Atomic conditional
+    // deduction mirrors the coin path so it can't overdraw or double-spend on concurrent taps.
+    if (item.token_cost > 0) {
+      const deduct = await tx.run(
+        'UPDATE users SET season_tokens = season_tokens - ? WHERE id = ? AND season_tokens >= ?',
+        [item.token_cost, userId, item.token_cost]
+      );
+      if (deduct.changes === 0) throw httpError(400, 'Not enough Season Tokens');
+      try {
+        await tx.run(`INSERT INTO user_inventory (user_id, item_id) VALUES (?, ?)`, [userId, itemId]);
+      } catch (e) {
+        if (e.message && e.message.includes('UNIQUE')) throw httpError(400, 'Item already purchased');
+        throw e;
+      }
+      return { success: true, message: 'Prestige item claimed', tokensLeft: (user.season_tokens || 0) - item.token_cost };
+    }
+
     // Earn-only trophies (achievement/rank/commitment badges and relics) are seeded with
     // cost 0 and are excluded from the catalog — but without this guard a direct API call
     // could "buy" them for 0 coins. They are granted by their reward services, never sold.
@@ -166,13 +228,20 @@ router.post('/api/shop/purchase', authenticateToken, idempotency, (req, res) => 
       throw httpError(400, 'This item is earned through play, not purchased');
     }
 
-    const user = await tx.get(`SELECT * FROM users WHERE id = ?`, [userId]);
-    if (!user) throw httpError(404, 'User not found');
-
     // Rank locks for prestigious cosmetic items
     const requiredRank = item.required_rank;
     if (requiredRank && getRankValue(user.rank) < getRankValue(requiredRank)) {
       throw httpError(400, `Locked: Requires competitive rank ${requiredRank}`);
+    }
+
+    // Season-exclusive cosmetics are only purchasable while their slot is the active season's —
+    // the scarcity that makes the seasonal rotation a recurring sink rather than a one-time buy.
+    if (item.season_slot != null) {
+      const season = await tx.get('SELECT id FROM seasons WHERE is_active = 1 LIMIT 1');
+      const slot = season ? season.id % SEASON_SLOTS : null;
+      if (item.season_slot !== slot) {
+        throw httpError(400, 'This season-exclusive item is not available right now');
+      }
     }
 
     // Cost with the affordability discount (the only discount; see affordabilityDiscount).
@@ -214,6 +283,33 @@ router.post('/api/shop/purchase', authenticateToken, idempotency, (req, res) => 
       throw e;
     }
     return { success: true, message: 'Item purchased successfully', coinsLeft: currentCoins - finalCost };
+  })
+    .then((payload) => res.json(payload))
+    .catch((err) => res.status(err.status || 500).json({ error: err.message }));
+});
+
+// Convert surplus coins into Season Tokens — the deep end-game sink that keeps coins meaningful
+// once a player owns the cosmetic catalog (docs/EconomyModel.md). The single atomic UPDATE spends
+// coins and credits tokens together (conditional on coins >= cost), so it can't overdraw.
+router.post('/api/shop/convert-coins', authenticateToken, idempotency, (req, res) => {
+  const userId = req.user.id;
+  let tokens = parseInt(req.body.tokens, 10);
+  if (!Number.isFinite(tokens) || tokens <= 0) {
+    return res.status(400).json({ error: 'tokens must be a positive integer' });
+  }
+  tokens = Math.min(tokens, MAX_TOKENS_PER_CONVERT);
+  const coinCost = tokens * COIN_TO_TOKEN_RATE;
+
+  withTransaction(async (tx) => {
+    const deduct = await tx.run(
+      'UPDATE users SET coins = coins - ?, total_coins_spent = total_coins_spent + ?, season_tokens = season_tokens + ? WHERE id = ? AND coins >= ?',
+      [coinCost, coinCost, tokens, userId, coinCost]
+    );
+    if (deduct.changes === 0) {
+      throw httpError(400, `Not enough coins — ${tokens} token(s) cost ${coinCost} coins.`);
+    }
+    const u = await tx.get('SELECT coins, season_tokens FROM users WHERE id = ?', [userId]);
+    return { success: true, tokensGained: tokens, coinsSpent: coinCost, coins: u.coins, seasonTokens: u.season_tokens };
   })
     .then((payload) => res.json(payload))
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));

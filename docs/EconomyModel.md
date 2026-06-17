@@ -117,7 +117,11 @@ ladder (review #61): the 3,500–4,000 "mythic" tier should feel like a multi-we
 
 ## Follow-up tasks (discrete)
 
-- [ ] Add a seasonal-rotation cosmetic sink (+ end-of-season coin conversion).
+- [x] Add a seasonal-rotation cosmetic sink (+ coin→token conversion). **Done** — a rotating
+      pool of season-exclusive cosmetics (`shop_items.season_slot`, slot = `activeSeasonId % 3`)
+      plus a coin→Season-Token conversion (`/api/shop/convert-coins`, migration v46
+      `users.season_tokens`) funding token-only prestige items (`token_cost`). Guarded by
+      `test/seasonSink.test.js`; client surface in ShopScreen (`SeasonTokenWallet`/`PrestigeTokenCard`).
 - [x] Decay the bot-duel faucet. **Done** — per-win reward now decays as the day's wins pile
       up (`routes/botDuel.js`), cutting the hard-tier ceiling from ~280 to ~160/day; first wins
       still pay full. Puzzle Rush already has a per-run cap (`MAX_COIN_REWARD`).

@@ -47,6 +47,10 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
     var dailyItems by remember { mutableStateOf<List<ShopItem>>(emptyList()) }
     var utilityItems by remember { mutableStateOf<List<ShopItem>>(emptyList()) }
     var catalogItems by remember { mutableStateOf<List<ShopItem>>(emptyList()) }
+    var seasonItems by remember { mutableStateOf<List<ShopItem>>(emptyList()) }
+    var tokenItems by remember { mutableStateOf<List<ShopItem>>(emptyList()) }
+    var seasonName by remember { mutableStateOf<String?>(null) }
+    var seasonTokens by remember { mutableIntStateOf(0) }
     var userUtilities by remember { mutableStateOf<List<UtilityBalance>>(emptyList()) }
     var inventoryIds by remember { mutableStateOf<List<String>>(emptyList()) }
     var shopErrorMessage by remember { mutableStateOf<String?>(null) }
@@ -80,6 +84,10 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     dailyItems = res.dailyItems ?: emptyList()
                     utilityItems = res.utilityItems ?: emptyList()
                     catalogItems = res.catalogItems ?: emptyList()
+                    seasonItems = res.seasonItems ?: emptyList()
+                    tokenItems = res.tokenItems ?: emptyList()
+                    seasonName = res.seasonInfo?.seasonName
+                    seasonTokens = res.seasonTokens ?: 0
                     userUtilities = res.utilities ?: emptyList()
                     inventoryIds = res.inventory
                     expiresInSeconds = res.expiresInSeconds
@@ -92,6 +100,43 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
             } catch (e: Exception) {
                 Log.e("Shop", "Shop fetch err: ${e.message}")
                 withContext(Dispatchers.Main) { isShopLoading = false }
+            }
+        }
+    }
+
+    // Convert 500 coins → 1 Season Token (the deep end-game coin sink). One token per tap keeps it
+    // simple and reversible-feeling; the server caps and guards the actual deduction.
+    val convertCoins: () -> Unit = {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken ?: ""
+                val res = RetrofitClient.apiService.convertCoinsToTokens(token, ConvertCoinsRequest(tokens = 1))
+                withContext(Dispatchers.Main) {
+                    seasonTokens = res.seasonTokens
+                    toast.success("Converted 500 🪙 → 1 Season Token")
+                    RetrofitClient.triggerProfileRefresh()
+                    fetchShop()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { toast.error("Not enough coins (500 needed)") }
+            }
+        }
+    }
+
+    // Claim a token-only prestige item (paid in Season Tokens, not coins).
+    val claimTokenItem: (ShopItem) -> Unit = { item ->
+        scope.launch(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken ?: ""
+                RetrofitClient.apiService.purchaseItem(token, PurchaseRequest(item.id))
+                withContext(Dispatchers.Main) {
+                    toast.achievement("Claimed ${item.name}!")
+                    RetrofitClient.triggerProfileRefresh()
+                    fetchShop()
+                    onPurchaseComplete()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { toast.error("Not enough Season Tokens") }
             }
         }
     }
@@ -327,6 +372,54 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                         inventoryIds = inventoryIds,
                         user = user,
                         onClick = { showItemDetail(item) }
+                    )
+                }
+            }
+
+            // This Season — rotating season-exclusive cosmetics (coin-priced, leave when the season
+            // ends). A recurring coin sink so coins stay meaningful past the one-time catalog (#66).
+            if (seasonItems.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "✦ THIS SEASON" + (seasonName?.let { " · $it" } ?: ""),
+                        fontWeight = FontWeight.Black,
+                        fontSize = 14.sp,
+                        color = Color(0xFFFFD54A),
+                        modifier = Modifier.padding(top = Spacing.s)
+                    )
+                }
+                item {
+                    Text(
+                        text = "Season-exclusive — these leave the shop when the season ends.",
+                        fontSize = 11.sp,
+                        color = Color.White.copy(alpha = 0.6f)
+                    )
+                }
+                items(seasonItems, key = { "season_${it.id}" }) { item ->
+                    DailyShopItemCard(
+                        item = item,
+                        inventoryIds = inventoryIds,
+                        user = user,
+                        onClick = { showItemDetail(item) }
+                    )
+                }
+            }
+
+            // Season Tokens wallet + the deep coin→token sink, plus token-only prestige cosmetics.
+            item {
+                SeasonTokenWallet(
+                    tokens = seasonTokens,
+                    coins = user?.coins ?: 0,
+                    onConvert = convertCoins,
+                    modifier = Modifier.padding(top = Spacing.s)
+                )
+            }
+            if (tokenItems.isNotEmpty()) {
+                items(tokenItems, key = { "token_${it.id}" }) { item ->
+                    PrestigeTokenCard(
+                        item = item,
+                        tokens = seasonTokens,
+                        onClaim = { claimTokenItem(item) }
                     )
                 }
             }

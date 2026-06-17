@@ -208,6 +208,12 @@ interface ApiService {
         @Body request: EquipRequest
     ): EquipResponse
 
+    @POST("api/shop/convert-coins")
+    suspend fun convertCoinsToTokens(
+        @Header("Authorization") token: String,
+        @Body request: ConvertCoinsRequest
+    ): ConvertCoinsResponse
+
     @POST("api/shop/consume-retry")
     suspend fun consumeRetryToken(
         @Header("Authorization") token: String

@@ -996,3 +996,93 @@ fun UtilityShopItemCard(
         }
     }
 }
+
+private val SeasonGold = Color(0xFFFFD54A)
+
+/**
+ * Season Tokens wallet + the coin→token conversion (the deep end-game sink, ultra-review #66/#75).
+ * Tokens are earned by converting surplus coins and spent on token-only prestige cosmetics, so
+ * coins stay meaningful long after a player owns the one-time cosmetic catalog.
+ */
+@Composable
+fun SeasonTokenWallet(
+    tokens: Int,
+    coins: Int,
+    onConvert: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(CornerRadius.m))
+            .background(Color(0xFF2A2438))
+            .border(1.dp, SeasonGold.copy(alpha = 0.5f), RoundedCornerShape(CornerRadius.m))
+            .padding(Spacing.m),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("👑 Season Tokens", fontWeight = FontWeight.Black, fontSize = 14.sp, color = SeasonGold)
+            Text("$tokens", fontWeight = FontWeight.Black, fontSize = 18.sp, color = Color.White)
+        }
+        Text(
+            text = "Convert surplus coins into prestige tokens — the rarest cosmetics cost tokens only.",
+            fontSize = 11.sp,
+            color = Color.White.copy(alpha = 0.65f),
+        )
+        DuoButton(
+            text = "Convert 500 🪙 → 1 Token",
+            onClick = onConvert,
+            enabled = coins >= 500,
+            color = SeasonGold,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/** A token-only prestige cosmetic: priced in Season Tokens, claimed with the token balance. */
+@Composable
+fun PrestigeTokenCard(
+    item: ShopItem,
+    tokens: Int,
+    onClaim: () -> Unit,
+) {
+    val cost = item.token_cost ?: 0
+    RarityCardFrame(
+        rarity = item.rarity ?: "Mythic",
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.m),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = item.name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+                if (!item.description.isNullOrEmpty()) {
+                    Text(
+                        text = item.description,
+                        fontSize = 11.sp,
+                        color = Color.White.copy(alpha = 0.65f),
+                        maxLines = 2,
+                    )
+                }
+                Text(
+                    text = "👑 $cost token${if (cost == 1) "" else "s"}",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SeasonGold,
+                )
+            }
+            DuoButton(
+                text = "Claim",
+                onClick = onClaim,
+                enabled = tokens >= cost,
+                color = SeasonGold,
+            )
+        }
+    }
+}

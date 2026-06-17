@@ -1044,6 +1044,20 @@ const migrations = [
       }
     },
   },
+  {
+    version: 46,
+    name: 'season_tokens',
+    // Prestige currency for the seasonal cosmetic sink: surplus coins convert into season tokens
+    // (a deep, recurring sink that keeps coins meaningful past the one-time cosmetic catalog),
+    // and tokens buy token-only prestige cosmetics. (ultra-review #66/#75 / docs/EconomyModel.md.)
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE users ADD COLUMN season_tokens INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**

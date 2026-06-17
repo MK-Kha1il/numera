@@ -182,7 +182,11 @@ data class ShopItem(
     val particle_effect: String? = null,
     val is_utility: Int? = 0,
     val originalCost: Int? = null,
-    val discountActive: Boolean? = null
+    val discountActive: Boolean? = null,
+    // Seasonal sink (#66/#75): season_slot != null => buyable only this season; token_cost > 0 =>
+    // a token-only prestige item (paid in Season Tokens, not coins).
+    val season_slot: Int? = null,
+    val token_cost: Int? = 0
 )
 
 @Serializable
@@ -790,11 +794,37 @@ data class ShopResponse(
     val dailyItems: List<ShopItem>? = null,
     val utilityItems: List<ShopItem>? = null,
     val catalogItems: List<ShopItem>? = null,
+    val seasonItems: List<ShopItem>? = null,
+    val tokenItems: List<ShopItem>? = null,
+    val seasonInfo: ShopSeasonInfo? = null,
+    val seasonTokens: Int? = 0,
     val utilities: List<UtilityBalance>? = null,
     val expiresInSeconds: Long? = null,
     val featuredExpiresInSeconds: Long? = null,
     val saveRate: Float? = null,
     val discountApplied: Boolean? = null
+)
+
+@Serializable
+data class ShopSeasonInfo(
+    val seasonId: Int = 0,
+    val seasonName: String = "",
+    val slot: Int = 0,
+    val endsAt: Long = 0
+)
+
+@Serializable
+data class ConvertCoinsRequest(
+    val tokens: Int
+)
+
+@Serializable
+data class ConvertCoinsResponse(
+    val success: Boolean = false,
+    val tokensGained: Int = 0,
+    val coinsSpent: Int = 0,
+    val coins: Int = 0,
+    val seasonTokens: Int = 0
 )
 
 @Serializable
