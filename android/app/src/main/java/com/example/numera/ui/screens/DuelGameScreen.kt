@@ -56,7 +56,10 @@ import org.json.JSONObject
 fun DuelGameScreen(
     roomId: String,
     opponentName: String,
-    onFinishGame: () -> Unit
+    onFinishGame: () -> Unit,
+    // Closes the compete→learn loop (ultra-review #17): jump straight from the result screen
+    // into a Growth Practice session over the misses this duel just banked.
+    onReviewMisses: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     var problemsList by remember { mutableStateOf<List<MathProblem>>(emptyList()) }
@@ -84,6 +87,9 @@ fun DuelGameScreen(
     var showVsIntro by remember { mutableStateOf(true) }
 
     var isDuelOver by remember { mutableStateOf(false) }
+    // How many problems the learner missed this duel — drives the post-duel "review your
+    // misses" affordance (the misses themselves are banked to the Mistakes Bank as they happen).
+    var missCount by remember { mutableIntStateOf(0) }
     var duelWinnerId by remember { mutableIntStateOf(-1) }
     var myUserId by remember { mutableIntStateOf(0) }
     var eloInfo by remember { mutableStateOf<JSONObject?>(null) }
@@ -363,6 +369,23 @@ fun DuelGameScreen(
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    // Compete→learn loop (ultra-review #17): the problems missed this duel were
+                    // banked to the Mistakes Bank as they happened; offer to review them now
+                    // rather than letting a fast-paced loss teach nothing.
+                    if (missCount > 0) {
+                        DuoButton(
+                            text = "📖 Review your $missCount miss${if (missCount == 1) "" else "es"}",
+                            onClick = {
+                                RetrofitClient.triggerProfileRefresh()
+                                SocketClient.disconnect()
+                                onReviewMisses()
+                            },
+                            color = CorrectGreen,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
 
                     DuoButton(
                         text = "Leave Arena",
@@ -663,6 +686,7 @@ fun DuelGameScreen(
                                                     // resurfaces in growth practice instead of vanishing
                                                     // when the match ends. Fire-and-forget.
                                                     if (answeredProblem != null && correctAnswer.isNotBlank()) {
+                                                        missCount++
                                                         scope.launch(Dispatchers.IO) {
                                                             runCatching {
                                                                 RetrofitClient.apiService.addMistake(
