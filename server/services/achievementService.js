@@ -82,8 +82,6 @@ function updateAchievements(userId, callback) {
                 else if (type === 'friends_count') progress = friendsCount;
                 else if (type === 'daily_puzzles_solved') progress = user.daily_puzzles_solved || 0;
                 else if (type === 'archive_solved') progress = user.archive_solved || 0;
-                else if (type === 'seasonal_spring') progress = user.seasonal_spring_count || 0;
-                else if (type === 'seasonal_summer') progress = user.seasonal_summer_count || 0;
                 else if (type === 'calculator_sixseven') progress = user.calculator_sixseven_count || 0;
                 else if (type === 'speed_demon') progress = user.speed_demon_count || 0;
 

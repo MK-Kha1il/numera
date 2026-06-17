@@ -360,15 +360,8 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
     }
 
     let addArchiveSolved = 0;
-    let addSpringSolved = 0;
-    let addSummerSolved = 0;
-
     if (gameMode === 'archive') {
       addArchiveSolved = solvedCount;
-    } else if (gameMode === 'seasonal_spring') {
-      addSpringSolved = solvedCount;
-    } else if (gameMode === 'seasonal_summer') {
-      addSummerSolved = solvedCount;
     }
 
     let setSpeedDemon = user.speed_demon_count || 0;
@@ -388,8 +381,6 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
          perfect_levels_count = perfect_levels_count + ?,
          perfect_exercises_count = perfect_exercises_count + ?,
          archive_solved = archive_solved + ?,
-         seasonal_spring_count = seasonal_spring_count + ?,
-         seasonal_summer_count = seasonal_summer_count + ?,
          speed_demon_count = ?
        WHERE id = ?`,
       [
@@ -403,8 +394,6 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
         addPerfectLevels,
         addPerfectExercises,
         addArchiveSolved,
-        addSpringSolved,
-        addSummerSolved,
         setSpeedDemon,
         req.user.id,
       ],

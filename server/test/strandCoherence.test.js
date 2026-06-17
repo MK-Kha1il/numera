@@ -108,7 +108,7 @@ test('every seeded achievement target_type is one achievementService computes', 
     'mastery_number_sense', 'mastery_statistics', 'mastery_expressions', 'mastery_powers',
     'mastery_graphing', 'mastery_inequalities', 'mastery_functions', 'mastery_sequences', 'mastery_equations', 'mastery_rates', 'mastery_factors',
     'friends_count', 'daily_puzzles_solved', 'archive_solved',
-    'seasonal_spring', 'seasonal_summer', 'calculator_sixseven', 'speed_demon',
+    'calculator_sixseven', 'speed_demon',
   ]);
   const rows = await new Promise((resolve, reject) => {
     db.all('SELECT DISTINCT target_type FROM achievements', (err, r) => (err ? reject(err) : resolve(r)));

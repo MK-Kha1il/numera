@@ -992,9 +992,11 @@ function initDb() {
         { id: 'shop_3', name: 'Collector III', description: 'Acquire 10 items from the shop', icon: 'shopping_bag', target_type: 'shop_count', target_value: 10, reward_coins: 300, category: 'Collection', chain_id: 'collection_path', chain_order: 3, is_hidden: 0 },
         { id: 'shop_4', name: 'Collector IV', description: 'Acquire 20 items from the shop', icon: 'shopping_bag', target_type: 'shop_count', target_value: 20, reward_coins: 600, category: 'Collection', chain_id: 'collection_path', chain_order: 4, is_hidden: 0 },
 
-        // 9. Seasonal Chain
-        { id: 'seasonal_1', name: 'Spring Blossom', description: 'Complete 3 exercises in Spring mode', icon: 'celebration', target_type: 'seasonal_spring', target_value: 3, reward_coins: 50, category: 'Seasonal', chain_id: 'seasonal_path', chain_order: 1, is_hidden: 0 },
-        { id: 'seasonal_2', name: 'Summer Spark', description: 'Complete 10 exercises in Summer mode', icon: 'celebration', target_type: 'seasonal_summer', target_value: 10, reward_coins: 150, category: 'Seasonal', chain_id: 'seasonal_path', chain_order: 2, is_hidden: 0 },
+        // 9. Seasonal Chain — removed (ultra-review #59). The "Spring/Summer mode" game modes it
+        // depended on were never reachable from the client, so these two achievements could never
+        // progress. Rather than ship 4 speculative seasonal modes (against the "fewer, deeper"
+        // thesis), the unearnable chain was dropped. Real seasonal content lives in the ranked
+        // seasons + the seasonal cosmetic rotation instead.
 
         // 10. Hidden Achievements
         { id: 'hidden_ultimate', name: 'The Ultimate Answer', description: 'Evaluate the magic number 67 in the calculator', icon: 'help', target_type: 'calculator_sixseven', target_value: 1, reward_coins: 670, category: 'Exploration', chain_id: 'hidden_path', chain_order: 1, is_hidden: 1 },
