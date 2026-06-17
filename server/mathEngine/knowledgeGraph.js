@@ -656,6 +656,37 @@ const concepts = {
     ]
   },
 
+  // ---- Systems II: the two solving methods + the three solution-type cases (8.EE.C.8) ----
+  "linear_system_substitution": {
+    name: "Solving Systems by Substitution",
+    prereqs: ["linear_system", "linear_variable_both_sides"],
+    baseElo: 1280,
+    misconceptions: [
+      { id: "reported_wrong_variable", label: "Solved correctly but reported y instead of the x asked for", rule: (ans, p) => p.yVal },
+      { id: "sign_slip_on_constant", label: "Mishandled the sign of the constant when substituting", rule: (ans) => ans },
+      { id: "forgot_to_distribute", label: "Forgot to multiply the substituted term's coefficient through", rule: (ans) => ans }
+    ]
+  },
+  "linear_system_elimination": {
+    name: "Solving Systems by Elimination",
+    prereqs: ["linear_system", "linear_system_substitution"],
+    baseElo: 1300,
+    misconceptions: [
+      { id: "reported_wrong_variable", label: "Solved correctly but reported y instead of the x asked for", rule: (ans, p) => p.yVal },
+      { id: "added_without_scaling", label: "Added the equations without first scaling to match a coefficient", rule: (ans) => ans },
+      { id: "sign_slip_combining", label: "Combined the equations with a sign error", rule: (ans) => ans }
+    ]
+  },
+  "linear_system_solution_types": {
+    name: "Number of Solutions to a System",
+    prereqs: ["linear_system_elimination", "slope_intercept_id"],
+    baseElo: 1320,
+    misconceptions: [
+      { id: "parallel_called_one", label: "Saw two equations and assumed exactly one solution, missing the parallel/identical cases", rule: () => "one solution" },
+      { id: "confused_none_and_inf", label: "Confused 'no solution' (parallel) with 'infinitely many' (same line)", rule: (ans) => (ans === "no solution" ? "infinitely many solutions" : "no solution") }
+    ]
+  },
+
   // ---- Polynomials (expressions depth — multiply and factor binomials) ----
   "foil_binomials": {
     name: "Multiplying Binomials (FOIL)",
@@ -1524,6 +1555,9 @@ const STANDARDS = {
   geo_volume_cylinder: "8.G.C.9",
   linear_variable_both_sides: "8.EE.C.7b",
   linear_system: "8.EE.C.8b",
+  linear_system_substitution: "8.EE.C.8b",
+  linear_system_elimination: "8.EE.C.8b",
+  linear_system_solution_types: "8.EE.C.8a",
   foil_binomials: "HSA-APR.A.1",
   square_binomial: "HSA-APR.A.1",
   factor_trinomial: "HSA-SSE.B.3a",

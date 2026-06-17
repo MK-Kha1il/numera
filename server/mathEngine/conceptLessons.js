@@ -1809,6 +1809,98 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // SYSTEMS II — the two solving methods + the three solution-type cases (8.EE.C.8):
+  // substitution, scale-and-eliminate, and counting solutions (one / none / infinitely many).
+  // ===========================================================================
+  linear_system_substitution: {
+    title: "Solving Systems by Substitution",
+    formula: "y = mx + c, \\;\\; ax + by = k \\;\\Rightarrow\\; ax + b(mx + c) = k",
+    oneLineSummary: "When one equation already gives a variable alone, plug that expression into the other equation — two unknowns collapse into one you can solve.",
+    intuitionHook: "Suppose you're told $y = x + 2$ and also $x + y = 8$. The first sentence says 'wherever you see $y$, you may write $x + 2$ instead.' So rewrite the second: $x + (x + 2) = 8$. Now there's only ONE unknown — $2x + 2 = 8$, so $x = 3$ (and $y = 5$). You didn't guess; you traded $y$ for what it equals.",
+    whatItIs: "Substitution solves a system by using one equation to express a variable in terms of the other, then replacing that variable in the second equation. The result is a single linear equation in one unknown; solve it, then back-substitute to find the second unknown.",
+    whyItWorks: "A system is two truths at once. If $y = mx + c$ is true, then $y$ and $mx + c$ are the SAME number everywhere — so swapping one for the other in the second equation changes nothing about its truth, but it erases $y$ from the page. What remains, $ax + b(mx + c) = k$, mentions only $x$, and one equation in one unknown always pins that unknown down. The single non-negotiable step is distributing $b$ across BOTH terms of $(mx + c)$ — over the $mx$ AND over the $c$ — because multiplication distributes over a sum. Skip either and the equation you solve isn't the one you were handed. Once $x$ is known, the isolated equation $y = mx + c$ hands you $y$ for free.",
+    whenToUse: "Whenever one equation is already solved for a variable (or is one easy step from it) — $y = \\ldots$ or $x = \\ldots$ forms, and most word problems where one quantity is described directly in terms of another ('the length is $3$ more than the width').",
+    representations: [
+      { kind: "swap", label: "Trade equals for equals", body: "$y = x + 2$ lets you write $x + 2$ in place of $y$: $x + y = 8$ becomes $x + (x + 2) = 8$." },
+      { kind: "collapse", label: "Two unknowns to one", body: "After the swap only $x$ remains: $2x + 2 = 8 \\Rightarrow x = 3$. One equation, one unknown, one answer." },
+      { kind: "back_substitute", label: "Recover the other", body: "Put $x = 3$ back into $y = x + 2$: $y = 5$. The solution is the pair $(3, 5)$." }
+    ],
+    commonMistakes: [
+      { label: "Reporting the wrong variable", why: "Solving cleanly for $x$ but answering with $y$ (or vice versa) — the algebra was right, the question wasn't reread.", fix: "Underline what the question asks for BEFORE solving. You found $x = 3$; if it wanted $x$, stop there — don't hand back $y$." },
+      { label: "Forgetting to distribute", why: "Writing $ax + b\\cdot mx + c$ instead of $ax + b(mx + c) = ax + bmx + bc$ — the coefficient $b$ never reached the constant.", fix: "Multiply $b$ across EVERY term inside the bracket: the $mx$ and the $c$ both get hit. A missed factor changes the answer." },
+      { label: "Substituting into the same equation", why: "Plugging $y = mx + c$ back into itself gives $0 = 0$ — no information.", fix: "Substitute into the OTHER equation, the one that still contains both variables." }
+    ],
+    connections: [
+      { concept: "linear_system", note: "The same systems; this names and drills the substitution method explicitly." },
+      { concept: "linear_variable_both_sides", note: "After substituting, you solve a one-variable linear equation — often with the variable on both sides." },
+      { concept: "linear_system_elimination", note: "The other standard method; elimination shines when neither variable is already isolated." }
+    ],
+    examples: [
+      { question: "Solve for $x$: $y = 2x - 1$ and $3x + y = 14$.", answer: "3", explanation: "Substitute: $3x + (2x - 1) = 14 \\Rightarrow 5x - 1 = 14 \\Rightarrow x = 3$ (then $y = 5$)." },
+      { question: "Solve for $x$: $y = x + 4$ and $x + 2y = 11$.", answer: "1", explanation: "Substitute: $x + 2(x + 4) = 11 \\Rightarrow 3x + 8 = 11 \\Rightarrow x = 1$ (then $y = 5$)." }
+    ]
+  },
+
+  linear_system_elimination: {
+    title: "Solving Systems by Elimination",
+    formula: "a_1x + b_1y = c_1,\\; a_2x + b_2y = c_2 \\;\\Rightarrow\\; \\text{scale, then add/subtract to cancel a variable}",
+    oneLineSummary: "Scale the equations so one variable's coefficients match, then add or subtract to make that variable vanish — leaving one equation in one unknown.",
+    intuitionHook: "You have $2x + y = 8$ and $x + 2y = 7$. Neither variable cancels yet. But multiply the first by $2$: $4x + 2y = 16$. Now BOTH equations have $2y$. Subtract: $(4x + 2y) - (x + 2y) = 16 - 7$, the $2y$'s annihilate, and $3x = 9$ — so $x = 3$. The trick is engineering a matching coefficient so a whole variable drops out.",
+    whatItIs: "Elimination (the addition method) solves a system by multiplying one or both equations by constants so a chosen variable has equal (or opposite) coefficients, then adding or subtracting the equations to eliminate it. The leftover single-variable equation is solved, then back-substituted.",
+    whyItWorks: "Adding equal quantities to equal quantities keeps a balance level: if $L_1 = R_1$ and $L_2 = R_2$ are both true, then $L_1 \\pm L_2 = R_1 \\pm R_2$ is true too. Elimination chooses the combination whose coefficients cancel. When the coefficients don't already match, you SCALE — multiplying an entire equation by a constant produces an equivalent equation (same solutions, every term grown by the same factor), so you may resize one until a variable's coefficient lines up with the other's. Then a single add or subtract kills that variable, because $by$ and $by$ (or $by$ and $-by$) sum to $0$ or cancel. The essential discipline is scaling the WHOLE equation — both sides, every term — not just the coefficient you're staring at; a half-scaled equation is a false one.",
+    whenToUse: "Systems in standard form $ax + by = c$ where no variable is isolated, problems where one scaling makes coefficients match cleanly, and as the method of choice when substitution would introduce messy fractions.",
+    representations: [
+      { kind: "scale", label: "Resize to match", body: "Multiply $2x + y = 8$ by $2$ to get $4x + 2y = 16$ — now its $y$-coefficient matches the other equation's $2y$." },
+      { kind: "cancel", label: "Add or subtract to vanish", body: "$(4x + 2y) - (x + 2y) = 16 - 7$: the $2y$ terms cancel, leaving $3x = 9$." },
+      { kind: "solve_back", label: "One unknown, then the other", body: "$3x = 9 \\Rightarrow x = 3$; substitute into either original to get $y = 2$." }
+    ],
+    commonMistakes: [
+      { label: "Adding without scaling first", why: "Combining $2x + y = 8$ and $x + 2y = 7$ straight away gives $3x + 3y = 15$ — both variables survive, nothing was eliminated.", fix: "First make a coefficient MATCH by multiplying an equation through; only then will a variable cancel when you combine." },
+      { label: "Scaling only one term", why: "Doubling just the $2y$ to $4y$ but leaving the rest of the equation untouched — that equation is now false.", fix: "Multiply EVERY term on BOTH sides by the constant. Scaling an equation resizes the whole thing, not one piece." },
+      { label: "Sign error when subtracting", why: "Subtracting equations but forgetting to flip the sign of every term in the one being subtracted.", fix: "Distribute the minus to each term: $(c_1) - (c_2)$ applies to the constants too. Adding the opposite equation is a safer framing." }
+    ],
+    connections: [
+      { concept: "linear_system_substitution", note: "The companion method; elimination avoids the fractions substitution can create when nothing is isolated." },
+      { concept: "linear_system", note: "Sum-and-difference systems are elimination's simplest case — the coefficients already match." },
+      { concept: "linear_system_solution_types", note: "When elimination cancels BOTH variables, the leftover equation reveals no solution or infinitely many." }
+    ],
+    examples: [
+      { question: "Solve for $x$: $2x + y = 8$ and $x + 2y = 7$.", answer: "3", explanation: "Scale eq1 by $2$: $4x + 2y = 16$; subtract eq2: $3x = 9 \\Rightarrow x = 3$ (then $y = 2$)." },
+      { question: "Solve for $x$: $3x + 2y = 16$ and $2x - 2y = 4$.", answer: "4", explanation: "Add the equations — the $\\pm 2y$ cancel: $5x = 20 \\Rightarrow x = 4$ (then $y = 2$)." }
+    ]
+  },
+
+  linear_system_solution_types: {
+    title: "Number of Solutions to a System",
+    formula: "\\text{different slopes} \\to 1; \\;\\; \\text{same slope, diff. intercept} \\to 0; \\;\\; \\text{same line} \\to \\infty",
+    oneLineSummary: "Two lines either cross once (one solution), run parallel (no solution), or are the very same line (infinitely many) — read it off their slopes and intercepts.",
+    intuitionHook: "Every linear equation is a line. Two lines can only relate three ways: they cross (one shared point), they're parallel and never touch (no shared point), or they're secretly the same line drawn twice (every point shared). A system's number of solutions is just which of those three is happening — no arithmetic marathon required, just compare the lines.",
+    whatItIs: "A 2-variable linear system has exactly one solution, no solution, or infinitely many. Rewrite both equations in slope-intercept form: different slopes give one solution (the lines cross); equal slopes with different intercepts give none (parallel); identical slope AND intercept give infinitely many (one line).",
+    whyItWorks: "A solution is a point lying on BOTH lines at once. Two lines with different slopes are tilted differently, so they must cross — exactly once, at one point: one solution. Two lines with the SAME slope are parallel; if their intercepts differ they march alongside forever without meeting, so no point is on both — no solution. But if same slope AND same intercept, the two equations describe one identical line, and every one of its infinitely many points satisfies both — infinitely many solutions. A fast algebra test: if one equation is a constant multiple of the other on BOTH sides, they're the same line ($\\infty$); if it's a multiple on the left (the variable side) but NOT the right, they're parallel ($0$); otherwise the slopes differ and you get exactly one. The trap is assuming 'two equations always pin down one answer' — that's only true when the lines actually cross.",
+    whenToUse: "Before grinding through a solve — checking whether a system even HAS a unique answer, spotting parallel (no-solution) and coincident (infinite-solution) systems, and interpreting the $0 = 0$ or $0 = 5$ that elimination produces when a variable fully cancels.",
+    representations: [
+      { kind: "graphical", label: "Three ways two lines meet", body: "Crossing $\\to$ one solution; parallel $\\to$ none; same line $\\to$ infinitely many." },
+      { kind: "slope_test", label: "Compare slopes & intercepts", body: "Different slopes $\\to 1$; same slope, different intercept $\\to 0$; same slope AND intercept $\\to \\infty$." },
+      { kind: "elimination_signal", label: "What elimination tells you", body: "If both variables cancel: $0 = 0$ means infinitely many; $0 = 5$ (a false statement) means no solution." }
+    ],
+    commonMistakes: [
+      { label: "Assuming there's always one solution", why: "Treating every 2-by-2 system as if the lines must cross, ignoring the parallel and identical cases.", fix: "Check the slopes first. Equal slopes mean the answer is either zero or infinitely many — never one." },
+      { label: "Confusing none with infinitely many", why: "Both are 'same slope', so they get swapped: parallel (no solution) mistaken for coincident (infinite).", fix: "After matching slopes, check the intercepts: DIFFERENT intercept $\\to$ no solution (parallel); SAME intercept $\\to$ infinitely many (one line)." },
+      { label: "Misreading the elimination signal", why: "Reaching $0 = 0$ and calling it 'no solution', or $0 = 7$ and calling it 'infinitely many'.", fix: "A TRUE leftover ($0 = 0$) means infinitely many; a FALSE leftover ($0 = 7$) means no solution. The truth of the statement is the tell." }
+    ],
+    connections: [
+      { concept: "slope_intercept_id", note: "The test is just reading each line's slope and intercept — put both equations in $y = mx + b$ form." },
+      { concept: "linear_system_elimination", note: "When elimination cancels both variables, the resulting $0 = 0$ or $0 = c$ names the solution count." },
+      { concept: "matrix_determinant", note: "For a square system, a nonzero determinant guarantees the unique-solution case." }
+    ],
+    examples: [
+      { question: "How many solutions: $x - y = 1$ and $x + y = 5$?", answer: "one solution", explanation: "Slopes $1$ and $-1$ differ, so the lines cross once — one solution." },
+      { question: "How many solutions: $x + 2y = 4$ and $2x + 4y = 10$?", answer: "no solution", explanation: "The second's left side is twice the first's, but $10 \\ne 2\\cdot 4 = 8$: same slope, different intercept — parallel, no solution." },
+      { question: "How many solutions: $x + y = 3$ and $2x + 2y = 6$?", answer: "infinitely many solutions", explanation: "The second equation is exactly twice the first — the same line — so every point works: infinitely many." }
+    ]
+  },
+
+  // ===========================================================================
   // POLYNOMIAL DEPTH (expressions strand — multiply and factor binomials).
   // ===========================================================================
   foil_binomials: {
@@ -4471,7 +4563,11 @@ function levelToConceptId(category, level) {
     if (lvl === 16) return 'linear_system';
     if (lvl === 17) return 'matrix_trace';
     if (lvl === 18 || lvl === 19) return 'matrix_determinant';
-    return null; // L20 Fermat milestone keeps legacy
+    // L20 Fermat milestone keeps legacy; 21-23 are Systems II (depth on linear_system).
+    if (lvl === 21) return 'linear_system_substitution';
+    if (lvl === 22) return 'linear_system_elimination';
+    if (lvl === 23) return 'linear_system_solution_types';
+    return null;
   }
   if (cat === 'combinatorics') {
     if (lvl <= 22) return 'pigeonhole';

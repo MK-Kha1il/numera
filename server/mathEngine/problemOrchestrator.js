@@ -83,6 +83,10 @@ const TYPE_TO_CONCEPT = {
   // Algebra promotions + polynomial/measurement depth.
   linear_variable_both_sides: 'linear_variable_both_sides',
   linear_system:            'linear_system',
+  // Systems II — solving methods + solution types.
+  linear_system_substitution:   'linear_system_substitution',
+  linear_system_elimination:    'linear_system_elimination',
+  linear_system_solution_types: 'linear_system_solution_types',
   factor_trinomial:         'factor_trinomial',
   unit_convert_metric:      'unit_convert_metric',
   unit_convert_time:        'unit_convert_time',
@@ -343,7 +347,7 @@ async function selectNextConcept(db, userId, currentCategory, currentLevel) {
 function getCategoryConceptIds(category, level) {
   const map = {
     arithmetic:    ['arithmetic_add', 'arithmetic_sub', 'arithmetic_mult', 'arithmetic_div', 'pemdas'],
-    algebra:       ['linear_one_step', 'linear_two_step', 'linear_variable_both_sides', 'quadratic', 'linear_system', 'matrix_trace', 'matrix_determinant'],
+    algebra:       ['linear_one_step', 'linear_two_step', 'linear_variable_both_sides', 'quadratic', 'linear_system', 'matrix_trace', 'matrix_determinant', 'linear_system_substitution', 'linear_system_elimination', 'linear_system_solution_types'],
     combinatorics: ['pigeonhole', 'permutations', 'combinations', 'binomial'],
     calculus:      ['derivative', 'integral', 'limit'],
     number_theory: ['gcd_lcm', 'modular_arithmetic', 'totient', 'divisor_count'],

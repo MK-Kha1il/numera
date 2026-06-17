@@ -421,6 +421,98 @@ templates.algebra = {
       type: "matrix_determinant"
     };
   },
+  // ---- Systems of linear equations II: substitution, elimination, solution types (8.EE.C.8) ----
+  // Depth on the existing linear_system concept (level 16, sum-and-difference elimination). These add
+  // the two canonical SOLVING methods (substitution, scale-and-eliminate) and the three SOLUTION-TYPE
+  // cases (one / none / infinitely many). Every distractor is a genuinely DIFFERENT integer value or a
+  // distinct label — a real solve-path slip — never a re-expression of the answer (the equivalence-aware
+  // competitive grader would otherwise treat a re-expression as a SECOND correct option).
+  21: (_diffFactor, idx) => {
+    // Solve by SUBSTITUTION. eq1 already isolates y: y = m·x + c. eq2 is a·x + b·y = k. Substitute eq1
+    // into eq2 and solve for x. Curated (x, y, m, a, b) so every quantity is a clean integer and the
+    // four options are distinct. c = y - m·x; k = a·x + b·y.
+    const [x, y, m, a, b] = [[3, 1, 1, 1, 3], [4, 1, 1, 1, 2], [5, 3, 1, 1, 3], [6, 1, 1, 2, 3], [2, 5, 1, 1, 2]][idx % 5];
+    const c = y - m * x;             // intercept of eq1 (y = m·x + c)
+    const k = a * x + b * y;         // RHS of eq2
+    const coef = a + b * m;          // coefficient of x after substituting (> 0 for every tuple here)
+    const cStr = c < 0 ? `- ${Math.abs(c)}` : `+ ${c}`;
+    const mStr = m === 1 ? '' : m;
+    // Distractors (each a real slip): reported y (solved for the wrong variable); a sign slip on the
+    // constant when substituting, x' = (k + b·c)/coef; and forgetting to multiply the m·x term by b,
+    // i.e. using (a + m) as the x-coefficient, x'' = (k - b·c)/(a + m). All curated to clean integers.
+    const wrongVar = y;
+    const signSlip = (k + b * c) / coef;
+    const badCoef = (k - b * c) / (a + m);
+    return {
+      question: `Solve the system for $x$ by substitution:\n$$y = ${mStr}x ${cStr}$$\n$$${a === 1 ? '' : a}x + ${b === 1 ? '' : b}y = ${k}$$`,
+      answer: x,
+      distractors: [wrongVar, signSlip, badCoef],
+      explanation: `The first equation already gives $y = ${mStr}x ${cStr}$. Substitute it into the second:\n$$${a === 1 ? '' : a}x + ${b === 1 ? '' : b}(${mStr}x ${cStr}) = ${k}$$\nDistribute and collect the $x$-terms — the coefficient becomes $a + b\\cdot m = ${a} + ${b}\\cdot${m} = ${coef}$ — giving $${coef}x = ${k - b * c}$, so $x = ${x}$. (Back-substituting gives $y = ${y}$, but the question asked for $x$.)`,
+      type: "linear_system_substitution",
+      xVal: x, yVal: y
+    };
+  },
+  22: (_diffFactor, idx) => {
+    // Solve by ELIMINATION with SCALING. eq1: a1·x + b1·y = c1, eq2: a2·x + b2·y = c2, with BOTH the x-
+    // and y-coefficients differing so you must multiply an equation before combining. Curated so the
+    // unique solution (x, y) is a clean integer pair and the four options are distinct integers.
+    const [x, y, a1, b1, a2, b2] = [[1, 5, 1, 3, 3, 1], [2, 5, 1, 2, 2, 1], [3, 5, 1, 2, 2, 1], [4, 5, 1, 2, 2, 1], [5, 6, 1, 3, 2, 2]][idx % 5];
+    const c1 = a1 * x + b1 * y;
+    const c2 = a2 * x + b2 * y;
+    // Eliminate y: multiply eq1 by b2, eq2 by b1, subtract. (b1·b2)y cancels; x = (b2·c1 - b1·c2)/(b2·a1 - b1·a2).
+    const xDen = b2 * a1 - b1 * a2;
+    const xNum = b2 * c1 - b1 * c2;
+    // Distractors: reported y (wrong variable); ADDED the equations without scaling first,
+    // x' = (c1 + c2)/(a1 + a2); and a sign slip in the combination, x'' = (b2·c1 + b1·c2)/(b2·a1 + b1·a2).
+    const wrongVar = y;
+    const noScale = (c1 + c2) / (a1 + a2);
+    const signSlip = (b2 * c1 + b1 * c2) / (b2 * a1 + b1 * a2);
+    return {
+      question: `Solve the system for $x$ by elimination:\n$$${a1 === 1 ? '' : a1}x + ${b1 === 1 ? '' : b1}y = ${c1}$$\n$$${a2 === 1 ? '' : a2}x + ${b2 === 1 ? '' : b2}y = ${c2}$$`,
+      answer: x,
+      distractors: [wrongVar, noScale, signSlip],
+      explanation: `Neither variable's coefficients match, so SCALE first. To eliminate $y$, multiply the first equation by $${b2}$ and the second by $${b1}$, then subtract: the $y$-terms cancel and $${xDen}x = ${xNum}$, so $x = ${x}$. (Substituting back gives $y = ${y}$, but the question asked for $x$.) Adding the equations without scaling leaves both $x$ and $y$ — the classic slip.`,
+      type: "linear_system_elimination",
+      xVal: x, yVal: y
+    };
+  },
+  23: (_diffFactor, idx) => {
+    // SOLUTION TYPES: one solution / no solution / infinitely many. Compare the two lines:
+    //   same slope & same intercept  => infinitely many (the SAME line),
+    //   same slope & different intercept => no solution (parallel),
+    //   different slope => exactly one solution.
+    // The answer is a LABEL, so there is no numeric-equivalence risk; the three labels are distinct.
+    const ONE = "one solution", NONE = "no solution", INF = "infinitely many solutions";
+    // "two solutions" is a genuine misconception (a linear system can never have exactly two) — it
+    // also keeps the option count at four authored labels so the engine never injects a generic "0".
+    const TWO = "two solutions";
+    // [a1, b1, c1, a2, b2, c2, label] — verified trios for each case.
+    const cases = [
+      [1, 1, 5, 1, -1, 1, ONE],   // different slopes -> cross once
+      [2, 1, 7, 1, 3, 8, ONE],
+      [1, 2, 4, 2, 4, 10, NONE],  // eq2 LHS = 2·eq1 LHS, RHS would be 8 but is 10 -> parallel
+      [3, 1, 5, 6, 2, 7, NONE],   // eq2 LHS = 2·eq1 LHS, RHS would be 10 but is 7 -> parallel
+      [1, 1, 3, 2, 2, 6, INF],    // eq2 = 2·eq1 entirely -> same line
+      [2, 1, 4, 4, 2, 8, INF],    // eq2 = 2·eq1 entirely -> same line
+    ];
+    const [a1, b1, c1, a2, b2, c2, label] = cases[idx % cases.length];
+    const fmt = (a, b, c) => `${a === 1 ? '' : a === -1 ? '-' : a}x ${b < 0 ? `- ${Math.abs(b) === 1 ? '' : Math.abs(b)}` : `+ ${b === 1 ? '' : b}`}y = ${c}`;
+    let why;
+    if (label === ONE) {
+      why = `Solve each for $y$: the two lines have DIFFERENT slopes, so they cross at exactly one point — one solution.`;
+    } else if (label === NONE) {
+      why = `The second equation's left side is a multiple of the first's, but the right side is NOT the matching multiple: same slope, different intercept. The lines are parallel and never meet — no solution.`;
+    } else {
+      why = `The entire second equation is the first multiplied by a constant (both sides), so they are the SAME line. Every point on it satisfies both — infinitely many solutions.`;
+    }
+    return {
+      question: `How many solutions does this system have?\n$$${fmt(a1, b1, c1)}$$\n$$${fmt(a2, b2, c2)}$$`,
+      answer: label,
+      distractors: [ONE, NONE, INF, TWO].filter((l) => l !== label),
+      explanation: why,
+      type: "linear_system_solution_types"
+    };
+  },
   20: (diffFactor, idx) => {
     // Fermat's Little Theorem Milestone
     const primes = [7, 11, 13, 17, 19];

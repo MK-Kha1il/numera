@@ -107,7 +107,10 @@ function normalizeLevelForGenerator(category, level) {
   const cat = (category || 'arithmetic').toLowerCase().replace(' ', '_');
   const index = Math.floor((parsedLevel - 1) / 6);
   if (cat === 'algebra') {
-    return index >= 8 ? 19 : 11 + index;
+    // 11..19 for index 0..8 (linear → quadratic → systems → matrices); index 9+ steps into Systems II
+    // (21/22/23), skipping the level-20 Fermat boss (force-routed by level===20). Cap at 23.
+    if (index <= 8) return 11 + index;          // 11..19
+    return Math.min(21 + (index - 9), 23);      // 21, 22, 23, then held
   } else if (cat === 'combinatorics') {
     return index >= 8 ? 29 : 21 + index;
   } else if (cat === 'calculus') {

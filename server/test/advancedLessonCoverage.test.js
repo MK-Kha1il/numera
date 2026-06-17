@@ -17,6 +17,8 @@ const UPGRADED = [
   'integral', 'gcd_lcm', 'modular_arithmetic', 'totient',
   // Algebra promotions (variety templates 14/16 raised to first-class concepts).
   'linear_variable_both_sides', 'linear_system',
+  // Systems II — solving methods + solution types (templates 21/22/23).
+  'linear_system_substitution', 'linear_system_elimination', 'linear_system_solution_types',
   // Advanced promotions (calculus limit, number-theory divisor count).
   'limit', 'divisor_count'
 ];

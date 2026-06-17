@@ -197,6 +197,11 @@ const CONCEPT_TO_LEVEL = {
   linear_system:        { category: 'algebra',       level: 16 },
   matrix_trace:         { category: 'algebra',       level: 17 },
   matrix_determinant:   { category: 'algebra',       level: 18 },
+  // Systems II — solving methods + solution types (8.EE.C.8; depth on linear_system, band raised to
+  // 23, the level-20 Fermat boss skipped). These index templates.algebra[21/22/23] directly.
+  linear_system_substitution:   { category: 'algebra', level: 21 },
+  linear_system_elimination:    { category: 'algebra', level: 22 },
+  linear_system_solution_types: { category: 'algebra', level: 23 },
   pigeonhole:           { category: 'combinatorics', level: 21 },
   permutations:         { category: 'combinatorics', level: 23 },
   combinations:         { category: 'combinatorics', level: 25 },
