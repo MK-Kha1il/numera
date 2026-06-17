@@ -19,6 +19,8 @@ const UPGRADED = [
   'linear_variable_both_sides', 'linear_system',
   // Systems II — solving methods + solution types (templates 21/22/23).
   'linear_system_substitution', 'linear_system_elimination', 'linear_system_solution_types',
+  // Quadratics II — solving methods (templates 24/25/26).
+  'quadratic_factoring', 'quadratic_formula', 'discriminant_roots',
   // Advanced promotions (calculus limit, number-theory divisor count).
   'limit', 'divisor_count'
 ];

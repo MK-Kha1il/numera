@@ -202,6 +202,11 @@ const CONCEPT_TO_LEVEL = {
   linear_system_substitution:   { category: 'algebra', level: 21 },
   linear_system_elimination:    { category: 'algebra', level: 22 },
   linear_system_solution_types: { category: 'algebra', level: 23 },
+  // Quadratics II — solving methods (HSA-REI.B.4; depth on quadratic, band raised to 26). These index
+  // templates.algebra[24/25/26] directly: factoring, the quadratic formula, the discriminant.
+  quadratic_factoring:  { category: 'algebra',       level: 24 },
+  quadratic_formula:    { category: 'algebra',       level: 25 },
+  discriminant_roots:   { category: 'algebra',       level: 26 },
   pigeonhole:           { category: 'combinatorics', level: 21 },
   permutations:         { category: 'combinatorics', level: 23 },
   combinations:         { category: 'combinatorics', level: 25 },

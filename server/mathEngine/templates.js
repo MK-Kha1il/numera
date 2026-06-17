@@ -513,6 +513,101 @@ templates.algebra = {
       type: "linear_system_solution_types"
     };
   },
+  // ---- Quadratic equations II: solving methods (HSA-REI.B.4) ----
+  // Depth on the existing `quadratic` concept (level 15), which only finds the LARGER root of an
+  // already-factored monic quadratic. These add the real SOLVING toolkit: solve by factoring (incl.
+  // negative roots, answer = the SMALLER root), the quadratic formula on a general ax²+bx+c=0, and
+  // reading the number of real roots off the discriminant's sign. Every numeric distractor is a
+  // genuinely DIFFERENT value modelling a real solve-path slip — never a re-expression of the answer
+  // (the equivalence-aware competitive grader would treat a re-expression as a SECOND correct option).
+  24: (_diffFactor, idx) => {
+    // SOLVE BY FACTORING. Build x² - (r1+r2)x + r1·r2 = 0 from integer roots (r1 < r2, either sign),
+    // and ask for the SMALLER root (distinct from the level-15 `quadratic` template, which asks for the
+    // larger root of positive-only roots). Factoring: find two numbers that multiply to c and add to
+    // -(b). Curated tuples so the four options are always distinct integers.
+    const roots = [[-3, 2], [1, 5], [-4, -1], [2, 6], [-5, 3], [1, 7], [-6, 2]];
+    const [r1, r2] = roots[idx % roots.length];
+    const small = Math.min(r1, r2);
+    const large = Math.max(r1, r2);
+    const b = -(r1 + r2);            // coefficient of x in x² + b·x + c
+    const c = r1 * r2;               // constant term
+    const bStr = b < 0 ? `- ${Math.abs(b)}` : `+ ${b}`;
+    const cStr = c < 0 ? `- ${Math.abs(c)}` : `+ ${c}`;
+    // Distractors, each a real slip: the OTHER root (reported the larger when the smaller was asked);
+    // the sign-flip of the answer (read the factor $(x - r)$ as giving root $-r$); and the negated
+    // middle coefficient $r_1 + r_2 = -b$ (read a coefficient off the equation as if it were a root).
+    const wrongRoot = large;
+    const signFlip = -small;
+    const readCoef = r1 + r2;
+    return {
+      question: `Solve by factoring. What is the SMALLER root of $$x^2 ${bStr}x ${cStr} = 0?$$`,
+      answer: small,
+      distractors: [wrongRoot, signFlip, readCoef],
+      explanation: `Find two numbers that multiply to $${c}$ and add to $${-b}$: they are $${r1}$ and $${r2}$. So the equation factors as $(x ${r1 < 0 ? `+ ${-r1}` : `- ${r1}`})(x ${r2 < 0 ? `+ ${-r2}` : `- ${r2}`}) = 0$. Setting each factor to zero gives the roots $x = ${r1}$ and $x = ${r2}$ — note each root has the OPPOSITE sign of the number inside its factor. The smaller root is $${small}$.`,
+      type: "quadratic_factoring"
+    };
+  },
+  25: (_diffFactor, idx) => {
+    // SOLVE WITH THE QUADRATIC FORMULA. General ax² + bx + c = 0 (a ≥ 1) built from integer roots so
+    // the discriminant is a perfect square and the roots are clean. Ask for the LARGER root. Curated
+    // [a, r1, r2] so every quantity below is an integer and the four options are distinct.
+    const cases = [[1, 2, 5], [1, -1, 4], [2, 1, 3], [1, -2, 6], [2, -1, 2], [1, 3, 7], [3, 1, 2], [2, 2, 5], [1, -3, 4], [2, -2, 3]];
+    const [a, r1, r2] = cases[idx % cases.length];
+    const b = -a * (r1 + r2);        // standard-form b
+    const c = a * r1 * r2;           // standard-form c
+    const disc = b * b - 4 * a * c;  // perfect square by construction
+    const sq = Math.round(Math.sqrt(disc));
+    const big = Math.max(r1, r2);
+    const small = Math.min(r1, r2);
+    const aStr = a === 1 ? '' : a;
+    const bStr = b < 0 ? `- ${Math.abs(b)}` : `+ ${b}`;
+    const cStr = c < 0 ? `- ${Math.abs(c)}` : `+ ${c}`;
+    // Distractors, each a real formula slip: used $+b$ in the numerator instead of $-b$ (forgot the
+    // leading minus); forgot to divide by $2a$ (divided by $a$ only); and the OTHER (smaller) root.
+    const usedPlusB = (b + sq) / (2 * a);
+    const forgotTwoA = (-b + sq) / a;
+    return {
+      question: `Use the quadratic formula to find the LARGER root of $$${aStr}x^2 ${bStr}x ${cStr} = 0.$$`,
+      answer: big,
+      distractors: [usedPlusB, forgotTwoA, small],
+      explanation: `Here $a = ${a}$, $b = ${b}$, $c = ${c}$. The discriminant is $b^2 - 4ac = ${b * b} - ${4 * a * c} = ${disc}$, and $\\sqrt{${disc}} = ${sq}$. The quadratic formula gives $x = \\dfrac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} = \\dfrac{${-b} \\pm ${sq}}{${2 * a}}$, so the roots are $${big}$ and $${small}$. The larger root is $${big}$. (Using $+b$ instead of $-b$, or dividing by $a$ rather than $2a$, are the classic slips.)`,
+      type: "quadratic_formula"
+    };
+  },
+  26: (_diffFactor, idx) => {
+    // THE DISCRIMINANT — number of real roots from the sign of b² − 4ac. The answer is a LABEL, so
+    // there is no numeric-equivalence risk; four authored, distinct labels (the three real cases + the
+    // "infinitely many" misconception) keep the option count at four so the engine never injects a
+    // generic numeric filler. positive → two, zero → one, negative → none.
+    const TWO = "two real solutions", ONE = "one real solution", NONE = "no real solutions";
+    const INF = "infinitely many real solutions"; // genuine misconception (a quadratic has at most two)
+    // [a, b, c, label] — verified: label matches sign(b² − 4ac).
+    const cases = [
+      [1, -5, 6, TWO], [1, 1, -6, TWO], [2, -7, 3, TWO],
+      [1, -4, 4, ONE], [1, 6, 9, ONE], [4, 4, 1, ONE],
+      [1, 0, 4, NONE], [1, 2, 5, NONE], [2, 1, 3, NONE],
+    ];
+    const [a, b, c, label] = cases[idx % cases.length];
+    const disc = b * b - 4 * a * c;
+    const aStr = a === 1 ? '' : a;
+    const bTerm = b === 0 ? '' : (b < 0 ? ` - ${Math.abs(b) === 1 ? '' : Math.abs(b)}x` : ` + ${b === 1 ? '' : b}x`);
+    const cStr = c < 0 ? `- ${Math.abs(c)}` : `+ ${c}`;
+    let why;
+    if (label === TWO) {
+      why = `The discriminant is $b^2 - 4ac = ${b * b} - ${4 * a * c} = ${disc}$. It is POSITIVE, so $\\pm\\sqrt{${disc}}$ gives two different values — two real solutions (the parabola crosses the x-axis twice).`;
+    } else if (label === ONE) {
+      why = `The discriminant is $b^2 - 4ac = ${b * b} - ${4 * a * c} = ${disc}$. It is exactly ZERO, so $\\pm\\sqrt{0}$ adds nothing — the two roots coincide into one repeated real solution (the parabola is tangent to the x-axis).`;
+    } else {
+      why = `The discriminant is $b^2 - 4ac = ${b * b} - ${4 * a * c} = ${disc}$. It is NEGATIVE, and a real square root of a negative number does not exist — so there are no real solutions (the parabola never touches the x-axis).`;
+    }
+    return {
+      question: `How many real solutions does $$${aStr}x^2${bTerm} ${cStr} = 0$$ have? (Use the discriminant.)`,
+      answer: label,
+      distractors: [TWO, ONE, NONE, INF].filter((l) => l !== label),
+      explanation: why,
+      type: "discriminant_roots"
+    };
+  },
   20: (diffFactor, idx) => {
     // Fermat's Little Theorem Milestone
     const primes = [7, 11, 13, 17, 19];

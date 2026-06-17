@@ -687,6 +687,37 @@ const concepts = {
     ]
   },
 
+  // ---- Quadratics II: solving methods (HSA-REI.B.4) — depth on the `quadratic` concept ----
+  "quadratic_factoring": {
+    name: "Solving Quadratics by Factoring",
+    prereqs: ["quadratic", "factor_trinomial"],
+    baseElo: 1310,
+    misconceptions: [
+      { id: "reported_other_root", label: "Reported the larger root when the smaller was asked", rule: (ans, p) => p.large },
+      { id: "sign_flip_root", label: "Read the factor (x - r) as giving root -r — flipped the sign", rule: (ans) => -ans },
+      { id: "read_coefficient_as_root", label: "Read the middle coefficient off the equation as if it were a root", rule: (ans, p) => p.r1 + p.r2 }
+    ]
+  },
+  "quadratic_formula": {
+    name: "The Quadratic Formula",
+    prereqs: ["quadratic_factoring"],
+    baseElo: 1340,
+    misconceptions: [
+      { id: "used_plus_b", label: "Used +b in the numerator instead of -b", rule: (ans) => ans },
+      { id: "forgot_two_a", label: "Divided by a instead of 2a", rule: (ans) => ans },
+      { id: "reported_smaller_root", label: "Reported the smaller root when the larger was asked", rule: (ans) => ans }
+    ]
+  },
+  "discriminant_roots": {
+    name: "The Discriminant — Number of Real Roots",
+    prereqs: ["quadratic_formula"],
+    baseElo: 1330,
+    misconceptions: [
+      { id: "assumed_always_two", label: "Assumed every quadratic has two real roots, ignoring the discriminant", rule: () => "two real solutions" },
+      { id: "confused_zero_and_negative", label: "Confused a zero discriminant (one root) with a negative one (none)", rule: (ans) => (ans === "no real solutions" ? "one real solution" : "no real solutions") }
+    ]
+  },
+
   // ---- Polynomials (expressions depth — multiply and factor binomials) ----
   "foil_binomials": {
     name: "Multiplying Binomials (FOIL)",
@@ -1558,6 +1589,9 @@ const STANDARDS = {
   linear_system_substitution: "8.EE.C.8b",
   linear_system_elimination: "8.EE.C.8b",
   linear_system_solution_types: "8.EE.C.8a",
+  quadratic_factoring: "HSA-REI.B.4b",
+  quadratic_formula: "HSA-REI.B.4b",
+  discriminant_roots: "HSA-REI.B.4b",
   foil_binomials: "HSA-APR.A.1",
   square_binomial: "HSA-APR.A.1",
   factor_trinomial: "HSA-SSE.B.3a",

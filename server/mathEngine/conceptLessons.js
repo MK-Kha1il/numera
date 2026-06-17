@@ -1901,6 +1901,100 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // QUADRATICS II — the real solving toolkit (HSA-REI.B.4): solve by factoring,
+  // the quadratic formula, and reading the number of real roots off the discriminant.
+  // Depth on the existing `quadratic` concept (which only found the larger root of an
+  // already-factored monic quadratic).
+  // ===========================================================================
+  quadratic_factoring: {
+    title: "Solving Quadratics by Factoring",
+    formula: "x^2 - (r_1 + r_2)x + r_1 r_2 = 0 \\;\\Rightarrow\\; (x - r_1)(x - r_2) = 0 \\;\\Rightarrow\\; x = r_1,\\, r_2",
+    oneLineSummary: "Rewrite the quadratic as a product of two factors, then use the fact that a product is zero only when one of its factors is zero.",
+    intuitionHook: "Look at $x^2 - x - 6 = 0$. If you can split it into $(x - 3)(x + 2) = 0$, the whole problem collapses: a product equals zero ONLY when one of the pieces is zero. So either $x - 3 = 0$ or $x + 2 = 0$ — the roots are $3$ and $-2$. No formula needed, just two numbers that multiply to $-6$ and add to $-1$.",
+    whatItIs: "Factoring solves $x^2 + bx + c = 0$ by finding two numbers whose product is $c$ and whose sum is $b$, rewriting the quadratic as $(x - r_1)(x - r_2) = 0$, and then setting each factor to zero. The two values of $x$ that result are the roots — the solutions of the equation.",
+    whyItWorks: "The engine is the Zero-Product Property: for real numbers, $AB = 0$ forces $A = 0$ or $B = 0$ — no other way for a product to vanish. So once the quadratic is a product of two linear factors, each factor independently hands you a root. Why do 'multiply to $c$, add to $b$' find the factors? Because expanding $(x - r_1)(x - r_2)$ gives $x^2 - (r_1 + r_2)x + r_1 r_2$ — the constant is the PRODUCT of the roots and the middle coefficient is the negated SUM. So the coefficients literally encode what you're hunting for. The one sign rule that trips everyone: the factor $(x - r)$ gives the root $x = +r$, the OPPOSITE sign of the number written inside.",
+    whenToUse: "Whenever a quadratic factors over the integers — clean textbook equations, areas and dimensions that come out whole, and as the FIRST thing to try before reaching for the quadratic formula (factoring is faster when it works).",
+    representations: [
+      { kind: "symbolic", label: "Factor and zero-out", body: "$x^2 - x - 6 = (x - 3)(x + 2) = 0 \\Rightarrow x = 3 \\text{ or } x = -2$." },
+      { kind: "sum_product", label: "Read the coefficients", body: "Two numbers multiplying to $c = -6$ and adding to $b = -1$ are $-3$ and $+2$; the roots are their negatives flipped through the factors: $3$ and $-2$." },
+      { kind: "graphical", label: "Where the parabola crosses", body: "The roots are the $x$-intercepts of $y = x^2 - x - 6$; the curve dips below the axis between $-2$ and $3$." }
+    ],
+    commonMistakes: [
+      { label: "Sign error reading the roots", why: "Reading $(x - 3)(x + 2) = 0$ as roots $-3$ and $+2$ — copying the numbers inside the factors instead of solving each factor.", fix: "Set each factor to zero and solve: $x - 3 = 0 \\Rightarrow x = +3$; $x + 2 = 0 \\Rightarrow x = -2$. The root is the OPPOSITE sign of the constant in its factor." },
+      { label: "Reporting the wrong root", why: "Finding both roots correctly but handing back the larger when the smaller was asked (or vice versa).", fix: "Reread which root the question wants. You found both — pick the one asked for." },
+      { label: "Confusing coefficients with roots", why: "Answering with $b$ or $c$ because they are the visible numbers in the equation.", fix: "The solutions are the $x$-values that make the equation zero, not the coefficients. Always finish by setting factors to zero." }
+    ],
+    connections: [
+      { concept: "quadratic", note: "The same equations; this names and drills the factoring METHOD and asks for a specific root, not just the larger one." },
+      { concept: "factor_trinomial", note: "Factoring the quadratic is exactly the trinomial-factoring skill, now used to SOLVE rather than just rewrite." },
+      { concept: "quadratic_formula", note: "When no integer factors exist, the quadratic formula solves any quadratic — factoring's universal backup." }
+    ],
+    examples: [
+      { question: "Solve by factoring; give the smaller root: $x^2 - x - 6 = 0$.", answer: "-2", explanation: "Two numbers multiplying to $-6$ and adding to $-1$ are $-3$ and $2$: $(x - 3)(x + 2) = 0$. Roots $3$ and $-2$; the smaller is $-2$." },
+      { question: "Solve by factoring; give the smaller root: $x^2 - 6x + 5 = 0$.", answer: "1", explanation: "$1$ and $5$ multiply to $5$ and add to $6$: $(x - 1)(x - 5) = 0$. Roots $1$ and $5$; the smaller is $1$." }
+    ]
+  },
+
+  quadratic_formula: {
+    title: "The Quadratic Formula",
+    formula: "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}",
+    oneLineSummary: "One formula solves EVERY quadratic $ax^2 + bx + c = 0$ — plug in $a$, $b$, $c$ and read off both roots.",
+    intuitionHook: "Factoring is great until the numbers don't cooperate. The quadratic formula never refuses: feed it $a$, $b$, $c$ from $ax^2 + bx + c = 0$ and it returns both roots directly. For $2x^2 - 8x + 6 = 0$, that's $a = 2$, $b = -8$, $c = 6$, and $x = \\dfrac{8 \\pm \\sqrt{64 - 48}}{4} = \\dfrac{8 \\pm 4}{4}$, giving $3$ and $1$. No guessing factors — just careful substitution.",
+    whatItIs: "The quadratic formula gives the exact solutions of any quadratic equation $ax^2 + bx + c = 0$ (with $a \\ne 0$) as $x = \\dfrac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$. The $\\pm$ produces the two roots; the expression under the root, $b^2 - 4ac$, is the discriminant.",
+    whyItWorks: "The formula is what you get by completing the square on the general equation $ax^2 + bx + c = 0$ once and for all. Dividing by $a$, moving the constant, adding $(b/2a)^2$ to both sides to form a perfect square, and taking the square root produces exactly $x = \\dfrac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$. Because it is derived symbolically, it works for ANY coefficients — integer, fractional, or irrational roots alike. Three pieces must each be handled correctly: the numerator starts with $-b$ (NOT $+b$ — if $b$ is negative, $-b$ is positive); the $\\pm$ gives two answers; and the ENTIRE numerator is divided by $2a$, not by $a$ and not by $2$. Miss any one and the roots come out wrong.",
+    whenToUse: "Any quadratic, but especially when factoring fails — non-integer or irrational roots, ugly coefficients, or when you also want the discriminant to judge how many real roots exist.",
+    representations: [
+      { kind: "substitute", label: "Identify a, b, c", body: "For $2x^2 - 8x + 6 = 0$: $a = 2$, $b = -8$, $c = 6$. Mind the signs — $b$ is $-8$, so $-b = +8$." },
+      { kind: "discriminant", label: "Compute under the root", body: "$b^2 - 4ac = (-8)^2 - 4(2)(6) = 64 - 48 = 16$, and $\\sqrt{16} = 4$." },
+      { kind: "two_roots", label: "Apply the ±", body: "$x = \\dfrac{8 \\pm 4}{4}$ gives $\\dfrac{12}{4} = 3$ and $\\dfrac{4}{4} = 1$." }
+    ],
+    commonMistakes: [
+      { label: "Using +b instead of -b", why: "Writing the numerator as $b \\pm \\sqrt{\\ldots}$ — forgetting the leading minus on $b$.", fix: "The numerator ALWAYS starts with $-b$. If $b = -8$, then $-b = +8$; if $b = 5$, then $-b = -5$. Substitute the negation deliberately." },
+      { label: "Forgetting to divide by 2a", why: "Dividing the numerator by $a$ (or by $2$) instead of by $2a$ — a halved or doubled answer.", fix: "The whole numerator sits over $2a$. For $a = 2$ that denominator is $4$, not $2$." },
+      { label: "Sign slip in the discriminant", why: "Mishandling the signs in $b^2 - 4ac$ — e.g. forgetting $b^2$ is positive even when $b$ is negative, or dropping a minus on $4ac$.", fix: "Compute $b^2$ first (always $\\ge 0$), then subtract $4ac$ with its own sign. Keep the two pieces separate." }
+    ],
+    connections: [
+      { concept: "quadratic_factoring", note: "Factoring is the fast path when it works; the formula is the universal one that always works." },
+      { concept: "discriminant_roots", note: "The piece under the root, $b^2 - 4ac$, decides how many real roots the formula will produce." },
+      { concept: "square_root", note: "The formula leans on the square root — and on knowing a negative discriminant has no real root." }
+    ],
+    examples: [
+      { question: "Use the quadratic formula; give the larger root of $x^2 - 7x + 10 = 0$.", answer: "5", explanation: "$a=1$, $b=-7$, $c=10$. Discriminant $49 - 40 = 9$, $\\sqrt{9}=3$. $x = \\dfrac{7 \\pm 3}{2}$ gives $5$ and $2$; the larger is $5$." },
+      { question: "Use the quadratic formula; give the larger root of $2x^2 - 8x + 6 = 0$.", answer: "3", explanation: "$a=2$, $b=-8$, $c=6$. Discriminant $64 - 48 = 16$, $\\sqrt{16}=4$. $x = \\dfrac{8 \\pm 4}{4}$ gives $3$ and $1$; the larger is $3$." }
+    ]
+  },
+
+  discriminant_roots: {
+    title: "The Discriminant — Counting Real Roots",
+    formula: "\\Delta = b^2 - 4ac: \\;\\; \\Delta > 0 \\to \\text{two}, \\;\\; \\Delta = 0 \\to \\text{one}, \\;\\; \\Delta < 0 \\to \\text{none}",
+    oneLineSummary: "The sign of $b^2 - 4ac$ tells you how many real solutions a quadratic has — before you solve it.",
+    intuitionHook: "You don't always need the roots — sometimes you just need to know IF there are any. The quadratic formula's answer hides under a square root: $\\sqrt{b^2 - 4ac}$. If that inside part is positive, the $\\pm$ splits into two real roots; if it's exactly zero, the $\\pm$ adds nothing and the two roots merge into one; if it's negative, there's no real square root at all — no real solutions. So one number, $b^2 - 4ac$, decides everything.",
+    whatItIs: "The discriminant of $ax^2 + bx + c = 0$ is $\\Delta = b^2 - 4ac$ — the quantity under the square root in the quadratic formula. Its SIGN (not its value) determines the number of real solutions: positive gives two distinct real roots, zero gives one repeated real root, and negative gives no real roots.",
+    whyItWorks: "Every root comes from $x = \\dfrac{-b \\pm \\sqrt{\\Delta}}{2a}$, so the roots differ only through $\\pm\\sqrt{\\Delta}$. When $\\Delta > 0$, $\\sqrt{\\Delta}$ is a real positive number and $-b + \\sqrt{\\Delta}$ differs from $-b - \\sqrt{\\Delta}$: two distinct real roots. When $\\Delta = 0$, $\\sqrt{0} = 0$, so both branches give the same value $-b/2a$: one repeated root. When $\\Delta < 0$, no real number squares to a negative, so $\\sqrt{\\Delta}$ isn't real and neither root is: zero real solutions. Geometrically this is whether the parabola $y = ax^2 + bx + c$ crosses the x-axis twice (cuts through), once (just touches, tangent), or never (floats entirely above or below). The discriminant measures exactly that.",
+    whenToUse: "Judging how many real roots a quadratic has without solving it, checking whether a parabola crosses the x-axis, ensuring a model has a real answer, and deciding whether factoring is even possible (a negative discriminant means no real factors).",
+    representations: [
+      { kind: "sign_table", label: "Read the sign", body: "$b^2 - 4ac > 0 \\to$ two real solutions; $= 0 \\to$ one; $< 0 \\to$ none." },
+      { kind: "graphical", label: "How the parabola meets the axis", body: "Two crossings $\\to$ two roots; tangent (one touch) $\\to$ one; never touches $\\to$ none." },
+      { kind: "formula_link", label: "Inside the square root", body: "$\\Delta$ is exactly what sits under $\\sqrt{\\;}$ in $x = \\dfrac{-b \\pm \\sqrt{\\Delta}}{2a}$ — its sign decides if that root is real." }
+    ],
+    commonMistakes: [
+      { label: "Assuming there are always two roots", why: "Treating every quadratic as if it must have two real solutions, ignoring the tangent and no-crossing cases.", fix: "Compute $b^2 - 4ac$ first. Only a POSITIVE discriminant gives two real roots; zero gives one, negative gives none." },
+      { label: "Confusing zero and negative discriminant", why: "Swapping the $\\Delta = 0$ case (one repeated root) with $\\Delta < 0$ (no real roots).", fix: "$\\Delta = 0$ means the root is real but repeated — ONE solution. $\\Delta < 0$ means there is NO real square root — ZERO solutions." },
+      { label: "Sign error computing the discriminant", why: "Mishandling $-4ac$ when $a$ or $c$ is negative, flipping the discriminant's sign and so the count.", fix: "Carefully track the sign of $4ac$: if $c < 0$, then $-4ac$ is POSITIVE and adds to $b^2$, often guaranteeing two roots." }
+    ],
+    connections: [
+      { concept: "quadratic_formula", note: "The discriminant is the expression under the formula's square root — same quantity, used to count rather than solve." },
+      { concept: "quadratic_factoring", note: "A negative discriminant means no real factors exist, so factoring over the reals is impossible." },
+      { concept: "linear_system_solution_types", note: "Like counting a system's solutions, this reads the NUMBER of solutions off the structure before solving." }
+    ],
+    examples: [
+      { question: "How many real solutions does $x^2 - 5x + 6 = 0$ have?", answer: "two real solutions", explanation: "$\\Delta = (-5)^2 - 4(1)(6) = 25 - 24 = 1 > 0$, so two distinct real roots." },
+      { question: "How many real solutions does $x^2 - 4x + 4 = 0$ have?", answer: "one real solution", explanation: "$\\Delta = (-4)^2 - 4(1)(4) = 16 - 16 = 0$, so one repeated real root." },
+      { question: "How many real solutions does $x^2 + 4 = 0$ have?", answer: "no real solutions", explanation: "$\\Delta = 0^2 - 4(1)(4) = -16 < 0$, so no real solutions (the parabola never touches the x-axis)." }
+    ]
+  },
+
+  // ===========================================================================
   // POLYNOMIAL DEPTH (expressions strand — multiply and factor binomials).
   // ===========================================================================
   foil_binomials: {
@@ -4563,10 +4657,14 @@ function levelToConceptId(category, level) {
     if (lvl === 16) return 'linear_system';
     if (lvl === 17) return 'matrix_trace';
     if (lvl === 18 || lvl === 19) return 'matrix_determinant';
-    // L20 Fermat milestone keeps legacy; 21-23 are Systems II (depth on linear_system).
+    // L20 Fermat milestone keeps legacy; 21-23 are Systems II (depth on linear_system);
+    // 24-26 are Quadratics II (depth on quadratic): factoring, formula, discriminant.
     if (lvl === 21) return 'linear_system_substitution';
     if (lvl === 22) return 'linear_system_elimination';
     if (lvl === 23) return 'linear_system_solution_types';
+    if (lvl === 24) return 'quadratic_factoring';
+    if (lvl === 25) return 'quadratic_formula';
+    if (lvl === 26) return 'discriminant_roots';
     return null;
   }
   if (cat === 'combinatorics') {
