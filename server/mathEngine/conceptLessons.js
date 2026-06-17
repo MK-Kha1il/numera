@@ -3798,6 +3798,96 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // STATISTICS III — probability foundations (7.SP.C): theoretical probability,
+  // experimental probability, and the counting principle / sample space.
+  // ===========================================================================
+  stat_theoretical_prob: {
+    title: "Theoretical Probability",
+    formula: "P(\\text{event}) = \\dfrac{\\text{favorable outcomes}}{\\text{total equally likely outcomes}}",
+    oneLineSummary: "Theoretical probability is the fraction of equally likely outcomes that count as a success — favorable over total, then reduced.",
+    intuitionHook: "Before you ever spin the wheel, you can name your chances. A spinner with $8$ equal slices, $2$ of them gold, is gold $\\frac{2}{8} = \\frac{1}{4}$ of the time — a quarter of the wheel is gold, so a quarter of your spins should be. You're not guessing from data; you're counting the wheel itself.",
+    whatItIs: "Theoretical probability is the chance of an event computed by reasoning about the outcomes, not by experimenting. When every outcome is equally likely, it equals the number of favorable outcomes divided by the total number of outcomes, written as a fraction in simplest form (or an equivalent decimal or percent).",
+    whyItWorks: "If a situation has outcomes that are all equally likely — a fair spinner's slices, a fair die's faces, marbles drawn blind — then 'how likely' is just 'what share'. Each outcome carries the same slice of certainty, and the total certainty is $1$ shared equally among $n$ outcomes, so each is worth $\\frac{1}{n}$. An event made of $f$ of those outcomes therefore carries $\\frac{f}{n}$. The 'equally likely' condition is everything: it's what lets you count instead of measure. We reduce the fraction because $\\frac{2}{8}$ and $\\frac{1}{4}$ name the same chance, and simplest form is the standard way to state it. The trap is the flip side — favorable over total, never total over favorable: probability is a part OF the whole, so it can never exceed $1$.",
+    whenToUse: "Fair games of chance (dice, cards, spinners, coins), genetics squares, any 'what are the chances' question where the outcomes are symmetric and you can count them, and as the prediction that experimental probability is compared against.",
+    representations: [
+      { kind: "part_of_whole", label: "Favorable over total", body: "$8$ slices, $2$ gold $\\Rightarrow P(\\text{gold}) = \\frac{2}{8} = \\frac{1}{4}$ — count the wins, divide by the total." },
+      { kind: "area", label: "Share of the wheel", body: "A quarter of the spinner's area is gold, so a quarter of spins land gold: probability IS the share." },
+      { kind: "scale", label: "From $0$ to $1$", body: "Impossible $= 0$, certain $= 1$. A probability is always a part of the whole, so it stays between them — never above $1$." }
+    ],
+    commonMistakes: [
+      { label: "Leaving it unreduced", why: "Writing $\\frac{2}{8}$ when the question asks for simplest form.", fix: "Divide the numerator and denominator by their GCF: $\\frac{2}{8} = \\frac{1}{4}$. Same chance, standard form." },
+      { label: "Giving the complement", why: "Reporting the chance the event does NOT happen — counting the losing outcomes.", fix: "Favorable means the outcomes you WANT. Count those over the total, not the rest." },
+      { label: "Flipping the fraction", why: "Writing total over favorable, e.g. $\\frac{8}{2}$, which exceeds $1$.", fix: "Probability is a part of the whole: favorable goes on TOP. If your answer is more than $1$, you flipped it." }
+    ],
+    connections: [
+      { concept: "stat_probability", note: "The basic 'favorable out of total' idea — here expressed as a reduced fraction." },
+      { concept: "fraction_simplify", note: "Stating a probability in simplest form is exactly fraction reduction." },
+      { concept: "stat_experimental_prob", note: "Theoretical is the prediction; experimental is what the data actually shows — the next concept compares them." }
+    ],
+    examples: [
+      { question: "A bag has $3$ red and $9$ marbles total. Find $P(\\text{red})$ in simplest form.", answer: "1/3", explanation: "$\\frac{3}{9} = \\frac{1}{3}$ — favorable over total, reduced." },
+      { question: "A fair spinner has $10$ equal sections, $4$ blue. Find $P(\\text{blue})$ in simplest form.", answer: "2/5", explanation: "$\\frac{4}{10} = \\frac{2}{5}$." }
+    ]
+  },
+
+  stat_experimental_prob: {
+    title: "Experimental Probability",
+    formula: "P(\\text{event}) \\approx \\dfrac{\\text{times the event happened}}{\\text{total trials}}",
+    oneLineSummary: "Experimental probability is what actually happened in the data — successes divided by the number of trials, read off real results rather than predicted.",
+    intuitionHook: "Flip a chip $12$ times and it lands heads $9$ of them. You didn't assume a fair $\\frac{1}{2}$ — you watched and counted: heads came up $\\frac{9}{12} = \\frac{3}{4}$ of the time. That fraction, straight from the experiment, is the experimental probability. Maybe the chip is weighted; the data tells you what theory can't.",
+    whatItIs: "Experimental (or empirical) probability is the chance of an event estimated from observed results: the number of times the event occurred divided by the total number of trials. It's computed from data, then usually reduced to simplest form.",
+    whyItWorks: "Theoretical probability assumes you know the outcomes are equally likely. Often you don't — a bent coin, a real spinner with sticky slices, the chance a free throw goes in. So instead of reasoning, you RUN the trials and count: out of $n$ attempts, the event happened $h$ times, so your best estimate of its probability is $\\frac{h}{n}$. The Law of Large Numbers makes this honest: the more trials you run, the closer the experimental probability tends to settle toward the true (often theoretical) probability. A handful of flips can stray far from $\\frac{1}{2}$; thousands rarely do. That's why 'how many trials' matters — experimental probability is an estimate that sharpens with data.",
+    whenToUse: "Estimating chances when outcomes aren't obviously equally likely, testing whether a die or coin is fair (compare experimental to theoretical), sports and quality-control statistics, and simulations.",
+    representations: [
+      { kind: "tally", label: "Count the results", body: "$12$ flips, $9$ heads $\\Rightarrow \\frac{9}{12} = \\frac{3}{4}$ — read straight off the tally." },
+      { kind: "vs_theoretical", label: "Data vs prediction", body: "Theory says a fair chip is $\\frac{1}{2}$; the data says $\\frac{3}{4}$. The gap hints the chip may be biased — or that $12$ flips is too few." },
+      { kind: "convergence", label: "More trials, truer estimate", body: "A few trials wander; many trials settle toward the real probability (Law of Large Numbers)." }
+    ],
+    commonMistakes: [
+      { label: "Counting the other outcome", why: "Reporting tails when asked for heads — dividing the failures by the trials.", fix: "Put the count of the event you were ASKED about on top: heads observed over total flips." },
+      { label: "Flipping the fraction", why: "Writing trials over successes, e.g. $\\frac{12}{9}$, which exceeds $1$.", fix: "Successes go on top, total trials on the bottom — a probability never exceeds $1$." },
+      { label: "Confusing it with theoretical", why: "Answering $\\frac{1}{2}$ for a coin because that's 'the' probability, ignoring the data given.", fix: "Experimental probability comes from the OBSERVED results — use the numbers in the problem, not the fair-coin assumption." }
+    ],
+    connections: [
+      { concept: "stat_theoretical_prob", note: "The prediction this is compared against; with enough trials, experimental drifts toward theoretical." },
+      { concept: "fraction_simplify", note: "The result is stated as a reduced fraction, just like theoretical probability." },
+      { concept: "stat_probability", note: "Both express 'how often' as favorable-over-total — one from counting outcomes, one from counting results." }
+    ],
+    examples: [
+      { question: "A spinner is spun $9$ times and lands on green $6$ times. Find the experimental probability of green in simplest form.", answer: "2/3", explanation: "$\\frac{6}{9} = \\frac{2}{3}$ — observed greens over total spins." },
+      { question: "A die is rolled $15$ times and shows a six $10$ times. Find the experimental probability of a six in simplest form.", answer: "2/3", explanation: "$\\frac{10}{15} = \\frac{2}{3}$ (this die is likely loaded — theory says $\\frac{1}{6}$)." }
+    ]
+  },
+
+  stat_sample_space: {
+    title: "Sample Space and the Counting Principle",
+    formula: "\\text{total outcomes} = n_1 \\times n_2 \\times \\cdots \\times n_k",
+    oneLineSummary: "When a choice happens in stages, the number of possible combinations is the product of the choices at each stage — you multiply, not add.",
+    intuitionHook: "You own $2$ shirts and $3$ pairs of pants. Each shirt can go with any of the $3$ pants, so the first shirt makes $3$ outfits and the second makes $3$ more — $2 \\times 3 = 6$ outfits in all. Add a hat with $4$ options and every one of those $6$ outfits splits into $4$: $6 \\times 4 = 24$. Stages multiply.",
+    whatItIs: "The sample space is the set of all possible outcomes of an experiment. The fundamental counting principle says that if one stage has $n_1$ outcomes, the next $n_2$, and so on independently, the total number of combined outcomes is the PRODUCT $n_1 \\times n_2 \\times \\cdots \\times n_k$.",
+    whyItWorks: "Picture a tree. The first stage branches into $n_1$ options. From the end of EACH of those branches, the second stage sprouts another $n_2$ branches — so after two stages there are $n_1$ groups of $n_2$, which is $n_1 \\times n_2$ leaves. Every further stage multiplies the leaf count again, because each existing path can be continued in $n_2$ (then $n_3$, …) ways. That's why you multiply, not add: adding would count the choices ($n_1 + n_2$), but you want the COMBINATIONS — every pairing of one choice from each stage. The principle needs the stages to be independent (your shirt doesn't limit your pants); when they interact, you count more carefully. Knowing the size of the sample space is the engine of theoretical probability: it's the denominator, the 'total equally likely outcomes'.",
+    whenToUse: "Counting outfit/menu/license-plate combinations, finding the total outcomes for a probability (the denominator), tree diagrams, and any 'how many ways' question with independent stages.",
+    representations: [
+      { kind: "tree", label: "A branching tree", body: "$2$ shirts each branch to $3$ pants $\\Rightarrow 2 \\times 3 = 6$ leaves. A third stage of $4$ hats makes $6 \\times 4 = 24$." },
+      { kind: "grid", label: "Rows times columns", body: "Lay shirts down the side, pants across the top: the grid has $2 \\times 3 = 6$ cells, one per outfit." },
+      { kind: "denominator", label: "The total for probability", body: "The sample-space size is the 'total outcomes' you divide by in $P = \\frac{\\text{favorable}}{\\text{total}}$." }
+    ],
+    commonMistakes: [
+      { label: "Adding instead of multiplying", why: "Computing $2 + 3 + 4 = 9$ — that counts individual items, not combinations.", fix: "Each stage multiplies the running total: $2 \\times 3 \\times 4 = 24$. Adding answers 'how many things', not 'how many combinations'." },
+      { label: "Forgetting a stage", why: "Multiplying only two of three stages, e.g. $2 \\times 3 = 6$ and stopping.", fix: "Include EVERY independent choice in the product — one factor per stage." }
+    ],
+    connections: [
+      { concept: "stat_theoretical_prob", note: "The counting principle gives the denominator (total outcomes) of a theoretical probability." },
+      { concept: "arithmetic_mult", note: "The whole principle is repeated multiplication — one factor per decision stage." },
+      { concept: "compound_probability", note: "Multiplying probabilities across independent events mirrors multiplying counts across independent stages." }
+    ],
+    examples: [
+      { question: "A meal is one of $3$ mains, one of $4$ sides, and one of $2$ drinks. How many meals are possible?", answer: "24", explanation: "$3 \\times 4 \\times 2 = 24$ — multiply the stages." },
+      { question: "A password is one letter ($5$ choices) followed by one digit ($3$ choices). How many passwords?", answer: "15", explanation: "$5 \\times 3 = 15$ combinations." }
+    ]
+  },
+
+  // ===========================================================================
   // TRANSFORMATIONS II — rotations and dilations about the origin (8.G.A).
   // ===========================================================================
   coord_rotate_180: {
@@ -4484,7 +4574,10 @@ function levelToConceptId(category, level) {
     if (lvl <= 16) return 'prob_without_replacement';
     if (lvl <= 17) return 'stat_quartile';
     if (lvl <= 18) return 'stat_iqr';
-    return 'stat_mad';
+    if (lvl <= 19) return 'stat_mad';
+    if (lvl <= 21) return 'stat_theoretical_prob';
+    if (lvl <= 22) return 'stat_experimental_prob';
+    return 'stat_sample_space';
   }
   if (cat === 'powers') {
     if (lvl <= 4) return 'square_root';

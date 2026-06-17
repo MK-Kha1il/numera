@@ -135,6 +135,10 @@ const TYPE_TO_CONCEPT = {
   stat_quartile:            'stat_quartile',
   stat_iqr:                 'stat_iqr',
   stat_mad:                 'stat_mad',
+  // Statistics III — probability foundations.
+  stat_theoretical_prob:    'stat_theoretical_prob',
+  stat_experimental_prob:   'stat_experimental_prob',
+  stat_sample_space:        'stat_sample_space',
   // Factors & multiples strand — template types equal conceptIds (prefixed to dodge gcd_lcm).
   prime_factorization:      'prime_factorization',
   find_gcf:                 'find_gcf',
@@ -358,7 +362,7 @@ function getCategoryConceptIds(category, level) {
     fractions:     ['fraction_simplify', 'fraction_add', 'mixed_number', 'fraction_sub', 'fraction_compare', 'fraction_mult', 'fraction_div', 'fraction_negative'],
     number_sense:  ['percentage_of', 'fraction_of', 'ratio_solve', 'percent_change', 'unit_convert_metric', 'unit_convert_time', 'unit_rate', 'exponent_power', 'proportion_solve',
                     'percent_discount', 'simple_interest', 'multi_step_word', 'percent_markup', 'percent_error'],
-    statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'mean_missing_value', 'stat_probability', 'compound_probability', 'probability_complement', 'prob_without_replacement', 'stat_quartile', 'stat_iqr', 'stat_mad'],
+    statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'mean_missing_value', 'stat_probability', 'compound_probability', 'probability_complement', 'prob_without_replacement', 'stat_quartile', 'stat_iqr', 'stat_mad', 'stat_theoretical_prob', 'stat_experimental_prob', 'stat_sample_space'],
     expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'translate_expression', 'distribute', 'foil_binomials', 'square_binomial', 'factor_trinomial'],
     powers:        ['square_root', 'cube_root', 'exponent_power_of_product', 'exponent_product_rule', 'exponent_power_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation'],
     graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula', 'coord_reflect', 'coord_translate', 'coord_rotate_180', 'coord_rotate_90', 'coord_dilate'],

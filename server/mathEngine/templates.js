@@ -1914,6 +1914,76 @@ templates.statistics = {
       type: "stat_mad",
       mean: m, sumdev: 4 * mad, range: 2 * b
     };
+  },
+  // ---- Statistics III: probability foundations (7.SP.C) ----
+  // Theoretical probability as a REDUCED fraction: favorable / total. Distractors are genuinely
+  // DIFFERENT VALUES (never an unreduced form of the answer — the CAS grader treats 2/6 == 1/3, so
+  // an unreduced "distractor" would grade as a second correct option). Misconceptions modeled:
+  // the complement (P of not winning), the flipped fraction, and ODDS (wins : losses) read as P.
+  21: (_diffFactor, idx) => {
+    // Curated (favorable, total): the fraction reduces, favorable != total/2 (complement differs),
+    // and the odds form wins/(total-wins) is a genuinely different value from favorable/total.
+    const [fav, total] = [[2, 6], [3, 9], [2, 8], [4, 10], [3, 12]][idx % 5];
+    const g = gcd(fav, total);
+    const rn = fav / g, rd = total / g;          // reduced favorable / total (the answer)
+    const cf = total - fav;                       // non-favorable count (losers)
+    const cg = gcd(cf, total);
+    const cn = cf / cg, cd = total / cg;          // reduced complement = P(not win)
+    const og = gcd(fav, cf);
+    const on = fav / og, od = cf / og;            // reduced ODDS for: wins / losses
+    return {
+      question: `A spinner has $${total}$ equal sections, $${fav}$ of them winning. What is the theoretical probability of a win, as a fraction in simplest form?`,
+      answer: `${rn}/${rd}`,
+      distractors: [
+        `${cn}/${cd}`,            // probability of NOT winning (complement)
+        `${total}/${fav}`,        // flipped the fraction (total over favorable)
+        `${on}/${od}`             // ODDS wins:losses read as a probability (favorable over non-favorable)
+      ],
+      explanation: `Theoretical probability is favorable over TOTAL outcomes: $\\frac{${fav}}{${total}} = \\frac{${rn}}{${rd}}$ in simplest form. $\\frac{${cn}}{${cd}}$ is the chance of NOT winning (the complement); $\\frac{${total}}{${fav}}$ flips numerator and denominator; and $\\frac{${on}}{${od}}$ is the ODDS (wins to losses, $${fav}$ over $${cf}$), which uses the wrong denominator — probability divides by the total, not by the losers.`,
+      type: "stat_theoretical_prob"
+    };
+  },
+  // Experimental probability from observed trials: successes / trials (reduced). Distractors are
+  // genuinely DIFFERENT VALUES (no unreduced form of the answer): failures/trials, the flipped
+  // fraction, and successes/failures (the odds, a wrong denominator).
+  22: (_diffFactor, idx) => {
+    // Curated (successes, trials): successes != trials/2 (failures differ), the fraction reduces.
+    const [succ, trials] = [[6, 9], [8, 12], [9, 12], [4, 10], [10, 15]][idx % 5];
+    const g = gcd(succ, trials);
+    const rn = succ / g, rd = trials / g;         // reduced successes / trials (the answer)
+    const fail = trials - succ;
+    const fg = gcd(fail, trials);
+    const fn = fail / fg, fd = trials / fg;        // reduced failures / trials
+    const og = gcd(succ, fail);
+    const on = succ / og, od = fail / og;          // reduced successes / failures (odds)
+    return {
+      question: `A chip was flipped $${trials}$ times and landed heads $${succ}$ times. What is the experimental probability of heads, as a fraction in simplest form?`,
+      answer: `${rn}/${rd}`,
+      distractors: [
+        `${fn}/${fd}`,           // probability of the OTHER outcome (tails)
+        `${trials}/${succ}`,     // flipped the fraction (trials over successes)
+        `${on}/${od}`            // successes over FAILURES (odds, wrong denominator)
+      ],
+      explanation: `Experimental probability uses what actually HAPPENED: heads over total FLIPS, $\\frac{${succ}}{${trials}} = \\frac{${rn}}{${rd}}$ in simplest form. $\\frac{${fn}}{${fd}}$ is the experimental probability of tails; $\\frac{${trials}}{${succ}}$ flips the fraction; and $\\frac{${on}}{${od}}$ divides heads by TAILS (the odds), not by the total flips.`,
+      type: "stat_experimental_prob"
+    };
+  },
+  // Sample space via the fundamental counting principle: total outcomes = product of the choices
+  // at each independent stage. Distractors: ADDING the stages (the classic error), and one stage alone.
+  23: (_diffFactor, idx) => {
+    // Curated (shirts, pants, hats): product, sum, a·b and b·c are all distinct (the distractors
+    // model adding the stages, and using only two of the three stages).
+    const [a, b, c] = [[2, 3, 4], [3, 2, 4], [2, 3, 5], [4, 2, 3], [3, 3, 4]][idx % 5];
+    const product = a * b * c;
+    const sum = a + b + c;
+    return {
+      question: `An outfit is one of $${a}$ shirts, one of $${b}$ pairs of pants, and one of $${c}$ hats. How many different outfits are possible?`,
+      answer: product,
+      distractors: [sum, a * b, b * c], // added the stages; used only two stages; dropped the first stage
+      explanation: `By the counting principle, independent choices MULTIPLY: $${a} \\times ${b} \\times ${c} = ${product}$ outfits — every shirt pairs with every pants-and-hat combination. Adding ($${a} + ${b} + ${c} = ${sum}$) counts items, not combinations, and using only two of the three stages ($${a * b}$ or $${b * c}$) forgets a choice.`,
+      type: "stat_sample_space",
+      sum, partial: a * b
+    };
   }
 };
 

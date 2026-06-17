@@ -1186,6 +1186,37 @@ const concepts = {
     ]
   },
 
+  // ---- Statistics III: probability foundations (7.SP.C) ----
+  "stat_theoretical_prob": {
+    name: "Theoretical Probability",
+    prereqs: ["stat_probability", "fraction_simplify"],
+    baseElo: 1060,
+    misconceptions: [
+      { id: "gave_complement", label: "Reported the probability of the event NOT happening", rule: (ans) => ans },
+      { id: "flipped_fraction", label: "Put the total over the favorable outcomes (flipped the fraction)", rule: (ans) => ans },
+      { id: "gave_odds", label: "Gave the odds (wins to losses) instead of the probability (wins out of total)", rule: (ans) => ans }
+    ]
+  },
+  "stat_experimental_prob": {
+    name: "Experimental Probability",
+    prereqs: ["stat_theoretical_prob"],
+    baseElo: 1100,
+    misconceptions: [
+      { id: "gave_other_outcome", label: "Reported the experimental probability of the other outcome", rule: (ans) => ans },
+      { id: "flipped_fraction", label: "Put the trials over the successes (flipped the fraction)", rule: (ans) => ans },
+      { id: "gave_odds", label: "Divided the successes by the failures (odds) instead of by the total trials", rule: (ans) => ans }
+    ]
+  },
+  "stat_sample_space": {
+    name: "Sample Space (Counting Principle)",
+    prereqs: ["stat_theoretical_prob", "arithmetic_mult"],
+    baseElo: 1140,
+    misconceptions: [
+      { id: "added_stages", label: "Added the choices at each stage instead of multiplying them", rule: (ans, p) => p.sum },
+      { id: "dropped_a_stage", label: "Multiplied only two of the three stages, forgetting one choice", rule: (ans, p) => p.partial }
+    ]
+  },
+
   // ---- Transformations II: rotations & dilations about the origin (8.G.A) ----
   "coord_rotate_180": {
     name: "Rotating a Point 180°",
@@ -1543,6 +1574,9 @@ const STANDARDS = {
   stat_quartile: "6.SP.B.5c",
   stat_iqr: "6.SP.B.5c",
   stat_mad: "6.SP.B.5c",
+  stat_theoretical_prob: "7.SP.C.7a",
+  stat_experimental_prob: "7.SP.C.6",
+  stat_sample_space: "7.SP.C.8b",
   coord_rotate_180: "8.G.A.3",
   coord_rotate_90: "8.G.A.3",
   coord_dilate: "8.G.A.4",
