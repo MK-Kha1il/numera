@@ -63,6 +63,11 @@ object MathAvatars {
             "avatar_lovelace" -> "💻"
             "avatar_newton" -> "🍎"
             "avatar_euler" -> "🧩"
+            // Seasonal + prestige cosmetics (ultra-review #66/#75)
+            "avatar_comet" -> "☄️"
+            "avatar_solstice" -> "☀️"
+            "avatar_frost" -> "❄️"
+            "avatar_celestial" -> "🌌"
             else -> "📐" // Default fallback
         }
     }
@@ -313,6 +318,12 @@ fun ProfileBanner(bannerKey: String?, modifier: Modifier = Modifier) {
                     }
                 }
             }
+            // Seasonal + prestige banners (ultra-review #66/#75): distinct gradients so the
+            // premium season/token cosmetics read as premium rather than the default fill.
+            "banner_aurora_veil" -> SeasonGradientBanner(listOf(Color(0xFF00C9A7), Color(0xFF1A2980), Color(0xFF4ADEDE)))
+            "banner_eclipse" -> SeasonGradientBanner(listOf(Color(0xFF0B0B1E), Color(0xFF512DA8), Color(0xFFFFB300)))
+            "banner_meteor" -> SeasonGradientBanner(listOf(Color(0xFF1B1B2F), Color(0xFFE94057), Color(0xFFF27121)))
+            "banner_eternal" -> SeasonGradientBanner(listOf(Color(0xFFFFD54A), Color(0xFF8E2DE2), Color(0xFF1A1A2E)))
             else -> {
                 // banner_default: Premium Purple-Pink linear gradient
                 Box(
@@ -328,6 +339,16 @@ fun ProfileBanner(bannerKey: String?, modifier: Modifier = Modifier) {
         }
     }
 }
+}
+
+/** A full-bleed diagonal gradient used by the seasonal/prestige banners (no drawable needed). */
+@Composable
+private fun SeasonGradientBanner(colors: List<Color>) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.linearGradient(colors))
+    )
 }
 
 @Composable
