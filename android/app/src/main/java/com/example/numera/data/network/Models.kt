@@ -1339,6 +1339,47 @@ data class RewardClaimResponse(
     val error: String? = null
 )
 
+// ---- Reasoning Arena (understanding-gated ranked mode) ----
+// A point banks only if BOTH the answer AND the chosen reason are correct. See routes/reasoningDuel.js.
+data class ReasoningProblemDto(
+    val question: String = "",
+    val options: List<String> = emptyList(),
+    val reasonQuestion: String = "",
+    val reasonOptions: List<String> = emptyList()
+)
+
+data class ReasoningStartResponse(
+    val roundId: Int = 0,
+    val problemCount: Int = 0,
+    val problems: List<ReasoningProblemDto> = emptyList()
+)
+
+data class ReasoningSubmitRequest(
+    val answers: List<String>,
+    val reasons: List<Int>
+)
+
+data class ReasoningResultItem(
+    val answerCorrect: Boolean = false,
+    val reasonCorrect: Boolean = false,
+    val banked: Boolean = false,
+    val correctAnswer: String = "",
+    val reasonCorrectIndex: Int = 0,
+    val reasonExplanation: String = ""
+)
+
+data class ReasoningSubmitResponse(
+    val success: Boolean = false,
+    val banked: Int = 0,
+    val answerCorrect: Int = 0,
+    val total: Int = 0,
+    val ratingDelta: Double = 0.0,
+    val newDisplayRating: Int? = null,
+    val newRank: String? = null,
+    val promoted: Boolean = false,
+    val perProblem: List<ReasoningResultItem> = emptyList()
+)
+
 // ---- Learning plan (goal-driven concept path — audit #19) ----
 @Serializable
 data class LearningPlanStep(

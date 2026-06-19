@@ -96,6 +96,7 @@ app.use(require('./routes/rating'));
 app.use(require('./routes/puzzleRush'));
 app.use(require('./routes/asyncDuel'));
 app.use(require('./routes/botDuel'));
+app.use(require('./routes/reasoningDuel'));
 app.use(require('./routes/challenges'));
 app.use(require('./routes/worksheet'));
 app.use(require('./routes/learn'));

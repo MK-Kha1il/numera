@@ -49,6 +49,7 @@ fun ArenaScreen(
     var showPuzzleRush by remember { mutableStateOf(false) }
     var showAsyncDuel by remember { mutableStateOf(false) }
     var showBotDuel by remember { mutableStateOf(false) }
+    var showReasoning by remember { mutableStateOf(false) }
     var showChallenges by remember { mutableStateOf(false) }
     var showTournament by remember { mutableStateOf(false) }
     var showSeason by remember { mutableStateOf(false) }
@@ -158,6 +159,10 @@ fun ArenaScreen(
     }
     if (showBotDuel) {
         BotDuelScreen(onExit = { showBotDuel = false })
+        return
+    }
+    if (showReasoning) {
+        ReasoningArenaScreen(onExit = { showReasoning = false })
         return
     }
     if (showChallenges) {
@@ -588,6 +593,16 @@ fun ArenaScreen(
                             modifier = Modifier.weight(1f)
                         ) { showBotDuel = true }
                     }
+                }
+
+                item {
+                    ArenaModeTile(
+                        emoji = "🧠", title = "Reasoning Arena",
+                        subtitle = "Answer, then prove you understand WHY. A point banks only if both are right — ranked rating that rewards understanding, not speed.",
+                        accent = MaterialTheme.colorScheme.secondary,
+                        cta = "THINK",
+                        modifier = Modifier.fillMaxWidth()
+                    ) { showReasoning = true }
                 }
 
                 item {

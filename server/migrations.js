@@ -1154,6 +1154,31 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_season_reward_claims_user ON season_reward_claims(user_id, season_id)');
     },
   },
+  {
+    version: 50,
+    name: 'reasoning_rounds',
+    // Reasoning Arena (competitive audit Phase 3): a ranked round where a correct answer only banks a
+    // point if the player ALSO picks the correct REASON. The round (problems + answer key +
+    // correct-reason indices) is stored server-side so grading is authoritative; status guards
+    // double-submit.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS reasoning_rounds (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id       INTEGER NOT NULL,
+          level         INTEGER DEFAULT 1,
+          problems_json TEXT NOT NULL,
+          problem_count INTEGER DEFAULT 0,
+          status        TEXT DEFAULT 'pending',
+          score         INTEGER DEFAULT 0,
+          created_at    INTEGER DEFAULT 0,
+          finished_at   INTEGER DEFAULT 0,
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_reasoning_rounds_user ON reasoning_rounds(user_id)');
+    },
+  },
 ];
 
 /**
