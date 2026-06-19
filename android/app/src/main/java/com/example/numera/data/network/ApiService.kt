@@ -753,6 +753,13 @@ interface ApiService {
         @Query("limit") limit: Int
     ): List<RatingHistoryEntry>
 
+    // ---- Competitive match history (opponents, scorelines, W/L) ----
+    @GET("api/rating/matches")
+    suspend fun getMatchHistory(
+        @Header("Authorization") token: String,
+        @Query("limit") limit: Int
+    ): List<MatchHistoryEntry>
+
     // ---- Season peak badges (Act Rank) ----
     @GET("api/rating/season-history")
     suspend fun getSeasonHistory(@Header("Authorization") token: String): SeasonHistoryResponse

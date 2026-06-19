@@ -16,6 +16,7 @@ const { buildSelfExplainJson, SELF_EXPLAIN } = require('../mathEngine/selfExplai
 const NRS = require('../mathEngine/ratingEngine');
 const { applyDuelResultToRatings } = require('../services/ratingService');
 const { feedEngineOutcome } = require('../services/engineFeed');
+const { recordMatch } = require('../services/matchLog');
 
 const router = express.Router();
 
@@ -142,6 +143,17 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
       applyDuelResultToRatings(
         { userId: req.user.id, opponentMu: benchmarkMu, opponentSigma: 200, outcome, gameMode: 'reasoning' },
         (_e, after) => {
+          // Record this round in the player's match history (vs the reasoning benchmark).
+          recordMatch(db, {
+            userId: req.user.id,
+            mode: 'reasoning',
+            opponentId: null,
+            opponentName: 'Reasoning Benchmark',
+            myScore: r.banked,
+            oppScore: r.total - r.banked,
+            result: after && after.delta > 0 ? 'win' : after && after.delta < 0 ? 'loss' : 'draw',
+            ratingDelta: after ? after.delta : 0,
+          });
           res.json({
             success: true,
             banked: r.banked,

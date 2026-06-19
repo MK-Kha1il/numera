@@ -1179,6 +1179,33 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_reasoning_rounds_user ON reasoning_rounds(user_id)');
     },
   },
+  {
+    version: 51,
+    name: 'match_log',
+    // Competitive match history (Phase 2 identity, audit #69/#71): one row per competitive result
+    // (duel or reasoning round) from the player's POV — opponent, scoreline, result, rating delta. The
+    // foundation for "recent matches" and head-to-head/rivalry records. opponent_id is null for a bot
+    // or the reasoning benchmark.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS match_log (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id       INTEGER NOT NULL,
+          mode          TEXT NOT NULL,
+          opponent_id   INTEGER,
+          opponent_name TEXT,
+          my_score      INTEGER DEFAULT 0,
+          opp_score     INTEGER DEFAULT 0,
+          result        TEXT,
+          rating_delta  REAL DEFAULT 0,
+          created_at    INTEGER DEFAULT 0,
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_match_log_user ON match_log(user_id, created_at)');
+      await run('CREATE INDEX IF NOT EXISTS idx_match_log_h2h ON match_log(user_id, opponent_id)');
+    },
+  },
 ];
 
 /**

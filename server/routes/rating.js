@@ -378,6 +378,31 @@ router.get('/api/rating/history', authenticateToken, (req, res) => {
   );
 });
 
+// ── GET /api/rating/matches ───────────────────────────────────────────────────
+// Competitive match history (Phase 2 identity): the caller's recent rated results — opponent,
+// scoreline, win/loss, rating delta — newest first. Optionally filtered to one opponent (head-to-head).
+router.get('/api/rating/matches', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const limit = Math.min(parseInt(req.query.limit, 10) || 20, 50);
+  const vs = req.query.vs ? parseInt(req.query.vs, 10) : null;
+
+  const where = vs ? 'WHERE user_id = ? AND opponent_id = ?' : 'WHERE user_id = ?';
+  const params = vs ? [userId, vs, limit] : [userId, limit];
+
+  db.all(
+    `SELECT id, mode, opponent_id AS opponentId, opponent_name AS opponentName,
+            my_score AS myScore, opp_score AS oppScore, result,
+            rating_delta AS ratingDelta, created_at AS createdAt
+       FROM match_log ${where}
+      ORDER BY created_at DESC, id DESC LIMIT ?`,
+    params,
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
+    }
+  );
+});
+
 // ── GET /api/rating/leaderboard ───────────────────────────────────────────────
 router.get('/api/rating/leaderboard', authenticateToken, (req, res) => {
   const domain = NRS.KNOWN_DOMAINS.includes(req.query.domain) ? req.query.domain : 'global';

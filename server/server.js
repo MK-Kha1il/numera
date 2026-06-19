@@ -23,6 +23,7 @@ const { globalRateLimiter } = require('./middleware/rateLimit');
 // service (the old K=32 duel-Elo that independently wrote users.elo is retired). See
 // docs/specs/Spec-RatingUnification.md.
 const { applyDuelResultToRatings, getRatingRow } = require('./services/ratingService');
+const { recordMatch } = require('./services/matchLog');
 const { updateAchievements } = require('./services/achievementService');
 const { grantRankRewards } = require('./services/rankRewardService');
 const { flagAnswer, resolveDuel, rankedMatchmakingError } = require('./lib/duelIntegrity');
@@ -1365,6 +1366,26 @@ function finalizeDuel(roomId, room, winner, p2IsBot, done) {
                 cheated: room.p2.cheated || false,
                 ticketUsed: p2HasTicket && !room.isCasual && !p2IsBot,
               };
+
+              // Record the match for each human player's history (best-effort; never blocks the end).
+              if (p1IsHuman) {
+                recordMatch(db, {
+                  userId: room.p1.id, mode: 'duel',
+                  opponentId: p2IsHuman ? room.p2.id : null, opponentName: room.p2.username,
+                  myScore: room.p1.score, oppScore: room.p2.score,
+                  result: winner === room.p1.id ? 'win' : winner === null ? 'draw' : 'loss',
+                  ratingDelta: p1Res.ratingDelta || 0,
+                });
+              }
+              if (p2IsHuman) {
+                recordMatch(db, {
+                  userId: room.p2.id, mode: 'duel',
+                  opponentId: room.p1.id, opponentName: room.p1.username,
+                  myScore: room.p2.score, oppScore: room.p1.score,
+                  result: winner === room.p2.id ? 'win' : winner === null ? 'draw' : 'loss',
+                  ratingDelta: p2Res.ratingDelta || 0,
+                });
+              }
 
               io.to(roomId).emit('duel_end', {
                 winnerId: winner,

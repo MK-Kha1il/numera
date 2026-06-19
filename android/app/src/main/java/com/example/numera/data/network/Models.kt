@@ -1289,6 +1289,19 @@ data class RatingProfileResponse(
     val profile: Map<String, DomainRating> = emptyMap()
 )
 
+// ---- Competitive match history — GET /api/rating/matches (returns a bare array) ----
+data class MatchHistoryEntry(
+    val id: Int = 0,
+    val mode: String = "",
+    val opponentId: Int? = null,
+    val opponentName: String? = null,
+    val myScore: Int = 0,
+    val oppScore: Int = 0,
+    val result: String = "",
+    val ratingDelta: Double = 0.0,
+    val createdAt: Long = 0
+)
+
 // ---- Rating timeline — GET /api/rating/history (returns a bare array) ----
 data class RatingHistoryEntry(
     val domain: String = "global",

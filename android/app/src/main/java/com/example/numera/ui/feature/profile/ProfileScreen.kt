@@ -107,6 +107,7 @@ fun ProfileScreen(
     var seasonHistory by remember { mutableStateOf<List<com.example.numera.data.network.SeasonAward>?>(null) }
     var rewardTrack by remember { mutableStateOf<com.example.numera.data.network.RewardTrackResponse?>(null) }
     var ratingHistory by remember { mutableStateOf<List<com.example.numera.data.network.RatingHistoryEntry>?>(null) }
+    var matchHistory by remember { mutableStateOf<List<com.example.numera.data.network.MatchHistoryEntry>?>(null) }
     LaunchedEffect(Unit) {
         try {
             ratingProfile = RetrofitClient.apiService.getRatingProfile(RetrofitClient.authToken ?: "").profile
@@ -117,6 +118,11 @@ fun ProfileScreen(
             ratingHistory = RetrofitClient.apiService.getRatingHistory(RetrofitClient.authToken ?: "", "global", 12)
         } catch (e: Exception) {
             Log.e("Profile", "Failed to fetch rating history: ${e.message}")
+        }
+        try {
+            matchHistory = RetrofitClient.apiService.getMatchHistory(RetrofitClient.authToken ?: "", 15)
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch match history: ${e.message}")
         }
         try {
             seasonHistory = RetrofitClient.apiService.getSeasonHistory(RetrofitClient.authToken ?: "").awards
@@ -449,6 +455,12 @@ fun ProfileScreen(
         SeasonRewardTrackCard(
             track = rewardTrack,
             onClaim = claimRewardTier,
+            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+        )
+
+        // ── MATCH HISTORY (head-to-head results) ──
+        MatchHistoryCard(
+            matches = matchHistory,
             modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
         )
 
