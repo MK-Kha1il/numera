@@ -357,8 +357,17 @@ router.get('/api/rating/history', authenticateToken, (req, res) => {
   const params = domain ? [userId, domain, limit] : [userId, limit];
 
   db.all(
-    `SELECT id, domain, display_before, display_after, delta, performance_score,
-            expected_score, explanation, session_category, session_level, game_mode, created_at
+    `SELECT id, domain,
+            display_before   AS displayBefore,
+            display_after    AS displayAfter,
+            delta,
+            performance_score AS performanceScore,
+            expected_score    AS expectedScore,
+            explanation,
+            session_category  AS sessionCategory,
+            session_level     AS sessionLevel,
+            game_mode         AS gameMode,
+            created_at        AS createdAt
      FROM rating_history ${where}
      ORDER BY created_at DESC LIMIT ?`,
     params,

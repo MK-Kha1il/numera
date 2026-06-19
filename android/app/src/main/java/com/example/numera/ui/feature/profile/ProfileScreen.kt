@@ -106,11 +106,17 @@ fun ProfileScreen(
     var ratingProfile by remember { mutableStateOf<Map<String, com.example.numera.data.network.DomainRating>?>(null) }
     var seasonHistory by remember { mutableStateOf<List<com.example.numera.data.network.SeasonAward>?>(null) }
     var rewardTrack by remember { mutableStateOf<com.example.numera.data.network.RewardTrackResponse?>(null) }
+    var ratingHistory by remember { mutableStateOf<List<com.example.numera.data.network.RatingHistoryEntry>?>(null) }
     LaunchedEffect(Unit) {
         try {
             ratingProfile = RetrofitClient.apiService.getRatingProfile(RetrofitClient.authToken ?: "").profile
         } catch (e: Exception) {
             Log.e("Profile", "Failed to fetch rating profile: ${e.message}")
+        }
+        try {
+            ratingHistory = RetrofitClient.apiService.getRatingHistory(RetrofitClient.authToken ?: "", "global", 12)
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch rating history: ${e.message}")
         }
         try {
             seasonHistory = RetrofitClient.apiService.getSeasonHistory(RetrofitClient.authToken ?: "").awards
@@ -443,6 +449,12 @@ fun ProfileScreen(
         SeasonRewardTrackCard(
             track = rewardTrack,
             onClaim = claimRewardTier,
+            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+        )
+
+        // ── RATING HISTORY (recent rated results timeline) ──
+        RatingHistoryCard(
+            history = ratingHistory,
             modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
         )
 

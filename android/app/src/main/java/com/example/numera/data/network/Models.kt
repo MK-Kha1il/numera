@@ -1289,6 +1289,19 @@ data class RatingProfileResponse(
     val profile: Map<String, DomainRating> = emptyMap()
 )
 
+// ---- Rating timeline — GET /api/rating/history (returns a bare array) ----
+data class RatingHistoryEntry(
+    val domain: String = "global",
+    val displayBefore: Int = 0,
+    val displayAfter: Int = 0,
+    val delta: Double = 0.0,
+    val gameMode: String = "",
+    val sessionCategory: String? = null,
+    val sessionLevel: Int = 0,
+    val explanation: String = "",
+    val createdAt: Long = 0
+)
+
 // ---- Season peak badges ("Act Rank") — GET /api/rating/season-history ----
 // A permanent record of the highest competitive rank reached in each ended season.
 data class SeasonAward(

@@ -745,6 +745,14 @@ interface ApiService {
     @GET("api/rating/profile")
     suspend fun getRatingProfile(@Header("Authorization") token: String): RatingProfileResponse
 
+    // ---- Rating timeline (recent rated results) ----
+    @GET("api/rating/history")
+    suspend fun getRatingHistory(
+        @Header("Authorization") token: String,
+        @Query("domain") domain: String,
+        @Query("limit") limit: Int
+    ): List<RatingHistoryEntry>
+
     // ---- Season peak badges (Act Rank) ----
     @GET("api/rating/season-history")
     suspend fun getSeasonHistory(@Header("Authorization") token: String): SeasonHistoryResponse
