@@ -247,6 +247,61 @@ function applySessionToRating(ratingRow, sessionData) {
   };
 }
 
+// ─── Head-to-Head Duel Update ─────────────────────────────────────────────────
+
+/**
+ * Applies one head-to-head duel result to a (mu, sigma) rating pair.
+ *
+ * This is the unification keystone (docs/specs/Spec-RatingUnification.md): a ranked
+ * duel is evidence about the SAME latent skill as a solo session, so it updates the
+ * SAME (mu, sigma) belief — just scored by OUTCOME-vs-EXPECTED instead of
+ * performance-vs-baseline. Solo and duels therefore move ONE number per domain.
+ *
+ *   outcome   ∈ {1 win, 0.5 draw, 0 loss}
+ *   expected  = P(player beats opponent)        [the Gaussian win-prob model below]
+ *   K         = clamp(2.5σ, K_MIN, K_MAX)        [same uncertainty-scaled K as sessions]
+ *   delta     = K * (outcome − expected)
+ *
+ * Returns the SAME shape as applySessionToRating so the shared persistence path
+ * (rating_history, season peak, users.* mirror sync) treats both kinds of evidence
+ * identically. Pure: no DB/IO — callers fetch the two rating rows and persist the result.
+ */
+function applyDuelOutcomeToRating(ratingRow, { outcome, opponentMu, opponentSigma } = {}) {
+  const { mu, sessions_count, last_updated } = ratingRow;
+  let { sigma } = ratingRow;
+
+  // Re-widen uncertainty for a returning player before incorporating the result.
+  sigma = applyInactivityBoost(sigma, last_updated, sessions_count);
+
+  const oppMu = Number.isFinite(opponentMu) ? opponentMu : MU_INIT;
+  const oppSigma = Number.isFinite(opponentSigma) ? opponentSigma : SIGMA_INIT;
+  const expected = winProbability(mu, sigma, oppMu, oppSigma);
+
+  const clampedOutcome = Math.max(0, Math.min(Number(outcome), 1));
+  const K = Math.max(K_MIN, Math.min(2.5 * sigma, K_MAX));
+  const delta = K * (clampedOutcome - expected);
+
+  const newMu = mu + delta;
+  const newSigma = updateSigma(sigma);
+  const displayRating = Math.max(0, Math.floor(newMu - 2 * newSigma));
+
+  return {
+    mu: newMu,
+    sigma: newSigma,
+    displayRating,
+    delta,
+    // For the rating_history row: the realised outcome and the win probability we expected.
+    performanceScore: clampedOutcome,
+    expectedPerformance: expected,
+    components: {
+      outcome: clampedOutcome,
+      winProbability: +expected.toFixed(3),
+      opponentMu: +oppMu.toFixed(1),
+    },
+    sessionsCount: (sessions_count || 0) + 1,
+  };
+}
+
 // ─── Rank Name from Display Rating ───────────────────────────────────────────
 
 /**
@@ -275,6 +330,21 @@ function displayRatingToRank(displayRating, sessionsCount) {
   if (r < 1850) return 'Diamond I';
   if (r < 2000) return 'Master';
   return 'Grandmaster';
+}
+
+// ─── Rank Tiers (metal only) ──────────────────────────────────────────────────
+
+// The 7 metal tiers, coarser than the 21 divisions. Used by the seasonal Rank Reward track.
+const RANK_TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster'];
+
+/**
+ * Maps a rank label (e.g. "Gold II", "Master", "Unranked (…)") to its metal-tier index 0..6, or −1
+ * if unranked. Derived from the rank label's first word so the tier ladder can NEVER drift from
+ * displayRatingToRank — there is one source of truth for the ladder.
+ */
+function rankToTierIndex(rankLabel) {
+  const metal = String(rankLabel || '').split(' ')[0];
+  return RANK_TIERS.indexOf(metal);
 }
 
 // ─── Rating Explanation ───────────────────────────────────────────────────────
@@ -392,17 +462,22 @@ function updateTiltState(currentTilt, performanceScore, sessionData) {
  * Match quality is highest when win probability is close to 50%.
  */
 function computeMatchQuality(ratingA, ratingB) {
-  const BETA = 150;
-  const { mu: muA, sigma: sigmaA } = ratingA;
-  const { mu: muB, sigma: sigmaB } = ratingB;
-
-  const denom = Math.sqrt(sigmaA * sigmaA + sigmaB * sigmaB + BETA * BETA);
-  const z = (muA - muB) / denom;
-  const winProbA = normalCDF(z);
-
+  const winProbA = winProbability(ratingA.mu, ratingA.sigma, ratingB.mu, ratingB.sigma);
   // Quality is maximized when win probability is 50% (perfectly balanced)
   const quality = 1.0 - 4.0 * (winProbA - 0.5) * (winProbA - 0.5);
   return Math.max(0, quality);
+}
+
+/**
+ * Probability that player A beats player B under the NRS belief model.
+ *   p(A beats B) ≈ Φ((muA − muB) / sqrt(sigmaA² + sigmaB² + β²))
+ * β = 150 is the natural per-session performance variance. Shared by match-quality
+ * scoring and the head-to-head duel update so both speak the same win-probability language.
+ */
+function winProbability(muA, sigmaA, muB, sigmaB) {
+  const BETA = 150;
+  const denom = Math.sqrt(sigmaA * sigmaA + sigmaB * sigmaB + BETA * BETA);
+  return normalCDF((muA - muB) / denom);
 }
 
 /**
@@ -468,7 +543,11 @@ module.exports = {
   computePerformanceScore,
   computeExpectedPerformance,
   applySessionToRating,
+  applyDuelOutcomeToRating,
+  winProbability,
   displayRatingToRank,
+  RANK_TIERS,
+  rankToTierIndex,
   buildRatingExplanation,
   evaluateSmurfSignals,
   updateLearningVelocity,

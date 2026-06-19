@@ -741,6 +741,21 @@ interface ApiService {
     @GET("api/rating/season/leaderboard")
     suspend fun getSeasonLeaderboard(@Header("Authorization") token: String): SeasonLeaderboardResponse
 
+    // ---- Unified competitive rating (per-domain NRS ranks) ----
+    @GET("api/rating/profile")
+    suspend fun getRatingProfile(@Header("Authorization") token: String): RatingProfileResponse
+
+    // ---- Season peak badges (Act Rank) ----
+    @GET("api/rating/season-history")
+    suspend fun getSeasonHistory(@Header("Authorization") token: String): SeasonHistoryResponse
+
+    // ---- Seasonal Rank Reward track ----
+    @GET("api/rating/reward-track")
+    suspend fun getRewardTrack(@Header("Authorization") token: String): RewardTrackResponse
+
+    @POST("api/rating/reward-track/claim")
+    suspend fun claimRewardTier(@Header("Authorization") token: String, @Body req: ClaimTierRequest): RewardClaimResponse
+
     // ---- Weekly tournaments (async global event) ----
     @GET("api/tournaments/current")
     suspend fun getCurrentTournament(@Header("Authorization") token: String): TournamentCurrentResponse

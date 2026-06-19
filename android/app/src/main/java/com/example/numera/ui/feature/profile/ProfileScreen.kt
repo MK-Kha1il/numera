@@ -102,6 +102,42 @@ fun ProfileScreen(
         }
     }
     
+    // Unified competitive rating — per-domain ranks (Spec-RatingUnification.md / audit Top-25 #6).
+    var ratingProfile by remember { mutableStateOf<Map<String, com.example.numera.data.network.DomainRating>?>(null) }
+    var seasonHistory by remember { mutableStateOf<List<com.example.numera.data.network.SeasonAward>?>(null) }
+    var rewardTrack by remember { mutableStateOf<com.example.numera.data.network.RewardTrackResponse?>(null) }
+    LaunchedEffect(Unit) {
+        try {
+            ratingProfile = RetrofitClient.apiService.getRatingProfile(RetrofitClient.authToken ?: "").profile
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch rating profile: ${e.message}")
+        }
+        try {
+            seasonHistory = RetrofitClient.apiService.getSeasonHistory(RetrofitClient.authToken ?: "").awards
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch season history: ${e.message}")
+        }
+        try {
+            rewardTrack = RetrofitClient.apiService.getRewardTrack(RetrofitClient.authToken ?: "")
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch reward track: ${e.message}")
+        }
+    }
+
+    // Claim a seasonal Rank Reward tier, then refresh the track + the coin/token balance.
+    val claimRewardTier: (Int) -> Unit = { tier ->
+        scope.launch(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken ?: ""
+                RetrofitClient.apiService.claimRewardTier(token, com.example.numera.data.network.ClaimTierRequest(tier))
+                rewardTrack = RetrofitClient.apiService.getRewardTrack(token)
+                RetrofitClient.triggerProfileRefresh()
+            } catch (e: Exception) {
+                Log.e("Profile", "Failed to claim reward tier $tier: ${e.message}")
+            }
+        }
+    }
+
     // Sub-tab selection state inside ProfileScreen
     var selectedSubTab by remember { mutableStateOf(0) } // 0: Stats & Customize, 1: Achievements, 2: Friends, 3: Saved
     var selectedCategoryTab by remember { mutableStateOf("Persistence") }
@@ -395,6 +431,20 @@ fun ProfileScreen(
                 }
             }
         }
+
+        // ── COMPETITIVE RANK (unified per-domain rating + specialties) ──
+        CompetitiveRankCard(
+            profile = ratingProfile,
+            seasonHistory = seasonHistory,
+            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+        )
+
+        // ── SEASON REWARD TRACK (reach a tier → claim its seasonal reward) ──
+        SeasonRewardTrackCard(
+            track = rewardTrack,
+            onClaim = claimRewardTier,
+            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+        )
 
         // ── SKILL MASTERY (multi-dimensional) ──
         MasteryProfileCard(

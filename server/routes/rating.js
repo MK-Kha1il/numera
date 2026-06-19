@@ -9,90 +9,35 @@ const { securityLog } = require('../middleware/security');
 const NRS = require('../mathEngine/ratingEngine');
 const { notify } = require('../services/notificationService');
 const { withTransaction } = require('../dbx');
+// Shared NRS persistence + the users.* mirror (also used by the socket duel path) — see
+// services/ratingService.js and docs/specs/Spec-RatingUnification.md.
+const {
+  getRatingRow,
+  persistRatingUpdate,
+  maybeUpdateSeasonPeak,
+  nrsUpdateVelocity,
+  syncCompetitiveMirror,
+} = require('../services/ratingService');
 
 const router = express.Router();
 
 // End-of-season coin prizes for the top finishers (by season peak rating).
 const SEASON_REWARDS = [500, 300, 150];
 const SEASON_DEFAULT_DAYS = 90;
+
+// Seasonal Rank Reward track: per metal tier (Bronze..Grandmaster, indices 0..6 matching
+// NRS.RANK_TIERS), the reward claimable once you REACH that tier during a season. Tokens are the
+// prestige currency (season_tokens, spent on token-only cosmetics); coins are a bonus. (Audit #4.)
+const TIER_REWARDS = [
+  { tokens: 1, coins: 50 },    // Bronze
+  { tokens: 2, coins: 75 },    // Silver
+  { tokens: 3, coins: 100 },   // Gold
+  { tokens: 5, coins: 150 },   // Platinum
+  { tokens: 8, coins: 250 },   // Diamond
+  { tokens: 12, coins: 400 },  // Master
+  { tokens: 20, coins: 600 },  // Grandmaster
+];
 const nextSeasonName = () => `New Season (${new Date().toISOString().slice(0, 10)})`;
-
-// ── Internal helpers ──────────────────────────────────────────────────────────
-
-function getRatingRow(userId, domain, callback) {
-  db.get('SELECT * FROM user_ratings WHERE user_id = ? AND domain = ?', [userId, domain], (err, row) => {
-    if (err) return callback(err);
-    if (row) return callback(null, row);
-    callback(null, {
-      user_id: userId,
-      domain,
-      mu: NRS.MU_INIT,
-      sigma: NRS.SIGMA_INIT,
-      display_rating: 0,
-      sessions_count: 0,
-      last_updated: 0,
-    });
-  });
-}
-
-function persistRatingUpdate(userId, domain, before, after, sessionMeta, explanation, callback) {
-  const now = Math.floor(Date.now() / 1000);
-  db.run(
-    `INSERT INTO user_ratings (user_id, domain, mu, sigma, display_rating, sessions_count, last_updated)
-     VALUES (?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(user_id, domain) DO UPDATE SET
-       mu             = excluded.mu,
-       sigma          = excluded.sigma,
-       display_rating = excluded.display_rating,
-       sessions_count = excluded.sessions_count,
-       last_updated   = excluded.last_updated`,
-    [userId, domain, after.mu, after.sigma, after.displayRating, after.sessionsCount, now],
-    (errUpsert) => {
-      if (errUpsert) return callback(errUpsert);
-      db.run(
-        `INSERT INTO rating_history
-           (user_id, domain, mu_before, sigma_before, mu_after, sigma_after,
-            display_before, display_after, delta, performance_score, expected_score,
-            components_json, explanation, session_category, session_level, game_mode, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          userId,
-          domain,
-          before.mu,
-          before.sigma,
-          after.mu,
-          after.sigma,
-          before.display_rating,
-          after.displayRating,
-          after.delta,
-          after.performanceScore,
-          after.expectedPerformance,
-          JSON.stringify(after.components),
-          explanation,
-          sessionMeta.category,
-          sessionMeta.level,
-          sessionMeta.gameMode,
-          now,
-        ],
-        (errHist) => callback(errHist)
-      );
-    }
-  );
-}
-
-function maybeUpdateSeasonPeak(userId, domain, displayRating) {
-  db.get('SELECT id FROM seasons WHERE is_active = 1 LIMIT 1', (errS, season) => {
-    if (errS || !season) return;
-    db.run(
-      `INSERT INTO season_ratings (user_id, season_id, domain, peak_display, final_display)
-       VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT(user_id, season_id, domain) DO UPDATE SET
-         peak_display  = MAX(peak_display, excluded.peak_display),
-         final_display = excluded.final_display`,
-      [userId, season.id, domain, displayRating, displayRating]
-    );
-  });
-}
 
 // ── Season rollover (shared by the admin endpoint and the lazy auto-rollover) ──
 // Reward the top finishers (idempotent via rewards_finalized), soft-reset every rating, close the
@@ -115,6 +60,30 @@ async function rolloverSeason(tx, oldSeason, { name, durationDays }) {
       await tx.run('UPDATE users SET coins = coins + ? WHERE id = ?', [reward, top[i].user_id]);
       winners.push({ userId: top[i].user_id, reward, position: i + 1, seasonName: oldSeason.name });
     }
+
+    // Mint each placed player's season-peak badge ("Act Rank" — a permanent record of the highest
+    // rank they reached this season). The peak is their best across domains; the global session count
+    // gates it (a peak only becomes a badge once they were actually placed, ≥5 rated). Idempotent via
+    // PK(user_id, season_id) + the rewards_finalized guard. (Competitive audit Top-25 #5.)
+    const peaks = await tx.all(
+      `SELECT sr.user_id AS user_id, MAX(sr.peak_display) AS peak,
+              MAX(COALESCE(ug.sessions_count, 0)) AS sessions
+         FROM season_ratings sr
+         LEFT JOIN user_ratings ug ON ug.user_id = sr.user_id AND ug.domain = 'global'
+        WHERE sr.season_id = ?
+        GROUP BY sr.user_id`,
+      [oldSeason.id]
+    );
+    for (const p of peaks) {
+      const peakRank = NRS.displayRatingToRank(p.peak, p.sessions);
+      if (peakRank.startsWith('Unranked')) continue; // never placed → no badge
+      await tx.run(
+        `INSERT OR IGNORE INTO season_awards (user_id, season_id, season_name, peak_display, peak_rank, awarded_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [p.user_id, oldSeason.id, oldSeason.name, p.peak, peakRank, now]
+      );
+    }
+
     await tx.run('UPDATE seasons SET rewards_finalized = 1 WHERE id = ?', [oldSeason.id]);
   }
 
@@ -166,19 +135,6 @@ function notifySeasonWinners(winners) {
       dedupKey: `season:${w.seasonName}:${w.userId}`,
     });
   }
-}
-
-function nrsUpdateVelocity(userId, domain, delta) {
-  db.get('SELECT velocity FROM learning_velocity WHERE user_id = ? AND domain = ?', [userId, domain], (err, row) => {
-    const newVel = NRS.updateLearningVelocity(row ? row.velocity : 0, delta);
-    const now = Math.floor(Date.now() / 1000);
-    db.run(
-      `INSERT INTO learning_velocity (user_id, domain, velocity, updated_at)
-         VALUES (?, ?, ?, ?)
-         ON CONFLICT(user_id, domain) DO UPDATE SET velocity = excluded.velocity, updated_at = excluded.updated_at`,
-      [userId, domain, newVel, now]
-    );
-  });
 }
 
 function checkSmurfSignals(userId, excess, sessionsCount) {
@@ -286,7 +242,11 @@ router.post('/api/rating/session', authenticateToken, (req, res) => {
           nrsUpdateTilt(userId, domainResult.performanceScore, sessionData);
 
           const newRank = NRS.displayRatingToRank(globalAfter.displayRating, globalAfter.sessionsCount);
-          db.run('UPDATE users SET elo = ?, competitive_matches = ? WHERE id = ?', [Math.round(globalAfter.mu), globalAfter.sessionsCount, userId]);
+          // The users.elo / competitive_matches / competitive_rank columns are now a DERIVED MIRROR of
+          // the just-persisted global rating — written ONLY here (and by the duel path) via the shared
+          // helper, never independently. (Was the ad-hoc `SET elo = round(mu)` that collided with the
+          // duel writer — see docs/specs/Spec-RatingUnification.md.)
+          syncCompetitiveMirror(userId);
 
           res.json({
             success: true,
@@ -541,6 +501,94 @@ router.get('/api/rating/season/leaderboard', authenticateToken, async (req, res)
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── GET /api/rating/season-history ────────────────────────────────────────────
+// The caller's permanent season-peak badges (Act Rank): the highest rank they reached in each ended
+// season, newest first. Forward-looking identity — empty until the player's first season ends.
+router.get('/api/rating/season-history', authenticateToken, (req, res) => {
+  db.all(
+    `SELECT season_id AS seasonId, season_name AS seasonName, peak_display AS peakDisplay,
+            peak_rank AS peakRank, awarded_at AS awardedAt
+       FROM season_awards WHERE user_id = ?
+      ORDER BY awarded_at DESC, season_id DESC LIMIT 50`,
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ awards: rows || [] });
+    }
+  );
+});
+
+// ── GET /api/rating/reward-track ──────────────────────────────────────────────
+// The seasonal Rank Reward track: for the active season, each metal tier with whether the caller has
+// REACHED it (by season peak) and whether they've CLAIMED its reward. Lazily ensures a season exists.
+router.get('/api/rating/reward-track', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const { season, winners } = await withTransaction((tx) => ensureSeason(tx));
+    notifySeasonWinners(winners);
+    db.get('SELECT MAX(peak_display) AS peak FROM season_ratings WHERE user_id = ? AND season_id = ?', [userId, season.id], (e1, pk) => {
+      if (e1) return res.status(500).json({ error: e1.message });
+      db.get("SELECT sessions_count FROM user_ratings WHERE user_id = ? AND domain = 'global'", [userId], (e2, ses) => {
+        if (e2) return res.status(500).json({ error: e2.message });
+        const peak = (pk && pk.peak) || 0;
+        const sessions = (ses && ses.sessions_count) || 0;
+        const peakRank = NRS.displayRatingToRank(peak, sessions);
+        const peakTier = NRS.rankToTierIndex(peakRank);
+        db.all('SELECT tier_index FROM season_reward_claims WHERE user_id = ? AND season_id = ?', [userId, season.id], (e3, claims) => {
+          if (e3) return res.status(500).json({ error: e3.message });
+          const claimed = new Set((claims || []).map((c) => c.tier_index));
+          const now = Math.floor(Date.now() / 1000);
+          res.json({
+            season: { id: season.id, name: season.name, endAt: season.end_at, daysRemaining: Math.max(0, Math.ceil((season.end_at - now) / 86400)) },
+            peakRank,
+            peakTier,
+            tiers: NRS.RANK_TIERS.map((tierName, i) => ({
+              tierIndex: i,
+              tierName,
+              tokens: TIER_REWARDS[i].tokens,
+              coins: TIER_REWARDS[i].coins,
+              reached: i <= peakTier,
+              claimed: claimed.has(i),
+            })),
+          });
+        });
+      });
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/rating/reward-track/claim ───────────────────────────────────────
+// Claim one tier's seasonal reward (season_tokens + coins). Validated server-side against the season
+// PEAK so a later derank never blocks a reward already earned; idempotent via the claim ledger.
+router.post('/api/rating/reward-track/claim', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const tier = parseInt(req.body && req.body.tier, 10);
+  if (!Number.isInteger(tier) || tier < 0 || tier >= NRS.RANK_TIERS.length) {
+    return res.status(400).json({ error: 'Invalid tier' });
+  }
+  withTransaction(async (tx) => {
+    const season = await tx.get('SELECT * FROM seasons WHERE is_active = 1 LIMIT 1');
+    if (!season) { const e = new Error('No active season'); e.status = 400; throw e; }
+    const pk = await tx.get('SELECT MAX(peak_display) AS peak FROM season_ratings WHERE user_id = ? AND season_id = ?', [userId, season.id]);
+    const ses = await tx.get("SELECT sessions_count FROM user_ratings WHERE user_id = ? AND domain = 'global'", [userId]);
+    const peak = (pk && pk.peak) || 0;
+    const sessions = (ses && ses.sessions_count) || 0;
+    const peakTier = NRS.rankToTierIndex(NRS.displayRatingToRank(peak, sessions));
+    if (tier > peakTier) { const e = new Error("You haven't reached this tier this season yet"); e.status = 400; throw e; }
+    const existing = await tx.get('SELECT 1 FROM season_reward_claims WHERE user_id = ? AND season_id = ? AND tier_index = ?', [userId, season.id, tier]);
+    if (existing) { const e = new Error('Reward already claimed'); e.status = 400; throw e; }
+    const reward = TIER_REWARDS[tier];
+    await tx.run('INSERT INTO season_reward_claims (user_id, season_id, tier_index, claimed_at) VALUES (?, ?, ?, ?)', [userId, season.id, tier, Math.floor(Date.now() / 1000)]);
+    await tx.run('UPDATE users SET season_tokens = season_tokens + ?, coins = coins + ? WHERE id = ?', [reward.tokens, reward.coins, userId]);
+    const u = await tx.get('SELECT season_tokens, coins FROM users WHERE id = ?', [userId]);
+    return { tier, tierName: NRS.RANK_TIERS[tier], tokensAwarded: reward.tokens, coinsAwarded: reward.coins, seasonTokens: u.season_tokens, coins: u.coins };
+  })
+    .then((r) => res.json({ success: true, ...r }))
+    .catch((err) => res.status(err.status || 500).json({ error: err.message }));
 });
 
 // ── POST /api/rating/season/end — admin only ──────────────────────────────────

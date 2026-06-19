@@ -19,7 +19,10 @@ const sympyCas = require('./mathEngine/cas/sympyClient'); // optional SymPy CAS 
 const { JWT_SECRET, PORT, EXTRA_CORS_ORIGINS, TRUST_PROXY } = require('./config');
 const { securityHeaders, sanitizeServerErrors, securityLog } = require('./middleware/security');
 const { globalRateLimiter } = require('./middleware/rateLimit');
-const { calculateRankFromElo } = require('./lib/progression');
+// Rating unification: ranked duels feed the SAME per-domain NRS rating as solo play, via the shared
+// service (the old K=32 duel-Elo that independently wrote users.elo is retired). See
+// docs/specs/Spec-RatingUnification.md.
+const { applyDuelResultToRatings, getRatingRow } = require('./services/ratingService');
 const { updateAchievements } = require('./services/achievementService');
 const { grantRankRewards } = require('./services/rankRewardService');
 const { flagAnswer, resolveDuel, rankedMatchmakingError } = require('./lib/duelIntegrity');
@@ -1160,42 +1163,47 @@ function simulateBot(roomId) {
   }, 3000 + Math.random() * 2000);
 }
 
-function processPlayerDuelResult(userId, eloChange, isWinner, callback) {
+// Commit one player's duel result. RATING is updated through the unified NRS path
+// (applyDuelResultToRatings → user_ratings + the users.* mirror) and ONLY when `ratingMoves` (ranked
+// human-vs-human). Coins/wins/solved_count are independent of rating. Note: this no longer writes
+// users.rank — that stays the level/progression rank; competitive rank lives in competitive_rank,
+// refreshed by the mirror. (docs/specs/Spec-RatingUnification.md)
+function processPlayerDuelResult(userId, opts, callback) {
+  const { isWinner, ratingMoves, outcome, opponentMu, opponentSigma, coinMultiplier = 1 } = opts;
   if (!userId || typeof userId !== 'number' || userId === 9999) {
-    return callback(null, { eloChange: 0, newElo: 0, newRank: 'MathBot' });
+    return callback(null, { ratingDelta: 0, newElo: 0, newDisplayRating: 0, newRank: 'MathBot' });
   }
 
-  db.get("SELECT elo, competitive_matches, coins, arena_wins FROM users WHERE id = ?", [userId], (err, user) => {
-    if (err || !user) {
-      return callback(null, { eloChange: 0, newElo: 1000, newRank: 'Unranked (Placement: 0/5)' });
-    }
-
-    const currentElo = user.elo !== undefined && user.elo !== null ? user.elo : 1000;
-    const currentMatches = user.competitive_matches || 0;
-    
-    const newElo = Math.max(100, currentElo + eloChange);
-    const newMatches = currentMatches + 1;
-    const newRank = calculateRankFromElo(newElo, newMatches);
-    
-    const newCoins = user.coins + (isWinner ? 50 : 0);
-    const newWins = user.arena_wins + (isWinner ? 1 : 0);
-
+  const finishWrites = (after) => {
+    const coinGain = isWinner ? 50 * coinMultiplier : 0;
     db.run(
-      "UPDATE users SET elo = ?, competitive_matches = ?, rank = ?, coins = ?, arena_wins = ?, solved_count = solved_count + 5 WHERE id = ?",
-      [newElo, newMatches, newRank, newCoins, newWins, userId],
-      (errUpdate) => {
-        updateAchievements(userId, () => {
-          grantRankRewards(userId, newRank, () => {
-            callback(null, {
-              eloChange,
-              newElo,
-              newRank
+      "UPDATE users SET coins = coins + ?, arena_wins = arena_wins + ?, solved_count = solved_count + 5 WHERE id = ?",
+      [coinGain, isWinner ? 1 : 0, userId],
+      () => {
+        // Read the (possibly just-synced) mirror so the debrief shows the unified competitive rank.
+        db.get('SELECT elo, competitive_rank FROM users WHERE id = ?', [userId], (e, row) => {
+          const newRank = (row && row.competitive_rank) || 'Unranked (Placement: 0/5)';
+          const newElo = row && row.elo != null ? row.elo : 1000;
+          updateAchievements(userId, () => {
+            grantRankRewards(userId, newRank, () => {
+              callback(null, {
+                ratingDelta: after ? +after.delta.toFixed(1) : 0,
+                newElo,
+                newDisplayRating: after ? after.displayRating : null,
+                newRank,
+              });
             });
           });
         });
       }
     );
-  });
+  };
+
+  if (ratingMoves) {
+    applyDuelResultToRatings({ userId, opponentMu, opponentSigma, outcome }, (err, after) => finishWrites(err ? null : after));
+  } else {
+    finishWrites(null);
+  }
 }
 
 // Look up a player's behavioral-telemetry opt-in. Integrity scoring is behavioral profiling, so
@@ -1255,15 +1263,17 @@ function endDuel(roomId, done) {
         securityLog(room.p2.id, 'ARENA_DUEL_CHEATING_DISQUALIFIED', null, `${room.p2.username} disqualified: ${room.p2.integrityReason} (${room.p2.integrityFlags || 0} flags).`);
       }
 
-      finalizeDuel(roomId, room, winner, resolution.p1EloChange, resolution.p2EloChange, p2IsBot, done);
+      // Rating is now resolved inside finalizeDuel via the unified NRS path (resolveDuel still owns
+      // the winner + integrity verdict + forfeit; its Elo numbers are no longer used).
+      finalizeDuel(roomId, room, winner, p2IsBot, done);
     });
   });
 }
 
-// Commit a resolved duel: quest increment, challenge-ticket doubling, the rating/reward writes
-// (processPlayerDuelResult), then emit duel_end and free the room. Split out of endDuel so the
-// pure resolution above stays readable; the body is the original (untested) commit logic.
-function finalizeDuel(roomId, room, winner, p1EloChange, p2EloChange, p2IsBot, done) {
+// Commit a resolved duel: quest increment, challenge tickets, the unified rating + reward writes
+// (processPlayerDuelResult), then emit duel_end and free the room. Rating moves ONLY for a ranked
+// human-vs-human duel — bots and casual stay rating-neutral. See docs/specs/Spec-RatingUnification.md.
+function finalizeDuel(roomId, room, winner, p2IsBot, done) {
   // Increment duels_today in user_quests for human players
   if (room.p1.id && typeof room.p1.id === 'number') {
     db.run("UPDATE user_quests SET duels_today = duels_today + 1 WHERE user_id = ?", [room.p1.id]);
@@ -1272,6 +1282,18 @@ function finalizeDuel(roomId, room, winner, p1EloChange, p2EloChange, p2IsBot, d
     db.run("UPDATE user_quests SET duels_today = duels_today + 1 WHERE user_id = ?", [room.p2.id]);
   }
 
+  const p1IsHuman = typeof room.p1.id === 'number' && room.p1.id !== 9999;
+  const p2IsHuman = typeof room.p2.id === 'number' && !p2IsBot;
+  // Only a ranked human-vs-human duel moves the competitive rating (this also closes the bot-Elo-farm
+  // — practising against a bot can no longer inflate your number).
+  const ratingMoves = !room.isCasual && p1IsHuman && p2IsHuman;
+
+  // Outcome per player (1 win / 0.5 draw / 0 loss). A cheat verdict forces a loss (resolveDuel has
+  // already flipped `winner` to the clean opponent; this also covers a double-DQ → both lose).
+  const outcomeFor = (id, cheated) => (cheated ? 0 : winner === id ? 1 : winner === null ? 0.5 : 0);
+  const p1Outcome = outcomeFor(room.p1.id, room.p1.cheated);
+  const p2Outcome = outcomeFor(room.p2.id, room.p2.cheated);
+
   let p1HasTicket = false;
   let p2HasTicket = false;
 
@@ -1279,70 +1301,100 @@ function finalizeDuel(roomId, room, winner, p1EloChange, p2EloChange, p2IsBot, d
     if (!errT1 && rowT1 && rowT1.quantity > 0) {
       p1HasTicket = true;
     }
-    
+
     db.get("SELECT quantity FROM user_utilities WHERE user_id = ? AND item_id = 'item_challenge_ticket'", [room.p2.id], (errT2, rowT2) => {
       if (!errT2 && rowT2 && rowT2.quantity > 0) {
         p2HasTicket = true;
       }
 
-      let p1EloMod = p1EloChange;
-      let p2EloMod = p2EloChange;
+      // Challenge tickets used to double the Elo swing; under the unified rating they double the
+      // WINNER's coin reward instead (doubling a mu delta is ill-defined). Consumed on a ranked duel.
+      const p1CoinMult = p1HasTicket && !room.isCasual ? 2 : 1;
+      const p2CoinMult = p2HasTicket && !room.isCasual && !p2IsBot ? 2 : 1;
 
-      const proceed = () => {
-        processPlayerDuelResult(room.p1.id, p1EloMod, winner === room.p1.id, (err1, p1Res) => {
-          processPlayerDuelResult(room.p2.id, p2EloMod, winner === room.p2.id, (err2, p2Res) => {
-            const p1Data = {
-              ...room.p1,
-              eloChange: p1EloMod,
-              newElo: p1Res.newElo,
-              newRank: p1Res.newRank,
-              cheated: room.p1.cheated || false,
-              ticketUsed: p1HasTicket && !room.isCasual
-            };
-
-            const p2Data = {
-              ...room.p2,
-              eloChange: p2EloMod,
-              newElo: p2IsBot ? 0 : p2Res.newElo,
-              newRank: p2IsBot ? 'MathBot' : p2Res.newRank,
-              cheated: room.p2.cheated || false,
-              ticketUsed: p2HasTicket && !room.isCasual && !p2IsBot
-            };
-
-            io.to(roomId).emit('duel_end', {
-              winnerId: winner,
-              winner,
-              p1: p1Data,
-              p2: p2Data,
-              isCasual: room.isCasual || false
-            });
-            delete rooms[roomId];
-            if (done) done();
-          });
+      // Fetch BOTH players' pre-duel global ratings up front, so each is scored against the other's
+      // rating as it stood before the match (one simultaneous update, no order dependence).
+      const withRatings = (cb) => {
+        if (!ratingMoves) return cb(undefined, undefined);
+        getRatingRow(room.p1.id, 'global', (e1, r1) => {
+          getRatingRow(room.p2.id, 'global', (e2, r2) => cb(r1, r2));
         });
       };
 
-      let pendingTasks = 0;
-      if (p1HasTicket && !room.isCasual) {
-        p1EloMod = p1EloChange * 2;
-        pendingTasks++;
-        db.run("UPDATE user_utilities SET quantity = quantity - 1 WHERE user_id = ? AND item_id = 'item_challenge_ticket'", [room.p1.id], () => {
-          pendingTasks--;
-          if (pendingTasks === 0) proceed();
-        });
-      }
-      if (p2HasTicket && !room.isCasual && !p2IsBot) {
-        p2EloMod = p2EloChange * 2;
-        pendingTasks++;
-        db.run("UPDATE user_utilities SET quantity = quantity - 1 WHERE user_id = ? AND item_id = 'item_challenge_ticket'", [room.p2.id], () => {
-          pendingTasks--;
-          if (pendingTasks === 0) proceed();
-        });
-      }
+      withRatings((r1, r2) => {
+        const proceed = () => {
+          processPlayerDuelResult(room.p1.id, {
+            isWinner: winner === room.p1.id,
+            ratingMoves,
+            outcome: p1Outcome,
+            opponentMu: r2 ? r2.mu : undefined,
+            opponentSigma: r2 ? r2.sigma : undefined,
+            coinMultiplier: p1CoinMult,
+          }, (err1, p1Res) => {
+            processPlayerDuelResult(room.p2.id, {
+              isWinner: winner === room.p2.id,
+              ratingMoves,
+              outcome: p2Outcome,
+              opponentMu: r1 ? r1.mu : undefined,
+              opponentSigma: r1 ? r1.sigma : undefined,
+              coinMultiplier: p2CoinMult,
+            }, (err2, p2Res) => {
+              const p1Data = {
+                ...room.p1,
+                ratingMoved: ratingMoves,
+                ratingDelta: p1Res.ratingDelta,
+                newElo: p1Res.newElo,
+                newDisplayRating: p1Res.newDisplayRating,
+                newRank: p1Res.newRank,
+                cheated: room.p1.cheated || false,
+                ticketUsed: p1HasTicket && !room.isCasual,
+              };
 
-      if (pendingTasks === 0) {
-        proceed();
-      }
+              const p2Data = {
+                ...room.p2,
+                ratingMoved: ratingMoves,
+                ratingDelta: p2IsBot ? 0 : p2Res.ratingDelta,
+                newElo: p2IsBot ? 0 : p2Res.newElo,
+                newDisplayRating: p2IsBot ? null : p2Res.newDisplayRating,
+                newRank: p2IsBot ? 'MathBot' : p2Res.newRank,
+                cheated: room.p2.cheated || false,
+                ticketUsed: p2HasTicket && !room.isCasual && !p2IsBot,
+              };
+
+              io.to(roomId).emit('duel_end', {
+                winnerId: winner,
+                winner,
+                p1: p1Data,
+                p2: p2Data,
+                isCasual: room.isCasual || false,
+              });
+              delete rooms[roomId];
+              if (done) done();
+            });
+          });
+        };
+
+        // Consume tickets (ranked only), then commit.
+        let pendingTasks = 0;
+        if (p1HasTicket && !room.isCasual) {
+          pendingTasks++;
+          db.run("UPDATE user_utilities SET quantity = quantity - 1 WHERE user_id = ? AND item_id = 'item_challenge_ticket'", [room.p1.id], () => {
+            pendingTasks--;
+            if (pendingTasks === 0) proceed();
+          });
+        }
+        if (p2HasTicket && !room.isCasual && !p2IsBot) {
+          pendingTasks++;
+          db.run("UPDATE user_utilities SET quantity = quantity - 1 WHERE user_id = ? AND item_id = 'item_challenge_ticket'", [room.p2.id], () => {
+            pendingTasks--;
+            if (pendingTasks === 0) proceed();
+          });
+        }
+
+        if (pendingTasks === 0) {
+          proceed();
+        }
+      });
     });
   });
 }

@@ -1270,6 +1270,72 @@ data class SeasonLeaderboardResponse(
     val yourRank: Int? = null
 )
 
+// ---- Unified competitive rating (NRS) — GET /api/rating/profile ----
+// One (mu/sigma) rating per domain; `displayRating` is the conservative mu−2σ shown to the player,
+// `rank` its ladder label. The `profile` map is keyed by domain ("global" + the 8 math domains).
+// See docs/specs/Spec-RatingUnification.md.
+data class DomainRating(
+    val displayRating: Int = 0,
+    val rank: String = "Unranked (Placement: 0/5)",
+    val sessionsCount: Int = 0,
+    val mu: Double = 0.0,
+    val velocity: Double = 0.0
+)
+
+data class RatingProfileResponse(
+    val profile: Map<String, DomainRating> = emptyMap()
+)
+
+// ---- Season peak badges ("Act Rank") — GET /api/rating/season-history ----
+// A permanent record of the highest competitive rank reached in each ended season.
+data class SeasonAward(
+    val seasonId: Int = 0,
+    val seasonName: String = "",
+    val peakDisplay: Int = 0,
+    val peakRank: String = "",
+    val awardedAt: Long = 0
+)
+
+data class SeasonHistoryResponse(
+    val awards: List<SeasonAward> = emptyList()
+)
+
+// ---- Seasonal Rank Reward track — GET /api/rating/reward-track, POST .../claim ----
+data class RewardTier(
+    val tierIndex: Int = 0,
+    val tierName: String = "",
+    val tokens: Int = 0,
+    val coins: Int = 0,
+    val reached: Boolean = false,
+    val claimed: Boolean = false
+)
+
+data class RewardTrackSeason(
+    val id: Int = 0,
+    val name: String = "",
+    val endAt: Long = 0,
+    val daysRemaining: Int = 0
+)
+
+data class RewardTrackResponse(
+    val season: RewardTrackSeason = RewardTrackSeason(),
+    val peakRank: String = "",
+    val peakTier: Int = -1,
+    val tiers: List<RewardTier> = emptyList()
+)
+
+data class ClaimTierRequest(val tier: Int)
+
+data class RewardClaimResponse(
+    val success: Boolean = false,
+    val tierName: String = "",
+    val tokensAwarded: Int = 0,
+    val coinsAwarded: Int = 0,
+    val seasonTokens: Int = 0,
+    val coins: Int = 0,
+    val error: String? = null
+)
+
 // ---- Learning plan (goal-driven concept path — audit #19) ----
 @Serializable
 data class LearningPlanStep(

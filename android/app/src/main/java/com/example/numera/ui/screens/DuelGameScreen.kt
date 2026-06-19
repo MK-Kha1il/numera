@@ -256,24 +256,29 @@ fun DuelGameScreen(
     if (isDuelOver) {
         val didIWin = duelWinnerId == myUserId
         val isCasual = eloInfo?.optBoolean("isCasual", false) ?: false
+        // Unified rating (docs/specs/Spec-RatingUnification.md): duels move the SAME per-domain NRS
+        // rating as solo play. The debrief shows the conservative display rating + its delta. A ranked
+        // duel vs the bot fallback is rating-neutral (ratingMoved=false), so we don't show a change.
         var myChange = 0
-        var myNewElo = 1000
+        var myNewRating = 0
         var myNewRank = ""
+        var myRatingMoved = false
         var didICheat = false
 
         val p1Obj = eloInfo?.optJSONObject("p1")
         val p2Obj = eloInfo?.optJSONObject("p2")
 
-        if (p1Obj != null && p1Obj.optInt("id") == myUserId) {
-            myChange = p1Obj.optInt("eloChange")
-            myNewElo = p1Obj.optInt("newElo")
-            myNewRank = p1Obj.optString("newRank")
-            didICheat = p1Obj.optBoolean("cheated", false)
-        } else if (p2Obj != null && p2Obj.optInt("id") == myUserId) {
-            myChange = p2Obj.optInt("eloChange")
-            myNewElo = p2Obj.optInt("newElo")
-            myNewRank = p2Obj.optString("newRank")
-            didICheat = p2Obj.optBoolean("cheated", false)
+        val mine = when {
+            p1Obj != null && p1Obj.optInt("id") == myUserId -> p1Obj
+            p2Obj != null && p2Obj.optInt("id") == myUserId -> p2Obj
+            else -> null
+        }
+        if (mine != null) {
+            myChange = mine.optInt("ratingDelta")
+            myNewRating = mine.optInt("newDisplayRating")
+            myNewRank = mine.optString("newRank")
+            myRatingMoved = mine.optBoolean("ratingMoved", false)
+            didICheat = mine.optBoolean("cheated", false)
         }
 
         Box(
@@ -324,12 +329,23 @@ fun DuelGameScreen(
                     )
 
                     if (!isCasual) {
-                        Text(
-                            text = "New Rating: $myNewElo (${if (myChange >= 0) "+" else ""}$myChange)",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
+                        if (myRatingMoved) {
+                            Text(
+                                text = "New Rating: $myNewRating (${if (myChange >= 0) "+" else ""}$myChange)",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        } else {
+                            // Ranked bot fallback: a practice opponent, so the rating is untouched.
+                            Text(
+                                text = "Practice match — rating unchanged",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -346,7 +362,7 @@ fun DuelGameScreen(
 
                         if (didICheat) {
                             Text(
-                                text = "⚠️ Suspicious solve times detected.\nElo change set to 0.",
+                                text = "⚠️ Suspicious solve times detected.\nThis ranked match was forfeited.",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = WrongRed,

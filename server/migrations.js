@@ -1058,6 +1058,102 @@ const migrations = [
       }
     },
   },
+  {
+    version: 47,
+    name: 'rating_unification_mirror',
+    // Rating unification (docs/specs/Spec-RatingUnification.md): the competitive rating now lives in
+    // ONE place — user_ratings (per-domain mu/sigma). The denormalised users.elo / competitive_matches
+    // columns were independently written by BOTH the solo path and the duel path in incompatible
+    // scales (the competitive-audit "smoking gun"), so this (a) adds competitive_rank as the mirror of
+    // the NRS rank and (b) RECONCILES the mirror to the authoritative global rating for every user who
+    // already has one. Users without a user_ratings row keep their defaults. No data loss —
+    // user_ratings was always the source of truth; we are only fixing the cache. From here, the mirror
+    // is written ONLY by ratingService.syncCompetitiveMirror.
+    up: async (run) => {
+      try {
+        await run("ALTER TABLE users ADD COLUMN competitive_rank TEXT DEFAULT 'Unranked (Placement: 0/5)'");
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+      // Reconcile elo + competitive_matches + competitive_rank from the global user_ratings row.
+      // The CASE mirrors mathEngine/ratingEngine.displayRatingToRank exactly (keep in sync if that
+      // ladder ever changes). Only touches users who actually have a global rating row.
+      await run(`
+        UPDATE users SET
+          elo = (SELECT CAST(ROUND(ur.mu) AS INTEGER) FROM user_ratings ur WHERE ur.user_id = users.id AND ur.domain = 'global'),
+          competitive_matches = (SELECT ur.sessions_count FROM user_ratings ur WHERE ur.user_id = users.id AND ur.domain = 'global'),
+          competitive_rank = (
+            SELECT CASE
+              WHEN ur.sessions_count < 5 THEN 'Unranked (Placement: ' || ur.sessions_count || '/5)'
+              WHEN ur.display_rating < 450  THEN 'Bronze III'
+              WHEN ur.display_rating < 550  THEN 'Bronze II'
+              WHEN ur.display_rating < 650  THEN 'Bronze I'
+              WHEN ur.display_rating < 750  THEN 'Silver III'
+              WHEN ur.display_rating < 850  THEN 'Silver II'
+              WHEN ur.display_rating < 950  THEN 'Silver I'
+              WHEN ur.display_rating < 1050 THEN 'Gold III'
+              WHEN ur.display_rating < 1150 THEN 'Gold II'
+              WHEN ur.display_rating < 1250 THEN 'Gold I'
+              WHEN ur.display_rating < 1350 THEN 'Platinum III'
+              WHEN ur.display_rating < 1450 THEN 'Platinum II'
+              WHEN ur.display_rating < 1550 THEN 'Platinum I'
+              WHEN ur.display_rating < 1650 THEN 'Diamond III'
+              WHEN ur.display_rating < 1750 THEN 'Diamond II'
+              WHEN ur.display_rating < 1850 THEN 'Diamond I'
+              WHEN ur.display_rating < 2000 THEN 'Master'
+              ELSE 'Grandmaster'
+            END
+            FROM user_ratings ur WHERE ur.user_id = users.id AND ur.domain = 'global'
+          )
+        WHERE EXISTS (SELECT 1 FROM user_ratings ur WHERE ur.user_id = users.id AND ur.domain = 'global')
+      `);
+    },
+  },
+  {
+    version: 48,
+    name: 'season_awards',
+    // Act-Rank-style seasonal peak badge (competitive audit Top-25 #5): a PERMANENT record of the
+    // highest competitive rank a player reached in each ended season, minted at rollover from the
+    // season's best peak_display. The lowest-effort identity win in the audit — the season peak was
+    // already stored (season_ratings.peak_display); this just immortalises it. One row per
+    // (user, season); empty until a player's first season ends.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS season_awards (
+          user_id      INTEGER NOT NULL,
+          season_id    INTEGER NOT NULL,
+          season_name  TEXT,
+          peak_display INTEGER DEFAULT 0,
+          peak_rank    TEXT,
+          awarded_at   INTEGER DEFAULT 0,
+          PRIMARY KEY (user_id, season_id),
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_season_awards_user ON season_awards(user_id)');
+    },
+  },
+  {
+    version: 49,
+    name: 'season_reward_claims',
+    // Seasonal Rank Reward track (competitive audit Top-25 #4 / Rocket League pattern): reaching a
+    // metal tier during a season unlocks that tier's seasonal reward (season_tokens + coins),
+    // claimable once per (user, season, tier). This ledger records claims so a reward can't be taken
+    // twice. "Reached" is judged off the season PEAK, so a later derank never revokes a claim.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS season_reward_claims (
+          user_id    INTEGER NOT NULL,
+          season_id  INTEGER NOT NULL,
+          tier_index INTEGER NOT NULL,
+          claimed_at INTEGER DEFAULT 0,
+          PRIMARY KEY (user_id, season_id, tier_index),
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_season_reward_claims_user ON season_reward_claims(user_id, season_id)');
+    },
+  },
 ];
 
 /**

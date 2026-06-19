@@ -51,6 +51,7 @@ function initDb() {
           last_league_reset INTEGER DEFAULT 0,
           elo INTEGER DEFAULT 1000,
           competitive_matches INTEGER DEFAULT 0,
+          competitive_rank TEXT DEFAULT 'Unranked (Placement: 0/5)',
           total_coins_earned INTEGER DEFAULT 100,
           total_coins_spent INTEGER DEFAULT 0,
           xp_booster_uses_left INTEGER DEFAULT 0,
@@ -76,6 +77,7 @@ function initDb() {
       safeAlter("ALTER TABLE users ADD COLUMN last_league_reset INTEGER DEFAULT 0");
       safeAlter("ALTER TABLE users ADD COLUMN elo INTEGER DEFAULT 1000");
       safeAlter("ALTER TABLE users ADD COLUMN competitive_matches INTEGER DEFAULT 0");
+      safeAlter("ALTER TABLE users ADD COLUMN competitive_rank TEXT DEFAULT 'Unranked (Placement: 0/5)'");
       safeAlter("ALTER TABLE users ADD COLUMN total_coins_earned INTEGER DEFAULT 100");
       safeAlter("ALTER TABLE users ADD COLUMN total_coins_spent INTEGER DEFAULT 0");
       safeAlter("ALTER TABLE users ADD COLUMN xp_booster_uses_left INTEGER DEFAULT 0");
