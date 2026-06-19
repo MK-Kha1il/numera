@@ -304,6 +304,30 @@ function applyDuelOutcomeToRating(ratingRow, { outcome, opponentMu, opponentSigm
 
 // ─── Rank Name from Display Rating ───────────────────────────────────────────
 
+// Single source of truth for the display-rating → division ladder. Each entry is the EXCLUSIVE upper
+// bound and the label for ratings below it (and ≥ the previous entry's bound). The last entry
+// (Grandmaster) is unbounded. displayRatingToRank AND rankProgress both read this, so the ladder and
+// the "pips" progress bar can never drift apart.
+const RANK_LADDER = [
+  { below: 450, name: 'Bronze III' },
+  { below: 550, name: 'Bronze II' },
+  { below: 650, name: 'Bronze I' },
+  { below: 750, name: 'Silver III' },
+  { below: 850, name: 'Silver II' },
+  { below: 950, name: 'Silver I' },
+  { below: 1050, name: 'Gold III' },
+  { below: 1150, name: 'Gold II' },
+  { below: 1250, name: 'Gold I' },
+  { below: 1350, name: 'Platinum III' },
+  { below: 1450, name: 'Platinum II' },
+  { below: 1550, name: 'Platinum I' },
+  { below: 1650, name: 'Diamond III' },
+  { below: 1750, name: 'Diamond II' },
+  { below: 1850, name: 'Diamond I' },
+  { below: 2000, name: 'Master' },
+  { below: Infinity, name: 'Grandmaster' },
+];
+
 /**
  * Maps a display rating to a human-readable competitive rank.
  * Requires at least 5 sessions before being assigned a real rank.
@@ -312,24 +336,53 @@ function displayRatingToRank(displayRating, sessionsCount) {
   if (sessionsCount < 5) {
     return `Unranked (Placement: ${sessionsCount}/5)`;
   }
-  const r = displayRating;
-  if (r < 450)  return 'Bronze III';
-  if (r < 550)  return 'Bronze II';
-  if (r < 650)  return 'Bronze I';
-  if (r < 750)  return 'Silver III';
-  if (r < 850)  return 'Silver II';
-  if (r < 950)  return 'Silver I';
-  if (r < 1050) return 'Gold III';
-  if (r < 1150) return 'Gold II';
-  if (r < 1250) return 'Gold I';
-  if (r < 1350) return 'Platinum III';
-  if (r < 1450) return 'Platinum II';
-  if (r < 1550) return 'Platinum I';
-  if (r < 1650) return 'Diamond III';
-  if (r < 1750) return 'Diamond II';
-  if (r < 1850) return 'Diamond I';
-  if (r < 2000) return 'Master';
+  for (const band of RANK_LADDER) {
+    if (displayRating < band.below) return band.name;
+  }
   return 'Grandmaster';
+}
+
+/**
+ * Progression detail for the divisions/pips UI (competitive audit Top-25 #7): where the player sits
+ * WITHIN their current division and how far to the next one. Pure; derived from RANK_LADDER so it
+ * always matches displayRatingToRank.
+ *
+ * Returns { rank, placement, progress (0..1 through the current division), pointsToNext, nextRank }.
+ * For an unranked player, `progress` tracks placement (sessions/5). For Grandmaster (no ceiling),
+ * progress is 1 and there is no next rank.
+ */
+function rankProgress(displayRating, sessionsCount) {
+  const sessions = sessionsCount || 0;
+  if (sessions < 5) {
+    return {
+      rank: `Unranked (Placement: ${sessions}/5)`,
+      placement: true,
+      progress: Math.max(0, Math.min(sessions / 5, 1)),
+      pointsToNext: null,
+      nextRank: null,
+      sessionsToPlacement: 5 - sessions,
+    };
+  }
+  const r = displayRating;
+  let floor = 0;
+  for (let i = 0; i < RANK_LADDER.length; i++) {
+    const band = RANK_LADDER[i];
+    if (r < band.below) {
+      const isTop = band.below === Infinity;
+      const ceil = band.below;
+      const width = isTop ? 0 : ceil - floor;
+      const next = RANK_LADDER[i + 1];
+      return {
+        rank: band.name,
+        placement: false,
+        progress: isTop ? 1 : Math.max(0, Math.min((r - floor) / width, 1)),
+        pointsToNext: isTop ? null : Math.max(0, Math.ceil(ceil - r)),
+        nextRank: isTop ? null : (next ? next.name : null),
+      };
+    }
+    floor = band.below;
+  }
+  return { rank: 'Grandmaster', placement: false, progress: 1, pointsToNext: null, nextRank: null };
 }
 
 // ─── Rank Tiers (metal only) ──────────────────────────────────────────────────
@@ -546,6 +599,7 @@ module.exports = {
   applyDuelOutcomeToRating,
   winProbability,
   displayRatingToRank,
+  rankProgress,
   RANK_TIERS,
   rankToTierIndex,
   buildRatingExplanation,

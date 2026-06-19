@@ -1191,6 +1191,8 @@ function processPlayerDuelResult(userId, opts, callback) {
                 newElo,
                 newDisplayRating: after ? after.displayRating : null,
                 newRank,
+                promoted: after ? !!after.promoted : false,
+                previousRank: after ? after.previousRank : null,
               });
             });
           });
@@ -1346,6 +1348,7 @@ function finalizeDuel(roomId, room, winner, p2IsBot, done) {
                 newElo: p1Res.newElo,
                 newDisplayRating: p1Res.newDisplayRating,
                 newRank: p1Res.newRank,
+                promoted: p1Res.promoted || false,
                 cheated: room.p1.cheated || false,
                 ticketUsed: p1HasTicket && !room.isCasual,
               };
@@ -1357,6 +1360,7 @@ function finalizeDuel(roomId, room, winner, p2IsBot, done) {
                 newElo: p2IsBot ? 0 : p2Res.newElo,
                 newDisplayRating: p2IsBot ? null : p2Res.newDisplayRating,
                 newRank: p2IsBot ? 'MathBot' : p2Res.newRank,
+                promoted: p2IsBot ? false : (p2Res.promoted || false),
                 cheated: room.p2.cheated || false,
                 ticketUsed: p2HasTicket && !room.isCasual && !p2IsBot,
               };

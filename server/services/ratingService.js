@@ -130,6 +130,19 @@ function applyDuelResultToRatings({ userId, opponentMu, opponentSigma, outcome, 
   getRatingRow(userId, domain, (err, before) => {
     if (err) return cb(err);
     const after = NRS.applyDuelOutcomeToRating(before, { outcome, opponentMu, opponentSigma });
+
+    // Rank-up detection for the debrief "you ranked up!" moment (audit Top-25 #7). A promotion is
+    // either completing placement, or crossing UP into a new division. No best-of-N promo series —
+    // a single result that crosses a boundary is the moment (RL-style soft divisions).
+    const previousRank = NRS.displayRatingToRank(before.display_rating, before.sessions_count);
+    const newRank = NRS.displayRatingToRank(after.displayRating, after.sessionsCount);
+    const placedNow = !newRank.startsWith('Unranked');
+    after.previousRank = previousRank;
+    after.promoted = placedNow && (
+      previousRank.startsWith('Unranked') ||
+      (newRank !== previousRank && after.displayRating > before.display_rating)
+    );
+
     const dir = after.delta >= 0 ? 'increased' : 'decreased';
     const mag = Math.abs(Math.round(after.delta));
     const winPct = Math.round(after.expectedPerformance * 100);

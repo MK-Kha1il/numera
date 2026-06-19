@@ -293,11 +293,16 @@ router.get('/api/rating/profile', authenticateToken, (req, res) => {
 
       const profile = {};
       (rows || []).forEach((row) => {
+        const prog = NRS.rankProgress(row.display_rating, row.sessions_count);
         profile[row.domain] = {
           mu: +row.mu.toFixed(1),
           sigma: +row.sigma.toFixed(1),
           displayRating: row.display_rating,
           rank: NRS.displayRatingToRank(row.display_rating, row.sessions_count),
+          // Divisions/pips (audit Top-25 #7): where the player sits within their division.
+          progress: +prog.progress.toFixed(3),
+          pointsToNext: prog.pointsToNext,
+          nextRank: prog.nextRank,
           sessionsCount: row.sessions_count,
           lastUpdated: row.last_updated,
           velocity: +row.velocity.toFixed(2),
@@ -313,6 +318,9 @@ router.get('/api/rating/profile', authenticateToken, (req, res) => {
             sigma: NRS.SIGMA_INIT,
             displayRating: 0,
             rank: 'Unranked (Placement: 0/5)',
+            progress: 0,
+            pointsToNext: null,
+            nextRank: null,
             sessionsCount: 0,
             lastUpdated: 0,
             velocity: 0,

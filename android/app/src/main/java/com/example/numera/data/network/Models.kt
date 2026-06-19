@@ -1277,6 +1277,9 @@ data class SeasonLeaderboardResponse(
 data class DomainRating(
     val displayRating: Int = 0,
     val rank: String = "Unranked (Placement: 0/5)",
+    val progress: Float = 0f,        // 0..1 through the current division (divisions/pips)
+    val pointsToNext: Int? = null,   // display points to the next division (null at Grandmaster)
+    val nextRank: String? = null,
     val sessionsCount: Int = 0,
     val mu: Double = 0.0,
     val velocity: Double = 0.0

@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.DomainRating
 import com.example.numera.data.network.SeasonAward
@@ -94,6 +95,35 @@ fun CompetitiveRankCard(
                             "Rating ${global.displayRating} · ${global.sessionsCount} rated"
                         },
                         fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    )
+                }
+            }
+
+            // Division pips: progress through the current division + how far to the next one.
+            if (!isUnranked(global) && global.nextRank != null) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(CornerRadius.s))
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                    ) {
+                        if (global.progress > 0f) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(global.progress.coerceIn(0f, 1f))
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(CornerRadius.s))
+                                    .background(MaterialTheme.colorScheme.primary),
+                            )
+                        }
+                    }
+                    Text(
+                        text = global.pointsToNext?.let { "$it points to ${global.nextRank}" } ?: "Next: ${global.nextRank}",
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     )

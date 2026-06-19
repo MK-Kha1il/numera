@@ -263,6 +263,7 @@ fun DuelGameScreen(
         var myNewRating = 0
         var myNewRank = ""
         var myRatingMoved = false
+        var didIGetPromoted = false
         var didICheat = false
 
         val p1Obj = eloInfo?.optJSONObject("p1")
@@ -278,6 +279,7 @@ fun DuelGameScreen(
             myNewRating = mine.optInt("newDisplayRating")
             myNewRank = mine.optString("newRank")
             myRatingMoved = mine.optBoolean("ratingMoved", false)
+            didIGetPromoted = mine.optBoolean("promoted", false)
             didICheat = mine.optBoolean("cheated", false)
         }
 
@@ -357,6 +359,16 @@ fun DuelGameScreen(
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+
+                        if (didIGetPromoted) {
+                            Text(
+                                text = "⬆️ RANKED UP to $myNewRank!",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = CorrectGreen,
+                                textAlign = TextAlign.Center
                             )
                         }
 

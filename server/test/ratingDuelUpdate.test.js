@@ -75,3 +75,41 @@ test('missing opponent rating falls back to defaults (no NaN)', () => {
   const r = NRS.applyDuelOutcomeToRating(row(1500, 200), { outcome: 1 });
   assert.ok(Number.isFinite(r.mu) && Number.isFinite(r.delta), 'no opponent → safe defaults, finite result');
 });
+
+// ─── rankProgress (divisions / pips) ───────────────────────────────────────────
+
+test('rankProgress: unranked tracks placement progress', () => {
+  const p = NRS.rankProgress(0, 3);
+  assert.equal(p.placement, true);
+  assert.equal(p.progress, 0.6, '3/5 sessions');
+  assert.equal(p.sessionsToPlacement, 2);
+  assert.equal(p.nextRank, null);
+});
+
+test('rankProgress: mid-division reports progress + points to the next division', () => {
+  // Gold I is [1150, 1250); at 1200 you are halfway, 50 points from Platinum III.
+  const p = NRS.rankProgress(1200, 20);
+  assert.equal(p.rank, 'Gold I');
+  assert.equal(p.nextRank, 'Platinum III');
+  assert.equal(p.pointsToNext, 50);
+  assert.ok(Math.abs(p.progress - 0.5) < 1e-9, 'halfway through the division');
+});
+
+test('rankProgress: division floor is 0% and just-below-ceiling is ~100%', () => {
+  assert.ok(NRS.rankProgress(1150, 20).progress < 0.01, 'at the Gold I floor → ~0%');
+  assert.ok(NRS.rankProgress(1249, 20).progress > 0.98, 'just under Platinum III → ~100%');
+});
+
+test('rankProgress: Grandmaster is the top — full bar, no next rank', () => {
+  const p = NRS.rankProgress(2200, 30);
+  assert.equal(p.rank, 'Grandmaster');
+  assert.equal(p.progress, 1);
+  assert.equal(p.nextRank, null);
+  assert.equal(p.pointsToNext, null);
+});
+
+test('rankProgress stays consistent with displayRatingToRank across the ladder', () => {
+  for (const r of [0, 449, 450, 700, 1199, 1850, 1999, 2000, 2500]) {
+    assert.equal(NRS.rankProgress(r, 20).rank, NRS.displayRatingToRank(r, 20), `mismatch at ${r}`);
+  }
+});
