@@ -155,6 +155,11 @@ router.get('/api/shop', authenticateToken, (req, res) => {
             .filter((item) => item.token_cost > 0 && !inventory.includes(item.id))
             .map((item) => ({ ...item, originalCost: item.cost, discountActive: false }));
 
+          // EVERY owned cosmetic with full metadata — so the client can equip ANY of them anytime,
+          // including earn-only items (badges, rank rewards, season Champion banners) that never appear
+          // in a buyable list. Fixes "owned earn-only cosmetics only re-equip at grant time".
+          const ownedItems = allItems.filter((item) => inventory.includes(item.id) && item.is_utility !== 1);
+
           res.json({
             items,
             featuredItems,
@@ -163,6 +168,7 @@ router.get('/api/shop', authenticateToken, (req, res) => {
             catalogItems,
             seasonItems,
             tokenItems,
+            ownedItems,
             seasonInfo: season
               ? { seasonId: season.id, seasonName: season.name, slot, endsAt: season.end_at }
               : null,

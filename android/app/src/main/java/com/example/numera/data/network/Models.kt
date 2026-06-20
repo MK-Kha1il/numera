@@ -800,6 +800,7 @@ data class ShopResponse(
     val catalogItems: List<ShopItem>? = null,
     val seasonItems: List<ShopItem>? = null,
     val tokenItems: List<ShopItem>? = null,
+    val ownedItems: List<ShopItem>? = null, // every owned cosmetic (incl. earn-only) — equip anytime
     val seasonInfo: ShopSeasonInfo? = null,
     val seasonTokens: Int? = 0,
     val utilities: List<UtilityBalance>? = null,

@@ -79,8 +79,10 @@ not new headline gaps:
 - #17 club seasons/promotion-relegation (skill ladder shipped); #18 calculator-use +
   multi-account/device heuristics (collusion review shipped); #19 socket push for instant live-room
   liveness (REST core + client shipped); #22 rendered image card + #75 public web competitive profile
-  (text share shipped). #14 also has a known platform limitation: owned earn-only cosmetics re-surface
-  for equipping only at grant time (a pre-existing shop-UI constraint shared by all season cosmetics).
+  (text share shipped).
+- **Resolved (was a known limitation):** owned earn-only cosmetics (rank rewards, season Champion
+  banners, badges) are now equippable anytime via a **"My Collection"** shop section, backed by an
+  `ownedItems` payload on `/api/shop` — they no longer only equip at grant time.
 
 ---
 

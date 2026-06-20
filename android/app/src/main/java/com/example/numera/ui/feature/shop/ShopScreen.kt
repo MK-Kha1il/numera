@@ -49,6 +49,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
     var catalogItems by remember { mutableStateOf<List<ShopItem>>(emptyList()) }
     var seasonItems by remember { mutableStateOf<List<ShopItem>>(emptyList()) }
     var tokenItems by remember { mutableStateOf<List<ShopItem>>(emptyList()) }
+    var ownedItems by remember { mutableStateOf<List<ShopItem>>(emptyList()) }
     var seasonName by remember { mutableStateOf<String?>(null) }
     var seasonTokens by remember { mutableIntStateOf(0) }
     var userUtilities by remember { mutableStateOf<List<UtilityBalance>>(emptyList()) }
@@ -73,6 +74,16 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
         scope.launch { shopListState.animateScrollToItem(3) }
     }
 
+    // Equip any owned cosmetic from the collection (incl. earn-only rewards), then refresh.
+    val equipOwned: (ShopItem) -> Unit = { owned ->
+        scope.launch(Dispatchers.IO) {
+            try {
+                RetrofitClient.apiService.equipItem(RetrofitClient.authToken ?: "", EquipRequest(owned.type, owned.value))
+                withContext(Dispatchers.Main) { onPurchaseComplete() }
+            } catch (e: Exception) { Log.e("Shop", "equip err: ${e.message}") }
+        }
+    }
+
     val fetchShop = {
         scope.launch(Dispatchers.IO) {
             try {
@@ -86,6 +97,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     catalogItems = res.catalogItems ?: emptyList()
                     seasonItems = res.seasonItems ?: emptyList()
                     tokenItems = res.tokenItems ?: emptyList()
+                    ownedItems = res.ownedItems ?: emptyList()
                     seasonName = res.seasonInfo?.seasonName
                     seasonTokens = res.seasonTokens ?: 0
                     userUtilities = res.utilities ?: emptyList()
@@ -268,6 +280,39 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                                     color = MilestoneGold,
                                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
                                 )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // My Collection — equip ANY owned cosmetic anytime, including earn-only rewards (rank
+            // rewards, season Champion banners, badges) that never appear in a buyable list.
+            if (ownedItems.isNotEmpty()) {
+                item {
+                    val equipped = setOfNotNull(user?.avatar, user?.active_banner, user?.active_badge, user?.theme)
+                    Column(modifier = Modifier.fillMaxWidth().padding(top = Spacing.s), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                        Text("MY COLLECTION", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.secondary)
+                        Text("Tap to equip anything you own — including earned rewards.", fontSize = 11.sp, color = Color.White.copy(alpha = 0.6f))
+                        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                            items(ownedItems, key = { "owned_${it.id}" }) { owned ->
+                                val isOn = equipped.contains(owned.value)
+                                Surface(
+                                    shape = RoundedCornerShape(CornerRadius.m),
+                                    color = if (isOn) MaterialTheme.colorScheme.primary.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.06f),
+                                    border = if (isOn) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+                                    modifier = Modifier.clickable { equipOwned(owned) }
+                                ) {
+                                    Column(
+                                        modifier = Modifier.width(96.dp).padding(Spacing.s),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                                    ) {
+                                        Text(cosmeticTypeEmoji(owned.type), fontSize = 18.sp)
+                                        Text(owned.name, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 2, color = Color.White, textAlign = TextAlign.Center)
+                                        Text(if (isOn) "Equipped" else "Equip", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (isOn) MaterialTheme.colorScheme.primary else CorrectGreen)
+                                    }
+                                }
                             }
                         }
                     }
@@ -646,4 +691,12 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
             )
         }
     }
+}
+
+private fun cosmeticTypeEmoji(type: String): String = when (type) {
+    "avatar" -> "🧑‍🎓"
+    "banner" -> "🖼️"
+    "badge" -> "🎖️"
+    "theme" -> "🎨"
+    else -> "✨"
 }
