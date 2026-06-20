@@ -120,39 +120,64 @@ function syncCompetitiveMirror(userId, callback) {
   });
 }
 
-// Apply one head-to-head duel result to a player's GLOBAL rating (Phase 0: global only; per-domain
-// attribution is a later item). Persists history, season peak, velocity, then syncs the mirror.
-// `outcome` ∈ {1 win, 0.5 draw, 0 loss}. Returns the `after` result so the caller can surface the
-// rating delta / new rank in the duel debrief.
-function applyDuelResultToRatings({ userId, opponentMu, opponentSigma, outcome, gameMode = 'duel', category = null, level = null }, callback) {
-  const cb = callback || (() => {});
-  const domain = 'global';
-  getRatingRow(userId, domain, (err, before) => {
-    if (err) return cb(err);
-    const after = NRS.applyDuelOutcomeToRating(before, { outcome, opponentMu, opponentSigma });
+const capitalizeDomain = (d) => String(d || '').replace('_', ' ').replace(/^\w/, (c) => c.toUpperCase());
 
-    // Rank-up detection for the debrief "you ranked up!" moment (audit Top-25 #7). A promotion is
-    // either completing placement, or crossing UP into a new division. No best-of-N promo series —
-    // a single result that crosses a boundary is the moment (RL-style soft divisions).
+// Apply one head-to-head competitive result (duel or reasoning round) to a player's rating.
+// ALWAYS updates the GLOBAL rating (which drives the users.* mirror + the rank-up moment) and, when a
+// contested `domain` is given, ALSO credits that domain so the per-domain ranks become real ladders
+// (audit #16/#45). `outcome` ∈ {1 win, 0.5 draw, 0 loss}. Returns the GLOBAL `after` so the caller can
+// surface the rating delta / new rank / promotion in the debrief.
+function applyDuelResultToRatings({ userId, opponentMu, opponentSigma, outcome, gameMode = 'duel', domain = null, category = null, level = null }, callback) {
+  const cb = callback || (() => {});
+
+  // Update one domain's (mu, sigma) via the head-to-head outcome; next(err, after, before).
+  const updateDomain = (dom, makeExplanation, next) => {
+    getRatingRow(userId, dom, (err, before) => {
+      if (err) return next(err);
+      const after = NRS.applyDuelOutcomeToRating(before, { outcome, opponentMu, opponentSigma });
+      persistRatingUpdate(userId, dom, before, after, { category, level, gameMode }, makeExplanation(before, after), (err2) => {
+        if (err2) return next(err2);
+        maybeUpdateSeasonPeak(userId, dom, after.displayRating);
+        nrsUpdateVelocity(userId, dom, after.delta);
+        next(null, after, before);
+      });
+    });
+  };
+
+  const kind = gameMode === 'reasoning' ? 'reasoning round' : 'duel';
+  const globalExplanation = (before, after) => {
+    const dir = after.delta >= 0 ? 'increased' : 'decreased';
+    const mag = Math.abs(Math.round(after.delta));
+    const winPct = Math.round(after.expectedPerformance * 100);
+    return `Your Overall Rating ${dir} by ${mag} points from a ranked ${kind} (your win probability was ${winPct}%).`;
+  };
+  const domainExplanation = (before, after) => {
+    const dir = after.delta >= 0 ? 'increased' : 'decreased';
+    const mag = Math.abs(Math.round(after.delta));
+    return `Your ${capitalizeDomain(domain)} rating ${dir} by ${mag} points from a ranked ${kind}.`;
+  };
+
+  updateDomain('global', globalExplanation, (err, after, before) => {
+    if (err) return cb(err);
+
+    // Rank-up detection for the debrief "you ranked up!" moment (audit Top-25 #7): completing
+    // placement, or crossing UP into a new division. Soft divisions — no best-of-N promo series.
     const previousRank = NRS.displayRatingToRank(before.display_rating, before.sessions_count);
     const newRank = NRS.displayRatingToRank(after.displayRating, after.sessionsCount);
-    const placedNow = !newRank.startsWith('Unranked');
     after.previousRank = previousRank;
-    after.promoted = placedNow && (
+    after.promoted = !newRank.startsWith('Unranked') && (
       previousRank.startsWith('Unranked') ||
       (newRank !== previousRank && after.displayRating > before.display_rating)
     );
 
-    const dir = after.delta >= 0 ? 'increased' : 'decreased';
-    const mag = Math.abs(Math.round(after.delta));
-    const winPct = Math.round(after.expectedPerformance * 100);
-    const explanation = `Your Overall Rating ${dir} by ${mag} points from a ranked duel (your win probability was ${winPct}%).`;
-    persistRatingUpdate(userId, domain, before, after, { category, level, gameMode }, explanation, (err2) => {
-      if (err2) return cb(err2);
-      maybeUpdateSeasonPeak(userId, domain, after.displayRating);
-      nrsUpdateVelocity(userId, domain, after.delta);
-      syncCompetitiveMirror(userId, () => cb(null, after));
-    });
+    const finish = () => syncCompetitiveMirror(userId, () => cb(null, after));
+
+    // Credit the contested domain too (best-effort; global already owns the mirror + promotion).
+    if (domain && domain !== 'global' && NRS.KNOWN_DOMAINS.includes(domain)) {
+      updateDomain(domain, domainExplanation, () => finish());
+    } else {
+      finish();
+    }
   });
 }
 

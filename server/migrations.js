@@ -1220,6 +1220,19 @@ const migrations = [
       }
     },
   },
+  {
+    version: 53,
+    name: 'reasoning_round_domain',
+    // Record a reasoning round's dominant math domain so it credits the contested per-domain rating
+    // (not only global) on submit — turning the 9 domains into real competitive ladders (audit #16/#45).
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE reasoning_rounds ADD COLUMN domain TEXT');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**

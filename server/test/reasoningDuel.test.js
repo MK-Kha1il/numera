@@ -11,6 +11,7 @@ before(async () => { ctx = await bootServer(); });
 after(async () => { await shutdown(ctx); });
 
 const dbGet = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.get(sql, p, (e, r) => (e ? rej(e) : res(r))));
+const dbAll = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.all(sql, p, (e, r) => (e ? rej(e) : res(r))));
 const dbRun = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.run(sql, p, (e) => (e ? rej(e) : res())));
 const idOf = (username) => dbGet('SELECT id FROM users WHERE username = ?', [username]).then((r) => r.id);
 const keyOf = async (roundId) => JSON.parse((await dbGet('SELECT problems_json FROM reasoning_rounds WHERE id = ?', [roundId])).problems_json);
@@ -79,4 +80,20 @@ test('daily rated cap: rounds past the cap are playable but rating-neutral (anti
   assert.equal(sub.body.banked, 5, 'the round is still played and scored');
   assert.equal(sub.body.ratingCounted, false, 'past the daily cap the rating does not move');
   assert.equal(sub.body.ratingDelta, 0, 'no rating delta when capped');
+});
+
+test('a rated reasoning round credits the contested per-domain rating, not only global', async () => {
+  const u = await registerUser(ctx.base);
+  const uid = await idOf(u.username);
+  const start = await api(ctx.base, 'POST', '/api/reasoning-duel/start', { token: u.token });
+  const probs = await keyOf(start.body.roundId);
+  await api(ctx.base, 'POST', `/api/reasoning-duel/${start.body.roundId}/submit`, {
+    token: u.token,
+    body: { answers: probs.map((p) => p.answer), reasons: probs.map((p) => p.reasonCorrectIndex) },
+  });
+
+  const rows = await dbAll('SELECT domain, sessions_count FROM user_ratings WHERE user_id = ?', [uid]);
+  const domains = rows.map((r) => r.domain);
+  assert.ok(domains.includes('global'), 'global rating updated');
+  assert.ok(domains.some((d) => d !== 'global'), 'the contested domain rating was created too — per-domain ladders climb from ranked play');
 });

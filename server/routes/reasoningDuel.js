@@ -67,9 +67,19 @@ router.post('/api/reasoning-duel/start', authenticateToken, (req, res) => {
     });
 
     const level = Math.max(1, Math.round(concepts.reduce((s, c) => s + c.level, 0) / Math.max(1, concepts.length)));
+    // The round's dominant domain → credited (alongside global) so per-domain ranks climb here too.
+    const domainCounts = {};
+    for (const c of concepts) {
+      const d = NRS.categoryToDomain(c.category);
+      domainCounts[d] = (domainCounts[d] || 0) + 1;
+    }
+    let roundDomain = null;
+    let bestN = 0;
+    for (const [d, n] of Object.entries(domainCounts)) if (n > bestN) { roundDomain = d; bestN = n; }
+
     db.run(
-      "INSERT INTO reasoning_rounds (user_id, level, problems_json, problem_count, status, created_at) VALUES (?, ?, ?, ?, 'pending', ?)",
-      [req.user.id, level, JSON.stringify(problems), problems.length, Date.now()],
+      "INSERT INTO reasoning_rounds (user_id, level, domain, problems_json, problem_count, status, created_at) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
+      [req.user.id, level, roundDomain, JSON.stringify(problems), problems.length, Date.now()],
       function (e2) {
         if (e2) return res.status(500).json({ error: e2.message });
         res.json({
@@ -133,7 +143,7 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
     const willRate = (ratedToday.n || 0) < DAILY_RATED_CAP;
 
     await tx.run("UPDATE reasoning_rounds SET status = 'done', score = ?, rated = ?, finished_at = ? WHERE id = ?", [banked, willRate ? 1 : 0, Date.now(), id]);
-    return { level: round.level, total: problems.length, banked, answerCorrectCount, perProblem, willRate };
+    return { level: round.level, domain: round.domain, total: problems.length, banked, answerCorrectCount, perProblem, willRate };
   })
     .then(async (r) => {
       // Feed the learning engine (answer correctness), awaited + sequential so the engine is fed
@@ -180,7 +190,7 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
       const outcome = r.total ? r.banked / r.total : 0;
       const benchmarkMu = 1300 + (r.level || 5) * 20; // harder rounds → stronger benchmark
       applyDuelResultToRatings(
-        { userId: req.user.id, opponentMu: benchmarkMu, opponentSigma: 200, outcome, gameMode: 'reasoning' },
+        { userId: req.user.id, opponentMu: benchmarkMu, opponentSigma: 200, outcome, gameMode: 'reasoning', domain: r.domain },
         (_e, after) => respond(after)
       );
     })

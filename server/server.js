@@ -24,6 +24,7 @@ const { globalRateLimiter } = require('./middleware/rateLimit');
 // docs/specs/Spec-RatingUnification.md.
 const { applyDuelResultToRatings, getRatingRow } = require('./services/ratingService');
 const { recordMatch } = require('./services/matchLog');
+const { categoryToDomain } = require('./mathEngine/ratingEngine'); // attribute a duel to its dominant domain
 const { updateAchievements } = require('./services/achievementService');
 const { grantRankRewards } = require('./services/rankRewardService');
 const { flagAnswer, resolveDuel, rankedMatchmakingError } = require('./lib/duelIntegrity');
@@ -1170,8 +1171,26 @@ function simulateBot(roomId) {
 // human-vs-human). Coins/wins/solved_count are independent of rating. Note: this no longer writes
 // users.rank — that stays the level/progression rank; competitive rank lives in competitive_rank,
 // refreshed by the mirror. (docs/specs/Spec-RatingUnification.md)
+// The duel's dominant math domain, from its concept mix — so a ranked duel credits the contested
+// per-domain rating (audit #16/#45), not just global. Returns null for an unattributable set (e.g.
+// CAS-generated rungs carry no concept key).
+function duelDomain(templateTypes) {
+  if (!Array.isArray(templateTypes)) return null;
+  const counts = {};
+  for (const t of templateTypes) {
+    const meta = t && CONCEPT_TO_LEVEL[t];
+    if (!meta || !meta.category) continue;
+    const d = categoryToDomain(meta.category);
+    counts[d] = (counts[d] || 0) + 1;
+  }
+  let best = null;
+  let bestN = 0;
+  for (const [d, n] of Object.entries(counts)) if (n > bestN) { best = d; bestN = n; }
+  return best;
+}
+
 function processPlayerDuelResult(userId, opts, callback) {
-  const { isWinner, ratingMoves, outcome, opponentMu, opponentSigma, coinMultiplier = 1 } = opts;
+  const { isWinner, ratingMoves, outcome, opponentMu, opponentSigma, domain = null, coinMultiplier = 1 } = opts;
   if (!userId || typeof userId !== 'number' || userId === 9999) {
     return callback(null, { ratingDelta: 0, newElo: 0, newDisplayRating: 0, newRank: 'MathBot' });
   }
@@ -1204,7 +1223,7 @@ function processPlayerDuelResult(userId, opts, callback) {
   };
 
   if (ratingMoves) {
-    applyDuelResultToRatings({ userId, opponentMu, opponentSigma, outcome }, (err, after) => finishWrites(err ? null : after));
+    applyDuelResultToRatings({ userId, opponentMu, opponentSigma, outcome, domain }, (err, after) => finishWrites(err ? null : after));
   } else {
     finishWrites(null);
   }
@@ -1298,6 +1317,10 @@ function finalizeDuel(roomId, room, winner, p2IsBot, done) {
   const p1Outcome = outcomeFor(room.p1.id, room.p1.cheated);
   const p2Outcome = outcomeFor(room.p2.id, room.p2.cheated);
 
+  // The contested domain (from the duel's concept mix) — credited alongside global so per-domain
+  // ranks climb from real competition, not only solo play.
+  const contestedDomain = duelDomain(room.templateTypes);
+
   let p1HasTicket = false;
   let p2HasTicket = false;
 
@@ -1333,6 +1356,7 @@ function finalizeDuel(roomId, room, winner, p2IsBot, done) {
             outcome: p1Outcome,
             opponentMu: r2 ? r2.mu : undefined,
             opponentSigma: r2 ? r2.sigma : undefined,
+            domain: contestedDomain,
             coinMultiplier: p1CoinMult,
           }, (err1, p1Res) => {
             processPlayerDuelResult(room.p2.id, {
@@ -1341,6 +1365,7 @@ function finalizeDuel(roomId, room, winner, p2IsBot, done) {
               outcome: p2Outcome,
               opponentMu: r1 ? r1.mu : undefined,
               opponentSigma: r1 ? r1.sigma : undefined,
+              domain: contestedDomain,
               coinMultiplier: p2CoinMult,
             }, (err2, p2Res) => {
               const p1Data = {
