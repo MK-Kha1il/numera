@@ -1302,6 +1302,28 @@ data class MatchHistoryEntry(
     val createdAt: Long = 0
 )
 
+// ---- Competitive titles — GET /api/rating/titles, POST .../select ----
+data class TitleEntry(
+    val id: String = "",
+    val name: String = "",
+    val desc: String = "",
+    val earned: Boolean = false,
+    val active: Boolean = false
+)
+
+data class TitlesResponse(
+    val active: String = "",
+    val titles: List<TitleEntry> = emptyList()
+)
+
+data class SelectTitleRequest(val title: String)
+
+data class SelectTitleResponse(
+    val success: Boolean = false,
+    val active: String = "",
+    val error: String? = null
+)
+
 // ---- Head-to-head rivals — GET /api/rating/rivals (returns a bare array) ----
 data class RivalEntry(
     val opponentId: Int = 0,

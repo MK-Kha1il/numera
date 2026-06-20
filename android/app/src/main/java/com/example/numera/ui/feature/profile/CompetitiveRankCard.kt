@@ -45,6 +45,7 @@ fun CompetitiveRankCard(
     profile: Map<String, DomainRating>?,
     modifier: Modifier = Modifier,
     seasonHistory: List<SeasonAward>? = null,
+    activeTitle: String? = null,
 ) {
     if (profile.isNullOrEmpty()) return
     val global = profile["global"] ?: return
@@ -63,12 +64,28 @@ fun CompetitiveRankCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(modifier = Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
-            Text(
-                text = "🏆 Competitive Rank",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "🏆 Competitive Rank",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                if (!activeTitle.isNullOrEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(CornerRadius.full))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
+                            .padding(horizontal = Spacing.m, vertical = Spacing.xs),
+                    ) {
+                        Text(text = activeTitle, fontSize = 11.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
             Text(
                 text = "One rating, earned across solo practice and ranked duels.",
                 fontSize = 12.sp,

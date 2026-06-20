@@ -767,6 +767,13 @@ interface ApiService {
         @Query("limit") limit: Int
     ): List<RivalEntry>
 
+    // ---- Competitive titles ----
+    @GET("api/rating/titles")
+    suspend fun getTitles(@Header("Authorization") token: String): TitlesResponse
+
+    @POST("api/rating/titles/select")
+    suspend fun selectTitle(@Header("Authorization") token: String, @Body req: SelectTitleRequest): SelectTitleResponse
+
     // ---- Season peak badges (Act Rank) ----
     @GET("api/rating/season-history")
     suspend fun getSeasonHistory(@Header("Authorization") token: String): SeasonHistoryResponse

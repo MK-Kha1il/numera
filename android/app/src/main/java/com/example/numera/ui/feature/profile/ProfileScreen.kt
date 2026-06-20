@@ -109,6 +109,7 @@ fun ProfileScreen(
     var ratingHistory by remember { mutableStateOf<List<com.example.numera.data.network.RatingHistoryEntry>?>(null) }
     var matchHistory by remember { mutableStateOf<List<com.example.numera.data.network.MatchHistoryEntry>?>(null) }
     var rivals by remember { mutableStateOf<List<com.example.numera.data.network.RivalEntry>?>(null) }
+    var titles by remember { mutableStateOf<com.example.numera.data.network.TitlesResponse?>(null) }
     LaunchedEffect(Unit) {
         try {
             ratingProfile = RetrofitClient.apiService.getRatingProfile(RetrofitClient.authToken ?: "").profile
@@ -131,6 +132,11 @@ fun ProfileScreen(
             Log.e("Profile", "Failed to fetch rivals: ${e.message}")
         }
         try {
+            titles = RetrofitClient.apiService.getTitles(RetrofitClient.authToken ?: "")
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch titles: ${e.message}")
+        }
+        try {
             seasonHistory = RetrofitClient.apiService.getSeasonHistory(RetrofitClient.authToken ?: "").awards
         } catch (e: Exception) {
             Log.e("Profile", "Failed to fetch season history: ${e.message}")
@@ -139,6 +145,19 @@ fun ProfileScreen(
             rewardTrack = RetrofitClient.apiService.getRewardTrack(RetrofitClient.authToken ?: "")
         } catch (e: Exception) {
             Log.e("Profile", "Failed to fetch reward track: ${e.message}")
+        }
+    }
+
+    // Equip (or clear, with "") a competitive title, then refresh the list.
+    val selectTitle: (String) -> Unit = { id ->
+        scope.launch(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken ?: ""
+                RetrofitClient.apiService.selectTitle(token, com.example.numera.data.network.SelectTitleRequest(id))
+                titles = RetrofitClient.apiService.getTitles(token)
+            } catch (e: Exception) {
+                Log.e("Profile", "Failed to set title: ${e.message}")
+            }
         }
     }
 
@@ -454,6 +473,14 @@ fun ProfileScreen(
         CompetitiveRankCard(
             profile = ratingProfile,
             seasonHistory = seasonHistory,
+            activeTitle = titles?.titles?.firstOrNull { it.active }?.name,
+            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+        )
+
+        // ── TITLES (earned prestige identity) ──
+        TitlesCard(
+            titles = titles,
+            onSelect = selectTitle,
             modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
         )
 

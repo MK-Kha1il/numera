@@ -1233,6 +1233,20 @@ const migrations = [
       }
     },
   },
+  {
+    version: 54,
+    name: 'active_title',
+    // Earned competitive titles (Phase 2 identity, Chess.com's prestige layer): the player picks one
+    // earned title to display. The earned SET is computed on the fly from existing data (rank, reasoning
+    // rounds, duels, head-to-head) — only the chosen title is stored.
+    up: async (run) => {
+      try {
+        await run("ALTER TABLE users ADD COLUMN active_title TEXT DEFAULT ''");
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**

@@ -429,6 +429,90 @@ router.get('/api/rating/rivals', authenticateToken, (req, res) => {
   );
 });
 
+// ── Competitive titles (earned identity) ──────────────────────────────────────
+// The earned SET is derived on the fly from existing data; only the chosen title is stored
+// (users.active_title). Tier indices match NRS.RANK_TIERS (Gold=2, Diamond=4, Grandmaster=6).
+const TITLE_CATALOG = [
+  { id: 'novice', name: 'Novice', desc: 'Welcome to the arena.' },
+  { id: 'ranked', name: 'Ranked Competitor', desc: 'Complete your 5 placement results.' },
+  { id: 'duelist', name: 'Duelist', desc: 'Play 10 ranked duels.' },
+  { id: 'thinker', name: 'Deep Thinker', desc: 'Finish 10 reasoning rounds.' },
+  { id: 'goldmind', name: 'Goldmind', desc: 'Reach Gold.' },
+  { id: 'diamondmind', name: 'Diamond Mind', desc: 'Reach Diamond.' },
+  { id: 'numerist', name: 'Numerist', desc: 'Reach Grandmaster — the apex.' },
+  { id: 'nemesis', name: 'Nemesis', desc: 'Beat one rival 3 times.' },
+];
+
+function isTitleEarned(id, s) {
+  switch (id) {
+    case 'novice': return true;
+    case 'ranked': return s.placed;
+    case 'duelist': return s.duels >= 10;
+    case 'thinker': return s.reasoning >= 10;
+    case 'goldmind': return s.peakTier >= 2;
+    case 'diamondmind': return s.peakTier >= 4;
+    case 'numerist': return s.peakTier >= 6;
+    case 'nemesis': return s.maxH2HWins >= 3;
+    default: return false;
+  }
+}
+
+// Gather the stats the title conditions need (rank/peak, duel & reasoning counts, best head-to-head).
+function computeTitleStats(userId, cb) {
+  db.get('SELECT competitive_matches, competitive_rank, active_title FROM users WHERE id = ?', [userId], (e, u) => {
+    db.get(
+      "SELECT SUM(CASE WHEN mode = 'duel' THEN 1 ELSE 0 END) AS duels, SUM(CASE WHEN mode = 'reasoning' THEN 1 ELSE 0 END) AS reasoning FROM match_log WHERE user_id = ?",
+      [userId],
+      (e2, mc) => {
+        db.get(
+          "SELECT MAX(w) AS maxW FROM (SELECT SUM(CASE WHEN result = 'win' THEN 1 ELSE 0 END) AS w FROM match_log WHERE user_id = ? AND opponent_id IS NOT NULL GROUP BY opponent_id)",
+          [userId],
+          (e3, h2h) => {
+            db.all('SELECT peak_rank FROM season_awards WHERE user_id = ?', [userId], (e4, awards) => {
+              let peakTier = NRS.rankToTierIndex(u ? u.competitive_rank : '');
+              for (const a of awards || []) peakTier = Math.max(peakTier, NRS.rankToTierIndex(a.peak_rank));
+              cb({
+                activeTitle: (u && u.active_title) || '',
+                placed: !!(u && u.competitive_matches >= 5),
+                duels: (mc && mc.duels) || 0,
+                reasoning: (mc && mc.reasoning) || 0,
+                peakTier,
+                maxH2HWins: (h2h && h2h.maxW) || 0,
+              });
+            });
+          }
+        );
+      }
+    );
+  });
+}
+
+router.get('/api/rating/titles', authenticateToken, (req, res) => {
+  computeTitleStats(req.user.id, (s) => {
+    res.json({
+      active: s.activeTitle,
+      titles: TITLE_CATALOG.map((t) => ({ id: t.id, name: t.name, desc: t.desc, earned: isTitleEarned(t.id, s), active: t.id === s.activeTitle })),
+    });
+  });
+});
+
+router.post('/api/rating/titles/select', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const title = String((req.body && req.body.title) || '');
+  if (title === '') {
+    db.run("UPDATE users SET active_title = '' WHERE id = ?", [userId], () => res.json({ success: true, active: '' }));
+    return;
+  }
+  if (!TITLE_CATALOG.find((t) => t.id === title)) return res.status(400).json({ error: 'Unknown title' });
+  computeTitleStats(userId, (s) => {
+    if (!isTitleEarned(title, s)) return res.status(400).json({ error: "You haven't earned that title yet" });
+    db.run('UPDATE users SET active_title = ? WHERE id = ?', [title, userId], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, active: title });
+    });
+  });
+});
+
 // ── GET /api/rating/leaderboard ───────────────────────────────────────────────
 router.get('/api/rating/leaderboard', authenticateToken, (req, res) => {
   const domain = NRS.KNOWN_DOMAINS.includes(req.query.domain) ? req.query.domain : 'global';
