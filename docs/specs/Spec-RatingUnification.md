@@ -4,11 +4,15 @@
 > making **one `μ/σ` rating per domain** the single source of competitive truth, fed by **both** solo
 > sessions and ranked duels. "Solo + duels move ONE number per domain." (Owner decision, 2026-06-19.)
 >
-> Status: **Phase 0 COMPLETE & verified.** Increments 1 (keystone engine), 2 (server: duels feed NRS,
-> mirror, migration v47), 3 (Android duel debrief + ProfileScreen per-domain `CompetitiveRankCard`),
-> and 4 (2nd ladder unwired) are all done — server `npm test` 954 pass / 0 lint errors; Android
-> `assembleDebug` + `testDebugUnitTest` green. The competitive substrate is now coherent end-to-end.
-> Next is Phase 1 (divisions/pips/promotion + seasonal reward track) per the competitive audit.
+> Status: **Phase 0 COMPLETE & verified**, and Phases 1–3 substantially shipped on
+> `feat/competitive-rating-unification`. Increments 1–4 (keystone engine; server duels-feed-NRS +
+> mirror + migration v47; Android debrief + per-domain `CompetitiveRankCard`; 2nd ladder unwired) are
+> done. Since then: divisions/pips/promotion + seasonal reward track + Act-Rank peak badges
+> (`afdd5cf`,`0d84242`); titles, match history, rivals, rating-history timeline, Reasoning Arena +
+> replays (Phase 2/3); **hidden-MMR matchmaking + provisional `?`** (`1a61cf8`, closing the Increment-2c
+> follow-up); **ranked-loss → SRS review** (`0070405`). Server `npm test` 985 pass / 0 lint errors;
+> Android `assembleDebug` + `testDebugUnitTest` green. See `docs/CompetitiveEcosystemAudit.md` §0.5 for
+> the full Top-25 status. Remaining work is the audit's Phase 4–5 (scale/social + deeper integrity).
 
 ## The decision
 

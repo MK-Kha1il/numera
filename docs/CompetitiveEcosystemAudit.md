@@ -27,6 +27,48 @@ weakness/opportunity catalogs come first so the rankings are defensible.
 
 ---
 
+## 0.5. Implementation status (last updated 2026-06-20)
+
+> The audit below is the original 2026-06-19 analysis, preserved as written. This section tracks what
+> has since been **built** on `feat/competitive-rating-unification`. **Phases 0–3 of the roadmap are
+> substantially shipped; the §1 "smoking gun" is fixed.**
+
+**The rating incoherence (§1 / risk #1) is resolved.** `user_ratings` (per-domain `μ/σ`) is now the
+single source of truth; `users.elo`/`competitive_matches`/`competitive_rank` are a derived mirror
+written only by `services/ratingService.syncCompetitiveMirror`; duels update the *same* NRS belief via
+`applyDuelOutcomeToRating`; the second Elo rank ladder is retired. The bot Elo farm (risk #3) is closed
+— **only human ranked results move the rating**. See `docs/specs/Spec-RatingUnification.md`.
+
+**Top-25 status:**
+
+| # | Item | Status | Anchor |
+|---|------|--------|--------|
+| 1 | Unify the rating substrate | ✅ Shipped | `afdd5cf` |
+| 2 | Duels update the canonical rating | ✅ Shipped | `afdd5cf`,`e5dfe92` |
+| 3 | Reduce speed weight; reward accuracy/depth | ✅ Shipped | `8cf9687` |
+| 4 | Seasonal Rank Reward track | ✅ Shipped | `afdd5cf` |
+| 5 | Act-Rank seasonal peak badge | ✅ Shipped | `afdd5cf` (Past-Seasons card) |
+| 6 | Surface 9 domains as specialties/"main" | ✅ Shipped | `e5dfe92` (`CompetitiveRankCard`) |
+| 7 | Divisions + pips + promotion + rank-up moment | ✅ Shipped | `0d84242` |
+| 8 | Plug bot Elo farm + server-validate metrics | 🟡 Partial | bot farm closed (`afdd5cf`); broad metric-validation still open (#29/#95) |
+| 9 | Competitive profile showcase | ✅ Shipped | `8552cff` + profile cards |
+| 10 | Reasoning/self-explanation ranked mode | ✅ Shipped | `d76813f` (Reasoning Arena) |
+| 11 | Hidden-MMR matchmaking + provisional marker | ✅ Shipped | `1a61cf8` |
+| 12 | Titles system | ✅ Shipped | `737877f`,`10cc189` |
+| 13 | One published rank ladder | ✅ Shipped | `afdd5cf` (RANK_LADDER) |
+| 16 | Match history + duel replays | ✅ Shipped | `c079993`,`7c50add` |
+| 21 | Seasonal history timeline + career peak | ✅ Shipped | `5519cd4` |
+| 25 | Mistake-review-into-SRS after ranked losses | ✅ Shipped | `0070405` |
+
+**Remaining (Phase 4–5 — larger, multi-session product systems, not yet built):**
+- #14 Seasonal-exclusive (scarce) cosmetics · #15 Per-domain ranked queue · #17 Club rating + club
+  seasons/ladder · #18 Calculator/collusion/multi-account integrity layer · #19 Live class/group
+  competitive rooms · #20 Competitive onboarding (placement narrative + rank reveal) · #22 Shareable
+  rank/result cards · #23 Apex (leaderboard-only) tier above Grandmaster · #24 Honor/commendation
+  system. These are the §9 Phase 4 (Scale & social) and Phase 5 (Integrity) tracks.
+
+---
+
 ## 1. Executive summary — the one thing to fix first
 
 **Numera does not have a competitive system. It has five overlapping ones that contradict each
