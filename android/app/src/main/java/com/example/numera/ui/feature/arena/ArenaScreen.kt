@@ -50,6 +50,7 @@ fun ArenaScreen(
     var showAsyncDuel by remember { mutableStateOf(false) }
     var showBotDuel by remember { mutableStateOf(false) }
     var showReasoning by remember { mutableStateOf(false) }
+    var showLiveRoom by remember { mutableStateOf(false) }
     var showChallenges by remember { mutableStateOf(false) }
     var showTournament by remember { mutableStateOf(false) }
     var showSeason by remember { mutableStateOf(false) }
@@ -167,6 +168,10 @@ fun ArenaScreen(
     }
     if (showReasoning) {
         ReasoningArenaScreen(onExit = { showReasoning = false })
+        return
+    }
+    if (showLiveRoom) {
+        LiveRoomScreen(onExit = { showLiveRoom = false })
         return
     }
     if (showChallenges) {
@@ -626,6 +631,16 @@ fun ArenaScreen(
                         cta = "THINK",
                         modifier = Modifier.fillMaxWidth()
                     ) { showReasoning = true }
+                }
+
+                item {
+                    ArenaModeTile(
+                        emoji = "🎉", title = "Live Room",
+                        subtitle = "Host a live room or join with a code — everyone races the same questions and a live podium crowns the winner. Great for a class or a group of friends.",
+                        accent = MaterialTheme.colorScheme.tertiary,
+                        cta = "HOST / JOIN",
+                        modifier = Modifier.fillMaxWidth()
+                    ) { showLiveRoom = true }
                 }
 
                 item {

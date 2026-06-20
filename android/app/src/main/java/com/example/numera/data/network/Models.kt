@@ -1339,6 +1339,39 @@ data class ShareCardResponse(
     val title: String? = null
 )
 
+// ---- Live group/class competitive rooms — audit #19 ----
+data class CreateLiveRoomRequest(val category: String? = null, val level: Int? = null)
+data class LiveAnswerRequest(val problemIndex: Int, val answer: String)
+data class LiveRoomProblem(val question: String = "", val options: List<String> = emptyList())
+data class LiveStanding(
+    val position: Int = 0,
+    val userId: Int = 0,
+    val username: String = "",
+    val score: Int = 0,
+    val answered: Int = 0
+)
+data class LiveYou(val score: Int = 0, val answered: Int = 0)
+data class LiveRoomResponse( // create / join
+    val roomId: Int = 0,
+    val code: String = "",
+    val problemCount: Int = 0,
+    val status: String = "lobby",
+    val isHost: Boolean = false
+)
+data class LiveRoomState( // GET /api/live-rooms/:id
+    val roomId: Int = 0,
+    val code: String = "",
+    val status: String = "lobby",
+    val isHost: Boolean = false,
+    val problemCount: Int = 0,
+    val problems: List<LiveRoomProblem> = emptyList(),
+    val you: LiveYou = LiveYou(),
+    val standings: List<LiveStanding> = emptyList()
+)
+data class LiveStartResponse(val status: String = "active", val problems: List<LiveRoomProblem> = emptyList())
+data class LiveAnswerResponse(val correct: Boolean = false, val score: Int = 0, val answered: Int = 0, val total: Int = 0)
+data class LiveFinishResponse(val status: String = "done", val podium: List<LiveStanding> = emptyList())
+
 // ---- Honor / commendation system — audit #24 ----
 data class CommendRequest(
     val matchId: Int,

@@ -51,7 +51,7 @@ written only by `services/ratingService.syncCompetitiveMirror`; duels update the
 | 6 | Surface 9 domains as specialties/"main" | ✅ Shipped | `e5dfe92` (`CompetitiveRankCard`) |
 | 7 | Divisions + pips + promotion + rank-up moment | ✅ Shipped | `0d84242` |
 | 8 | Plug bot Elo farm + server-validate metrics | ✅ Shipped | bot farm closed (`afdd5cf`); solo session metrics now consistency-validated server-side (#29/#95) |
-| 19 | Live class/group competitive rooms | 🟡 Server core | `routes/liveRoom.js` (create/join/start/answer/podium, server-graded, migration v58); Android UI + socket push remain |
+| 19 | Live class/group competitive rooms | ✅ Shipped | `routes/liveRoom.js` (create/join/start/answer/podium, server-graded, migration v58) + `LiveRoomScreen` (host/join, live polled podium); socket push is a liveness follow-up |
 | 17 | Club rating ladder (skill, not summed XP) | 🟡 Partial | skill ladder shipped (`/api/clubs/leaderboard/skill` avg competitive rating); club seasons/promotion still open |
 | 18 | Integrity beyond speed — collusion/rating-pump review | 🟡 Partial | win-trade/boost detection shipped (`lib/integritySignals` + admin review queue); calculator/multi-account still open |
 | 9 | Competitive profile showcase | ✅ Shipped | `8552cff` + profile cards |
@@ -73,12 +73,12 @@ written only by `services/ratingService.syncCompetitiveMirror`; duels update the
 > back to arithmetic — silently collapsing the per-domain ladders (#16/#45) into one. Now grouped into
 > the real domains, so the 9-domain identity actually moves off arithmetic. This also unblocked #15.
 
-**Remaining (Phase 4–5 — larger, multi-session product systems, not yet built):**
-- #14 Seasonal-exclusive (scarce) cosmetics · #19 Live class/group competitive rooms. These are the §9
-  Phase 4 (Scale & social) track. Partials with follow-ups: #17 club *skill ladder* shipped (club
-  seasons/promotion-relegation remain); #18 collusion/rating-pump review shipped (calculator-use +
-  multi-account/device heuristics remain); #22 text share shipped (rendered image card + public web
-  profile remain).
+**Remaining / follow-ups:**
+- #14 Seasonal-exclusive cosmetics: the *bought* seasonal rotation already exists in the shop; the
+  remaining gap is *earned-via-rank-track* cosmetics (touches the shop catalog/inventory/equip path).
+- Follow-up polish on shipped items: #17 club seasons/promotion-relegation; #18 calculator-use +
+  multi-account/device heuristics; #19 socket push for instant liveness; #22 rendered image card +
+  #75 public web competitive profile.
 
 ---
 

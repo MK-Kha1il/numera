@@ -755,6 +755,25 @@ interface ApiService {
     @GET("api/rating/share-card")
     suspend fun getShareCard(@Header("Authorization") token: String): ShareCardResponse
 
+    // ---- Live group/class competitive rooms (audit #19) ----
+    @POST("api/live-rooms")
+    suspend fun createLiveRoom(@Header("Authorization") token: String, @Body req: CreateLiveRoomRequest = CreateLiveRoomRequest()): LiveRoomResponse
+
+    @POST("api/live-rooms/{code}/join")
+    suspend fun joinLiveRoom(@Header("Authorization") token: String, @Path("code") code: String): LiveRoomResponse
+
+    @POST("api/live-rooms/{id}/start")
+    suspend fun startLiveRoom(@Header("Authorization") token: String, @Path("id") id: Int): LiveStartResponse
+
+    @GET("api/live-rooms/{id}")
+    suspend fun getLiveRoom(@Header("Authorization") token: String, @Path("id") id: Int): LiveRoomState
+
+    @POST("api/live-rooms/{id}/answer")
+    suspend fun answerLiveRoom(@Header("Authorization") token: String, @Path("id") id: Int, @Body req: LiveAnswerRequest): LiveAnswerResponse
+
+    @POST("api/live-rooms/{id}/finish")
+    suspend fun finishLiveRoom(@Header("Authorization") token: String, @Path("id") id: Int): LiveFinishResponse
+
     // ---- Apex tier (leaderboard-only standing above the rank thresholds) ----
     @GET("api/rating/apex")
     suspend fun getApex(
