@@ -10,6 +10,7 @@ const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { withTransaction, httpError } = require('../dbx');
 const { checkText } = require('../lib/contentFilter');
+const NRS = require('../mathEngine/ratingEngine');
 
 const router = express.Router();
 
@@ -117,6 +118,46 @@ router.get('/api/clubs/leaderboard', authenticateToken, (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json((rows || []).map((r, i) => ({ ...r, position: i + 1 })));
+    }
+  );
+});
+
+// Club SKILL ladder (competitive audit #17/#76/#77): rank clubs by the AVERAGE competitive rating of
+// their placed members, not summed level/XP — so a tight crew of strong mathematicians outranks a
+// horde of grinders, and recruiting weak accounts doesn't inflate a club. Average over members with
+// an established rating (≥5 rated games); clubs with none are "Unrated". The club's rank label is
+// derived from its average via the one published ladder.
+router.get('/api/clubs/leaderboard/skill', authenticateToken, (req, res) => {
+  db.all(
+    `SELECT c.id, c.name,
+            COUNT(cm.user_id) AS memberCount,
+            COUNT(r.user_id) AS ratedMembers,
+            COALESCE(AVG(r.display_rating), 0) AS avgRating
+       FROM clubs c
+       JOIN club_members cm ON cm.club_id = c.id
+       LEFT JOIN user_ratings r
+              ON r.user_id = cm.user_id AND r.domain = 'global' AND r.sessions_count >= 5
+      GROUP BY c.id
+      ORDER BY avgRating DESC, ratedMembers DESC, memberCount DESC
+      LIMIT 50`,
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(
+        (rows || []).map((r, i) => {
+          const avg = Math.round(r.avgRating || 0);
+          return {
+            id: r.id,
+            name: r.name,
+            position: i + 1,
+            memberCount: r.memberCount,
+            ratedMembers: r.ratedMembers,
+            avgRating: avg,
+            // A club is only "ranked" once it has at least one established member; pass 5 sessions so
+            // the rank label is a real tier (not the placement string) when rated.
+            clubRank: r.ratedMembers > 0 ? NRS.displayRatingToRank(avg, 5) : 'Unrated',
+          };
+        })
+      );
     }
   );
 });

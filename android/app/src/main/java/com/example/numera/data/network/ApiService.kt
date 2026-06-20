@@ -297,6 +297,12 @@ interface ApiService {
         @Header("Authorization") token: String
     ): List<ClubLeaderboardEntry>
 
+    // Club SKILL ladder — ranked by avg competitive rating, not XP (audit #17).
+    @GET("api/clubs/leaderboard/skill")
+    suspend fun clubsSkillLeaderboard(
+        @Header("Authorization") token: String
+    ): List<ClubSkillEntry>
+
     @POST("api/clubs")
     suspend fun createClub(
         @Header("Authorization") token: String,

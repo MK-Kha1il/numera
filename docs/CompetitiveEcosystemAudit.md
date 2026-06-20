@@ -51,6 +51,7 @@ written only by `services/ratingService.syncCompetitiveMirror`; duels update the
 | 6 | Surface 9 domains as specialties/"main" | ✅ Shipped | `e5dfe92` (`CompetitiveRankCard`) |
 | 7 | Divisions + pips + promotion + rank-up moment | ✅ Shipped | `0d84242` |
 | 8 | Plug bot Elo farm + server-validate metrics | 🟡 Partial | bot farm closed (`afdd5cf`); broad metric-validation still open (#29/#95) |
+| 17 | Club rating ladder (skill, not summed XP) | 🟡 Partial | skill ladder shipped (`/api/clubs/leaderboard/skill` avg competitive rating); club seasons/promotion still open |
 | 18 | Integrity beyond speed — collusion/rating-pump review | 🟡 Partial | win-trade/boost detection shipped (`lib/integritySignals` + admin review queue); calculator/multi-account still open |
 | 9 | Competitive profile showcase | ✅ Shipped | `8552cff` + profile cards |
 | 10 | Reasoning/self-explanation ranked mode | ✅ Shipped | `d76813f` (Reasoning Arena) |
@@ -72,10 +73,11 @@ written only by `services/ratingService.syncCompetitiveMirror`; duels update the
 > the real domains, so the 9-domain identity actually moves off arithmetic. This also unblocked #15.
 
 **Remaining (Phase 4–5 — larger, multi-session product systems, not yet built):**
-- #14 Seasonal-exclusive (scarce) cosmetics · #17 Club rating + club seasons/ladder · #19 Live
-  class/group competitive rooms. These are the §9 Phase 4 (Scale & social) track. (#18 integrity:
-  collusion/rating-pump review shipped; calculator-use + multi-account/device heuristics remain.
-  #22 shipped as a text share; a rendered image card + public web profile remain a follow-up.)
+- #14 Seasonal-exclusive (scarce) cosmetics · #19 Live class/group competitive rooms. These are the §9
+  Phase 4 (Scale & social) track. Partials with follow-ups: #17 club *skill ladder* shipped (club
+  seasons/promotion-relegation remain); #18 collusion/rating-pump review shipped (calculator-use +
+  multi-account/device heuristics remain); #22 text share shipped (rendered image card + public web
+  profile remain).
 
 ---
 

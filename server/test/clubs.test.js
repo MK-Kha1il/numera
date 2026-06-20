@@ -172,3 +172,35 @@ test('when the owner leaves, ownership passes to the top-ranked remaining member
   assert.ok(mine.body.club, 'the club still exists with the remaining member');
   assert.equal(mine.body.club.isOwner, true, 'the remaining member inherited ownership');
 });
+
+test('the SKILL leaderboard ranks clubs by avg competitive rating, not summed XP (audit #17/#76)', async () => {
+  // Two clubs: A = one strong placed mathematician; B = two low-level grinders, no rated members.
+  const strong = await registerUser(ctx.base);
+  const a = await api(ctx.base, 'POST', '/api/clubs', { token: strong.token, body: { name: `Elite ${Math.random().toString(36).slice(2, 7)}` } });
+  const clubA = a.body.clubId;
+  // Seed the strong player's placed global rating high.
+  await dbRun(
+    `INSERT INTO user_ratings (user_id, domain, mu, sigma, display_rating, sessions_count, last_updated)
+     VALUES (?, 'global', 2000, 50, 1800, 30, strftime('%s','now'))
+     ON CONFLICT(user_id, domain) DO UPDATE SET display_rating=excluded.display_rating, sessions_count=excluded.sessions_count`,
+    [await idOf(strong.username)]
+  );
+
+  const g1 = await registerUser(ctx.base);
+  const b = await api(ctx.base, 'POST', '/api/clubs', { token: g1.token, body: { name: `Grinders ${Math.random().toString(36).slice(2, 7)}` } });
+  const clubB = b.body.clubId;
+  const g2 = await registerUser(ctx.base);
+  await api(ctx.base, 'POST', `/api/clubs/${clubB}/join`, { token: g2.token });
+  // Grinders have huge level/XP but no rated games.
+  await dbRun('UPDATE users SET level = 99, xp = 999999 WHERE id IN (?, ?)', [await idOf(g1.username), await idOf(g2.username)]);
+
+  const ladder = await api(ctx.base, 'GET', '/api/clubs/leaderboard/skill', { token: strong.token });
+  assert.equal(ladder.status, 200);
+  const posA = ladder.body.find((c) => c.id === clubA);
+  const posB = ladder.body.find((c) => c.id === clubB);
+  assert.ok(posA && posB);
+  assert.ok(posA.position < posB.position, 'the strong-but-small club outranks the grinder horde');
+  assert.equal(posA.avgRating, 1800, 'club rating = avg of placed members');
+  assert.ok(!posA.clubRank.startsWith('Unrated'), 'a club with a placed member gets a real rank');
+  assert.equal(posB.clubRank, 'Unrated', 'a club with no placed members is unrated, not XP-ranked');
+});

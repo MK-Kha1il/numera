@@ -1731,6 +1731,17 @@ data class ClubLeaderboardEntry(
     val position: Int = 0
 )
 
+// Club SKILL ladder (audit #17): clubs ranked by avg competitive rating of placed members, not XP.
+data class ClubSkillEntry(
+    val id: Int = 0,
+    val name: String = "",
+    val memberCount: Int = 0,
+    val ratedMembers: Int = 0,
+    val avgRating: Int = 0,
+    val clubRank: String = "Unrated",
+    val position: Int = 0
+)
+
 // ---- Friends leaderboard ----
 @Serializable
 data class FriendLeaderboardEntry(
