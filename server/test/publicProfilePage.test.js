@@ -56,3 +56,29 @@ test('an unknown username 404s with a friendly page', async () => {
   assert.equal(r.status, 404);
   assert.match(String(r.body), /not found/i);
 });
+
+test('the SVG rank card renders the rank (and the profile references it as its OG image)', async () => {
+  const u = await registerUser(ctx.base);
+  const uid = await idOf(u.username);
+  await dbRun("UPDATE users SET competitive_rank = 'Platinum I', competitive_matches = 25 WHERE id = ?", [uid]);
+
+  const card = await api(ctx.base, 'GET', `/u/${u.username}/card.svg`);
+  assert.equal(card.status, 200);
+  const svg = String(card.body);
+  assert.match(svg, /<svg/, 'is an SVG document');
+  assert.match(svg, /Platinum I/, 'the card shows the rank');
+  assert.match(svg, new RegExp(u.username), 'the card shows the username');
+
+  const page = await api(ctx.base, 'GET', `/u/${u.username}`);
+  assert.match(String(page.body), /og:image/, 'the profile page advertises the card as its social image');
+  assert.match(String(page.body), /card\.svg/, 'og:image points at the SVG card');
+});
+
+test("a private player's card shows no rank", async () => {
+  const u = await registerUser(ctx.base);
+  const uid = await idOf(u.username);
+  await dbRun("UPDATE users SET competitive_rank = 'Grandmaster', competitive_matches = 50, profile_private = 1 WHERE id = ?", [uid]);
+  const card = await api(ctx.base, 'GET', `/u/${u.username}/card.svg`);
+  assert.equal(card.status, 200);
+  assert.doesNotMatch(String(card.body), /Grandmaster/, 'a private card never leaks the rank');
+});

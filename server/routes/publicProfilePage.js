@@ -36,13 +36,17 @@ const CSS = `
   footer{margin-top:30px;border-top:1px solid #eee;padding-top:14px;color:#888;font-size:.82rem;text-align:center}
 `;
 
-function shell({ title, description, body }) {
+function shell({ title, description, body, image }) {
+  const imageMeta = image
+    ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter:card" content="summary_large_image">`
+    : '';
   return `<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:type" content="profile">
+${imageMeta}
 <style>${CSS}</style>
 </head><body>
 <header class="site"><a class="brand" href="/">NUMERA</a><nav><a href="/learn">Lessons</a> · <a href="/worksheet">Worksheets</a></nav></header>
@@ -55,6 +59,43 @@ const DOMAIN_LABELS = {
   arithmetic: 'Arithmetic', algebra: 'Algebra', geometry: 'Geometry', calculus: 'Calculus',
   combinatorics: 'Combinatorics', number_theory: 'Number Theory', statistics: 'Statistics', probability: 'Probability',
 };
+
+// Tier → accent colour for the SVG rank card.
+const TIER_COLOR = {
+  Bronze: '#a86b3c', Silver: '#9fb1c4', Gold: '#e6b422', Platinum: '#5fd3c5',
+  Diamond: '#5aa9ff', Master: '#b06bff', Grandmaster: '#ff5b7f',
+};
+
+// ── GET /u/:username/card.svg ──────────────────────────────────────────────────
+// A shareable SVG rank card — the visual half of the share loop (audit #22). Used as the profile
+// page's social/OG image and embeddable anywhere. Private profiles get a generic card (no rank).
+router.get('/u/:username/card.svg', async (req, res) => {
+  res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  try {
+    const user = await get(
+      'SELECT id, username, competitive_rank, competitive_matches, profile_private FROM users WHERE username = ? COLLATE NOCASE',
+      [String(req.params.username || '')]
+    );
+    const svg = (name, line, accent) => `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="315" viewBox="0 0 600 315">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a0f4a"/><stop offset="1" stop-color="#14081f"/></linearGradient></defs>
+  <rect width="600" height="315" fill="url(#g)"/>
+  <rect x="0" y="0" width="600" height="8" fill="${accent}"/>
+  <text x="40" y="70" fill="#b79bff" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="700" letter-spacing="3">NUMERA</text>
+  <text x="40" y="160" fill="#ffffff" font-family="Segoe UI,Arial,sans-serif" font-size="46" font-weight="800">${esc(name)}</text>
+  <text x="40" y="210" fill="${accent}" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="700">${esc(line)}</text>
+  <text x="40" y="280" fill="#9b8bbf" font-family="Segoe UI,Arial,sans-serif" font-size="18">the ranked math ladder where understanding wins</text>
+</svg>`;
+    if (!user) return res.send(svg('Numera', 'Play the ranked math ladder', '#b06bff'));
+    if (user.profile_private === 1) return res.send(svg(user.username, 'Competitor on Numera', '#b06bff'));
+    const placed = (user.competitive_matches || 0) >= 5;
+    const rank = placed ? (user.competitive_rank || 'Unranked') : 'Unranked — in placement';
+    const tier = String(user.competitive_rank || '').split(' ')[0];
+    return res.send(svg(user.username, `🏆 ${rank}`, TIER_COLOR[tier] || '#b06bff'));
+  } catch {
+    res.send(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="315"><rect width="600" height="315" fill="#14081f"/></svg>`);
+  }
+});
 
 router.get('/u/:username', async (req, res) => {
   try {
@@ -120,7 +161,10 @@ router.get('/u/:username', async (req, res) => {
     ${medalHtml}
     <a class="cta" href="/">Play Numera — climb your own ladder</a>`;
 
-    res.send(shell({ title: `${user.username} (${placed ? rank : 'Unranked'}) · Numera`, description: desc, body }));
+    // OG image = the SVG rank card (absolute URL when APP_BASE_URL is set, so social unfurls work).
+    const base = (require('../config').APP_BASE_URL || '').replace(/\/$/, '');
+    const cardUrl = `${base}/u/${encodeURIComponent(user.username)}/card.svg`;
+    res.send(shell({ title: `${user.username} (${placed ? rank : 'Unranked'}) · Numera`, description: desc, body, image: cardUrl }));
   } catch {
     res.status(500).send(shell({ title: 'Error · Numera', description: 'Something went wrong.', body: '<div class="hero"><h1>Something went wrong</h1></div>' }));
   }
