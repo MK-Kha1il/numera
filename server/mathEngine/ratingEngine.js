@@ -48,18 +48,30 @@ const KNOWN_DOMAINS = [
  * Maps a category string from the game to a canonical domain name.
  * Returns 'arithmetic' as the safe fallback.
  */
+// Maps a generator/session category to one of the 8 competitive domains. The generator uses ~20
+// fine-grained category names (graphing, expressions, equations, factors, …); without this table they
+// all fell back to 'arithmetic', silently collapsing the per-domain rating ladders into one (every
+// algebra/geometry concept credited arithmetic). The grouping keeps the buckets pedagogically honest:
+// symbolic manipulation / equations / functions / coordinate work → algebra; factor/divisor work →
+// number_theory; pure number/fraction/decimal work → arithmetic.
+const CATEGORY_DOMAIN = {
+  // arithmetic & number sense
+  arithmetic: 'arithmetic', mental: 'arithmetic', mental_math: 'arithmetic',
+  number_sense: 'arithmetic', fractions: 'arithmetic', decimals: 'arithmetic',
+  integers: 'arithmetic', rates: 'arithmetic',
+  // algebra (symbolic manipulation, equations, functions, coordinate work)
+  algebra: 'algebra', expressions: 'algebra', equations: 'algebra', inequalities: 'algebra',
+  functions: 'algebra', graphing: 'algebra', sequences: 'algebra', powers: 'algebra',
+  // the rest map by name
+  geometry: 'geometry', calculus: 'calculus', combinatorics: 'combinatorics',
+  number_theory: 'number_theory', factors: 'number_theory',
+  statistics: 'statistics', probability: 'probability',
+};
+
 function categoryToDomain(category) {
   if (!category) return 'arithmetic';
   const c = category.toLowerCase().replace(/\s+/g, '_');
-  if (c === 'arithmetic' || c === 'mental' || c === 'mental_math') return 'arithmetic';
-  if (c === 'algebra')       return 'algebra';
-  if (c === 'geometry')      return 'geometry';
-  if (c === 'calculus')      return 'calculus';
-  if (c === 'combinatorics') return 'combinatorics';
-  if (c === 'number_theory' || c === 'number theory') return 'number_theory';
-  if (c === 'statistics')    return 'statistics';
-  if (c === 'probability')   return 'probability';
-  return 'arithmetic'; // safe fallback
+  return CATEGORY_DOMAIN[c] || 'arithmetic'; // safe fallback for any unknown category
 }
 
 // ─── Difficulty Scaling ───────────────────────────────────────────────────────
