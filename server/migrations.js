@@ -1206,6 +1206,20 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_match_log_h2h ON match_log(user_id, opponent_id)');
     },
   },
+  {
+    version: 52,
+    name: 'reasoning_rated_flag',
+    // Anti-farm for the Reasoning Arena: rating only moves for the first N rated rounds per UTC day;
+    // `rated` marks which finished rounds actually counted, so the daily cap can be enforced without
+    // blocking further (practice) play.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE reasoning_rounds ADD COLUMN rated INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**

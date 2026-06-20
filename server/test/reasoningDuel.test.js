@@ -11,6 +11,8 @@ before(async () => { ctx = await bootServer(); });
 after(async () => { await shutdown(ctx); });
 
 const dbGet = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.get(sql, p, (e, r) => (e ? rej(e) : res(r))));
+const dbRun = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.run(sql, p, (e) => (e ? rej(e) : res())));
+const idOf = (username) => dbGet('SELECT id FROM users WHERE username = ?', [username]).then((r) => r.id);
 const keyOf = async (roundId) => JSON.parse((await dbGet('SELECT problems_json FROM reasoning_rounds WHERE id = ?', [roundId])).problems_json);
 
 test('start returns a level round of problems + reason options, with the answer key stripped', async () => {
@@ -53,4 +55,28 @@ test('a correct answer with the WRONG reason banks nothing (the understanding ga
   assert.equal(sub.status, 200);
   assert.equal(sub.body.answerCorrect, 5, 'all answers were correct');
   assert.equal(sub.body.banked, 0, 'but no reasons correct → nothing banked: speed/recall alone cannot climb');
+});
+
+test('daily rated cap: rounds past the cap are playable but rating-neutral (anti-farm)', async () => {
+  const u = await registerUser(ctx.base);
+  const uid = await idOf(u.username);
+  // Seed the day's rated-round cap (10) as already used.
+  const now = Date.now();
+  for (let i = 0; i < 10; i++) {
+    await dbRun(
+      "INSERT INTO reasoning_rounds (user_id, level, problems_json, problem_count, status, score, rated, created_at, finished_at) VALUES (?, 5, '[]', 0, 'done', 0, 1, ?, ?)",
+      [uid, now, now]
+    );
+  }
+
+  const start = await api(ctx.base, 'POST', '/api/reasoning-duel/start', { token: u.token });
+  const probs = await keyOf(start.body.roundId);
+  const sub = await api(ctx.base, 'POST', `/api/reasoning-duel/${start.body.roundId}/submit`, {
+    token: u.token,
+    body: { answers: probs.map((p) => p.answer), reasons: probs.map((p) => p.reasonCorrectIndex) },
+  });
+  assert.equal(sub.status, 200);
+  assert.equal(sub.body.banked, 5, 'the round is still played and scored');
+  assert.equal(sub.body.ratingCounted, false, 'past the daily cap the rating does not move');
+  assert.equal(sub.body.ratingDelta, 0, 'no rating delta when capped');
 });

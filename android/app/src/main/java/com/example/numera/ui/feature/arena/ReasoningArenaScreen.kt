@@ -134,7 +134,9 @@ fun ReasoningArenaScreen(onExit: () -> Unit) {
                         Column(modifier = Modifier.fillMaxWidth().padding(Spacing.xl), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                             Text("${r.banked} / ${r.total} banked", fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = MaterialTheme.colorScheme.primary)
                             Text("${r.answerCorrect} answered correctly · ${r.banked} fully understood", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                            if (r.promoted && r.newRank != null) {
+                            if (!r.ratingCounted) {
+                                Text("Practice round — daily ranked cap reached. Rating unchanged.", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            } else if (r.promoted && r.newRank != null) {
                                 Text("⬆️ RANKED UP to ${r.newRank}!", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = CorrectGreen)
                             } else if (r.newRank != null) {
                                 val delta = r.ratingDelta.toInt()

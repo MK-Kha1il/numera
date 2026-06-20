@@ -22,6 +22,8 @@ const router = express.Router();
 
 const PROBLEM_COUNT = 5;
 const GEN_ELO = 1200; // representative difficulty for generation (the concept, not the player, sets it)
+const DAILY_RATED_CAP = 10; // rating-moving rounds per UTC day (anti-farm; play past it for practice)
+const dayStart = () => Math.floor(Date.now() / 86400000) * 86400000;
 
 // The eligible concepts = those with an authored reason-set AND a generatable problem.
 const REASONING_POOL = Object.keys(SELF_EXPLAIN)
@@ -125,8 +127,13 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
       }
     }
 
-    await tx.run("UPDATE reasoning_rounds SET status = 'done', score = ?, finished_at = ? WHERE id = ?", [banked, Date.now(), id]);
-    return { level: round.level, total: problems.length, banked, answerCorrectCount, perProblem };
+    // Anti-farm: only the first DAILY_RATED_CAP rounds each UTC day move the rating; the rest are
+    // playable for practice but rating-neutral. The cap is judged off rounds that actually counted.
+    const ratedToday = await tx.get("SELECT COUNT(*) AS n FROM reasoning_rounds WHERE user_id = ? AND rated = 1 AND finished_at >= ?", [req.user.id, dayStart()]);
+    const willRate = (ratedToday.n || 0) < DAILY_RATED_CAP;
+
+    await tx.run("UPDATE reasoning_rounds SET status = 'done', score = ?, rated = ?, finished_at = ? WHERE id = ?", [banked, willRate ? 1 : 0, Date.now(), id]);
+    return { level: round.level, total: problems.length, banked, answerCorrectCount, perProblem, willRate };
   })
     .then(async (r) => {
       // Feed the learning engine (answer correctness), awaited + sequential so the engine is fed
@@ -137,35 +144,44 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
         } catch { /* engine feed is best-effort; never block the result on it */ }
       }
 
+      // Record the match + send the result. `after` is the rating update (null when the daily rated
+      // cap is hit — the round was still played, just rating-neutral practice).
+      const respond = (after) => {
+        const result = after
+          ? (after.delta > 0 ? 'win' : after.delta < 0 ? 'loss' : 'draw')
+          : (r.banked * 2 >= r.total ? 'win' : 'loss');
+        recordMatch(db, {
+          userId: req.user.id,
+          mode: 'reasoning',
+          opponentId: null,
+          opponentName: 'Reasoning Benchmark',
+          myScore: r.banked,
+          oppScore: r.total - r.banked,
+          result,
+          ratingDelta: after ? after.delta : 0,
+        });
+        res.json({
+          success: true,
+          banked: r.banked,
+          answerCorrect: r.answerCorrectCount,
+          total: r.total,
+          ratingCounted: !!after,
+          ratingDelta: after ? +after.delta.toFixed(1) : 0,
+          newDisplayRating: after ? after.displayRating : null,
+          newRank: after ? NRS.displayRatingToRank(after.displayRating, after.sessionsCount) : null,
+          promoted: after ? !!after.promoted : false,
+          perProblem: r.perProblem,
+        });
+      };
+
+      if (!r.willRate) { respond(null); return; }
+
       // Understanding-only outcome (banked/total) moves the unified rating vs a level benchmark.
       const outcome = r.total ? r.banked / r.total : 0;
       const benchmarkMu = 1300 + (r.level || 5) * 20; // harder rounds → stronger benchmark
       applyDuelResultToRatings(
         { userId: req.user.id, opponentMu: benchmarkMu, opponentSigma: 200, outcome, gameMode: 'reasoning' },
-        (_e, after) => {
-          // Record this round in the player's match history (vs the reasoning benchmark).
-          recordMatch(db, {
-            userId: req.user.id,
-            mode: 'reasoning',
-            opponentId: null,
-            opponentName: 'Reasoning Benchmark',
-            myScore: r.banked,
-            oppScore: r.total - r.banked,
-            result: after && after.delta > 0 ? 'win' : after && after.delta < 0 ? 'loss' : 'draw',
-            ratingDelta: after ? after.delta : 0,
-          });
-          res.json({
-            success: true,
-            banked: r.banked,
-            answerCorrect: r.answerCorrectCount,
-            total: r.total,
-            ratingDelta: after ? +after.delta.toFixed(1) : 0,
-            newDisplayRating: after ? after.displayRating : null,
-            newRank: after ? NRS.displayRatingToRank(after.displayRating, after.sessionsCount) : null,
-            promoted: after ? !!after.promoted : false,
-            perProblem: r.perProblem,
-          });
-        }
+        (_e, after) => respond(after)
       );
     })
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));

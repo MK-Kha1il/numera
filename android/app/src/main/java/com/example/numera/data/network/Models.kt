@@ -1399,6 +1399,7 @@ data class ReasoningSubmitResponse(
     val banked: Int = 0,
     val answerCorrect: Int = 0,
     val total: Int = 0,
+    val ratingCounted: Boolean = true,
     val ratingDelta: Double = 0.0,
     val newDisplayRating: Int? = null,
     val newRank: String? = null,
