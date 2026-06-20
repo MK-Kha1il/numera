@@ -17,6 +17,7 @@ const NRS = require('../mathEngine/ratingEngine');
 const { applyDuelResultToRatings } = require('../services/ratingService');
 const { feedEngineOutcome } = require('../services/engineFeed');
 const { recordMatch } = require('../services/matchLog');
+const { enqueueMissedTopic } = require('../services/srsService');
 
 const router = express.Router();
 
@@ -117,6 +118,7 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
     let banked = 0;
     let answerCorrectCount = 0;
     const perProblem = [];
+    const missedConcepts = [];
     feeds = [];
     for (let i = 0; i < problems.length; i++) {
       const answerCorrect = areEquivalent(answers[i], problems[i].answer);
@@ -124,6 +126,9 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
       const bankedThis = answerCorrect && reasonCorrect;
       if (answerCorrect) answerCorrectCount++;
       if (bankedThis) banked++;
+      // Not banked = the answer OR the reason was wrong → didn't fully understand it. Queue the
+      // concept for spaced review (audit #25: a ranked loss becomes learning).
+      else if (problems[i].conceptId && !missedConcepts.includes(problems[i].conceptId)) missedConcepts.push(problems[i].conceptId);
       perProblem.push({
         answerCorrect,
         reasonCorrect,
@@ -144,7 +149,7 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
 
     const submissionJson = JSON.stringify({ answers, reasons });
     await tx.run("UPDATE reasoning_rounds SET status = 'done', score = ?, rated = ?, submission_json = ?, finished_at = ? WHERE id = ?", [banked, willRate ? 1 : 0, submissionJson, Date.now(), id]);
-    return { level: round.level, domain: round.domain, total: problems.length, banked, answerCorrectCount, perProblem, willRate };
+    return { level: round.level, domain: round.domain, total: problems.length, banked, answerCorrectCount, perProblem, missedConcepts, willRate };
   })
     .then(async (r) => {
       // Feed the learning engine (answer correctness), awaited + sequential so the engine is fed
@@ -153,6 +158,12 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
         try {
           await feedEngineOutcome(db, req.user.id, f.conceptKey, { correct: f.correct, correctAnswer: f.correctAnswer, wrongAnswer: f.wrongAnswer });
         } catch { /* engine feed is best-effort; never block the result on it */ }
+      }
+
+      // Queue every not-fully-understood concept for spaced review, due now (audit #25). Best-effort,
+      // awaited so the review queue is populated before the client navigates to it.
+      for (const topic of r.missedConcepts) {
+        try { await new Promise((resolve) => enqueueMissedTopic(db, req.user.id, topic, resolve)); } catch { /* never block the result */ }
       }
 
       // Record the match + send the result. `after` is the rating update (null when the daily rated
@@ -183,6 +194,7 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
           newRank: after ? NRS.displayRatingToRank(after.displayRating, after.sessionsCount) : null,
           promoted: after ? !!after.promoted : false,
           perProblem: r.perProblem,
+          reviewQueued: r.missedConcepts.length, // concepts pushed into SRS for spaced review (audit #25)
         });
       };
 

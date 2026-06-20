@@ -98,6 +98,45 @@ test('a rated reasoning round credits the contested per-domain rating, not only 
   assert.ok(domains.some((d) => d !== 'global'), 'the contested domain rating was created too — per-domain ladders climb from ranked play');
 });
 
+test('missed concepts are queued into SRS, due now — a ranked loss becomes learning (audit #25)', async () => {
+  const u = await registerUser(ctx.base);
+  const uid = await idOf(u.username);
+  const start = await api(ctx.base, 'POST', '/api/reasoning-duel/start', { token: u.token });
+  const probs = await keyOf(start.body.roundId);
+  // Every answer correct but every reason wrong → nothing banks → all 5 distinct concepts are "missed".
+  const answers = probs.map((p) => p.answer);
+  const reasons = probs.map((p) => (p.reasonCorrectIndex + 1) % p.reasonOptions.length);
+
+  const sub = await api(ctx.base, 'POST', `/api/reasoning-duel/${start.body.roundId}/submit`, { token: u.token, body: { answers, reasons } });
+  assert.equal(sub.status, 200);
+  assert.equal(sub.body.banked, 0, 'nothing banked');
+  assert.ok(sub.body.reviewQueued >= 1, 'the response reports concepts queued for review');
+
+  const now = Math.floor(Date.now() / 1000);
+  const due = await dbAll('SELECT topic, next_review, repetitions FROM srs_reviews WHERE user_id = ?', [uid]);
+  assert.equal(due.length, sub.body.reviewQueued, 'one SRS row per missed concept');
+  assert.ok(due.every((r) => r.next_review <= now), 'every queued review is due immediately');
+  assert.ok(due.every((r) => r.repetitions === 0), 'queued as a fresh lapse (reps reset)');
+  // The topics are the round's concept keys.
+  const missedKeys = new Set(probs.map((p) => p.conceptId));
+  assert.ok(due.every((r) => missedKeys.has(r.topic)), 'queued topics are the round concepts');
+});
+
+test('a fully-understood round queues nothing for review', async () => {
+  const u = await registerUser(ctx.base);
+  const uid = await idOf(u.username);
+  const start = await api(ctx.base, 'POST', '/api/reasoning-duel/start', { token: u.token });
+  const probs = await keyOf(start.body.roundId);
+  const sub = await api(ctx.base, 'POST', `/api/reasoning-duel/${start.body.roundId}/submit`, {
+    token: u.token,
+    body: { answers: probs.map((p) => p.answer), reasons: probs.map((p) => p.reasonCorrectIndex) },
+  });
+  assert.equal(sub.body.banked, 5);
+  assert.equal(sub.body.reviewQueued, 0, 'nothing missed → nothing queued');
+  const due = await dbAll('SELECT topic FROM srs_reviews WHERE user_id = ?', [uid]);
+  assert.equal(due.length, 0, 'no SRS rows created from a perfect round');
+});
+
 test('a finished round can be replayed problem-by-problem (review)', async () => {
   const u = await registerUser(ctx.base);
   const start = await api(ctx.base, 'POST', '/api/reasoning-duel/start', { token: u.token });

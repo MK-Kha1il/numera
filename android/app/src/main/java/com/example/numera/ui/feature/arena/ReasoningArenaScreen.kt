@@ -142,6 +142,13 @@ fun ReasoningArenaScreen(onExit: () -> Unit) {
                                 val delta = r.ratingDelta.toInt()
                                 Text("Rating ${if (delta >= 0) "+" else ""}$delta · ${r.newRank}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                             }
+                            if (r.reviewQueued > 0) {
+                                Text(
+                                    "📌 ${r.reviewQueued} concept${if (r.reviewQueued == 1) "" else "s"} added to your review queue",
+                                    fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            }
                         }
                     }
                     r.perProblem.forEachIndexed { i, item ->

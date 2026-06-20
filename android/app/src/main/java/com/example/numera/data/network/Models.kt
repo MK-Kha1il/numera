@@ -1465,7 +1465,8 @@ data class ReasoningSubmitResponse(
     val newDisplayRating: Int? = null,
     val newRank: String? = null,
     val promoted: Boolean = false,
-    val perProblem: List<ReasoningResultItem> = emptyList()
+    val perProblem: List<ReasoningResultItem> = emptyList(),
+    val reviewQueued: Int = 0 // concepts you missed, queued into spaced review (audit #25)
 )
 
 // ---- Learning plan (goal-driven concept path — audit #19) ----
