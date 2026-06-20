@@ -779,8 +779,14 @@ interface ApiService {
     suspend fun getSeasonHistory(@Header("Authorization") token: String): SeasonHistoryResponse
 
     // ---- Reasoning Arena (understanding-gated ranked mode) ----
+    @GET("api/reasoning-duel/domains")
+    suspend fun getReasoningDomains(@Header("Authorization") token: String): ReasoningDomainsResponse
+
     @POST("api/reasoning-duel/start")
-    suspend fun startReasoningDuel(@Header("Authorization") token: String): ReasoningStartResponse
+    suspend fun startReasoningDuel(
+        @Header("Authorization") token: String,
+        @Body req: ReasoningStartRequest = ReasoningStartRequest()
+    ): ReasoningStartResponse
 
     @POST("api/reasoning-duel/{id}/submit")
     suspend fun submitReasoningDuel(

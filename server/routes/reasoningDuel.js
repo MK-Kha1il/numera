@@ -26,15 +26,39 @@ const GEN_ELO = 1200; // representative difficulty for generation (the concept, 
 const DAILY_RATED_CAP = 10; // rating-moving rounds per UTC day (anti-farm; play past it for practice)
 const dayStart = () => Math.floor(Date.now() / 86400000) * 86400000;
 
-// The eligible concepts = those with an authored reason-set AND a generatable problem.
+// The eligible concepts = those with an authored reason-set AND a generatable problem. Each carries
+// its competitive domain so a player can choose to climb a specific ladder (audit #15).
 const REASONING_POOL = Object.keys(SELF_EXPLAIN)
   .filter((id) => CONCEPT_TO_LEVEL[id])
-  .map((id) => ({ id, category: CONCEPT_TO_LEVEL[id].category, level: CONCEPT_TO_LEVEL[id].level }));
+  .map((id) => ({ id, category: CONCEPT_TO_LEVEL[id].category, level: CONCEPT_TO_LEVEL[id].level, domain: NRS.categoryToDomain(CONCEPT_TO_LEVEL[id].category) }));
 
-// Pick `count` reason-set concepts nearest the player's level, lightly shuffled for variety.
-function pickReasoningConcepts(playerLevel, count) {
-  const sorted = [...REASONING_POOL].sort((a, b) => Math.abs(a.level - playerLevel) - Math.abs(b.level - playerLevel));
-  const pool = sorted.slice(0, Math.max(count + 3, 6));
+// A domain is offerable as a focus only if it has enough reason-sets to fill most of a round, so a
+// "focus" round is genuinely mostly that domain (the rest backfills from nearest-level concepts).
+const MIN_FOCUS_CONCEPTS = Math.ceil(PROBLEM_COUNT * 0.6); // 3 of 5
+const FOCUS_DOMAINS = (() => {
+  const counts = {};
+  for (const c of REASONING_POOL) counts[c.domain] = (counts[c.domain] || 0) + 1;
+  return Object.keys(counts).filter((d) => counts[d] >= MIN_FOCUS_CONCEPTS).sort();
+})();
+
+// Pick `count` reason-set concepts nearest the player's level, lightly shuffled for variety. When a
+// `focusDomain` is given (and offerable), its concepts are prioritised and the rest backfills so the
+// round always has `count` items but is dominated by the chosen domain.
+function pickReasoningConcepts(playerLevel, count, focusDomain = null) {
+  const byProximity = (a, b) => Math.abs(a.level - playerLevel) - Math.abs(b.level - playerLevel);
+  const ranked = [...REASONING_POOL].sort(byProximity);
+
+  let pool;
+  if (focusDomain && FOCUS_DOMAINS.includes(focusDomain)) {
+    const inDomain = ranked.filter((c) => c.domain === focusDomain);
+    const rest = ranked.filter((c) => c.domain !== focusDomain);
+    // Take a domain-heavy candidate set: a few extra in-domain for variety, then nearest others.
+    pool = inDomain.slice(0, count + 2);
+    if (pool.length < count) pool = pool.concat(rest.slice(0, count - pool.length + 2));
+  } else {
+    pool = ranked.slice(0, Math.max(count + 3, 6));
+  }
+
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -45,11 +69,21 @@ function pickReasoningConcepts(playerLevel, count) {
 // ── POST /api/reasoning-duel/start ────────────────────────────────────────────
 // Build a round at the player's level: each item is a problem + its reason-MCQ. The answer key and
 // correct-reason index are stored server-side; only the questions + options are returned.
+// ── GET /api/reasoning-duel/domains ───────────────────────────────────────────
+// The domains a player can choose to focus a round on (each has enough reason-sets to fill one).
+// Drives the Arena's "climb a specific ladder" chooser (audit #15).
+router.get('/api/reasoning-duel/domains', authenticateToken, (req, res) => {
+  res.json({ domains: FOCUS_DOMAINS });
+});
+
 router.post('/api/reasoning-duel/start', authenticateToken, (req, res) => {
+  // Optional: focus the round on one domain to climb that ladder ("rank up my Algebra"). Ignored
+  // unless it is an offerable focus domain — otherwise the round is mixed ("Any").
+  const focusDomain = FOCUS_DOMAINS.includes(req.body && req.body.domain) ? req.body.domain : null;
   db.get('SELECT level FROM users WHERE id = ?', [req.user.id], (err, u) => {
     if (err) return res.status(500).json({ error: err.message });
     const playerLevel = (u && u.level) || 1;
-    const concepts = pickReasoningConcepts(playerLevel, PROBLEM_COUNT);
+    const concepts = pickReasoningConcepts(playerLevel, PROBLEM_COUNT, focusDomain);
 
     const problems = concepts.map((c) => {
       const p = generateProblem(c.category, c.level, Math.floor(Math.random() * 1000), GEN_ELO, {}, { targetConceptId: c.id });
@@ -86,6 +120,7 @@ router.post('/api/reasoning-duel/start', authenticateToken, (req, res) => {
         res.json({
           roundId: this.lastID,
           problemCount: problems.length,
+          domain: roundDomain, // the round's dominant domain (the focused ladder, when chosen)
           // Answer key + correct-reason index intentionally stripped.
           problems: problems.map((p) => ({
             question: p.question,

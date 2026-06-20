@@ -137,6 +137,30 @@ test('a fully-understood round queues nothing for review', async () => {
   assert.equal(due.length, 0, 'no SRS rows created from a perfect round');
 });
 
+test('focus domains are offered, and a focused round is dominated by that domain (audit #15)', async () => {
+  const u = await registerUser(ctx.base);
+  const doms = await api(ctx.base, 'GET', '/api/reasoning-duel/domains', { token: u.token });
+  assert.equal(doms.status, 200);
+  assert.ok(Array.isArray(doms.body.domains) && doms.body.domains.length >= 1, 'at least one focus domain is offered');
+  assert.ok(doms.body.domains.includes('algebra'), 'algebra has enough reason-sets to be a focus ladder');
+
+  const focus = 'algebra';
+  const start = await api(ctx.base, 'POST', '/api/reasoning-duel/start', { token: u.token, body: { domain: focus } });
+  assert.equal(start.status, 200);
+  assert.equal(start.body.domain, focus, 'the round reports the focused domain as its dominant one');
+
+  // Verify server-side: the stored round is mostly the focused domain (the credited ladder).
+  const round = await dbGet('SELECT domain FROM reasoning_rounds WHERE id = ?', [start.body.roundId]);
+  assert.equal(round.domain, focus, 'the stored round domain is the chosen focus → that ladder is credited');
+});
+
+test('an unoffered/invalid focus domain falls back to a mixed round (not an error)', async () => {
+  const u = await registerUser(ctx.base);
+  const start = await api(ctx.base, 'POST', '/api/reasoning-duel/start', { token: u.token, body: { domain: 'underwater_basket_weaving' } });
+  assert.equal(start.status, 200, 'an invalid focus is ignored, not rejected');
+  assert.equal(start.body.problems.length, 5, 'a full mixed round is still served');
+});
+
 test('a finished round can be replayed problem-by-problem (review)', async () => {
   const u = await registerUser(ctx.base);
   const start = await api(ctx.base, 'POST', '/api/reasoning-duel/start', { token: u.token });

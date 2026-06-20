@@ -1438,7 +1438,18 @@ data class ReasoningProblemDto(
 data class ReasoningStartResponse(
     val roundId: Int = 0,
     val problemCount: Int = 0,
+    val domain: String? = null, // the round's dominant domain (the focused ladder, when chosen)
     val problems: List<ReasoningProblemDto> = emptyList()
+)
+
+// Optional focus: climb a specific domain ladder ("rank up my Algebra"). Null/absent = mixed round.
+data class ReasoningStartRequest(
+    val domain: String? = null
+)
+
+// The domains offerable as a focus (each has enough authored reason-sets to fill a round).
+data class ReasoningDomainsResponse(
+    val domains: List<String> = emptyList()
 )
 
 data class ReasoningSubmitRequest(
