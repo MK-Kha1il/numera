@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.numera.data.network.ApexStanding
 import com.example.numera.data.network.DomainRating
 import com.example.numera.data.network.SeasonAward
 import com.example.numera.ui.components.RankBadge
@@ -46,6 +47,7 @@ fun CompetitiveRankCard(
     modifier: Modifier = Modifier,
     seasonHistory: List<SeasonAward>? = null,
     activeTitle: String? = null,
+    apexStanding: ApexStanding? = null,
 ) {
     if (profile.isNullOrEmpty()) return
     val global = profile["global"] ?: return
@@ -117,6 +119,22 @@ fun CompetitiveRankCard(
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     )
+                    // Apex tier (audit #23): the leaderboard-only standing above the rank thresholds.
+                    if (apexStanding != null) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(CornerRadius.full))
+                                .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.18f))
+                                .padding(horizontal = Spacing.m, vertical = Spacing.xs),
+                        ) {
+                            Text(
+                                text = "👑 Apex #${apexStanding.position}",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.tertiary,
+                            )
+                        }
+                    }
                 }
             }
 

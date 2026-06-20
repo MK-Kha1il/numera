@@ -56,16 +56,22 @@ written only by `services/ratingService.syncCompetitiveMirror`; duels update the
 | 11 | Hidden-MMR matchmaking + provisional marker | ✅ Shipped | `1a61cf8` |
 | 12 | Titles system | ✅ Shipped | `737877f`,`10cc189` |
 | 13 | One published rank ladder | ✅ Shipped | `afdd5cf` (RANK_LADDER) |
+| 15 | Per-domain ranked focus ("climb my Algebra") | ✅ Shipped | `4cab0a2` (Reasoning Arena) |
 | 16 | Match history + duel replays | ✅ Shipped | `c079993`,`7c50add` |
 | 21 | Seasonal history timeline + career peak | ✅ Shipped | `5519cd4` |
 | 25 | Mistake-review-into-SRS after ranked losses | ✅ Shipped | `0070405` |
 
+> **Substrate correctness fix (`6be1988`):** `categoryToDomain` recognized only the 8 canonical names,
+> so the generator's ~20 fine-grained categories (graphing/expressions/equations/factors/…) all fell
+> back to arithmetic — silently collapsing the per-domain ladders (#16/#45) into one. Now grouped into
+> the real domains, so the 9-domain identity actually moves off arithmetic. This also unblocked #15.
+
 **Remaining (Phase 4–5 — larger, multi-session product systems, not yet built):**
-- #14 Seasonal-exclusive (scarce) cosmetics · #15 Per-domain ranked queue · #17 Club rating + club
-  seasons/ladder · #18 Calculator/collusion/multi-account integrity layer · #19 Live class/group
-  competitive rooms · #20 Competitive onboarding (placement narrative + rank reveal) · #22 Shareable
-  rank/result cards · #23 Apex (leaderboard-only) tier above Grandmaster · #24 Honor/commendation
-  system. These are the §9 Phase 4 (Scale & social) and Phase 5 (Integrity) tracks.
+- #14 Seasonal-exclusive (scarce) cosmetics · #17 Club rating + club seasons/ladder · #18
+  Calculator/collusion/multi-account integrity layer · #19 Live class/group competitive rooms · #20
+  Competitive onboarding (placement narrative + rank reveal) · #22 Shareable rank/result cards · #23
+  Apex (leaderboard-only) tier above Grandmaster · #24 Honor/commendation system. These are the §9
+  Phase 4 (Scale & social) and Phase 5 (Integrity) tracks.
 
 ---
 

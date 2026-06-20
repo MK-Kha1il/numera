@@ -1292,6 +1292,26 @@ data class RatingProfileResponse(
     val profile: Map<String, DomainRating> = emptyMap()
 )
 
+// ---- Apex tier — GET /api/rating/apex (leaderboard-only standing above the rank thresholds) ----
+data class ApexEntry(
+    val position: Int = 0,
+    val userId: Int = 0,
+    val username: String = "",
+    val avatar: String? = null,
+    val displayRating: Int = 0,
+    val rank: String = ""
+)
+data class ApexStanding(
+    val position: Int = 0,
+    val displayRating: Int = 0
+)
+data class ApexResponse(
+    val size: Int = 0,
+    val cutoffRating: Int? = null,
+    val leaders: List<ApexEntry> = emptyList(),
+    val you: ApexStanding? = null // null unless the viewer is inside the apex
+)
+
 // ---- Competitive match history — GET /api/rating/matches (returns a bare array) ----
 data class MatchHistoryEntry(
     val id: Int = 0,

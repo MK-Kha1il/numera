@@ -110,11 +110,17 @@ fun ProfileScreen(
     var matchHistory by remember { mutableStateOf<List<com.example.numera.data.network.MatchHistoryEntry>?>(null) }
     var rivals by remember { mutableStateOf<List<com.example.numera.data.network.RivalEntry>?>(null) }
     var titles by remember { mutableStateOf<com.example.numera.data.network.TitlesResponse?>(null) }
+    var apex by remember { mutableStateOf<com.example.numera.data.network.ApexResponse?>(null) }
     LaunchedEffect(Unit) {
         try {
             ratingProfile = RetrofitClient.apiService.getRatingProfile(RetrofitClient.authToken ?: "").profile
         } catch (e: Exception) {
             Log.e("Profile", "Failed to fetch rating profile: ${e.message}")
+        }
+        try {
+            apex = RetrofitClient.apiService.getApex(RetrofitClient.authToken ?: "", 10)
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch apex: ${e.message}")
         }
         try {
             ratingHistory = RetrofitClient.apiService.getRatingHistory(RetrofitClient.authToken ?: "", "global", 12)
@@ -868,6 +874,7 @@ fun ProfileScreen(
                 profile = ratingProfile,
                 seasonHistory = seasonHistory,
                 activeTitle = titles?.titles?.firstOrNull { it.active }?.name,
+                apexStanding = apex?.you,
                 modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
             )
             TitlesCard(

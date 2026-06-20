@@ -523,6 +523,46 @@ router.get('/api/rating/leaderboard', authenticateToken, (req, res) => {
   );
 });
 
+// ── GET /api/rating/apex ──────────────────────────────────────────────────────
+// The apex tier (competitive audit #23): a leaderboard-only standing ABOVE the rank thresholds, in
+// the spirit of LoL Challenger / VALORANT Radiant. Eligibility = placed (≥5 rated) AND at least Master
+// tier; the apex is the top `limit` of those by global display rating. Returns the leaders + the
+// requester's own standing (null unless they're inside the apex). Empty until someone reaches Master —
+// it is aspirational by design.
+const APEX_MIN_TIER = NRS.RANK_TIERS.indexOf('Master'); // 5 — Master & Grandmaster qualify
+router.get('/api/rating/apex', authenticateToken, (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100);
+  db.all(
+    `SELECT u.id, u.username, u.avatar, r.display_rating, r.sessions_count
+     FROM user_ratings r
+     JOIN users u ON u.id = r.user_id
+     WHERE r.domain = 'global' AND r.sessions_count >= 5
+     ORDER BY r.display_rating DESC, r.sessions_count DESC`,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const eligible = (rows || []).filter(
+        (row) => NRS.rankToTierIndex(NRS.displayRatingToRank(row.display_rating, row.sessions_count)) >= APEX_MIN_TIER
+      );
+      const leaders = eligible.slice(0, limit).map((row, i) => ({
+        position: i + 1,
+        userId: row.id,
+        username: row.username,
+        avatar: row.avatar,
+        displayRating: row.display_rating,
+        rank: NRS.displayRatingToRank(row.display_rating, row.sessions_count),
+      }));
+      const meIdx = leaders.findIndex((l) => l.userId === req.user.id);
+      res.json({
+        size: leaders.length,
+        cutoffRating: leaders.length ? leaders[leaders.length - 1].displayRating : null,
+        leaders,
+        you: meIdx >= 0 ? { position: meIdx + 1, displayRating: leaders[meIdx].displayRating } : null,
+      });
+    }
+  );
+});
+
 // ── GET /api/rating/matchmaking ───────────────────────────────────────────────
 router.get('/api/rating/matchmaking', authenticateToken, (req, res) => {
   const userId = req.user.id;

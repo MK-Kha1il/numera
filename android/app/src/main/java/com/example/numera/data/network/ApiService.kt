@@ -745,6 +745,13 @@ interface ApiService {
     @GET("api/rating/profile")
     suspend fun getRatingProfile(@Header("Authorization") token: String): RatingProfileResponse
 
+    // ---- Apex tier (leaderboard-only standing above the rank thresholds) ----
+    @GET("api/rating/apex")
+    suspend fun getApex(
+        @Header("Authorization") token: String,
+        @Query("limit") limit: Int = 10
+    ): ApexResponse
+
     // ---- Rating timeline (recent rated results) ----
     @GET("api/rating/history")
     suspend fun getRatingHistory(
