@@ -109,8 +109,8 @@ function updateAchievements(userId, callback) {
                         if (isCompleted && !alreadyCompleted) {
                           notify(userId, {
                             category: 'achievement',
-                            title: 'Achievement Completed! 🏆',
-                            message: `You completed the achievement: ${ach.name}! Claim it for rewards.`,
+                            title: 'You earned a new badge',
+                            message: `${ach.name} — not many players get there. Claim your reward.`,
                             type: 'achievement',
                           });
                         }

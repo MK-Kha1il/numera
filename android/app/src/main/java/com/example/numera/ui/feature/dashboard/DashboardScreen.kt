@@ -183,7 +183,7 @@ fun DashboardScreen(
             containerColor = MaterialTheme.colorScheme.surface
         ) {
             Tab(selected = homeSubTab == 0, onClick = { homeSubTab = 0 }) {
-                Text("Daily Quests", modifier = Modifier.padding(14.dp), fontWeight = FontWeight.Bold)
+                Text("Daily Drills", modifier = Modifier.padding(14.dp), fontWeight = FontWeight.Bold)
             }
             Tab(selected = homeSubTab == 1, onClick = { homeSubTab = 1 }) {
                 Text("Weekly Leagues", modifier = Modifier.padding(14.dp), fontWeight = FontWeight.Bold)
@@ -265,13 +265,13 @@ fun DashboardScreen(
                     // subtitle — heavy card chrome that bloated the top of the Quests tab).
                     Column(modifier = Modifier.padding(horizontal = Spacing.xs)) {
                         Text(
-                            text = "Daily Challenges",
+                            text = "Today's drills",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "Complete objectives every day to earn coins and experience points.",
+                            text = "Three quick reps. Each one sharpens you for the Arena.",
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             modifier = Modifier.padding(top = Spacing.xs)

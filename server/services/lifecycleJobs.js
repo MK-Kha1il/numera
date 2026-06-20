@@ -92,8 +92,8 @@ const TRIGGERS = [
     // Active yesterday, no streak to protect — a gentle nudge back.
     audience: (db) => allUsersActiveOn(db, 1, 'AND (streak IS NULL OR streak = 0)'),
     build: () => ({
-      title: 'Ready for today’s math? 🧠',
-      message: 'A short session is all it takes to keep your skills sharp. Jump back in!',
+      title: 'The Arena is open',
+      message: 'A few minutes of training, then queue up for a ranked match.',
       type: 'info',
     }),
   },
@@ -101,8 +101,8 @@ const TRIGGERS = [
     category: 'winback_d3',
     audience: (db) => allUsersActiveOn(db, 3),
     build: () => ({
-      title: 'We miss you at Numera 👋',
-      message: 'It’s been a few days. Come back and pick up right where you left off.',
+      title: 'Three days off the ladder',
+      message: 'Your rivals are still climbing. Come take a match and hold your ground.',
       type: 'info',
     }),
   },
@@ -110,8 +110,8 @@ const TRIGGERS = [
     category: 'winback_d7',
     audience: (db) => allUsersActiveOn(db, 7),
     build: () => ({
-      title: 'Your next level is waiting 🚀',
-      message: 'A whole week off — let’s get back to it. One session restarts the momentum.',
+      title: 'Your rank is still yours',
+      message: 'A week away from the Arena — come defend it. One match restarts the climb.',
       type: 'info',
     }),
   },
@@ -141,8 +141,8 @@ const TRIGGERS = [
       if (u.solved_count) bits.push(`${u.solved_count} problems solved`);
       const standing = bits.join(', ');
       return {
-        title: 'Your weekly Numera recap 📊',
-        message: `Here's where you stand: ${standing}${u.coins ? ` and ${u.coins} coins` : ''}. Keep the momentum going next week!`,
+        title: 'Your week in the Arena',
+        message: `Where you stand: ${standing}${u.coins ? ` and ${u.coins} coins` : ''}. Train up — next week's climb is waiting.`,
         type: 'info',
       };
     },
