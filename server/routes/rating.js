@@ -300,6 +300,8 @@ router.get('/api/rating/profile', authenticateToken, (req, res) => {
           sigma: +row.sigma.toFixed(1),
           displayRating: row.display_rating,
           rank: NRS.displayRatingToRank(row.display_rating, row.sessions_count),
+          // Provisional `?` while σ is still wide — the rating isn't calibrated yet (audit opp #9).
+          provisional: NRS.isProvisional(row.sigma),
           // Divisions/pips (audit Top-25 #7): where the player sits within their division.
           progress: +prog.progress.toFixed(3),
           pointsToNext: prog.pointsToNext,
@@ -319,6 +321,7 @@ router.get('/api/rating/profile', authenticateToken, (req, res) => {
             sigma: NRS.SIGMA_INIT,
             displayRating: 0,
             rank: 'Unranked (Placement: 0/5)',
+            provisional: true,
             progress: 0,
             pointsToNext: null,
             nextRank: null,

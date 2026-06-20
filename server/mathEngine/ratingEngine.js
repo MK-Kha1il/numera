@@ -523,6 +523,30 @@ function computeMatchQuality(ratingA, ratingB) {
   return Math.max(0, quality);
 }
 
+// σ below which a rating is "established" — above it the player is still in calibration and the
+// display rating (μ−2σ) is wide of the true skill. Surfaced as a provisional `?` marker (audit opp #9)
+// and used to loosen matchmaking for not-yet-calibrated players. SIGMA_INIT 350 → established ~150.
+const SIGMA_ESTABLISHED = 150;
+
+/** A rating is provisional (show `?`, match loosely) while its uncertainty is still high. */
+function isProvisional(sigma) {
+  return (sigma == null ? SIGMA_INIT : sigma) > SIGMA_ESTABLISHED;
+}
+
+/**
+ * Hidden-MMR pairing gate (audit Top-25 #11 / opp #7,#8): accept a ranked pairing when the
+ * win-probability-based match quality clears a floor that *relaxes with wait time*, so a fair match
+ * forms quickly and a looser one still forms eventually (the 10s bot fallback is the final backstop).
+ * Pairs on (μ, σ) — the real belief — not a raw rating-point window, so high-σ provisional players,
+ * whose win-prob denom is naturally wider, are matched more permissively. Pure + testable.
+ */
+function matchAcceptable(ratingA, ratingB, waitSeconds) {
+  const quality = computeMatchQuality(ratingA, ratingB);
+  // Floor starts strict (0.65 ≈ 40/60 win-prob) and relaxes toward 0.2 as the wait grows.
+  const floor = Math.max(0.2, 0.65 - 0.04 * Math.max(0, waitSeconds || 0));
+  return quality >= floor;
+}
+
 /**
  * Probability that player A beats player B under the NRS belief model.
  *   p(A beats B) ≈ Φ((muA − muB) / sqrt(sigmaA² + sigmaB² + β²))
@@ -609,6 +633,9 @@ module.exports = {
   updateLearningVelocity,
   updateTiltState,
   computeMatchQuality,
+  matchAcceptable,
+  isProvisional,
+  SIGMA_ESTABLISHED,
   applySeasonReset,
   domainInfluenceWeight,
 };

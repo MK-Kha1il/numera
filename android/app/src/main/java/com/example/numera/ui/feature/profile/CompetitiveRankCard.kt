@@ -100,7 +100,7 @@ fun CompetitiveRankCard(
                 RankBadge(rankName = global.rank, modifier = Modifier.size(IconSize.l))
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     Text(
-                        text = if (isUnranked(global)) "Unranked" else global.rank,
+                        text = if (isUnranked(global)) "Unranked" else global.rank + if (global.provisional) " ?" else "",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onBackground,
@@ -108,6 +108,8 @@ fun CompetitiveRankCard(
                     Text(
                         text = if (isUnranked(global)) {
                             "Play ${5 - global.sessionsCount.coerceAtMost(5)} more rated session(s) to be placed"
+                        } else if (global.provisional) {
+                            "Rating ${global.displayRating} · provisional, still calibrating"
                         } else {
                             "Rating ${global.displayRating} · ${global.sessionsCount} rated"
                         },
@@ -231,7 +233,7 @@ private fun DomainRankRow(
             }
         }
         Text(
-            text = if (isUnranked(rating)) "Unranked" else "${rating.rank} · ${rating.displayRating}",
+            text = if (isUnranked(rating)) "Unranked" else "${rating.rank} · ${rating.displayRating}" + if (rating.provisional) " ?" else "",
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),

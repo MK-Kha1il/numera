@@ -24,7 +24,7 @@ const { globalRateLimiter } = require('./middleware/rateLimit');
 // docs/specs/Spec-RatingUnification.md.
 const { applyDuelResultToRatings, getRatingRow } = require('./services/ratingService');
 const { recordMatch } = require('./services/matchLog');
-const { categoryToDomain } = require('./mathEngine/ratingEngine'); // attribute a duel to its dominant domain
+const { categoryToDomain, matchAcceptable, SIGMA_INIT: NRS_SIGMA_INIT } = require('./mathEngine/ratingEngine'); // attribute a duel to its dominant domain; hidden-MMR pairing gate
 const { updateAchievements } = require('./services/achievementService');
 const { grantRankRewards } = require('./services/rankRewardService');
 const { flagAnswer, resolveDuel, rankedMatchmakingError } = require('./lib/duelIntegrity');
@@ -776,9 +776,6 @@ function matchmake(queueArray, isRanked) {
   for (let i = 0; i < queueArray.length; i++) {
     const p1 = queueArray[i];
     const elapsed = (Date.now() - p1.joinTime) / 1000;
-    
-    // Elo delta search window starts at 100 and expands by 15 per second
-    const delta = 100 + Math.floor(elapsed) * 15;
     const p1IsBeginner = p1.competitiveMatches < 5;
 
     // Bot fallback: after 10 seconds of queuing, match with a bot
@@ -792,11 +789,18 @@ function matchmake(queueArray, isRanked) {
     // Try to find a matched human player
     for (let j = i + 1; j < queueArray.length; j++) {
       const p2 = queueArray[j];
-      const eloDiff = Math.abs(p1.elo - p2.elo);
       const p2IsBeginner = p2.competitiveMatches < 5;
-      
+
       const elapsed2 = (Date.now() - p2.joinTime) / 1000;
-      const delta2 = 100 + Math.floor(elapsed2) * 15;
+
+      // Hidden-MMR pairing (audit Top-25 #11): pair on the (μ, σ) belief via the win-probability
+      // match-quality gate, not a raw rating-point window. The acceptance floor relaxes with wait time
+      // (the longer-waiting of the two drives it) so a fair match forms fast and a looser one still
+      // forms before the 10s bot fallback. `elo` is the unified mirror = round(global μ); `sigma` is
+      // the global belief uncertainty loaded at queue time.
+      const wait = Math.max(elapsed, elapsed2);
+      const ratingA = { mu: p1.elo, sigma: p1.sigma != null ? p1.sigma : NRS_SIGMA_INIT };
+      const ratingB = { mu: p2.elo, sigma: p2.sigma != null ? p2.sigma : NRS_SIGMA_INIT };
 
       // Level-fair matchmaking (the core of the duel feature): only pair players whose MATH level is
       // close, so middle-schoolers meet middle-schoolers and advanced students meet advanced ones. The
@@ -804,7 +808,7 @@ function matchmake(queueArray, isRanked) {
       const levelWindow = 3 + Math.floor(Math.min(elapsed, elapsed2) / 3) * 2;
       const levelOk = Math.abs((p1.level || DUEL_PROBLEM_LEVEL) - (p2.level || DUEL_PROBLEM_LEVEL)) <= levelWindow;
 
-      let isMatchOk = eloDiff <= delta && eloDiff <= delta2 && levelOk;
+      let isMatchOk = matchAcceptable(ratingA, ratingB, wait) && levelOk;
 
       // Beginner protection logic: placement match beginners don't match with veterans unless wait is > 8s
       if (p1IsBeginner !== p2IsBeginner && elapsed < 8 && elapsed2 < 8) {
@@ -838,11 +842,20 @@ io.on('connection', (socket) => {
     const username = socket.username;
     const mode = (data && data.mode) === 'casual' ? 'casual' : 'ranked';
 
-    db.get("SELECT elo, rank, competitive_matches, telemetry_enabled, level FROM users WHERE id = ?", [userId], (err, row) => {
+    // LEFT JOIN the authoritative global rating so we can pair on the (μ, σ) belief (hidden MMR), not
+    // just the denormalised users.elo mirror. `sigma` defaults wide for players with no rating row yet.
+    db.get(
+      `SELECT u.elo, u.rank, u.competitive_matches, u.telemetry_enabled, u.level, r.sigma
+         FROM users u
+         LEFT JOIN user_ratings r ON r.user_id = u.id AND r.domain = 'global'
+        WHERE u.id = ?`,
+      [userId],
+      (err, row) => {
       const elo = row ? (row.elo || 1000) : 1000;
       const rank = row ? row.rank : 'Unranked (Placement: 0/5)';
       const competitiveMatches = row ? (row.competitive_matches || 0) : 0;
       const level = row ? (row.level || DUEL_PROBLEM_LEVEL) : DUEL_PROBLEM_LEVEL;
+      const sigma = row && row.sigma != null ? row.sigma : NRS_SIGMA_INIT;
 
       // Ranked requires fair-play consent so the integrity scorer may run (no opt-out cheating).
       if (mode === 'ranked') {
@@ -868,6 +881,7 @@ io.on('connection', (socket) => {
         username,
         rank,
         elo,
+        sigma,
         competitiveMatches,
         level,
         joinTime: Date.now()
