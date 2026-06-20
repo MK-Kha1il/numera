@@ -8,6 +8,9 @@ let ctx;
 before(async () => { ctx = await bootServer(); });
 after(async () => { await shutdown(ctx); });
 
+const dbRun = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.run(sql, p, (e) => (e ? rej(e) : res())));
+const idOf = (username) => new Promise((res, rej) => ctx.mod.db.get('SELECT id FROM users WHERE username = ?', [username], (e, r) => (e ? rej(e) : res(r.id))));
+
 test('a fresh player has Novice earned but not the milestone titles', async () => {
   const u = await registerUser(ctx.base);
   const res = await api(ctx.base, 'GET', '/api/rating/titles', { token: u.token });
@@ -36,4 +39,15 @@ test('selecting an earned title sets it; an unearned title is rejected', async (
   const cleared = await api(ctx.base, 'POST', '/api/rating/titles/select', { token: u.token, body: { title: '' } });
   assert.equal(cleared.status, 200);
   assert.equal(cleared.body.active, '', 'a title can be cleared');
+});
+
+test('public profile exposes competitive rank + the active title name (prestige is visible to others)', async () => {
+  const u = await registerUser(ctx.base);
+  const uid = await idOf(u.username);
+  await dbRun("UPDATE users SET competitive_rank = 'Gold I', active_title = 'numerist' WHERE id = ?", [uid]);
+
+  const res = await api(ctx.base, 'GET', `/api/user/${uid}`, { token: u.token });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.competitive_rank, 'Gold I', 'competitive rank is shown');
+  assert.equal(res.body.active_title, 'Numerist', 'the stored title id resolves to its display name');
 });

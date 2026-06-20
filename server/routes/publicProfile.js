@@ -6,6 +6,7 @@
 const express = require('express');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { titleName } = require('../lib/titles');
 
 const router = express.Router();
 
@@ -15,7 +16,7 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
 
   db.get(
     `
-    SELECT id, username, xp, level, coins, rank, active_badge, theme, avatar, active_banner, solved_count, arena_wins, elo, competitive_matches, profile_private
+    SELECT id, username, xp, level, coins, rank, competitive_rank, active_title, active_badge, theme, avatar, active_banner, solved_count, arena_wins, elo, competitive_matches, profile_private
     FROM users
     WHERE id = ?
   `,
@@ -70,6 +71,8 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
           arena_wins: user.arena_wins || 0,
           elo: user.elo,
           competitive_matches: user.competitive_matches,
+          competitive_rank: user.competitive_rank || 'Unranked (Placement: 0/5)',
+          active_title: titleName(user.active_title),
           mastery: {
             arithmetic_correct: mast.arithmetic_correct || 0,
             mental_correct: mast.mental_correct || 0,

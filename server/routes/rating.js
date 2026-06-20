@@ -7,6 +7,7 @@ const { db } = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { securityLog } = require('../middleware/security');
 const NRS = require('../mathEngine/ratingEngine');
+const { TITLE_CATALOG, isTitleEarned } = require('../lib/titles');
 const { notify } = require('../services/notificationService');
 const { withTransaction } = require('../dbx');
 // Shared NRS persistence + the users.* mirror (also used by the socket duel path) — see
@@ -431,31 +432,7 @@ router.get('/api/rating/rivals', authenticateToken, (req, res) => {
 
 // ── Competitive titles (earned identity) ──────────────────────────────────────
 // The earned SET is derived on the fly from existing data; only the chosen title is stored
-// (users.active_title). Tier indices match NRS.RANK_TIERS (Gold=2, Diamond=4, Grandmaster=6).
-const TITLE_CATALOG = [
-  { id: 'novice', name: 'Novice', desc: 'Welcome to the arena.' },
-  { id: 'ranked', name: 'Ranked Competitor', desc: 'Complete your 5 placement results.' },
-  { id: 'duelist', name: 'Duelist', desc: 'Play 10 ranked duels.' },
-  { id: 'thinker', name: 'Deep Thinker', desc: 'Finish 10 reasoning rounds.' },
-  { id: 'goldmind', name: 'Goldmind', desc: 'Reach Gold.' },
-  { id: 'diamondmind', name: 'Diamond Mind', desc: 'Reach Diamond.' },
-  { id: 'numerist', name: 'Numerist', desc: 'Reach Grandmaster — the apex.' },
-  { id: 'nemesis', name: 'Nemesis', desc: 'Beat one rival 3 times.' },
-];
-
-function isTitleEarned(id, s) {
-  switch (id) {
-    case 'novice': return true;
-    case 'ranked': return s.placed;
-    case 'duelist': return s.duels >= 10;
-    case 'thinker': return s.reasoning >= 10;
-    case 'goldmind': return s.peakTier >= 2;
-    case 'diamondmind': return s.peakTier >= 4;
-    case 'numerist': return s.peakTier >= 6;
-    case 'nemesis': return s.maxH2HWins >= 3;
-    default: return false;
-  }
-}
+// (users.active_title). Catalog + earn rules live in lib/titles.js (shared with publicProfile).
 
 // Gather the stats the title conditions need (rank/peak, duel & reasoning counts, best head-to-head).
 function computeTitleStats(userId, cb) {

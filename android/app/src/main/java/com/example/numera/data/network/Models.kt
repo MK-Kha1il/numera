@@ -151,6 +151,8 @@ data class PublicProfile(
     val active_banner: String? = null,
     val solved_count: Int,
     val arena_wins: Int,
+    val competitive_rank: String? = null,
+    val active_title: String? = null,
     val mastery: CategoryMastery
 )
 
