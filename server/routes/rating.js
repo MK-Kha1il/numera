@@ -190,11 +190,19 @@ router.post('/api/rating/session', authenticateToken, (req, res) => {
   const { category, level, usedCalculator, gameMode } = req.body;
   let { solvedCount, totalProblems, errorsCount, speedBonus, comboBonus } = req.body;
 
-  solvedCount = Math.min(Math.max(parseInt(solvedCount, 10) || 0, 0), 20);
+  // Bound every client-supplied metric (the solo path is the last place the client asserts its own
+  // performance — duels are server-graded). Beyond bounds, enforce INTERNAL CONSISTENCY so a cheater
+  // can't claim an impossible/maximal session to pump the unified rating (audit #29/#95 / Top-25 #8).
   totalProblems = Math.min(Math.max(parseInt(totalProblems, 10) || 3, 1), 20);
+  solvedCount = Math.min(Math.max(parseInt(solvedCount, 10) || 0, 0), 20);
+  solvedCount = Math.min(solvedCount, totalProblems); // can't solve more than you attempted
   errorsCount = Math.min(Math.max(parseInt(errorsCount, 10) || 0, 0), 20);
   speedBonus = Math.min(Math.max(parseInt(speedBonus, 10) || 0, 0), 20);
   comboBonus = Math.min(Math.max(parseInt(comboBonus, 10) || 0, 0), 15);
+  // The perfect-combo bonus is only legitimate on a flawless full run (no errors, everything solved);
+  // otherwise it's a spoofed value and is dropped — speed/combo can't outrank an honest careful solver.
+  const perfectRun = errorsCount === 0 && solvedCount > 0 && solvedCount === totalProblems;
+  if (!perfectRun) comboBonus = 0;
   const lv = Math.max(1, parseInt(level, 10) || 1);
   const gMode = gameMode || 'level';
   const domain = NRS.categoryToDomain(category);
