@@ -56,6 +56,8 @@ function getUserWithMastery(userId, callback) {
         arena_wins: user.arena_wins || 0,
         elo: user.elo || 1000,
         competitive_matches: user.competitive_matches || 0,
+        competitive_rank: user.competitive_rank || 'Unranked (Placement: 0/5)',
+        rank_revealed: user.rank_revealed || 0,
         total_coins_earned: user.total_coins_earned !== undefined ? user.total_coins_earned : 100,
         total_coins_spent: user.total_coins_spent || 0,
         xp_booster_uses_left: user.xp_booster_uses_left || 0,

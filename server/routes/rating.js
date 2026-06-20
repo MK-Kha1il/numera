@@ -442,6 +442,15 @@ router.post('/api/rating/commend', authenticateToken, (req, res) => {
   });
 });
 
+// Competitive onboarding (audit #20): mark that the player has seen their placement rank-reveal
+// ceremony, so it fires exactly once. Only meaningful once they're placed (≥5 rated games).
+router.post('/api/rating/reveal-seen', authenticateToken, (req, res) => {
+  db.run('UPDATE users SET rank_revealed = 1 WHERE id = ?', [req.user.id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
 // The caller's received honor: total commendations + derived level + breakdown by type.
 router.get('/api/rating/honor', authenticateToken, (req, res) => {
   db.all(

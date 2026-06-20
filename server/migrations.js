@@ -1288,6 +1288,23 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_commendations_to ON commendations(to_user)');
     },
   },
+  {
+    version: 57,
+    name: 'rank_revealed',
+    // Competitive onboarding (audit #20): a one-time "rank reveal" ceremony when a player finishes
+    // placement (crosses 5 rated games). This flag persists that the reveal has been shown so it fires
+    // exactly once. Defaults 0; backfilled to 1 for already-placed players so they don't get a
+    // retroactive reveal on first launch after this ships.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE users ADD COLUMN rank_revealed INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+      // Anyone already placed has effectively "seen" their rank — don't surprise them with a reveal.
+      await run("UPDATE users SET rank_revealed = 1 WHERE competitive_matches >= 5");
+    },
+  },
 ];
 
 /**

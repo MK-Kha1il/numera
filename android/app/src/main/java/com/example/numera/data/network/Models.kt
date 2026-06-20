@@ -124,6 +124,8 @@ data class User(
     val arena_wins: Int? = null,
     val elo: Int? = null,
     val competitive_matches: Int? = null,
+    val competitive_rank: String? = null, // unified competitive rank (mirror of user_ratings global)
+    val rank_revealed: Int? = 0,          // one-time placement rank-reveal ceremony fired (audit #20)
     val total_coins_earned: Int? = null,
     val total_coins_spent: Int? = null,
     val xp_booster_uses_left: Int? = null,

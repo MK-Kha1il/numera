@@ -777,6 +777,10 @@ interface ApiService {
     @GET("api/rating/honor")
     suspend fun getHonor(@Header("Authorization") token: String): HonorResponse
 
+    // ---- Competitive onboarding: mark the one-time placement rank-reveal as seen (audit #20) ----
+    @POST("api/rating/reveal-seen")
+    suspend fun markRankRevealSeen(@Header("Authorization") token: String): SimpleResponse
+
     // ---- Head-to-head rivals ----
     @GET("api/rating/rivals")
     suspend fun getRivals(
