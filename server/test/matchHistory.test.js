@@ -66,3 +66,35 @@ test('a ranked duel is recorded for both players with the right scoreline and re
   const h2h = await api(ctx.base, 'GET', `/api/rating/matches?vs=${bId}`, { token: a.token });
   assert.ok(h2h.body.length >= 1 && h2h.body.every((m) => m.opponentId === bId), 'vs filter is head-to-head');
 });
+
+test('rivals aggregates the head-to-head record against each opponent', async () => {
+  const a = await registerUser(ctx.base);
+  const b = await registerUser(ctx.base);
+  const aId = await idOf(a.username);
+  const bId = await idOf(b.username);
+
+  // a beats b twice, then loses once.
+  const duel = (s1, s2) => runDuel({
+    p1: { id: aId, username: a.username, score: s1, progress: 5, elo: 1000 },
+    p2: { id: bId, username: b.username, score: s2, progress: 5, elo: 1000 },
+    isCasual: false,
+  });
+  await duel(100, 40);
+  await duel(80, 60);
+  await duel(20, 100);
+
+  const res = await api(ctx.base, 'GET', '/api/rating/rivals', { token: a.token });
+  assert.equal(res.status, 200);
+  const rival = res.body.find((r) => r.opponentId === bId);
+  assert.ok(rival, 'b appears as a rival');
+  assert.equal(rival.wins, 2, 'two wins vs b');
+  assert.equal(rival.losses, 1, 'one loss vs b');
+  assert.equal(rival.total, 3);
+  assert.equal(rival.opponentName, b.username);
+
+  // From b's POV the record is mirrored.
+  const bRes = await api(ctx.base, 'GET', '/api/rating/rivals', { token: b.token });
+  const bRival = bRes.body.find((r) => r.opponentId === aId);
+  assert.equal(bRival.wins, 1);
+  assert.equal(bRival.losses, 2);
+});

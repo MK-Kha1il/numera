@@ -403,6 +403,32 @@ router.get('/api/rating/matches', authenticateToken, (req, res) => {
   );
 });
 
+// ── GET /api/rating/rivals ────────────────────────────────────────────────────
+// Head-to-head records (Phase 2 identity, audit #71): the caller's win/loss/draw tally against each
+// human opponent they've faced, most-played first. Only real opponents (bots/benchmark excluded).
+router.get('/api/rating/rivals', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const limit = Math.min(parseInt(req.query.limit, 10) || 20, 50);
+  db.all(
+    `SELECT m.opponent_id AS opponentId, u.username AS opponentName, u.avatar AS opponentAvatar,
+            SUM(CASE WHEN m.result = 'win'  THEN 1 ELSE 0 END) AS wins,
+            SUM(CASE WHEN m.result = 'loss' THEN 1 ELSE 0 END) AS losses,
+            SUM(CASE WHEN m.result = 'draw' THEN 1 ELSE 0 END) AS draws,
+            COUNT(*) AS total,
+            MAX(m.created_at) AS lastPlayed
+       FROM match_log m JOIN users u ON u.id = m.opponent_id
+      WHERE m.user_id = ? AND m.opponent_id IS NOT NULL
+      GROUP BY m.opponent_id
+      ORDER BY total DESC, lastPlayed DESC
+      LIMIT ?`,
+    [userId, limit],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
+    }
+  );
+});
+
 // ── GET /api/rating/leaderboard ───────────────────────────────────────────────
 router.get('/api/rating/leaderboard', authenticateToken, (req, res) => {
   const domain = NRS.KNOWN_DOMAINS.includes(req.query.domain) ? req.query.domain : 'global';

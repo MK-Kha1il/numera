@@ -1302,6 +1302,18 @@ data class MatchHistoryEntry(
     val createdAt: Long = 0
 )
 
+// ---- Head-to-head rivals — GET /api/rating/rivals (returns a bare array) ----
+data class RivalEntry(
+    val opponentId: Int = 0,
+    val opponentName: String = "",
+    val opponentAvatar: String? = null,
+    val wins: Int = 0,
+    val losses: Int = 0,
+    val draws: Int = 0,
+    val total: Int = 0,
+    val lastPlayed: Long = 0
+)
+
 // ---- Rating timeline — GET /api/rating/history (returns a bare array) ----
 data class RatingHistoryEntry(
     val domain: String = "global",
