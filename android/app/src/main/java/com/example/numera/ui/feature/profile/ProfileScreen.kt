@@ -393,6 +393,9 @@ fun ProfileScreen(
             Tab(selected = selectedSubTab == 3, onClick = { selectedSubTab = 3 }) {
                 Text("Saved", modifier = Modifier.padding(vertical = Spacing.m), fontWeight = FontWeight.Bold)
             }
+            Tab(selected = selectedSubTab == 4, onClick = { selectedSubTab = 4 }) {
+                Text("Competitive", modifier = Modifier.padding(vertical = Spacing.m), fontWeight = FontWeight.Bold)
+            }
         }
 
         Spacer(modifier = Modifier.height(Spacing.s))
@@ -468,46 +471,6 @@ fun ProfileScreen(
                 }
             }
         }
-
-        // ── COMPETITIVE RANK (unified per-domain rating + specialties) ──
-        CompetitiveRankCard(
-            profile = ratingProfile,
-            seasonHistory = seasonHistory,
-            activeTitle = titles?.titles?.firstOrNull { it.active }?.name,
-            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
-        )
-
-        // ── TITLES (earned prestige identity) ──
-        TitlesCard(
-            titles = titles,
-            onSelect = selectTitle,
-            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
-        )
-
-        // ── SEASON REWARD TRACK (reach a tier → claim its seasonal reward) ──
-        SeasonRewardTrackCard(
-            track = rewardTrack,
-            onClaim = claimRewardTier,
-            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
-        )
-
-        // ── MATCH HISTORY (head-to-head results) ──
-        MatchHistoryCard(
-            matches = matchHistory,
-            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
-        )
-
-        // ── RIVALS (head-to-head records; hidden until a repeat opponent) ──
-        RivalsCard(
-            rivals = rivals,
-            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
-        )
-
-        // ── RATING HISTORY (recent rated results timeline) ──
-        RatingHistoryCard(
-            history = ratingHistory,
-            modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
-        )
 
         // ── SKILL MASTERY (multi-dimensional) ──
         MasteryProfileCard(
@@ -886,6 +849,38 @@ fun ProfileScreen(
             }
         }
         } // End of selectedSubTab == 0
+
+        if (selectedSubTab == 4) {
+            // ── COMPETITIVE: unified rank + specialties, titles, season rewards, history, rivals ──
+            CompetitiveRankCard(
+                profile = ratingProfile,
+                seasonHistory = seasonHistory,
+                activeTitle = titles?.titles?.firstOrNull { it.active }?.name,
+                modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+            )
+            TitlesCard(
+                titles = titles,
+                onSelect = selectTitle,
+                modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+            )
+            SeasonRewardTrackCard(
+                track = rewardTrack,
+                onClaim = claimRewardTier,
+                modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+            )
+            MatchHistoryCard(
+                matches = matchHistory,
+                modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+            )
+            RivalsCard(
+                rivals = rivals,
+                modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+            )
+            RatingHistoryCard(
+                history = ratingHistory,
+                modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+            )
+        } // End of selectedSubTab == 4
 
         if (selectedSubTab == 2) {
         // Friends List integration Card
