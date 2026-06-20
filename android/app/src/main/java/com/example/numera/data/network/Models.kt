@@ -501,6 +501,23 @@ data class ProblemReportResponse(
     val success: Boolean = false
 )
 
+// In-app Help & Support ticket (Settings → Contact Support / Report a Bug / Request a Feature).
+// kind = "support" | "bug" | "feature". Backed by /api/feedback.
+@Serializable
+data class FeedbackRequest(
+    val kind: String,
+    val subject: String? = null,
+    val body: String,
+    val appVersion: String? = null
+)
+
+@Serializable
+data class FeedbackResponse(
+    val success: Boolean = false,
+    val id: Int = 0,
+    val message: String? = null
+)
+
 // School channel: class-code create/join + teacher roster.
 @Serializable
 data class ClassCreateRequest(val name: String)

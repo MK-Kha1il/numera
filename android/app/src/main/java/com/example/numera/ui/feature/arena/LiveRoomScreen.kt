@@ -26,7 +26,8 @@ import kotlinx.coroutines.launch
 
 // Live group/class competitive rooms (audit #19 — Kahoot-style). Host opens a room → others join by
 // code → host starts → everyone races the same server-graded set → live podium. Server-authoritative
-// (routes/liveRoom.js); REST-polled for liveness (socket push is a later layer).
+// (routes/liveRoom.js). Socket push (join_live_room channel + live_room_update ping) gives instant
+// liveness, with a slower REST poll as the graceful fallback.
 @Composable
 fun LiveRoomScreen(onExit: () -> Unit) {
     val scope = rememberCoroutineScope()
@@ -98,19 +99,43 @@ fun LiveRoomScreen(onExit: () -> Unit) {
         }
     }
 
-    // Poll room state for liveness while in the lobby or playing (standings, and the start/finish edge).
+    // One authoritative room fetch + phase transition, shared by the poll loop and the socket push.
+    suspend fun applyRoomState() {
+        if (roomId == 0) return
+        try {
+            val s = RetrofitClient.apiService.getLiveRoom(token, roomId)
+            state = s
+            if (phase == "lobby" && s.status == "active") {
+                problems = s.problems; qIndex = 0; phase = "playing"
+            } else if (s.status == "done") {
+                podium = s.standings; phase = "done"
+            }
+        } catch (_: Exception) {}
+    }
+
+    // Instant liveness: subscribe to the room's socket channel so a server push (player joined, host
+    // started, score moved, host ended) re-fetches immediately. The poll below stays as a fallback if
+    // the socket is unavailable, so behaviour degrades gracefully to the original REST-only flow.
+    DisposableEffect(roomId) {
+        if (roomId != 0) {
+            SocketClient.connect() // no-op if already connected; attaches the JWT auth
+            SocketClient.joinLiveRoom(roomId)
+            SocketClient.onLiveRoomUpdate { scope.launch { applyRoomState() } }
+        }
+        onDispose {
+            if (roomId != 0) {
+                SocketClient.offLiveRoomUpdate()
+                SocketClient.leaveLiveRoom(roomId)
+            }
+        }
+    }
+
+    // Poll room state for liveness while in the lobby or playing — the fallback when no socket push
+    // arrives (slower cadence now that the socket carries the instant path).
     LaunchedEffect(phase, roomId) {
         while ((phase == "lobby" || phase == "playing") && roomId != 0) {
-            try {
-                val s = RetrofitClient.apiService.getLiveRoom(token, roomId)
-                state = s
-                if (phase == "lobby" && s.status == "active") {
-                    problems = s.problems; qIndex = 0; phase = "playing"
-                } else if (s.status == "done") {
-                    podium = s.standings; phase = "done"
-                }
-            } catch (_: Exception) {}
-            delay(2000)
+            applyRoomState()
+            delay(3000)
         }
     }
 

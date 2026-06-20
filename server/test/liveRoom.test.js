@@ -88,3 +88,36 @@ test('answering is blocked until the host starts the room', async () => {
   const r = await api(ctx.base, 'POST', `/api/live-rooms/${roomId}/answer`, { token: host.token, body: { problemIndex: 0, answer: probs[0].answer } });
   assert.equal(r.status, 400, 'no answers accepted while still in the lobby');
 });
+
+test('socket liveness: state-changing routes push a live_room_update to the room channel', async () => {
+  // The socket push is a best-effort "refetch" ping (no game state in the payload — clients re-GET).
+  // Rather than spin up a socket.io-client, spy on the in-process io: capture every (channel, event)
+  // emitted, and assert each lifecycle step pings the right 'live:<roomId>' channel.
+  const io = ctx.mod.app.get('io');
+  assert.ok(io, "io must be exposed to routes via app.get('io')");
+  const emits = [];
+  const realTo = io.to.bind(io);
+  io.to = (channel) => ({ emit: (event, payload) => { emits.push({ channel, event, payload }); } });
+  try {
+    const host = await registerUser(ctx.base);
+    const player = await registerUser(ctx.base);
+    const create = await api(ctx.base, 'POST', '/api/live-rooms', { token: host.token, body: { category: 'arithmetic', level: 3 } });
+    const { roomId, code } = create.body;
+    const ch = `live:${roomId}`;
+
+    await api(ctx.base, 'POST', `/api/live-rooms/${code}/join`, { token: player.token });
+    await api(ctx.base, 'POST', `/api/live-rooms/${roomId}/start`, { token: host.token });
+    const probs = await keyOf(roomId);
+    await api(ctx.base, 'POST', `/api/live-rooms/${roomId}/answer`, { token: player.token, body: { problemIndex: 0, answer: probs[0].answer } });
+    await api(ctx.base, 'POST', `/api/live-rooms/${roomId}/finish`, { token: host.token });
+
+    const onChannel = emits.filter((e) => e.channel === ch && e.event === 'live_room_update');
+    assert.ok(onChannel.length >= 4, `join/start/answer/finish each ping the room channel (got ${onChannel.length})`);
+    assert.ok(onChannel.every((e) => e.payload && e.payload.roomId === roomId), 'every ping names its room');
+    assert.equal(onChannel[onChannel.length - 1].payload.status, 'done', 'the finish ping reports the done status');
+    // The contract: the ping carries no problems / answer key.
+    assert.ok(onChannel.every((e) => !('problems' in e.payload) && !('answer' in e.payload)), 'ping carries no game state');
+  } finally {
+    io.to = realTo; // restore so later tests/sockets are unaffected
+  }
+});

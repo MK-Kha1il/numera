@@ -3,8 +3,9 @@
 // the SAME server-generated set. Grading is server-authoritative — the answer key is kept server-side
 // and stripped from every payload, like the duel/reasoning modes — and scores feed a live podium.
 //
-// REST-driven (pollable) so the core is fully testable; a socket "room updated" push can layer on for
-// instant liveness without changing this contract.
+// REST-driven (pollable) so the core is fully testable; a socket "live_room_update" push (emitted by
+// emitRoomUpdate to the 'live:<id>' channel) layers on for instant liveness without changing this
+// contract — clients re-GET on the ping, so the answer key still never leaves the server.
 const express = require('express');
 const crypto = require('crypto');
 const { db } = require('../db');
@@ -36,6 +37,17 @@ function buildProblems(category, level) {
 
 // Strip the answer key before any problem leaves the server.
 const publicProblem = (p) => ({ question: p.question, options: p.options });
+
+// Push a lightweight liveness ping to everyone subscribed to this room's socket channel. The ping
+// carries only { roomId, status } — clients re-GET /api/live-rooms/:id for the authoritative state —
+// so there is no answer-key leak or trust surface; it just collapses poll latency. Best-effort: if
+// the socket layer isn't wired (e.g. a route-only test), this is a no-op.
+function emitRoomUpdate(req, roomId, status) {
+  try {
+    const io = req.app && req.app.get('io');
+    if (io) io.to('live:' + roomId).emit('live_room_update', { roomId, status });
+  } catch { /* best-effort liveness only */ }
+}
 
 // ── POST /api/live-rooms ──────────────────────────────────────────────────────
 // Host opens a room (auto-joins as a member). Optional category/level (defaults to the host's level).
@@ -85,7 +97,7 @@ router.post('/api/live-rooms/:code/join', authenticateToken, (req, res) => {
     }
     return { roomId: room.id, code, problemCount: room.problem_count, status: room.status, isHost: room.host_id === req.user.id };
   })
-    .then((r) => res.json(r))
+    .then((r) => { emitRoomUpdate(req, r.roomId, r.status); res.json(r); })
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));
 });
 
@@ -101,7 +113,7 @@ router.post('/api/live-rooms/:id/start', authenticateToken, (req, res) => {
     await tx.run("UPDATE live_rooms SET status = 'active' WHERE id = ?", [id]);
     return JSON.parse(room.problems_json);
   })
-    .then((problems) => res.json({ status: 'active', problems: problems.map(publicProblem) }))
+    .then((problems) => { emitRoomUpdate(req, id, 'active'); res.json({ status: 'active', problems: problems.map(publicProblem) }); })
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));
 });
 
@@ -172,6 +184,7 @@ router.post('/api/live-rooms/:id/answer', authenticateToken, (req, res) => {
   })
     .then(async (r) => {
       if (feed) { try { await feedEngineOutcome(db, req.user.id, feed.conceptKey, feed); } catch { /* best-effort */ } }
+      emitRoomUpdate(req, id, 'active'); // a score moved → push the standings refresh
       res.json(r);
     })
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));
@@ -194,6 +207,7 @@ router.post('/api/live-rooms/:id/finish', authenticateToken, (req, res) => {
         [id],
         (e3, rows) => {
           if (e3) return res.status(500).json({ error: e3.message });
+          emitRoomUpdate(req, id, 'done'); // the host ended it → push everyone to the final podium
           res.json({ status: 'done', podium: (rows || []).map((m, i) => ({ position: i + 1, ...m })) });
         }
       );

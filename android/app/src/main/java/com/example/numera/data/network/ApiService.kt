@@ -169,6 +169,13 @@ interface ApiService {
         @Body request: ProblemReportRequest
     ): ProblemReportResponse
 
+    // In-app Help & Support ticket (Settings dialogs): support / bug / feature.
+    @POST("api/feedback")
+    suspend fun submitFeedback(
+        @Header("Authorization") token: String,
+        @Body request: FeedbackRequest
+    ): FeedbackResponse
+
     @GET("api/math/srs/due")
     suspend fun getSrsDue(
         @Header("Authorization") token: String

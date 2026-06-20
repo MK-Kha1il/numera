@@ -51,7 +51,7 @@ written only by `services/ratingService.syncCompetitiveMirror`; duels update the
 | 6 | Surface 9 domains as specialties/"main" | ✅ Shipped | `e5dfe92` (`CompetitiveRankCard`) |
 | 7 | Divisions + pips + promotion + rank-up moment | ✅ Shipped | `0d84242` |
 | 8 | Plug bot Elo farm + server-validate metrics | ✅ Shipped | bot farm closed (`afdd5cf`); solo session metrics now consistency-validated server-side (#29/#95) |
-| 19 | Live class/group competitive rooms | ✅ Shipped | `routes/liveRoom.js` (create/join/start/answer/podium, server-graded, migration v58) + `LiveRoomScreen` (host/join, live polled podium); socket push is a liveness follow-up |
+| 19 | Live class/group competitive rooms | ✅ Shipped | `routes/liveRoom.js` (create/join/start/answer/podium, server-graded, migration v58) + `LiveRoomScreen` (host/join, live podium). **Socket push now wired** (`app.set('io')` + `join_live_room` channel + `live_room_update` refetch ping; client `DisposableEffect` subscribe, REST poll as fallback) — instant liveness, no answer-key leak |
 | 17 | Club rating ladder (skill, not summed XP) | 🟡 Partial | skill ladder shipped (`/api/clubs/leaderboard/skill` avg competitive rating); club seasons/promotion still open |
 | 18 | Integrity beyond speed — collusion/rating-pump review | 🟡 Partial | win-trade/boost detection shipped (`lib/integritySignals` + admin review queue); calculator/multi-account still open |
 | 9 | Competitive profile showcase | ✅ Shipped | `8552cff` + profile cards |
@@ -77,8 +77,9 @@ written only by `services/ratingService.syncCompetitiveMirror`; duels update the
 **All 25 Top-25 items are now shipped.** Remaining work is follow-up polish/depth on shipped items,
 not new headline gaps:
 - #17 club seasons/promotion-relegation (skill ladder shipped); #18 calculator-use +
-  multi-account/device heuristics (collusion review shipped); #19 socket push for instant live-room
-  liveness (REST core + client shipped).
+  multi-account/device heuristics (collusion review shipped). **#19 socket push for live-room liveness
+  is now shipped** (2026-06-20). The two remaining (#17 club seasons, #18 device/multi-account
+  fingerprinting) are net-new subsystems on the Phase-4/5 roadmap, not unfinished follow-ups.
 - **#22 fully shipped:** text share + a server-rendered **SVG rank card** (`/u/:username/card.svg`,
   tier-coloured) used as the web profile's OG/social image, and the share text deep-links to the
   profile when `APP_BASE_URL` is set.

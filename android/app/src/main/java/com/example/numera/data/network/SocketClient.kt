@@ -87,6 +87,29 @@ object SocketClient {
         Log.d(TAG, "join_friend_room: $roomCode")
     }
 
+    // Live-room liveness: subscribe to a room's socket channel so server-side state changes (a player
+    // joined, the host started, a score moved, the host ended it) push an instant refresh instead of
+    // waiting for the next poll. The event carries no game state — the screen re-fetches the room over
+    // REST — so this only collapses latency; it adds no trust surface.
+    fun joinLiveRoom(roomId: Int) {
+        mSocket?.emit("join_live_room", JSONObject().put("roomId", roomId))
+        Log.d(TAG, "join_live_room: $roomId")
+    }
+
+    fun leaveLiveRoom(roomId: Int) {
+        mSocket?.emit("leave_live_room", JSONObject().put("roomId", roomId))
+        Log.d(TAG, "leave_live_room: $roomId")
+    }
+
+    fun onLiveRoomUpdate(listener: () -> Unit) {
+        mSocket?.off("live_room_update") // avoid stacking duplicate listeners across recompositions
+        mSocket?.on("live_room_update") { listener() }
+    }
+
+    fun offLiveRoomUpdate() {
+        mSocket?.off("live_room_update")
+    }
+
     // Send the player's ACTUAL answer (selected option / typed value), not a self-judged boolean —
     // the server is authoritative and grades it against the canonical answer it kept (which it never
     // sent us). This closes the last client-trusted scoring path in ranked duels.

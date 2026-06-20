@@ -72,6 +72,7 @@ app.use(require('./routes/auth'));
 app.use(require('./routes/quests'));
 app.use(require('./routes/today'));
 app.use(require('./routes/crash'));
+app.use(require('./routes/feedback'));
 app.use(require('./routes/analytics'));
 app.use(require('./routes/classes'));
 app.use(require('./routes/dailyPuzzle'));
@@ -617,6 +618,10 @@ const ready = initDb()
 
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: "*" } });
+// Expose io to HTTP routes (read at request time via req.app.get('io')) so REST handlers can push
+// lightweight "refetch" pings to socket rooms — e.g. live-room liveness (routes/liveRoom.js) — without
+// the routes importing server.js (which would be a require cycle).
+app.set('io', io);
 
 // JWT middleware for Socket.io
 io.use((socket, next) => {
@@ -838,6 +843,19 @@ setInterval(() => {
 
 io.on('connection', (socket) => {
   logger.info(`Socket connected: ${socket.id}`);
+
+  // Live-room liveness: a member subscribes to its room channel so REST state changes (a player
+  // joined, the host started, someone scored, the host ended it) push an instant "refetch" ping.
+  // The ping carries no game state — clients re-GET /api/live-rooms/:id — so there's no answer-key
+  // leak or trust surface; sockets only collapse poll latency.
+  socket.on('join_live_room', (data) => {
+    const roomId = data && (data.roomId != null ? data.roomId : data.room);
+    if (roomId != null) socket.join('live:' + roomId);
+  });
+  socket.on('leave_live_room', (data) => {
+    const roomId = data && (data.roomId != null ? data.roomId : data.room);
+    if (roomId != null) socket.leave('live:' + roomId);
+  });
 
   socket.on('join_queue', (data) => {
     const userId = socket.userId;

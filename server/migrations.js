@@ -1353,6 +1353,31 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_live_members_room ON live_room_members(room_id, score)');
     },
   },
+  {
+    version: 59,
+    name: 'user_feedback',
+    // In-app Help & Support channel (completion pass). The Settings "Contact Support", "Report a
+    // Bug", and "Request a Feature" dialogs previously faked a success toast and persisted nothing.
+    // This table is the real backing store: a learner-initiated ticket reviewed via the admin queue,
+    // mirroring the content_reports / crash_reports pattern. kind = support | bug | feature.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS user_feedback (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id     INTEGER,
+          kind        TEXT NOT NULL,            -- support | bug | feature
+          subject     TEXT,
+          body        TEXT NOT NULL,
+          app_version TEXT,
+          status      TEXT NOT NULL DEFAULT 'open',  -- open | reviewed | resolved
+          created_at  INTEGER NOT NULL,
+          reviewed_at INTEGER,
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_feedback_status ON user_feedback(status, created_at)');
+    },
+  },
 ];
 
 /**
