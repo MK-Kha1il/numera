@@ -84,7 +84,10 @@ object MathBanners {
         "banner_fibonacci" to "Golden Spiral",
         "banner_calculus" to "Calculus Shimmer",
         "banner_matrix" to "Matrix Rain",
-        "banner_cosmos" to "Cosmic Constellation"
+        "banner_cosmos" to "Cosmic Constellation",
+        "banner_champion_aureate" to "Aureate Champion",
+        "banner_champion_verdant" to "Verdant Champion",
+        "banner_champion_crimson" to "Crimson Champion"
     )
 
     fun getLabel(bannerKey: String?): String {
@@ -324,6 +327,10 @@ fun ProfileBanner(bannerKey: String?, modifier: Modifier = Modifier) {
             "banner_eclipse" -> SeasonGradientBanner(listOf(Color(0xFF0B0B1E), Color(0xFF512DA8), Color(0xFFFFB300)))
             "banner_meteor" -> SeasonGradientBanner(listOf(Color(0xFF1B1B2F), Color(0xFFE94057), Color(0xFFF27121)))
             "banner_eternal" -> SeasonGradientBanner(listOf(Color(0xFFFFD54A), Color(0xFF8E2DE2), Color(0xFF1A1A2E)))
+            // Season-reward Champion banners (audit #14): earned by reaching Diamond on the season track.
+            "banner_champion_aureate" -> SeasonGradientBanner(listOf(Color(0xFF3A2E00), Color(0xFFC9A227), Color(0xFFFFE082)))
+            "banner_champion_verdant" -> SeasonGradientBanner(listOf(Color(0xFF06281E), Color(0xFF188C5A), Color(0xFF8CE6B0)))
+            "banner_champion_crimson" -> SeasonGradientBanner(listOf(Color(0xFF2B0710), Color(0xFFB3123C), Color(0xFFFF7B89)))
             else -> {
                 // banner_default: Premium Purple-Pink linear gradient
                 Box(

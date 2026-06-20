@@ -89,6 +89,15 @@ private fun RewardTierRow(tier: RewardTier, onClaim: (Int) -> Unit) {
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
                 )
+                if (tier.cosmetic != null) {
+                    // The season-exclusive earn-only Champion banner (audit #14).
+                    Text(
+                        text = "🎁 Season-exclusive banner",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
             }
         }
 

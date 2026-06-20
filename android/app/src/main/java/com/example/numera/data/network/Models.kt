@@ -1479,6 +1479,7 @@ data class RewardTier(
     val tierName: String = "",
     val tokens: Int = 0,
     val coins: Int = 0,
+    val cosmetic: String? = null, // season-exclusive earn-only banner at the Diamond tier (audit #14)
     val reached: Boolean = false,
     val claimed: Boolean = false
 )

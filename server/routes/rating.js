@@ -39,6 +39,14 @@ const TIER_REWARDS = [
   { tokens: 12, coins: 400 },  // Master
   { tokens: 20, coins: 600 },  // Grandmaster
 ];
+// Season-reward cosmetic (competitive audit #14): reaching Diamond on the season track grants a
+// season-exclusive, earn-only banner — tied to the season's slot so it rotates and is scarce. Must
+// match the catalog ids + season_slot in db.js and the SEASON_SLOTS used by the shop.
+const SEASON_SLOTS = 3;
+const DIAMOND_TIER_INDEX = NRS.RANK_TIERS.indexOf('Diamond'); // 4
+const SEASON_REWARD_BANNERS = ['banner_champion_aureate', 'banner_champion_verdant', 'banner_champion_crimson'];
+const seasonRewardBanner = (seasonId) => SEASON_REWARD_BANNERS[seasonId % SEASON_SLOTS];
+
 const nextSeasonName = () => `New Season (${new Date().toISOString().slice(0, 10)})`;
 
 // ── Season rollover (shared by the admin endpoint and the lazy auto-rollover) ──
@@ -817,6 +825,8 @@ router.get('/api/rating/reward-track', authenticateToken, async (req, res) => {
               tierName,
               tokens: TIER_REWARDS[i].tokens,
               coins: TIER_REWARDS[i].coins,
+              // The Diamond tier also yields this season's earn-only exclusive Champion banner (#14).
+              cosmetic: i === DIAMOND_TIER_INDEX ? seasonRewardBanner(season.id) : null,
               reached: i <= peakTier,
               claimed: claimed.has(i),
             })),
@@ -852,8 +862,19 @@ router.post('/api/rating/reward-track/claim', authenticateToken, (req, res) => {
     const reward = TIER_REWARDS[tier];
     await tx.run('INSERT INTO season_reward_claims (user_id, season_id, tier_index, claimed_at) VALUES (?, ?, ?, ?)', [userId, season.id, tier, Math.floor(Date.now() / 1000)]);
     await tx.run('UPDATE users SET season_tokens = season_tokens + ?, coins = coins + ? WHERE id = ?', [reward.tokens, reward.coins, userId]);
+
+    // Reaching the Diamond tier this season also grants the season-exclusive Champion banner — an
+    // earned (never bought), season-scoped cosmetic trophy (audit #14). Idempotent (the per-tier claim
+    // ledger above already gates this), and OR IGNORE guards a re-grant if they own it.
+    let cosmeticAwarded = null;
+    if (tier >= DIAMOND_TIER_INDEX) {
+      const banner = seasonRewardBanner(season.id);
+      await tx.run('INSERT OR IGNORE INTO user_inventory (user_id, item_id) VALUES (?, ?)', [userId, banner]);
+      cosmeticAwarded = banner;
+    }
+
     const u = await tx.get('SELECT season_tokens, coins FROM users WHERE id = ?', [userId]);
-    return { tier, tierName: NRS.RANK_TIERS[tier], tokensAwarded: reward.tokens, coinsAwarded: reward.coins, seasonTokens: u.season_tokens, coins: u.coins };
+    return { tier, tierName: NRS.RANK_TIERS[tier], tokensAwarded: reward.tokens, coinsAwarded: reward.coins, cosmeticAwarded, seasonTokens: u.season_tokens, coins: u.coins };
   })
     .then((r) => res.json({ success: true, ...r }))
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));

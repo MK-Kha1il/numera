@@ -59,6 +59,7 @@ written only by `services/ratingService.syncCompetitiveMirror`; duels update the
 | 11 | Hidden-MMR matchmaking + provisional marker | ✅ Shipped | `1a61cf8` |
 | 12 | Titles system | ✅ Shipped | `737877f`,`10cc189` |
 | 13 | One published rank ladder | ✅ Shipped | `afdd5cf` (RANK_LADDER) |
+| 14 | Seasonal-exclusive (scarce) cosmetics | ✅ Shipped | shop season rotation + earn-only Champion banner granted at Diamond on the reward track (`db.js` + `routes/rating.js`) |
 | 15 | Per-domain ranked focus ("climb my Algebra") | ✅ Shipped | `4cab0a2` (Reasoning Arena) |
 | 16 | Match history + duel replays | ✅ Shipped | `c079993`,`7c50add` |
 | 20 | Competitive onboarding (placement narrative + rank reveal) | ✅ Shipped | migration v57 |
@@ -73,12 +74,13 @@ written only by `services/ratingService.syncCompetitiveMirror`; duels update the
 > back to arithmetic — silently collapsing the per-domain ladders (#16/#45) into one. Now grouped into
 > the real domains, so the 9-domain identity actually moves off arithmetic. This also unblocked #15.
 
-**Remaining / follow-ups:**
-- #14 Seasonal-exclusive cosmetics: the *bought* seasonal rotation already exists in the shop; the
-  remaining gap is *earned-via-rank-track* cosmetics (touches the shop catalog/inventory/equip path).
-- Follow-up polish on shipped items: #17 club seasons/promotion-relegation; #18 calculator-use +
-  multi-account/device heuristics; #19 socket push for instant liveness; #22 rendered image card +
-  #75 public web competitive profile.
+**All 25 Top-25 items are now shipped.** Remaining work is follow-up polish/depth on shipped items,
+not new headline gaps:
+- #17 club seasons/promotion-relegation (skill ladder shipped); #18 calculator-use +
+  multi-account/device heuristics (collusion review shipped); #19 socket push for instant live-room
+  liveness (REST core + client shipped); #22 rendered image card + #75 public web competitive profile
+  (text share shipped). #14 also has a known platform limitation: owned earn-only cosmetics re-surface
+  for equipping only at grant time (a pre-existing shop-UI constraint shared by all season cosmetics).
 
 ---
 

@@ -787,6 +787,13 @@ function initDb() {
         { id: 'avatar_frost', name: 'Frostfall Avatar', cost: 800, type: 'avatar', value: 'avatar_frost', rarity: 'Epic', description: 'Crystalline and exacting. The cold clarity of a season spent sharpening.', required_rank: null, is_animated: 1, particle_effect: 'star_drift', is_utility: 0, season_slot: 2 },
         { id: 'banner_meteor', name: 'Meteor Shower Banner', cost: 700, type: 'banner', value: 'banner_meteor', rarity: 'Epic', description: 'A sky full of falling light for the length of one season.', required_rank: null, is_animated: 1, particle_effect: 'fire_sparkle', is_utility: 0, season_slot: 2 },
 
+        // Season-reward banners (competitive audit #14): EARNED, never bought (cost 0 → the purchase
+        // guard blocks them). Granted only by reaching Diamond on this season's Rank Reward track, and
+        // tied to the season's slot — so each is a scarce, season-exclusive trophy of a ranked climb.
+        { id: 'banner_champion_aureate', name: 'Aureate Champion Banner', cost: 0, type: 'banner', value: 'banner_champion_aureate', rarity: 'Legendary', description: 'Earned, not bought — reach Diamond on the season track. Gold laurels for a season conquered.', required_rank: null, is_animated: 1, particle_effect: 'gold_halos', is_utility: 0, season_slot: 0 },
+        { id: 'banner_champion_verdant', name: 'Verdant Champion Banner', cost: 0, type: 'banner', value: 'banner_champion_verdant', rarity: 'Legendary', description: 'Earned, not bought — reach Diamond on the season track. A living green crown for the relentless.', required_rank: null, is_animated: 1, particle_effect: 'star_drift', is_utility: 0, season_slot: 1 },
+        { id: 'banner_champion_crimson', name: 'Crimson Champion Banner', cost: 0, type: 'banner', value: 'banner_champion_crimson', rarity: 'Legendary', description: 'Earned, not bought — reach Diamond on the season track. Forged-red proof of a hard climb.', required_rank: null, is_animated: 1, particle_effect: 'fire_sparkle', is_utility: 0, season_slot: 2 },
+
         // Token-only prestige cosmetics (cost 0 coins, paid in Season Tokens). Tokens come from
         // converting surplus coins — the deep end-game sink for the wealthiest collectors.
         { id: 'avatar_celestial', name: 'Celestial Avatar', cost: 0, token_cost: 3, type: 'avatar', value: 'avatar_celestial', rarity: 'Mythic', description: 'Forged from seasons of surplus. The rarest face in Numera — it cannot be bought with coins at all.', required_rank: null, is_animated: 1, particle_effect: 'cosmic_sparkle', is_utility: 0 },

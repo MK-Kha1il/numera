@@ -154,3 +154,42 @@ test('claiming a reached tier grants tokens+coins; double-claim and unreached ar
   const tooHigh = await api(ctx.base, 'POST', '/api/rating/reward-track/claim', { token: u.token, body: { tier: 4 } });
   assert.equal(tooHigh.status, 400, 'cannot claim an unreached tier');
 });
+
+test('reaching Diamond on the season track grants the season-exclusive Champion banner (audit #14)', async () => {
+  const u = await registerUser(ctx.base);
+  const seasonId = await isolatedSeason();
+  const uid = await idOf(u.username);
+  await seedPeak(uid, seasonId, 1700); // Diamond II → tier index 4 (Diamond)
+  await seedSessions(uid, 30);
+
+  const SEASON_BANNERS = ['banner_champion_aureate', 'banner_champion_verdant', 'banner_champion_crimson'];
+  const expected = SEASON_BANNERS[seasonId % 3];
+
+  // The reward track surfaces the exclusive cosmetic at the Diamond tier.
+  const track = await api(ctx.base, 'GET', '/api/rating/reward-track', { token: u.token });
+  assert.equal(track.body.tiers[4].cosmetic, expected, 'Diamond tier advertises this season\'s banner');
+  assert.equal(track.body.tiers[2].cosmetic, null, 'lower tiers carry no cosmetic');
+
+  // Claiming Diamond grants it (earned, not bought) into the inventory.
+  const claim = await api(ctx.base, 'POST', '/api/rating/reward-track/claim', { token: u.token, body: { tier: 4 } });
+  assert.equal(claim.status, 200);
+  assert.equal(claim.body.cosmeticAwarded, expected, 'the claim reports the granted banner');
+  const owned = await dbGet('SELECT 1 AS yes FROM user_inventory WHERE user_id = ? AND item_id = ?', [uid, expected]);
+  assert.ok(owned && owned.yes, 'the Champion banner is now in the inventory');
+
+  // It is EARN-ONLY: the purchase path refuses it (cost 0).
+  const buy = await api(ctx.base, 'POST', '/api/shop/purchase', { token: u.token, body: { itemId: expected } });
+  assert.equal(buy.status, 400, 'the season Champion banner cannot be bought, only earned');
+});
+
+test('claiming a sub-Diamond tier grants no cosmetic', async () => {
+  const u = await registerUser(ctx.base);
+  const seasonId = await isolatedSeason();
+  const uid = await idOf(u.username);
+  await seedPeak(uid, seasonId, 1050); // Gold III → tier 2
+  await seedSessions(uid, 20);
+  const claim = await api(ctx.base, 'POST', '/api/rating/reward-track/claim', { token: u.token, body: { tier: 2 } });
+  assert.equal(claim.body.cosmeticAwarded, null, 'no cosmetic below Diamond');
+  const cnt = await dbGet("SELECT COUNT(*) AS n FROM user_inventory WHERE user_id = ? AND item_id LIKE 'banner_champion_%'", [uid]);
+  assert.equal(cnt.n, 0, 'no Champion banner granted');
+});
