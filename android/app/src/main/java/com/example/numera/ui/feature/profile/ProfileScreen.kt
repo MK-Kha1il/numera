@@ -172,6 +172,25 @@ fun ProfileScreen(
         }
     }
 
+    // Share your competitive rank (audit #22): fetch the server-composed boast, fire a share sheet.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val shareRank: () -> Unit = {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val card = RetrofitClient.apiService.getShareCard(RetrofitClient.authToken ?: "")
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_TEXT, card.text)
+                    }
+                    context.startActivity(android.content.Intent.createChooser(send, "Share your rank"))
+                }
+            } catch (e: Exception) {
+                Log.e("Profile", "Failed to build share card: ${e.message}")
+            }
+        }
+    }
+
     // Honor (audit #24): commend a past opponent, then refresh the match list + honor tally.
     val commend: (Int) -> Unit = { matchId ->
         scope.launch(Dispatchers.IO) {
@@ -898,6 +917,7 @@ fun ProfileScreen(
                 activeTitle = titles?.titles?.firstOrNull { it.active }?.name,
                 apexStanding = apex?.you,
                 honor = honor,
+                onShare = shareRank,
                 modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
             )
             TitlesCard(

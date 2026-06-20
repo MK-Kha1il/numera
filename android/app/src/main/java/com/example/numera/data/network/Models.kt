@@ -1330,6 +1330,15 @@ data class MatchHistoryEntry(
     val commendable: Boolean = false  // a real human opponent you can still commend
 )
 
+// ---- Shareable rank card — GET /api/rating/share-card (audit #22, viral loop) ----
+data class ShareCardResponse(
+    val text: String = "",
+    val placed: Boolean = false,
+    val rank: String? = null,
+    val displayRating: Int? = null,
+    val title: String? = null
+)
+
 // ---- Honor / commendation system — audit #24 ----
 data class CommendRequest(
     val matchId: Int,

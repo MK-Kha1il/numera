@@ -466,6 +466,34 @@ router.get('/api/rating/honor', authenticateToken, (req, res) => {
   );
 });
 
+// ── GET /api/rating/share-card ────────────────────────────────────────────────
+// A composed, shareable boast about the player's competitive standing (audit #22 — the viral loop /
+// reach gap). Server-built so the copy is consistent and the rank can't be spoofed by the client.
+// Returns a ready-to-share `text` + the structured bits so the client can render a card too.
+const APP_TAGLINE = 'the ranked math ladder where understanding wins, not speed';
+router.get('/api/rating/share-card', authenticateToken, (req, res) => {
+  getRatingRow(req.user.id, 'global', (err, row) => {
+    if (err) return res.status(500).json({ error: 'Rating lookup failed' });
+    const placed = (row.sessions_count || 0) >= 5;
+    const rank = NRS.displayRatingToRank(row.display_rating, row.sessions_count);
+    db.get('SELECT active_title FROM users WHERE id = ?', [req.user.id], (e2, u) => {
+      const titleId = u && u.active_title;
+      const title = titleId ? TITLE_CATALOG.find((t) => t.id === titleId) : null;
+      const titleStr = title ? ` "${title.name}"` : '';
+      const text = placed
+        ? `🧠 I'm ${rank} (${row.display_rating})${titleStr} on Numera — ${APP_TAGLINE}. Think you can climb higher?`
+        : `🧠 I'm climbing the ranked ladder on Numera — ${APP_TAGLINE}. Come compete with me!`;
+      res.json({
+        text,
+        placed,
+        rank: placed ? rank : null,
+        displayRating: placed ? row.display_rating : null,
+        title: title ? title.name : null,
+      });
+    });
+  });
+});
+
 // ── GET /api/rating/rivals ────────────────────────────────────────────────────
 // Head-to-head records (Phase 2 identity, audit #71): the caller's win/loss/draw tally against each
 // human opponent they've faced, most-played first. Only real opponents (bots/benchmark excluded).

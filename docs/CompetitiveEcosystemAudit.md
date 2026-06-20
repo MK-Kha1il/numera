@@ -60,6 +60,7 @@ written only by `services/ratingService.syncCompetitiveMirror`; duels update the
 | 16 | Match history + duel replays | ✅ Shipped | `c079993`,`7c50add` |
 | 20 | Competitive onboarding (placement narrative + rank reveal) | ✅ Shipped | migration v57 |
 | 21 | Seasonal history timeline + career peak | ✅ Shipped | `5519cd4` |
+| 22 | Shareable rank/result card (viral loop) | ✅ Shipped (text share) | `/api/rating/share-card` |
 | 23 | Apex (leaderboard-only) tier above Grandmaster | ✅ Shipped | `963107f` |
 | 24 | Honor / commendation system | ✅ Shipped | migration v56 |
 | 25 | Mistake-review-into-SRS after ranked losses | ✅ Shipped | `0070405` |
@@ -71,8 +72,9 @@ written only by `services/ratingService.syncCompetitiveMirror`; duels update the
 
 **Remaining (Phase 4–5 — larger, multi-session product systems, not yet built):**
 - #14 Seasonal-exclusive (scarce) cosmetics · #17 Club rating + club seasons/ladder · #18
-  Calculator/collusion/multi-account integrity layer · #19 Live class/group competitive rooms · #22
-  Shareable rank/result cards. These are the §9 Phase 4 (Scale & social) and Phase 5 (Integrity) tracks.
+  Calculator/collusion/multi-account integrity layer · #19 Live class/group competitive rooms. These
+  are the §9 Phase 4 (Scale & social) and Phase 5 (Integrity) tracks. (#22 shipped as a text share;
+  a rendered image card + public web profile remain a follow-up.)
 
 ---
 

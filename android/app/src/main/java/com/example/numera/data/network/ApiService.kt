@@ -745,6 +745,10 @@ interface ApiService {
     @GET("api/rating/profile")
     suspend fun getRatingProfile(@Header("Authorization") token: String): RatingProfileResponse
 
+    // ---- Shareable rank card (viral loop, audit #22) ----
+    @GET("api/rating/share-card")
+    suspend fun getShareCard(@Header("Authorization") token: String): ShareCardResponse
+
     // ---- Apex tier (leaderboard-only standing above the rank thresholds) ----
     @GET("api/rating/apex")
     suspend fun getApex(

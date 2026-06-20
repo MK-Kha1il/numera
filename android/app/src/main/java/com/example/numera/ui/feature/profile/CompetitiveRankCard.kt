@@ -1,6 +1,7 @@
 package com.example.numera.ui.feature.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -50,6 +51,7 @@ fun CompetitiveRankCard(
     activeTitle: String? = null,
     apexStanding: ApexStanding? = null,
     honor: HonorResponse? = null,
+    onShare: (() -> Unit)? = null,
 ) {
     if (profile.isNullOrEmpty()) return
     val global = profile["global"] ?: return
@@ -79,14 +81,28 @@ fun CompetitiveRankCard(
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary,
                 )
-                if (!activeTitle.isNullOrEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(CornerRadius.full))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
-                            .padding(horizontal = Spacing.m, vertical = Spacing.xs),
-                    ) {
-                        Text(text = activeTitle, fontSize = 11.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                    if (!activeTitle.isNullOrEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(CornerRadius.full))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
+                                .padding(horizontal = Spacing.m, vertical = Spacing.xs),
+                        ) {
+                            Text(text = activeTitle, fontSize = 11.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                    // Share your rank (audit #22, the viral loop).
+                    if (onShare != null) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(CornerRadius.full))
+                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f))
+                                .clickable { onShare() }
+                                .padding(horizontal = Spacing.m, vertical = Spacing.xs),
+                        ) {
+                            Text(text = "↗ Share", fontSize = 11.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.secondary)
+                        }
                     }
                 }
             }
