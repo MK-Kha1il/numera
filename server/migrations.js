@@ -1305,6 +1305,54 @@ const migrations = [
       await run("UPDATE users SET rank_revealed = 1 WHERE competitive_matches >= 5");
     },
   },
+  {
+    version: 58,
+    name: 'live_rooms',
+    // Live group/class competitive rooms (competitive audit #19 — Kahoot-style live play, reusing the
+    // class-code join pattern). A host opens a room, players join by code, everyone answers the SAME
+    // server-generated set; grading is server-authoritative (answer key never leaves the server) and
+    // scores feed a live podium. REST-driven (pollable) so the core is testable; socket push is a
+    // later liveness layer.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS live_rooms (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          code          TEXT UNIQUE NOT NULL,
+          host_id       INTEGER NOT NULL,
+          category      TEXT,
+          level         INTEGER NOT NULL DEFAULT 1,
+          problems_json TEXT NOT NULL,          -- includes the answer key; never sent to clients
+          problem_count INTEGER NOT NULL,
+          status        TEXT NOT NULL DEFAULT 'lobby',  -- lobby | active | done
+          created_at    INTEGER NOT NULL,
+          FOREIGN KEY (host_id) REFERENCES users(id)
+        )
+      `);
+      await run(`
+        CREATE TABLE IF NOT EXISTS live_room_members (
+          room_id        INTEGER NOT NULL,
+          user_id        INTEGER NOT NULL,
+          score          INTEGER NOT NULL DEFAULT 0,
+          answered_count INTEGER NOT NULL DEFAULT 0,
+          joined_at      INTEGER NOT NULL,
+          PRIMARY KEY (room_id, user_id),
+          FOREIGN KEY (room_id) REFERENCES live_rooms(id),
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+      // One row per (member, problem) — enforces "answer each problem once" and records correctness.
+      await run(`
+        CREATE TABLE IF NOT EXISTS live_room_answers (
+          room_id       INTEGER NOT NULL,
+          user_id       INTEGER NOT NULL,
+          problem_index INTEGER NOT NULL,
+          correct       INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (room_id, user_id, problem_index)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_live_members_room ON live_room_members(room_id, score)');
+    },
+  },
 ];
 
 /**

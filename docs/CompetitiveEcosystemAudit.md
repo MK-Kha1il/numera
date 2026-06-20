@@ -51,6 +51,7 @@ written only by `services/ratingService.syncCompetitiveMirror`; duels update the
 | 6 | Surface 9 domains as specialties/"main" | ✅ Shipped | `e5dfe92` (`CompetitiveRankCard`) |
 | 7 | Divisions + pips + promotion + rank-up moment | ✅ Shipped | `0d84242` |
 | 8 | Plug bot Elo farm + server-validate metrics | ✅ Shipped | bot farm closed (`afdd5cf`); solo session metrics now consistency-validated server-side (#29/#95) |
+| 19 | Live class/group competitive rooms | 🟡 Server core | `routes/liveRoom.js` (create/join/start/answer/podium, server-graded, migration v58); Android UI + socket push remain |
 | 17 | Club rating ladder (skill, not summed XP) | 🟡 Partial | skill ladder shipped (`/api/clubs/leaderboard/skill` avg competitive rating); club seasons/promotion still open |
 | 18 | Integrity beyond speed — collusion/rating-pump review | 🟡 Partial | win-trade/boost detection shipped (`lib/integritySignals` + admin review queue); calculator/multi-account still open |
 | 9 | Competitive profile showcase | ✅ Shipped | `8552cff` + profile cards |
