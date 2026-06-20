@@ -78,8 +78,10 @@ written only by `services/ratingService.syncCompetitiveMirror`; duels update the
 not new headline gaps:
 - #17 club seasons/promotion-relegation (skill ladder shipped); #18 calculator-use +
   multi-account/device heuristics (collusion review shipped); #19 socket push for instant live-room
-  liveness (REST core + client shipped); #22 rendered image card + #75 public web competitive profile
-  (text share shipped).
+  liveness (REST core + client shipped); #22 rendered *image* card (text share shipped, and it now
+  deep-links to the web profile when `APP_BASE_URL` is set). **#75 public web competitive profile is
+  shipped** — a no-auth, SEO-friendly `/u/:username` page (rank, peak, title, specialties, honor,
+  season medals; honors the private-profile flag).
 - **Resolved (was a known limitation):** owned earn-only cosmetics (rank rewards, season Champion
   banners, badges) are now equippable anytime via a **"My Collection"** shop section, backed by an
   `ownedItems` payload on `/api/shop` — they no longer only equip at grant time.

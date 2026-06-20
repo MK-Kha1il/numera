@@ -493,19 +493,25 @@ router.get('/api/rating/share-card', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: 'Rating lookup failed' });
     const placed = (row.sessions_count || 0) >= 5;
     const rank = NRS.displayRatingToRank(row.display_rating, row.sessions_count);
-    db.get('SELECT active_title FROM users WHERE id = ?', [req.user.id], (e2, u) => {
+    db.get('SELECT active_title, username FROM users WHERE id = ?', [req.user.id], (e2, u) => {
       const titleId = u && u.active_title;
       const title = titleId ? TITLE_CATALOG.find((t) => t.id === titleId) : null;
       const titleStr = title ? ` "${title.name}"` : '';
-      const text = placed
+      // Link to the public web profile when a base URL is configured (completes the viral loop into
+      // the SEO profile page, audit #75). Omitted when unconfigured (dev) so the text stays clean.
+      const base = require('../config').APP_BASE_URL;
+      const profileUrl = base && u && u.username ? `${base.replace(/\/$/, '')}/u/${encodeURIComponent(u.username)}` : null;
+      const urlSuffix = profileUrl ? ` ${profileUrl}` : '';
+      const text = (placed
         ? `🧠 I'm ${rank} (${row.display_rating})${titleStr} on Numera — ${APP_TAGLINE}. Think you can climb higher?`
-        : `🧠 I'm climbing the ranked ladder on Numera — ${APP_TAGLINE}. Come compete with me!`;
+        : `🧠 I'm climbing the ranked ladder on Numera — ${APP_TAGLINE}. Come compete with me!`) + urlSuffix;
       res.json({
         text,
         placed,
         rank: placed ? rank : null,
         displayRating: placed ? row.display_rating : null,
         title: title ? title.name : null,
+        profileUrl,
       });
     });
   });
