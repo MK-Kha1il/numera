@@ -113,3 +113,17 @@ test('rankProgress stays consistent with displayRatingToRank across the ladder',
     assert.equal(NRS.rankProgress(r, 20).rank, NRS.displayRatingToRank(r, 20), `mismatch at ${r}`);
   }
 });
+
+// ─── computePerformanceScore weighting (understanding > speed, audit #28) ───────
+
+test('accuracy dominates speed: a careful accurate solver outranks a fast guesser', () => {
+  const careful = NRS.computePerformanceScore({ solvedCount: 5, totalProblems: 5, errorsCount: 0, speedBonus: 0, comboBonus: 0, level: 10 });
+  const fastGuesser = NRS.computePerformanceScore({ solvedCount: 3, totalProblems: 5, errorsCount: 2, speedBonus: 20, comboBonus: 0, level: 10 });
+  assert.ok(careful.performanceScore > fastGuesser.performanceScore, 'slow-but-right beats fast-but-wrong');
+});
+
+test('weights are accuracy 0.65 / speed 0.10', () => {
+  const c = NRS.computePerformanceScore({ solvedCount: 5, totalProblems: 5, errorsCount: 0, speedBonus: 20, comboBonus: 0, level: 15 });
+  assert.ok(Math.abs(c.components.accuracy - 0.65) < 1e-9, 'full accuracy → 0.65 component');
+  assert.ok(Math.abs(c.components.speed - 0.10) < 1e-9, 'max speed → 0.10 component');
+});

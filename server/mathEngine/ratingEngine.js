@@ -95,9 +95,11 @@ function levelToExpectedBaseline(level) {
 /**
  * Converts a session's raw metrics into a single performance score [0, 1].
  *
- * Weights:
- *   Accuracy    55%  — primary; correctness is the main signal
- *   Speed       20%  — meaningful but bounded; never outweighs accuracy
+ * Weights (rebalanced to reward UNDERSTANDING over speed — competitive audit #28: a fast guesser must
+ * not outrate a careful solver; the ceiling is unchanged at 0.85, weight just shifted from speed to
+ * accuracy):
+ *   Accuracy    65%  — primary; correctness is the dominant signal
+ *   Speed       10%  — a minor fluency factor; never near accuracy's weight
  *   Combo       10%  — rewarded for clean perfect runs
  *   Errors      −5%  per error, up to −15%
  *   Calculator  −10% (ranked sessions only; tool assistance reduces signal strength)
@@ -119,10 +121,10 @@ function computePerformanceScore({
   const correct = Math.max(0, Math.min(solvedCount || 0, total));
   const errors  = Math.max(0, errorsCount || 0);
 
-  const accuracyScore = (correct / total) * 0.55;
+  const accuracyScore = (correct / total) * 0.65;
 
   const normalizedSpeed  = Math.min((speedBonus || 0) / 20.0, 1.0);
-  const speedScore       = normalizedSpeed * 0.20;
+  const speedScore       = normalizedSpeed * 0.10;
 
   const comboScore = (comboBonus > 0) ? 0.10 : 0;
 
@@ -412,13 +414,13 @@ function buildRatingExplanation(domain, sessionData, result) {
   const direction = delta >= 0 ? 'increased' : 'decreased';
   const magnitude = Math.abs(Math.round(delta));
 
-  const accuracyPct = Math.round((components.accuracy / 0.55) * 100);
+  const accuracyPct = Math.round((components.accuracy / 0.65) * 100);
   const reasons = [];
 
   if (accuracyPct >= 85) reasons.push(`high accuracy (${accuracyPct}%)`);
   else if (accuracyPct <= 50) reasons.push(`low accuracy (${accuracyPct}%)`);
 
-  if (components.speed >= 0.12) reasons.push('fast response times');
+  if (components.speed >= 0.08) reasons.push('fast response times');
   if (components.combo > 0) reasons.push('perfect combo');
   if (components.calcPenalty > 0) reasons.push('calculator used (ranked penalty)');
   if (components.errorPenalty > 0) reasons.push(`${Math.round(components.errorPenalty / 0.05)} error(s)`);
