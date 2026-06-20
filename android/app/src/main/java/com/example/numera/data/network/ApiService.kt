@@ -789,6 +789,12 @@ interface ApiService {
         @Body req: ReasoningSubmitRequest
     ): ReasoningSubmitResponse
 
+    @GET("api/reasoning-duel/{id}/review")
+    suspend fun getReasoningReview(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): ReasoningReviewResponse
+
     // ---- Seasonal Rank Reward track ----
     @GET("api/rating/reward-track")
     suspend fun getRewardTrack(@Header("Authorization") token: String): RewardTrackResponse

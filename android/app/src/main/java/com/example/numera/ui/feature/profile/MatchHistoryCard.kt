@@ -1,6 +1,7 @@
 package com.example.numera.ui.feature.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -43,6 +44,7 @@ private fun ago(createdAtSeconds: Long, nowSeconds: Long): String {
 fun MatchHistoryCard(
     matches: List<MatchHistoryEntry>?,
     modifier: Modifier = Modifier,
+    onReplay: (Int) -> Unit = {},
 ) {
     if (matches.isNullOrEmpty()) return
     val now = System.currentTimeMillis() / 1000
@@ -67,8 +69,11 @@ fun MatchHistoryCard(
                     else -> "D" to MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 }
                 val delta = m.ratingDelta.toInt()
+                val replayable = m.mode == "reasoning" && m.refId != null
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.xs),
+                    modifier = Modifier.fillMaxWidth()
+                        .then(if (replayable) Modifier.clickable { onReplay(m.refId!!) } else Modifier)
+                        .padding(top = Spacing.xs),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.m),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -98,6 +103,9 @@ fun MatchHistoryCard(
                             fontWeight = FontWeight.Black,
                             color = if (delta > 0) CorrectGreen else WrongRed,
                         )
+                    }
+                    if (replayable) {
+                        Text(text = "▶", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }

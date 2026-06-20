@@ -393,7 +393,7 @@ router.get('/api/rating/matches', authenticateToken, (req, res) => {
   db.all(
     `SELECT id, mode, opponent_id AS opponentId, opponent_name AS opponentName,
             my_score AS myScore, opp_score AS oppScore, result,
-            rating_delta AS ratingDelta, created_at AS createdAt
+            rating_delta AS ratingDelta, ref_id AS refId, created_at AS createdAt
        FROM match_log ${where}
       ORDER BY created_at DESC, id DESC LIMIT ?`,
     params,

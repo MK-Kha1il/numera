@@ -1301,7 +1301,31 @@ data class MatchHistoryEntry(
     val oppScore: Int = 0,
     val result: String = "",
     val ratingDelta: Double = 0.0,
+    val refId: Int? = null,   // replayable source (e.g. the reasoning round id)
     val createdAt: Long = 0
+)
+
+// ---- Reasoning round replay — GET /api/reasoning-duel/:id/review ----
+data class ReasoningReviewItem(
+    val question: String = "",
+    val options: List<String> = emptyList(),
+    val yourAnswer: String? = null,
+    val correctAnswer: String = "",
+    val answerCorrect: Boolean = false,
+    val reasonQuestion: String = "",
+    val reasonOptions: List<String> = emptyList(),
+    val yourReasonIndex: Int? = null,
+    val reasonCorrectIndex: Int = 0,
+    val reasonCorrect: Boolean = false,
+    val reasonExplanation: String = "",
+    val banked: Boolean = false
+)
+
+data class ReasoningReviewResponse(
+    val roundId: Int = 0,
+    val total: Int = 0,
+    val banked: Int = 0,
+    val items: List<ReasoningReviewItem> = emptyList()
 )
 
 // ---- Competitive titles — GET /api/rating/titles, POST .../select ----

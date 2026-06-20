@@ -97,3 +97,28 @@ test('a rated reasoning round credits the contested per-domain rating, not only 
   assert.ok(domains.includes('global'), 'global rating updated');
   assert.ok(domains.some((d) => d !== 'global'), 'the contested domain rating was created too — per-domain ladders climb from ranked play');
 });
+
+test('a finished round can be replayed problem-by-problem (review)', async () => {
+  const u = await registerUser(ctx.base);
+  const start = await api(ctx.base, 'POST', '/api/reasoning-duel/start', { token: u.token });
+  const probs = await keyOf(start.body.roundId);
+  const answers = probs.map((p) => p.answer); // every answer correct
+  const reasons = probs.map((p, i) => (i === 0 ? (p.reasonCorrectIndex + 1) % p.reasonOptions.length : p.reasonCorrectIndex)); // first reason wrong
+
+  await api(ctx.base, 'POST', `/api/reasoning-duel/${start.body.roundId}/submit`, { token: u.token, body: { answers, reasons } });
+
+  const rev = await api(ctx.base, 'GET', `/api/reasoning-duel/${start.body.roundId}/review`, { token: u.token });
+  assert.equal(rev.status, 200);
+  assert.equal(rev.body.items.length, 5);
+  const first = rev.body.items[0];
+  assert.equal(first.answerCorrect, true, 'answer was right');
+  assert.equal(first.reasonCorrect, false, 'the first reason was wrong');
+  assert.equal(first.banked, false, 'so the point did not bank');
+  assert.equal(rev.body.items[1].banked, true, 'second problem fully correct');
+  assert.ok(first.correctAnswer != null && first.reasonExplanation, 'the review reveals the correct answer + reasoning');
+
+  // The match row links back to the round for replay.
+  const matches = await api(ctx.base, 'GET', '/api/rating/matches', { token: u.token });
+  const m = matches.body.find((x) => x.mode === 'reasoning');
+  assert.equal(m.refId, start.body.roundId, 'the reasoning match links to its replayable round');
+});

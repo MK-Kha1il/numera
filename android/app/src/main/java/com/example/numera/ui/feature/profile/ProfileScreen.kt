@@ -148,6 +148,18 @@ fun ProfileScreen(
         }
     }
 
+    // Reasoning-round replay: fetch a finished round's review and show it in a dialog.
+    var replayReview by remember { mutableStateOf<com.example.numera.data.network.ReasoningReviewResponse?>(null) }
+    val openReplay: (Int) -> Unit = { roundId ->
+        scope.launch(Dispatchers.IO) {
+            try {
+                replayReview = RetrofitClient.apiService.getReasoningReview(RetrofitClient.authToken ?: "", roundId)
+            } catch (e: Exception) {
+                Log.e("Profile", "Failed to load round review: ${e.message}")
+            }
+        }
+    }
+
     // Equip (or clear, with "") a competitive title, then refresh the list.
     val selectTitle: (String) -> Unit = { id ->
         scope.launch(Dispatchers.IO) {
@@ -870,6 +882,7 @@ fun ProfileScreen(
             )
             MatchHistoryCard(
                 matches = matchHistory,
+                onReplay = openReplay,
                 modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
             )
             RivalsCard(
@@ -1600,6 +1613,8 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(Spacing.l))
 
         // Dialogs
+        replayReview?.let { ReasoningReplayDialog(review = it, onDismiss = { replayReview = null }) }
+
         if (showCreateCollectionDialog) {
             AlertDialog(
                 onDismissRequest = { showCreateCollectionDialog = false },

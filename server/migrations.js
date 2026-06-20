@@ -1247,6 +1247,24 @@ const migrations = [
       }
     },
   },
+  {
+    version: 55,
+    name: 'reasoning_replay',
+    // Reasoning-round replays (competitive audit #70 — learn from competition): persist the player's
+    // submission so a finished round can be reviewed problem-by-problem later, and link the match_log
+    // row to its round so "tap a match → replay" works.
+    up: async (run) => {
+      const addCol = async (table, col, type) => {
+        try {
+          await run(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}`);
+        } catch (e) {
+          if (!/duplicate column name/i.test(e.message)) throw e;
+        }
+      };
+      await addCol('reasoning_rounds', 'submission_json', 'TEXT');
+      await addCol('match_log', 'ref_id', 'INTEGER');
+    },
+  },
 ];
 
 /**

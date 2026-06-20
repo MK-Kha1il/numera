@@ -142,7 +142,8 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
     const ratedToday = await tx.get("SELECT COUNT(*) AS n FROM reasoning_rounds WHERE user_id = ? AND rated = 1 AND finished_at >= ?", [req.user.id, dayStart()]);
     const willRate = (ratedToday.n || 0) < DAILY_RATED_CAP;
 
-    await tx.run("UPDATE reasoning_rounds SET status = 'done', score = ?, rated = ?, finished_at = ? WHERE id = ?", [banked, willRate ? 1 : 0, Date.now(), id]);
+    const submissionJson = JSON.stringify({ answers, reasons });
+    await tx.run("UPDATE reasoning_rounds SET status = 'done', score = ?, rated = ?, submission_json = ?, finished_at = ? WHERE id = ?", [banked, willRate ? 1 : 0, submissionJson, Date.now(), id]);
     return { level: round.level, domain: round.domain, total: problems.length, banked, answerCorrectCount, perProblem, willRate };
   })
     .then(async (r) => {
@@ -169,6 +170,7 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
           oppScore: r.total - r.banked,
           result,
           ratingDelta: after ? after.delta : 0,
+          refId: id, // link the match to this round so it can be replayed
         });
         res.json({
           success: true,
@@ -195,6 +197,47 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
       );
     })
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));
+});
+
+// ── GET /api/reasoning-duel/:id/review ────────────────────────────────────────
+// Replay a FINISHED round problem-by-problem: the question, your answer vs the correct one, and the
+// reason you picked vs the correct reason (audit #70 — turn a competitive result into learning).
+router.get('/api/reasoning-duel/:id/review', authenticateToken, (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  db.get('SELECT * FROM reasoning_rounds WHERE id = ? AND user_id = ?', [id, req.user.id], (err, round) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!round) return res.status(404).json({ error: 'Round not found' });
+    if (round.status !== 'done') return res.status(400).json({ error: 'This round is not finished' });
+
+    let problems = [];
+    let submission = { answers: [], reasons: [] };
+    try { problems = JSON.parse(round.problems_json); } catch { problems = []; }
+    try { submission = JSON.parse(round.submission_json || '{}'); } catch { submission = {}; }
+    const answers = submission.answers || [];
+    const reasons = submission.reasons || [];
+
+    const items = problems.map((p, i) => {
+      const yourReason = Number(reasons[i]);
+      const answerCorrect = areEquivalent(answers[i], p.answer);
+      const reasonCorrect = yourReason === p.reasonCorrectIndex;
+      return {
+        question: p.question,
+        options: p.options,
+        yourAnswer: answers[i] != null ? String(answers[i]) : null,
+        correctAnswer: p.answer,
+        answerCorrect,
+        reasonQuestion: p.reasonQuestion,
+        reasonOptions: p.reasonOptions,
+        yourReasonIndex: Number.isInteger(yourReason) ? yourReason : null,
+        reasonCorrectIndex: p.reasonCorrectIndex,
+        reasonCorrect,
+        reasonExplanation: p.reasonExplanation,
+        banked: answerCorrect && reasonCorrect,
+      };
+    });
+
+    res.json({ roundId: id, total: problems.length, banked: round.score, items });
+  });
 });
 
 module.exports = router;
