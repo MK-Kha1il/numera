@@ -1378,6 +1378,18 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_feedback_status ON user_feedback(status, created_at)');
     },
   },
+  {
+    version: 60,
+    name: 'studio_default_theme',
+    // docs/BrandIdentity.md: retire the borrowed Duolingo skin as the *default*. The flagship default
+    // theme is now "Studio" (warm light, indigo→amber — the competitive home of math). Flip everyone
+    // still on the old default over to it. Themes are free to equip (routes/shop.js treats every theme
+    // as a default item — no ownership check), so no inventory grant is needed, and the Duolingo theme
+    // stays fully selectable in Settings. Pre-launch, so nobody deliberately "chose" duolingo.
+    up: async (run) => {
+      await run("UPDATE users SET theme = 'studio' WHERE theme = 'duolingo' OR theme IS NULL");
+    },
+  },
 ];
 
 /**

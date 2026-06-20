@@ -59,8 +59,10 @@ fun MainTabsScreen(
     onStartLegacyGame: (Int) -> Unit,
     onLogout: () -> Unit
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
-    var previousTab by remember { mutableStateOf(0) }
+    // Competition is home: the app lands on the Arena (index 1), not the training map (Phase 0,
+    // docs/BrandIdentity.md). Index→screen wiring is unchanged; only the landing + nav order shift.
+    var selectedTab by remember { mutableStateOf(1) }
+    var previousTab by remember { mutableStateOf(1) }
     var currentUser by remember { mutableStateOf<User?>(null) }
     val scope = rememberCoroutineScope()
     var isTakingPlacementTest by remember { mutableStateOf(false) }
@@ -143,7 +145,7 @@ fun MainTabsScreen(
                 }
                 withContext(Dispatchers.Main) {
                     currentUser = user
-                    ThemeManager.currentTheme = user.theme ?: "duolingo"
+                    ThemeManager.currentTheme = user.theme ?: "studio"
                     if (commitment != null) {
                         unlockedRelicIds = commitment.relics.map { it.relic_id }.toSet()
                     }
@@ -624,9 +626,11 @@ fun MainTabsScreen(
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface
                 ) {
+                    // Arena leads (competition is home); Training sits second. Display order differs
+                    // from the index wiring on purpose — the `index` field still drives the screen.
                     val items = listOf(
-                        NavigationItem("Learn", com.example.numera.ui.components.NumeraIconType.Learn, 0),
                         NavigationItem("Arena", com.example.numera.ui.components.NumeraIconType.Arena, 1),
+                        NavigationItem("Train", com.example.numera.ui.components.NumeraIconType.Learn, 0),
                         NavigationItem("Quests", com.example.numera.ui.components.NumeraIconType.Quests, 2),
                         NavigationItem("Shop", com.example.numera.ui.components.NumeraIconType.Shop, 3),
                         NavigationItem("Profile", com.example.numera.ui.components.NumeraIconType.Profile, 4)

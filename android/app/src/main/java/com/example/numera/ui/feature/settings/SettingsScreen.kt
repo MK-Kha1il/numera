@@ -1112,6 +1112,7 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     
                     val themesList = listOf(
+                        "studio" to "Studio",
                         "duolingo" to "Duo",
                         "neon_eclipse" to "Eclipse",
                         "emerald_abyss" to "Emerald",
@@ -1129,7 +1130,7 @@ fun SettingsScreen(
                             modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
                         ) {
                             rowItems.forEach { (themeKey, themeLabel) ->
-                                val isActive = user?.theme == themeKey || (user?.theme == null && themeKey == "duolingo")
+                                val isActive = user?.theme == themeKey || (user?.theme == null && themeKey == "studio")
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)

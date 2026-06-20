@@ -21,6 +21,7 @@ import com.example.numera.theme.*
 @Composable
 fun ThemePreview(themeKey: String, modifier: Modifier = Modifier) {
     val colors = when (themeKey) {
+        "studio", "theme_studio" -> Triple(StudioPrimary, StudioSecondary, StudioTertiary)
         "duolingo", "theme_duolingo" -> Triple(DuoPrimary, DuoSecondary, DuoTertiary)
         "cyberpunk", "theme_cyberpunk" -> Triple(CyberPrimary, CyberSecondary, CyberTertiary)
         "eclipse", "theme_eclipse", "neon_eclipse", "theme_neon_eclipse" -> Triple(EclipsePrimary, EclipseSecondary, EclipseTertiary)
@@ -30,7 +31,7 @@ fun ThemePreview(themeKey: String, modifier: Modifier = Modifier) {
         "ocean", "theme_ocean" -> Triple(OceanPrimary, OceanSecondary, OceanTertiary)
         "sunset", "theme_sunset" -> Triple(SunsetPrimary, SunsetSecondary, SunsetTertiary)
         "midnight", "theme_midnight" -> Triple(MidnightPrimary, MidnightSecondary, MidnightTertiary)
-        else -> Triple(DuoPrimary, DuoSecondary, DuoTertiary)
+        else -> Triple(StudioPrimary, StudioSecondary, StudioTertiary)
     }
 
     Box(

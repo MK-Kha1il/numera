@@ -316,13 +316,51 @@ private val MidnightDarkColorScheme = darkColorScheme(
     onError = Color.White
 )
 
+// Studio — the flagship / default theme (docs/BrandIdentity.md). Warm "lobby" light: off-white paper,
+// graphite ink, Studio Indigo as the brand/active primary, Amber as the earned tertiary.
+private val StudioColorScheme = lightColorScheme(
+    primary = StudioPrimary,
+    secondary = StudioSecondary,
+    tertiary = StudioTertiary,
+    background = StudioBg,
+    surface = StudioSurface,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White,
+    onBackground = StudioOnSurface,
+    onSurface = StudioOnSurface,
+    outline = StudioBorder,
+    surfaceVariant = StudioSurfaceCard,
+    error = WrongRed,
+    onError = Color.White
+)
+
+// Studio dark — the higher-contrast "Arena/stadium" surface: deep graphite-indigo ground, lifted
+// indigo primary, amber for earned. Dark text on the lighter accents for legibility.
+private val StudioDarkColorScheme = darkColorScheme(
+    primary = Color(0xFF8E9BD6),
+    secondary = Color(0xFF5FB3A1),
+    tertiary = Color(0xFFE6B36A),
+    background = Color(0xFF15171F),
+    surface = Color(0xFF1C1F2A),
+    onPrimary = Color(0xFF12152B),
+    onSecondary = Color(0xFF06231C),
+    onTertiary = Color(0xFF2A1B05),
+    onBackground = Color(0xFFECEDF4),
+    onSurface = Color(0xFFECEDF4),
+    outline = Color(0xFF2E3344),
+    surfaceVariant = Color(0xFF232838),
+    error = WrongRed,
+    onError = Color.White
+)
+
 object ThemeManager {
-    var currentTheme by mutableStateOf("duolingo")
+    var currentTheme by mutableStateOf("studio")
     var isDarkMode by mutableStateOf(false)
 
     fun init(context: Context) {
         val prefs = context.getSharedPreferences("numera_prefs", Context.MODE_PRIVATE)
-        currentTheme = prefs.getString("current_theme", "duolingo") ?: "duolingo"
+        currentTheme = prefs.getString("current_theme", "studio") ?: "studio"
         isDarkMode = prefs.getBoolean("is_dark_mode", false)
     }
 
@@ -353,7 +391,8 @@ fun NumeraTheme(
             "ocean", "theme_ocean" -> OceanDarkColorScheme
             "sunset", "theme_sunset" -> SunsetDarkColorScheme
             "midnight", "theme_midnight" -> MidnightDarkColorScheme
-            else -> DuoDarkColorScheme
+            "studio", "theme_studio" -> StudioDarkColorScheme
+            else -> StudioDarkColorScheme
         }
     } else {
         when (themeKey) {
@@ -366,7 +405,8 @@ fun NumeraTheme(
             "ocean", "theme_ocean" -> OceanColorScheme
             "sunset", "theme_sunset" -> SunsetColorScheme
             "midnight", "theme_midnight" -> MidnightColorScheme
-            else -> DuoColorScheme
+            "studio", "theme_studio" -> StudioColorScheme
+            else -> StudioColorScheme
         }
     }
 

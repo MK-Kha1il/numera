@@ -40,7 +40,7 @@ function initDb() {
           streak INTEGER DEFAULT 0,
           last_active INTEGER DEFAULT 0,
           active_badge TEXT DEFAULT 'Novice',
-          theme TEXT DEFAULT 'duolingo',
+          theme TEXT DEFAULT 'studio',
           avatar TEXT DEFAULT 'avatar_pythagoras',
           solved_count INTEGER DEFAULT 0,
           arena_wins INTEGER DEFAULT 0,

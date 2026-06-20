@@ -3,12 +3,29 @@ package com.example.numera.theme
 import androidx.compose.ui.graphics.Color
 
 // Shared colors
-val CorrectGreen = Color(0xFF58CC02) // Duolingo green
+val CorrectGreen = Color(0xFF58CC02) // semantic "correct answer" green (feedback only — NOT a brand color)
 val CorrectGreenPressed = Color(0xFF46A302)
 val WrongRed = Color(0xFFEA2B2B)
 val WrongRedPressed = Color(0xFFC21818)
 
-// Duolingo Theme (Default Bright Theme)
+// ── Studio — the flagship / default theme (see docs/BrandIdentity.md) ────────────────────────────
+// The brand surface for "the competitive home of math": warm off-white paper, graphite ink, and a
+// two-tone arc — Studio Indigo = active / training (brand primary), Amber = earned (rank, wins,
+// mastery). Replaces the borrowed Duolingo skin as the default; secondary is a refined teal accent.
+val StudioBg               = Color(0xFFFBFAF8) // warm off-white "paper"
+val StudioPrimary          = Color(0xFF4C5BA6) // Studio Indigo — brand / active / training
+val StudioPrimaryPressed   = Color(0xFF3A4680)
+val StudioSecondary        = Color(0xFF2E7D6B) // refined teal — secondary accent
+val StudioSecondaryPressed = Color(0xFF245C50)
+val StudioTertiary         = Color(0xFFD99A4E) // Amber — earned (rank, wins, mastery)
+val StudioTertiaryPressed  = Color(0xFFB97E33)
+val StudioSurface          = Color(0xFFFFFFFF)
+val StudioSurfaceCard      = Color(0xFFF4F2EC)
+val StudioOnSurface        = Color(0xFF23262B) // graphite ink
+val StudioBorder           = Color(0xFFECE9E4)
+val StudioSubtext          = Color(0xFF7C7A74)
+
+// Duolingo Theme (legacy alternate — no longer the default; kept as a selectable theme)
 val DuoBg = Color(0xFFFFFFFF)
 val DuoPrimary = Color(0xFF58CC02) 
 val DuoPrimaryPressed = Color(0xFF46A302)
