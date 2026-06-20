@@ -45,6 +45,7 @@ fun MatchHistoryCard(
     matches: List<MatchHistoryEntry>?,
     modifier: Modifier = Modifier,
     onReplay: (Int) -> Unit = {},
+    onCommend: (Int) -> Unit = {},
 ) {
     if (matches.isNullOrEmpty()) return
     val now = System.currentTimeMillis() / 1000
@@ -106,6 +107,19 @@ fun MatchHistoryCard(
                     }
                     if (replayable) {
                         Text(text = "▶", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                    }
+                    // Honor (audit #24): commend a real opponent — positive-only, once per match.
+                    when {
+                        m.commended -> Text(text = "🎖️", fontSize = 13.sp)
+                        m.commendable -> Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(CornerRadius.full))
+                                .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f))
+                                .clickable { onCommend(m.id) }
+                                .padding(horizontal = Spacing.s, vertical = Spacing.xs),
+                        ) {
+                            Text(text = "👏", fontSize = 12.sp)
+                        }
                     }
                 }
             }

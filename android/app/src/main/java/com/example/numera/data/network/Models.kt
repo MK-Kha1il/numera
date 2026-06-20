@@ -1323,7 +1323,26 @@ data class MatchHistoryEntry(
     val result: String = "",
     val ratingDelta: Double = 0.0,
     val refId: Int? = null,   // replayable source (e.g. the reasoning round id)
-    val createdAt: Long = 0
+    val createdAt: Long = 0,
+    val commended: Boolean = false,   // you have honored this opponent (audit #24)
+    val commendable: Boolean = false  // a real human opponent you can still commend
+)
+
+// ---- Honor / commendation system — audit #24 ----
+data class CommendRequest(
+    val matchId: Int,
+    val type: String = "good_game" // good_game | tough_opponent | good_sport
+)
+data class CommendResponse(
+    val success: Boolean = false,
+    val commended: Boolean = false,
+    val alreadyCommended: Boolean = false,
+    val toUserId: Int = 0
+)
+data class HonorResponse(
+    val total: Int = 0,
+    val level: Int = 0,
+    val byType: Map<String, Int> = emptyMap()
 )
 
 // ---- Reasoning round replay — GET /api/reasoning-duel/:id/review ----

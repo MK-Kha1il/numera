@@ -396,13 +396,63 @@ router.get('/api/rating/matches', authenticateToken, (req, res) => {
   db.all(
     `SELECT id, mode, opponent_id AS opponentId, opponent_name AS opponentName,
             my_score AS myScore, opp_score AS oppScore, result,
-            rating_delta AS ratingDelta, ref_id AS refId, created_at AS createdAt
+            rating_delta AS ratingDelta, ref_id AS refId, created_at AS createdAt,
+            EXISTS(SELECT 1 FROM commendations c WHERE c.from_user = match_log.user_id AND c.match_id = match_log.id) AS commended
        FROM match_log ${where}
       ORDER BY created_at DESC, id DESC LIMIT ?`,
     params,
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json(rows || []);
+      // `commendable` = a real human opponent you haven't yet commended (audit #24 honor system).
+      res.json((rows || []).map((r) => ({ ...r, commended: !!r.commended, commendable: !!r.opponentId && !r.commended })));
+    }
+  );
+});
+
+// ── Honor / commendation system (competitive audit #24) ───────────────────────
+const COMMEND_TYPES = ['good_game', 'tough_opponent', 'good_sport'];
+const HONOR_THRESHOLDS = [3, 10, 25, 60, 120]; // total commendations → honor level (count passed)
+const honorLevel = (total) => HONOR_THRESHOLDS.filter((t) => total >= t).length;
+
+// Commend the opponent from one of your matches. One commendation per match (UNIQUE), only matches
+// with a real human opponent. Peer recognition — never punitive (the "reward the good" ethic).
+router.post('/api/rating/commend', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const matchId = parseInt(req.body && req.body.matchId, 10);
+  const type = req.body && req.body.type;
+  if (!matchId) return res.status(400).json({ error: 'matchId is required' });
+  if (!COMMEND_TYPES.includes(type)) return res.status(400).json({ error: 'invalid commendation type' });
+
+  db.get('SELECT opponent_id FROM match_log WHERE id = ? AND user_id = ?', [matchId, userId], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'match not found' });
+    if (!row.opponent_id) return res.status(400).json({ error: 'no human opponent to commend' });
+    if (row.opponent_id === userId) return res.status(400).json({ error: 'cannot commend yourself' });
+
+    db.run(
+      `INSERT INTO commendations (from_user, to_user, match_id, type, created_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(from_user, match_id) DO NOTHING`,
+      [userId, row.opponent_id, matchId, type, Math.floor(Date.now() / 1000)],
+      function (e) {
+        if (e) return res.status(500).json({ error: e.message });
+        res.json({ success: true, commended: true, alreadyCommended: this.changes === 0, toUserId: row.opponent_id });
+      }
+    );
+  });
+});
+
+// The caller's received honor: total commendations + derived level + breakdown by type.
+router.get('/api/rating/honor', authenticateToken, (req, res) => {
+  db.all(
+    'SELECT type, COUNT(*) AS n FROM commendations WHERE to_user = ? GROUP BY type',
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const byType = {};
+      let total = 0;
+      (rows || []).forEach((r) => { byType[r.type] = r.n; total += r.n; });
+      res.json({ total, level: honorLevel(total), byType });
     }
   );
 });

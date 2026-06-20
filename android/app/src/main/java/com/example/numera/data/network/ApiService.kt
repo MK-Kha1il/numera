@@ -767,6 +767,16 @@ interface ApiService {
         @Query("limit") limit: Int
     ): List<MatchHistoryEntry>
 
+    // ---- Honor / commendation system (audit #24) ----
+    @POST("api/rating/commend")
+    suspend fun commendOpponent(
+        @Header("Authorization") token: String,
+        @Body req: CommendRequest
+    ): CommendResponse
+
+    @GET("api/rating/honor")
+    suspend fun getHonor(@Header("Authorization") token: String): HonorResponse
+
     // ---- Head-to-head rivals ----
     @GET("api/rating/rivals")
     suspend fun getRivals(

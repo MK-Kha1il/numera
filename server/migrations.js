@@ -1265,6 +1265,29 @@ const migrations = [
       await addCol('match_log', 'ref_id', 'INTEGER');
     },
   },
+  {
+    version: 56,
+    name: 'commendations',
+    // Honor / commendation system (competitive audit #24): peer sportsmanship recognition that fits
+    // the "no silent bans — reward the good" ethic. One commendation per (giver, match) so it can't be
+    // farmed; the receiver's honor is the COUNT of commendations they've been given.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS commendations (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          from_user   INTEGER NOT NULL,
+          to_user     INTEGER NOT NULL,
+          match_id    INTEGER NOT NULL,       -- the match_log row the giver played
+          type        TEXT NOT NULL,          -- good_game | tough_opponent | good_sport
+          created_at  INTEGER NOT NULL,
+          UNIQUE (from_user, match_id),       -- one commendation per match, no farming
+          FOREIGN KEY (from_user) REFERENCES users(id),
+          FOREIGN KEY (to_user) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_commendations_to ON commendations(to_user)');
+    },
+  },
 ];
 
 /**

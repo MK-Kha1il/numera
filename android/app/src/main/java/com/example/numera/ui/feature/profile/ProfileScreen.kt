@@ -111,6 +111,7 @@ fun ProfileScreen(
     var rivals by remember { mutableStateOf<List<com.example.numera.data.network.RivalEntry>?>(null) }
     var titles by remember { mutableStateOf<com.example.numera.data.network.TitlesResponse?>(null) }
     var apex by remember { mutableStateOf<com.example.numera.data.network.ApexResponse?>(null) }
+    var honor by remember { mutableStateOf<com.example.numera.data.network.HonorResponse?>(null) }
     LaunchedEffect(Unit) {
         try {
             ratingProfile = RetrofitClient.apiService.getRatingProfile(RetrofitClient.authToken ?: "").profile
@@ -121,6 +122,11 @@ fun ProfileScreen(
             apex = RetrofitClient.apiService.getApex(RetrofitClient.authToken ?: "", 10)
         } catch (e: Exception) {
             Log.e("Profile", "Failed to fetch apex: ${e.message}")
+        }
+        try {
+            honor = RetrofitClient.apiService.getHonor(RetrofitClient.authToken ?: "")
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch honor: ${e.message}")
         }
         try {
             ratingHistory = RetrofitClient.apiService.getRatingHistory(RetrofitClient.authToken ?: "", "global", 12)
@@ -162,6 +168,22 @@ fun ProfileScreen(
                 replayReview = RetrofitClient.apiService.getReasoningReview(RetrofitClient.authToken ?: "", roundId)
             } catch (e: Exception) {
                 Log.e("Profile", "Failed to load round review: ${e.message}")
+            }
+        }
+    }
+
+    // Honor (audit #24): commend a past opponent, then refresh the match list + honor tally.
+    val commend: (Int) -> Unit = { matchId ->
+        scope.launch(Dispatchers.IO) {
+            try {
+                RetrofitClient.apiService.commendOpponent(
+                    RetrofitClient.authToken ?: "",
+                    com.example.numera.data.network.CommendRequest(matchId = matchId)
+                )
+                matchHistory = RetrofitClient.apiService.getMatchHistory(RetrofitClient.authToken ?: "", 15)
+                honor = RetrofitClient.apiService.getHonor(RetrofitClient.authToken ?: "")
+            } catch (e: Exception) {
+                Log.e("Profile", "Failed to commend: ${e.message}")
             }
         }
     }
@@ -875,6 +897,7 @@ fun ProfileScreen(
                 seasonHistory = seasonHistory,
                 activeTitle = titles?.titles?.firstOrNull { it.active }?.name,
                 apexStanding = apex?.you,
+                honor = honor,
                 modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
             )
             TitlesCard(
@@ -890,6 +913,7 @@ fun ProfileScreen(
             MatchHistoryCard(
                 matches = matchHistory,
                 onReplay = openReplay,
+                onCommend = commend,
                 modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
             )
             RivalsCard(

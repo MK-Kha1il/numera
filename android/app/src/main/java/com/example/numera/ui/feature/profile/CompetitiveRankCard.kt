@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.ApexStanding
 import com.example.numera.data.network.DomainRating
+import com.example.numera.data.network.HonorResponse
 import com.example.numera.data.network.SeasonAward
 import com.example.numera.ui.components.RankBadge
 import com.example.numera.theme.*
@@ -48,6 +49,7 @@ fun CompetitiveRankCard(
     seasonHistory: List<SeasonAward>? = null,
     activeTitle: String? = null,
     apexStanding: ApexStanding? = null,
+    honor: HonorResponse? = null,
 ) {
     if (profile.isNullOrEmpty()) return
     val global = profile["global"] ?: return
@@ -134,6 +136,15 @@ fun CompetitiveRankCard(
                                 color = MaterialTheme.colorScheme.tertiary,
                             )
                         }
+                    }
+                    // Honor (audit #24): peer commendations earned for good sportsmanship.
+                    if (honor != null && honor.total > 0) {
+                        Text(
+                            text = "🎖️ Honor Lv.${honor.level} · ${honor.total} commend${if (honor.total == 1) "" else "s"}",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        )
                     }
                 }
             }
