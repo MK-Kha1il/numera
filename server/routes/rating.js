@@ -8,6 +8,7 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { securityLog } = require('../middleware/security');
 const NRS = require('../mathEngine/ratingEngine');
 const { TITLE_CATALOG, isTitleEarned } = require('../lib/titles');
+const { detectRatingPump } = require('../lib/integritySignals');
 const { notify } = require('../services/notificationService');
 const { withTransaction } = require('../dbx');
 // Shared NRS persistence + the users.* mirror (also used by the socket duel path) — see
@@ -904,6 +905,43 @@ router.get('/api/rating/analytics', authenticateToken, requireAdmin, (req, res) 
               avgTiltScore: tl ? +(tl.avg || 0).toFixed(3) : 0,
             },
           });
+        });
+      });
+    }
+  );
+});
+
+// ── GET /api/rating/admin/collusion ───────────────────────────────────────────
+// Competitive-integrity review queue (audit #18): surfaces (player → opponent) pairs whose ranked
+// rating gains look pumped — most of a player's gains from one opponent over many duels, and/or an
+// ~always-win record vs them (win-trading / boosting signature). REVIEW ONLY — no auto-action, fitting
+// the "flag for a human, never silently punish" ethic. Admin-gated + read-only.
+router.get('/api/rating/admin/collusion', authenticateToken, requireAdmin, (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 25, 100);
+  const minMatches = Math.max(2, parseInt(req.query.minMatches, 10) || 6);
+
+  db.all(
+    `SELECT user_id AS userId, opponent_id AS opponentId,
+            COUNT(*) AS matches,
+            SUM(CASE WHEN rating_delta > 0 THEN rating_delta ELSE 0 END) AS posDelta,
+            SUM(CASE WHEN result = 'win' THEN 1 ELSE 0 END) AS wins
+       FROM match_log
+      WHERE opponent_id IS NOT NULL AND mode = 'duel'
+      GROUP BY user_id, opponent_id
+     HAVING matches >= ?`,
+    [minMatches],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const flagged = detectRatingPump(rows || [], { minMatches }).slice(0, limit);
+      if (flagged.length === 0) return res.json({ flagged: [] });
+
+      // Attach usernames for the flagged ids (one lookup).
+      const ids = [...new Set(flagged.flatMap((f) => [f.userId, f.opponentId]))];
+      db.all(`SELECT id, username FROM users WHERE id IN (${ids.map(() => '?').join(',')})`, ids, (e2, users) => {
+        const nameOf = {};
+        (users || []).forEach((u) => { nameOf[u.id] = u.username; });
+        res.json({
+          flagged: flagged.map((f) => ({ ...f, username: nameOf[f.userId] || null, opponentName: nameOf[f.opponentId] || null })),
         });
       });
     }
