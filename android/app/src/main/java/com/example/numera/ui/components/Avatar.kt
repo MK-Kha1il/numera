@@ -28,7 +28,20 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import com.example.numera.theme.MedalGold
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -358,32 +371,144 @@ private fun SeasonGradientBanner(colors: List<Color>) {
     )
 }
 
+/**
+ * The competitive rank crest (docs/BrandIdentity.md §4.1). One faceted core per tier carrying a math
+ * symbol that climbs from beginner to expert (+ √ π ∑ ∫ ∂ ∞), with ornamentation and motion that
+ * escalate from a still Bronze coin to a radiant, rotating Grandmaster apex. Motion is gated by the
+ * shared reduce-motion setting; Bronze + unranked render static.
+ */
 @Composable
 fun RankBadge(rankName: String?, modifier: Modifier = Modifier) {
-    val cleanRank = rankName?.split(" ")?.firstOrNull()?.lowercase() ?: "bronze"
-    val drawableName = "rank_$cleanRank"
-    val painter = rememberDrawableResource(drawableName)
-    if (painter != null) {
-        Image(
-            painter = painter,
-            contentDescription = rankName ?: "Rank Badge",
-            contentScale = ContentScale.Fit,
-            modifier = modifier
-        )
-    } else {
-        val emoji = when {
-            cleanRank.contains("silver") -> "🥈"
-            cleanRank.contains("gold") -> "🥇"
-            cleanRank.contains("platinum") -> "💎"
-            cleanRank.contains("diamond") -> "💠"
-            cleanRank.contains("master") -> "👑"
-            cleanRank.contains("grandmaster") -> "🔥"
-            else -> "🥉"
-        }
+    val st = remember(rankName) { crestStyle(rankName) }
+    val reduce = com.example.numera.motion.MotionManager.reduceMotion
+    if (reduce || st.spinMs <= 0) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
-            Text(text = emoji, fontSize = 24.sp)
+            Canvas(modifier = Modifier.fillMaxSize()) { drawRankCrest(st, 0f, 1f) }
+        }
+    } else {
+        val tr = rememberInfiniteTransition(label = "rankCrest")
+        val spin by tr.animateFloat(
+            0f, 360f,
+            infiniteRepeatable(tween(durationMillis = st.spinMs, easing = LinearEasing)),
+            label = "spin",
+        )
+        val pulse by tr.animateFloat(
+            0.45f, 1f,
+            infiniteRepeatable(tween(durationMillis = 1700, easing = LinearEasing), RepeatMode.Reverse),
+            label = "pulse",
+        )
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Canvas(modifier = Modifier.fillMaxSize()) { drawRankCrest(st, spin, pulse) }
         }
     }
+}
+
+private class CrestStyle(
+    val idx: Int,
+    val symbol: String,
+    val ring: Color,
+    val fill: Color,
+    val facet: Color,
+    val sym: Color,
+    val accent: Color,
+    val spinMs: Int,
+)
+
+// Map a rank label (e.g. "Gold II", "Grandmaster", "Unranked (Placement: 0/5)") to its crest style.
+private fun crestStyle(rankName: String?): CrestStyle {
+    val r = rankName?.lowercase() ?: ""
+    return when {
+        r.contains("grandmaster") -> CrestStyle(6, "∞", Color(0xFF23272F), Color(0xFF363B47), Color(0xFF50566A), Color(0xFFE6B36A), Color(0xFFD99A4E), 14000)
+        r.contains("master") -> CrestStyle(5, "∂", Color(0xFF443893), Color(0xFF7361C2), Color(0xFF9586D6), Color(0xFF241B58), Color(0xFF9586D6), 18000)
+        r.contains("diamond") -> CrestStyle(4, "∫", Color(0xFF4FA1BE), Color(0xFF95D6E8), Color(0xFFC0E9F3), Color(0xFF1F5A6B), Color(0xFF4FA1BE), 20000)
+        r.contains("platinum") -> CrestStyle(3, "∑", Color(0xFF7C93A4), Color(0xFFB6C9D7), Color(0xFFD4E0E9), Color(0xFF3C5060), Color(0xFF7C93A4), 9000)
+        r.contains("gold") -> CrestStyle(2, "π", Color(0xFFB07F0C), Color(0xFFE3BC49), Color(0xFFF4D98A), Color(0xFF6A4D08), Color(0xFFB07F0C), 16000)
+        r.contains("silver") -> CrestStyle(1, "√", Color(0xFF8A929A), Color(0xFFBCC4CC), Color(0xFFDCE2E7), Color(0xFF3F464D), Color(0xFF8A929A), 24000)
+        r.contains("bronze") -> CrestStyle(0, "+", Color(0xFF9C5A2A), Color(0xFFC77F3A), Color(0xFFDDA168), Color(0xFF5A3214), Color(0xFF9C5A2A), 0)
+        else -> CrestStyle(-1, "·", Color(0xFF9AA0A6), Color(0xFFC4C9CE), Color(0xFFE0E3E6), Color(0xFF5A6066), Color(0xFF9AA0A6), 0)
+    }
+}
+
+private fun DrawScope.drawRankCrest(st: CrestStyle, rot: Float, pulse: Float) {
+    val s = minOf(size.width, size.height)
+    val cx = size.width / 2f
+    val cy = size.height / 2f
+    val c = Offset(cx, cy)
+    val core = s * 0.30f
+
+    when (st.idx) {
+        6 -> {
+            rotate(rot, c) { drawSunburst(cx, cy, 12, s * 0.34f, s * 0.50f, s * 0.018f, st.accent) }
+            rotate(-rot, c) { drawOrbit(c, cx, cy, s * 0.45f, s * 0.038f, 3, st.accent, st.facet) }
+            drawCircle(st.accent, core * 1.14f, c)
+        }
+        5 -> {
+            drawWing(cx, cy, s, st.fill, false)
+            drawWing(cx, cy, s, st.fill, true)
+            rotate(rot, c) { drawOrbit(c, cx, cy, s * 0.42f, s * 0.032f, 3, st.accent, st.facet) }
+        }
+        4 -> rotate(rot, c) { drawSunburst(cx, cy, 8, s * 0.34f, s * 0.46f, s * 0.014f, st.accent) }
+        3 -> rotate(rot, c) { drawOrbit(c, cx, cy, s * 0.44f, s * 0.04f, 1, st.ring, st.facet) }
+        2 -> {
+            drawArc(st.ring, 20f, 140f, false, Offset(cx - s * 0.42f, cy - s * 0.10f), Size(s * 0.84f, s * 0.84f), style = Stroke(s * 0.05f))
+            drawCircle(st.facet.copy(alpha = pulse), s * 0.03f, Offset(cx - s * 0.40f, cy - s * 0.18f))
+            drawCircle(st.facet.copy(alpha = pulse), s * 0.022f, Offset(cx + s * 0.40f, cy - s * 0.12f))
+        }
+        1 -> rotate(rot, c) { drawArc(st.facet, -40f, 120f, false, Offset(cx - s * 0.44f, cy - s * 0.44f), Size(s * 0.88f, s * 0.88f), style = Stroke(s * 0.04f)) }
+    }
+
+    drawCircle(st.ring, core, c)
+    drawCircle(st.fill, core * 0.82f, c)
+    drawCircle(st.facet.copy(alpha = 0.7f), core * 0.34f, Offset(cx - core * 0.28f, cy - core * 0.30f))
+
+    val nv = drawContext.canvas.nativeCanvas
+    val paint = android.graphics.Paint().apply {
+        isAntiAlias = true
+        color = st.sym.toArgb()
+        textSize = s * 0.40f
+        textAlign = android.graphics.Paint.Align.CENTER
+        typeface = android.graphics.Typeface.create(android.graphics.Typeface.SERIF, android.graphics.Typeface.BOLD)
+    }
+    val fm = paint.fontMetrics
+    nv.drawText(st.symbol, cx, cy - (fm.ascent + fm.descent) / 2f, paint)
+}
+
+private fun DrawScope.drawSunburst(cx: Float, cy: Float, n: Int, r1: Float, r2: Float, w: Float, color: Color) {
+    for (i in 0 until n) {
+        val a = (2.0 * PI * i / n).toFloat()
+        val dx = cos(a); val dy = sin(a)
+        val px = -dy; val py = dx
+        drawPath(
+            Path().apply {
+                moveTo(cx + dx * r1 - px * w, cy + dy * r1 - py * w)
+                lineTo(cx + dx * r1 + px * w, cy + dy * r1 + py * w)
+                lineTo(cx + dx * r2, cy + dy * r2)
+                close()
+            },
+            color,
+        )
+    }
+}
+
+private fun DrawScope.drawOrbit(c: Offset, cx: Float, cy: Float, r: Float, dot: Float, dots: Int, ringColor: Color, dotColor: Color) {
+    drawCircle(ringColor.copy(alpha = 0.6f), r, c, style = Stroke(width = r * 0.05f))
+    for (i in 0 until dots) {
+        val a = (2.0 * PI * i / dots - PI / 2.0).toFloat()
+        drawCircle(dotColor, dot, Offset(cx + cos(a) * r, cy + sin(a) * r))
+    }
+}
+
+private fun DrawScope.drawWing(cx: Float, cy: Float, s: Float, color: Color, mirror: Boolean) {
+    val g = if (mirror) -1f else 1f
+    drawPath(
+        Path().apply {
+            moveTo(cx + g * s * 0.10f, cy - s * 0.02f)
+            cubicTo(cx + g * s * 0.52f, cy - s * 0.34f, cx + g * s * 0.62f, cy - s * 0.02f, cx + g * s * 0.50f, cy + s * 0.20f)
+            cubicTo(cx + g * s * 0.34f, cy + s * 0.04f, cx + g * s * 0.20f, cy + s * 0.08f, cx + g * s * 0.10f, cy + s * 0.12f)
+            close()
+        },
+        color,
+    )
 }
 
 @Composable

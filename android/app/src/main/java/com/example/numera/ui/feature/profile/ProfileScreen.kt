@@ -490,7 +490,7 @@ fun ProfileScreen(
                     ) {
                         RankBadge(
                             rankName = user?.rank ?: "Bronze III",
-                            modifier = Modifier.size(IconSize.m)
+                            modifier = Modifier.size(56.dp)
                         )
                         Text(
                             text = user?.rank ?: "Bronze III",
