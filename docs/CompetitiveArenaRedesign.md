@@ -306,8 +306,10 @@ guarantees the schema exists on any DB version.
   `rematchIntent` maps + `request_rematch` / `cancel_rematch` socket events + `findSocketByUserId` +
   `startRematch`; eligibility recorded in `finalizeDuel` (human-v-human only); torn down on
   disconnect. Client: result-screen rematch states (idle / requested / offered / unavailable), and a
-  persistent `duel_start` listener that recreates the screen on the new room via `onRematch`
-  (pop+push the nav entry — clean state, socket stays joined). Bots are never eligible.
+  persistent `duel_start` listener that resets the duel **in place** onto the new room (`activeRoomId`
+  + a full per-duel state reset) — deliberately NOT a navigation pop+push, so the duel screen's own
+  socket listeners are never torn down mid-rematch (that ordering was a latent race). Bots are
+  never eligible.
 - Guard test `test/rematch.test.js` (eligibility gate + reasoning prompt); full handshake is verified
   live (it's a two-client real-time interaction, like the rest of the socket duel).
 

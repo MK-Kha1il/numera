@@ -75,9 +75,7 @@ fun DuelGameScreen(
     onFinishGame: () -> Unit,
     // Closes the compete→learn loop (ultra-review #17): jump straight from the result screen
     // into a Growth Practice session over the misses this duel just banked.
-    onReviewMisses: () -> Unit = {},
-    // "Run it back" against the same opponent — recreates this screen on a fresh duel room.
-    onRematch: (roomId: String, opponentName: String) -> Unit = { _, _ -> }
+    onReviewMisses: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     var problemsList by remember { mutableStateOf<List<MathProblem>>(emptyList()) }
@@ -124,6 +122,10 @@ fun DuelGameScreen(
     var wasTrailing by remember { mutableStateOf(false) }
     // Rematch ("run it back") UI state: idle | requested (I asked) | offered (they asked) | unavailable.
     var rematchState by remember { mutableStateOf("idle") }
+    // The room currently being played. Starts at the nav arg; a rematch swaps it IN PLACE (the
+    // screen stays mounted and the socket listeners stay registered — no navigation churn, so a
+    // rematch can't race the duel-screen's own listener teardown).
+    var activeRoomId by remember { mutableStateOf(roomId) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -260,23 +262,34 @@ fun DuelGameScreen(
         socket.on("rematch_unavailable") { _ ->
             scope.launch(Dispatchers.Main) { rematchState = "unavailable" }
         }
-        // The rematch's fresh duel — recreate this screen on the new room (socket already joined it).
-        // Off any lingering ArenaScreen duel_start listener first so a rematch isn't double-handled
-        // (ArenaScreen re-registers its own when it next queues).
+        // The rematch's fresh duel arrives as a new duel_start. Reset this screen IN PLACE onto the
+        // new room (the socket is already joined to it) — no navigation, so the duel-screen's own
+        // listeners are never torn down mid-rematch. Off any lingering ArenaScreen duel_start
+        // listener first so the rematch isn't double-handled (ArenaScreen re-registers when queuing).
         socket.off("duel_start")
         socket.on("duel_start") { args ->
             val data = args.getOrNull(0) as? JSONObject ?: return@on
             val newRoomId = data.optString("roomId")
-            var oppName = opponentName
-            data.optJSONObject("opponent")?.let { opp ->
-                val p1 = opp.optJSONObject("p1")
-                val p2 = opp.optJSONObject("p2")
-                if (p1 != null && p2 != null) {
-                    oppName = if (p1.optInt("id") == myUserId) p2.optString("username") else p1.optString("username")
-                }
-            }
-            if (newRoomId.isNotBlank() && newRoomId != roomId) {
-                scope.launch(Dispatchers.Main) { onRematch(newRoomId, oppName) }
+            if (newRoomId.isBlank() || newRoomId == activeRoomId) return@on
+            scope.launch(Dispatchers.Main) {
+                // Reset every per-duel field for the fresh room (same opponent, so name is unchanged).
+                activeRoomId = newRoomId
+                problemsList = emptyList()
+                currentProblemIdx = 0
+                myProgress = 0; oppProgress = 0; myPoints = 0; oppPoints = 0
+                hasAnswered = false; selectedAnswer = ""; revealedCorrectAnswer = ""; revealedExplanation = ""
+                showParticles = false
+                streakCount = 0
+                showVsIntro = true
+                isDuelOver = false
+                missCount = 0
+                duelWinnerId = -1
+                eloInfo = null
+                myIdentity = null; oppIdentity = null; h2h = null; wasTrailing = false
+                rematchState = "idle"
+                com.example.numera.haptic.HapticManager.playMedium()
+                // Join the new room to receive its problems + identities via room_status.
+                SocketClient.socket?.emit("join_duel_room", JSONObject().apply { put("roomId", newRoomId) })
             }
         }
     }
@@ -965,7 +978,7 @@ fun DuelGameScreen(
                                         // Send the actual answer; the SERVER grades it and acks back
                                         // its verdict + the canonical answer, which drives the reveal
                                         // (sound/particles/highlight). The client no longer self-judges.
-                                        SocketClient.submitAnswer(roomId, myUserId, option, nextIdx) { correct, correctAnswer, explanation ->
+                                        SocketClient.submitAnswer(activeRoomId, myUserId, option, nextIdx) { correct, correctAnswer, explanation ->
                                             scope.launch(Dispatchers.Main) {
                                                 revealedCorrectAnswer = correctAnswer
                                                 revealedExplanation = explanation

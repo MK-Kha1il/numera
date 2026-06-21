@@ -199,13 +199,6 @@ fun MainNavigation() {
               onReviewMisses = {
                 backStack.removeLastOrNull()
                 backStack.add(SoloGame(category = "General", level = 0, gameMode = "mistakes_practice"))
-              },
-              // Rematch: replace the finished duel with a fresh one against the same opponent. Popping
-              // then pushing a new DuelGame entry recreates the screen with clean state (the socket
-              // stays connected and is already joined to the new room by the server).
-              onRematch = { newRoomId, newOpponentName ->
-                backStack.removeLastOrNull()
-                backStack.add(DuelGame(newRoomId, newOpponentName))
               }
             )
           }
