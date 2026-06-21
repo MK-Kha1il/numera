@@ -28,6 +28,15 @@ router.get('/api/arena/feed', authenticateToken, (req, res) => {
   });
 });
 
+// Your recent matches (competitive arc) — opponent, win/loss, rating delta — newest first.
+router.get('/api/arena/history', authenticateToken, (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 8, 30);
+  arena.getMatchHistory(req.user.id, limit, (err, matches) => {
+    if (err) return res.status(500).json({ error: 'Failed to load match history' });
+    res.json({ matches });
+  });
+});
+
 // Head-to-head against a specific player (e.g. peeking a rival's record before a rematch).
 router.get('/api/arena/h2h/:opponentId', authenticateToken, (req, res) => {
   const oppId = parseInt(req.params.opponentId, 10);

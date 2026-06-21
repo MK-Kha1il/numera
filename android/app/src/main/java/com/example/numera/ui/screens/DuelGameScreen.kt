@@ -126,6 +126,16 @@ fun DuelGameScreen(
     // screen stays mounted and the socket listeners stay registered — no navigation churn, so a
     // rematch can't race the duel-screen's own listener teardown).
     var activeRoomId by remember { mutableStateOf(roomId) }
+    // Opponent presence: a brief "answered" tell whenever the opponent's progress advances, so you
+    // FEEL a competitor racing you rather than watching a bar move.
+    var oppJustAnswered by remember { mutableStateOf(false) }
+    LaunchedEffect(oppProgress) {
+        if (oppProgress > 0) {
+            oppJustAnswered = true
+            kotlinx.coroutines.delay(850)
+            oppJustAnswered = false
+        }
+    }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -475,6 +485,14 @@ fun DuelGameScreen(
             // Result pops in with the reward spring; a win earns a confetti burst on top.
             var endRevealed by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) { endRevealed = true }
+            // A distinct stinger for the rarest, most prestigious moment — a rank promotion — so it
+            // doesn't feel like just another win (the win/loss sound already played on duel_end).
+            LaunchedEffect(Unit) {
+                if (clutchTags.any { it.key == "promotion" }) {
+                    SoundManager.playRewardClaim()
+                    com.example.numera.haptic.HapticManager.playMajorReward()
+                }
+            }
             // The result can get tall (clutch banners + rating + rivalry + reasoning), so bound the
             // card to most of the screen and let it scroll rather than clip on small devices.
             val maxResultHeight = (LocalConfiguration.current.screenHeightDp * 0.92f).dp
@@ -728,6 +746,13 @@ fun DuelGameScreen(
         // Cosmetic momentum (shared by the header banner, the match-point treatment, and the card glow).
         val momentum = momentumFor(streakCount, currentProblemIdx, total, myPoints, oppPoints)
         val isMatchPoint = momentum == Momentum.CLUTCH && !hasAnswered
+        // A tension stinger the instant the match comes down to the wire.
+        LaunchedEffect(isMatchPoint) {
+            if (isMatchPoint) {
+                SoundManager.playTick()
+                com.example.numera.haptic.HapticManager.playMedium()
+            }
+        }
         DuoCard(
             modifier = Modifier.fillMaxWidth(),
             backgroundColor = MaterialTheme.colorScheme.surfaceVariant
@@ -740,15 +765,22 @@ fun DuelGameScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = myUsername,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
+                    // You: rank crest + name.
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+                    ) {
+                        myIdentity?.let { RankBadge(rankName = it.rank, modifier = Modifier.size(18.dp)) }
+                        Text(
+                            text = myUsername,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                     Text(
                         text = "$myPoints — $oppPoints",
                         fontSize = 22.sp,
@@ -756,16 +788,26 @@ fun DuelGameScreen(
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(horizontal = Spacing.s)
                     )
-                    Text(
-                        text = opponentName,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.secondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.weight(1f)
-                    )
+                    // Opponent: a live "answered" tell + name + rank crest, right-aligned.
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.End)
+                    ) {
+                        androidx.compose.animation.AnimatedVisibility(visible = oppJustAnswered) {
+                            Text("⚡", fontSize = 12.sp)
+                        }
+                        Text(
+                            text = opponentName,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.End
+                        )
+                        oppIdentity?.let { RankBadge(rankName = it.rank, modifier = Modifier.size(18.dp)) }
+                    }
                 }
                 LinearProgressIndicator(
                     progress = { myBar },

@@ -16,6 +16,7 @@ const dbRun = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.run(sql, p, 
 const idOf = (username) => dbGet('SELECT id FROM users WHERE username = ?', [username]).then((r) => r.id);
 const h2h = (a, b) => new Promise((res) => arena.getHeadToHead(a, b, (e, r) => res(r)));
 const rivals = (id) => new Promise((res) => arena.getRivals(id, 5, (e, r) => res(r)));
+const history = (id) => new Promise((res) => arena.getMatchHistory(id, 10, (e, r) => res(r)));
 
 async function setPlayer(id, elo = 1000) {
   await dbRun('UPDATE users SET elo = ?, peak_elo = ?, competitive_matches = 20, current_win_streak = 0, best_win_streak = 0 WHERE id = ?', [elo, elo, id]);
@@ -81,6 +82,26 @@ test('bot duels are excluded from rivalries (no fake rivals)', async () => {
   assert.ok(!list.some((r) => r.opponentId === 9999), 'the bot is never a rival');
   const rows = await dbGet('SELECT COUNT(*) AS c FROM duel_history WHERE p1_id = ? OR p2_id = ?', [a, a]);
   assert.equal(rows.c, 0, 'no history row written for a bot match');
+});
+
+test('match history reads each result + rating delta from the player\'s own perspective', async () => {
+  const u1 = await registerUser(ctx.base);
+  const u2 = await registerUser(ctx.base);
+  const a = await idOf(u1.username);
+  const b = await idOf(u2.username);
+  await setPlayer(a); await setPlayer(b);
+
+  // a wins (as p1), then a loses (as p2). History is newest-first.
+  await runDuel({ p1: { id: a, username: u1.username, score: 100, progress: 5, elo: 1000 }, p2: { id: b, username: u2.username, score: 60, progress: 5, elo: 1000 }, isCasual: false });
+  await runDuel({ p1: { id: b, username: u2.username, score: 100, progress: 5, elo: 984 }, p2: { id: a, username: u1.username, score: 20, progress: 5, elo: 1016 }, isCasual: false });
+
+  const list = await history(a);
+  assert.equal(list.length, 2);
+  assert.equal(list[0].result, 'loss', 'newest first: the loss');
+  assert.equal(list[0].opponent, u2.username);
+  assert.ok(list[0].eloChange < 0, 'loss shows a negative delta from a\'s perspective');
+  assert.equal(list[1].result, 'win');
+  assert.ok(list[1].eloChange > 0, 'the win shows a positive delta');
 });
 
 test('ranked win raises peak rating and extends the win streak; a loss resets the streak', async () => {

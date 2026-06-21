@@ -38,6 +38,9 @@ interface ApiService {
     @GET("api/arena/feed")
     suspend fun getArenaFeed(@Header("Authorization") token: String): ArenaFeedResponse
 
+    @GET("api/arena/history")
+    suspend fun getArenaHistory(@Header("Authorization") token: String): MatchHistoryResponse
+
     @GET("api/arena/h2h/{opponentId}")
     suspend fun getHeadToHead(
         @Header("Authorization") token: String,

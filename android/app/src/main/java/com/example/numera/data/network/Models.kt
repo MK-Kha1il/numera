@@ -2195,6 +2195,18 @@ data class Rival(
 )
 
 @Serializable
+data class MatchHistoryResponse(val matches: List<MatchRecord> = emptyList())
+
+@Serializable
+data class MatchRecord(
+    val opponent: String = "",
+    val result: String = "",   // "win" | "loss" | "draw"
+    val eloChange: Int = 0,
+    val mode: String = "",
+    val createdAt: Long = 0
+)
+
+@Serializable
 data class ArenaFeedResponse(val events: List<ArenaEvent> = emptyList())
 
 @Serializable

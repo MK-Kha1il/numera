@@ -171,10 +171,10 @@ Scale 1–5 (Eff: 5 = cheap). ★ = shipped in Pass 1.
 | 14 | **Promotion-progress bar** — "N points to Gold I" | 4 | 4 | 2 | 4 | ★ |
 | 15 | **Reasoning beat** — a "why?" self-explain after a duel (educational integrity) | 4 | 2 | 5 | 3 | ★ |
 | 16 | **Match-point** distinguished final/decisive question (pressure) | 4 | 3 | 1 | 3 | ★ |
-| 17 | **Opponent presence** during play — avatar + live "answering…" tell | 3 | 3 | 1 | 3 | (P2) |
-| 18 | **Arena stadium identity** — distinct surface/motion/sound for ranked | 3 | 3 | 1 | 2 | (P2) |
-| 19 | **Stake-scaled rewards** — bigger coins for beating stronger opponents | 3 | 4 | 1 | 3 | (P2) |
-| 20 | **Season history** on the profile (past peaks, finishes) | 3 | 3 | 1 | 3 | (P3) |
+| 17 | **Opponent presence** during play — rank crest + live "answered" tell | 3 | 3 | 1 | 3 | ★ |
+| 18 | **Arena stadium identity** — sound stingers ★; distinct surface/motion (P3, needs assets) | 3 | 3 | 1 | 2 | ◐ |
+| 19 | **Stake-scaled rewards** — bigger coins for beating stronger opponents | 3 | 4 | 1 | 3 | (P3) |
+| 20 | **Recent matches** on the arena home — your competitive arc (result + Δrating) | 3 | 3 | 1 | 3 | ★ |
 
 *(Improvements 21–100: ready-check ritual, queue population ticker, GG/emote, spectate, replay of
 your best duel, weekly rival assignment, "nemesis" auto-detection, draw drama, MMR transparency,
@@ -313,5 +313,29 @@ guarantees the schema exists on any DB version.
 - Guard test `test/rematch.test.js` (eligibility gate + reasoning prompt); full handshake is verified
   live (it's a two-client real-time interaction, like the rest of the socket duel).
 
-Deferred (P3) tracked in §2–§8: intra-duel adaptive difficulty, opponent live-presence (avatar +
-"answering…" tell during play), stadium sound, season-history surfacing, spectate/replay.
+**Pass 5 (also shipped) — closing out the backlog:**
+- **Opponent presence in-match** (#17): the race header now shows each competitor's rank crest +
+  name, and a live "⚡ answered" tell pulses whenever the opponent's progress advances — you feel a
+  rival racing you, not a bar moving.
+- **Recent Matches** (#20): `GET /api/arena/history` (`arenaService.getMatchHistory`, perspective-
+  correct W/L + Δrating, newest-first with an `id` tie-break) + an arena-home card — your
+  competitive arc at a glance.
+- **Competitive sound stingers** (part of #18): a tension tick the moment a match hits match point,
+  and a distinct flourish on a rank promotion (reusing the existing `SoundManager` — no new assets).
+
+**Reasoned non-items (deliberately NOT built — recorded so nothing is silently dropped):**
+- **Intra-duel adaptive difficulty (#81)** — *rejected on design grounds.* A duel's fairness rests on
+  both players solving the SAME problem set, which makes scores comparable. Per-player adaptive
+  difficulty would make outcomes incomparable and invite "easy-bracket" gaming. The right place for
+  adaptivity is *matchmaking* (already level + rating matched) and the *post-match reasoning beat*,
+  not the live race. Leaving the shared set intact is the correct competitive call.
+- **Full stadium soundtrack / spectate / replay (P3, genuine subsystems)** — a custom arena
+  soundtrack needs audio assets I can't author; live **spectate** needs socket room-observer plumbing
+  + a viewer UI; **replay** needs persisting the full per-answer timeline. Each is a scoped net-new
+  feature deserving its own session, not a blind addition. Approach notes: spectate = a read-only
+  `join_spectate(roomId)` that forwards `room_status`; replay = append answer events to a
+  `duel_timeline` table keyed by duel_history id, played back client-side.
+
+Everything else from §1's audit is shipped. The competitive mode is now a living arena end to end:
+identity → rivalry → anticipation → momentum → presence → match point → clutch payoff → reasoning →
+the climb → run it back.

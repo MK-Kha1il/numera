@@ -209,6 +209,36 @@ function getRivals(userId, limit, cb) {
   );
 }
 
+// Your own recent matches (competitive arc), newest first — each from YOUR perspective:
+// opponent, win/loss/draw, and the rating you gained/lost.
+function getMatchHistory(userId, limit, cb) {
+  if (!userId) return cb(null, []);
+  db.all(
+    `SELECT dh.created_at AS created_at, dh.mode AS mode,
+            CASE WHEN dh.p1_id = ? THEN dh.p2_id ELSE dh.p1_id END AS opponent_id,
+            u.username AS opponent,
+            CASE WHEN dh.winner_id IS NULL THEN 'draw'
+                 WHEN dh.winner_id = ? THEN 'win' ELSE 'loss' END AS result,
+            CASE WHEN dh.p1_id = ? THEN dh.p1_elo_change ELSE dh.p2_elo_change END AS elo_change
+     FROM duel_history dh
+     LEFT JOIN users u ON u.id = (CASE WHEN dh.p1_id = ? THEN dh.p2_id ELSE dh.p1_id END)
+     WHERE dh.p1_id = ? OR dh.p2_id = ?
+     ORDER BY dh.created_at DESC, dh.id DESC
+     LIMIT ?`,
+    [userId, userId, userId, userId, userId, userId, limit || 8],
+    (err, rows) => {
+      if (err || !rows) return cb(null, []);
+      cb(null, rows.map((r) => ({
+        opponent: r.opponent || 'Unknown',
+        result: r.result,
+        eloChange: r.elo_change || 0,
+        mode: r.mode,
+        createdAt: r.created_at || 0,
+      })));
+    }
+  );
+}
+
 // The community feed for the arena home: recent notable events, newest first.
 function getFeed(limit, cb) {
   db.all(
@@ -228,5 +258,6 @@ module.exports = {
   addArenaEvent,
   getRivals,
   getFeed,
+  getMatchHistory,
   calculateRankFromElo,
 };

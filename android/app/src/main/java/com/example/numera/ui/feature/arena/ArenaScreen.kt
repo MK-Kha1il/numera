@@ -64,6 +64,7 @@ fun ArenaScreen(
     // Living Arena social presence: your rivals + the community feed make the arena feel inhabited.
     var rivals by remember { mutableStateOf<List<Rival>>(emptyList()) }
     var feed by remember { mutableStateOf<List<ArenaEvent>>(emptyList()) }
+    var history by remember { mutableStateOf<List<MatchRecord>>(emptyList()) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -72,7 +73,8 @@ fun ArenaScreen(
             withContext(Dispatchers.IO) {
                 val r = RetrofitClient.apiService.getArenaRivals(token)
                 val f = RetrofitClient.apiService.getArenaFeed(token)
-                withContext(Dispatchers.Main) { rivals = r.rivals; feed = f.events }
+                val h = RetrofitClient.apiService.getArenaHistory(token)
+                withContext(Dispatchers.Main) { rivals = r.rivals; feed = f.events; history = h.matches }
             }
         } catch (e: Exception) {
             Log.e("Arena", "Arena social load failed: ${e.message}")
@@ -594,6 +596,70 @@ fun ArenaScreen(
                                             fontSize = 11.sp,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                         )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ── Recent Matches — your competitive arc: the last few duels with result + rating
+                // delta. Hidden until you've played a ranked/casual human duel.
+                if (history.isNotEmpty()) {
+                    item {
+                        DuoCard(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l)) {
+                                Text(
+                                    text = "RECENT MATCHES",
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 12.sp,
+                                    letterSpacing = 1.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(Spacing.s))
+                                history.take(6).forEach { m ->
+                                    val won = m.result == "win"
+                                    val lost = m.result == "loss"
+                                    val resultColor = when {
+                                        won -> CorrectGreen
+                                        lost -> WrongRed
+                                        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    }
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xs),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+                                    ) {
+                                        Text(
+                                            text = if (won) "W" else if (lost) "L" else "D",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Black,
+                                            color = resultColor,
+                                            modifier = Modifier.width(16.dp)
+                                        )
+                                        Text(
+                                            text = "vs ${m.opponent}",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        if (m.mode != "casual" && m.eloChange != 0) {
+                                            Text(
+                                                text = "${if (m.eloChange >= 0) "+" else ""}${m.eloChange}",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Black,
+                                                color = if (m.eloChange >= 0) CorrectGreen else WrongRed
+                                            )
+                                        } else {
+                                            Text(
+                                                text = "casual",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                            )
+                                        }
                                     }
                                 }
                             }
