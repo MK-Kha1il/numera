@@ -98,7 +98,45 @@ function initDb() {
       safeAlter("ALTER TABLE users ADD COLUMN seasonal_summer_count INTEGER DEFAULT 0");
       safeAlter("ALTER TABLE users ADD COLUMN calculator_sixseven_count INTEGER DEFAULT 0");
       safeAlter("ALTER TABLE users ADD COLUMN speed_demon_count INTEGER DEFAULT 0");
+      // Living Arena reputation (migration v47). Mirrored here in the idempotent baseline so the
+      // columns exist regardless of the DB's migration version (safeAlter no-ops if already present).
+      safeAlter("ALTER TABLE users ADD COLUMN peak_elo INTEGER DEFAULT 1000");
+      safeAlter("ALTER TABLE users ADD COLUMN current_win_streak INTEGER DEFAULT 0");
+      safeAlter("ALTER TABLE users ADD COLUMN best_win_streak INTEGER DEFAULT 0");
+      safeAlter("ALTER TABLE users ADD COLUMN last_duel_at INTEGER DEFAULT 0");
+      db.run("UPDATE users SET peak_elo = elo WHERE peak_elo IS NULL OR peak_elo < elo", () => {});
       db.run("UPDATE users SET rank = 'Unranked (Placement: 0/5)' WHERE competitive_matches IS NULL OR competitive_matches < 5", () => {});
+
+      // Living Arena rivalry + social substrate (migration v47), mirrored idempotently in the
+      // baseline so the duel lifecycle works on any DB version. See services/arenaService.js.
+      db.run(`
+        CREATE TABLE IF NOT EXISTS duel_history (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          p1_id       INTEGER NOT NULL,
+          p2_id       INTEGER NOT NULL,
+          winner_id   INTEGER,
+          p1_score    INTEGER NOT NULL,
+          p2_score    INTEGER NOT NULL,
+          p1_elo_change INTEGER DEFAULT 0,
+          p2_elo_change INTEGER DEFAULT 0,
+          mode        TEXT NOT NULL,
+          created_at  INTEGER NOT NULL
+        )
+      `);
+      db.run("CREATE INDEX IF NOT EXISTS idx_duel_history_p1 ON duel_history(p1_id, p2_id)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_duel_history_p2 ON duel_history(p2_id, p1_id)");
+      db.run("CREATE INDEX IF NOT EXISTS idx_duel_history_created ON duel_history(created_at)");
+      db.run(`
+        CREATE TABLE IF NOT EXISTS arena_events (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id    INTEGER NOT NULL,
+          username   TEXT NOT NULL,
+          type       TEXT NOT NULL,
+          detail     TEXT,
+          created_at INTEGER NOT NULL
+        )
+      `);
+      db.run("CREATE INDEX IF NOT EXISTS idx_arena_events_created ON arena_events(created_at)");
 
       // 2. Friends table
       db.run(`

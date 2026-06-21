@@ -9,6 +9,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -24,6 +26,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -52,6 +55,7 @@ import com.example.numera.ui.feature.arena.Momentum
 import com.example.numera.ui.feature.arena.MomentumBanner
 import com.example.numera.ui.feature.arena.PlayerIdentityCard
 import com.example.numera.ui.feature.arena.RatingCountUp
+import com.example.numera.ui.feature.arena.ReasoningRecapCard
 import com.example.numera.ui.feature.arena.momentumFor
 import com.example.numera.ui.feature.arena.rivalryLine
 import com.google.gson.Gson
@@ -384,6 +388,24 @@ fun DuelGameScreen(
             } else serverTags
         }
 
+        // Post-match reasoning beat: a "why is that right?" prompt on one of the duel's problems.
+        val reasoningJson = eloInfo?.optJSONObject("reasoning")?.optString("selfExplainJson")
+        val reasoning = remember(reasoningJson) {
+            reasoningJson?.takeIf { it.isNotBlank() }?.let { sej ->
+                runCatching {
+                    val o = JSONObject(sej)
+                    val opts = ArrayList<Pair<String, Boolean>>()
+                    o.optJSONArray("options")?.let { arr ->
+                        for (i in 0 until arr.length()) {
+                            val oo = arr.optJSONObject(i) ?: continue
+                            opts.add(oo.optString("text") to oo.optBoolean("correct", false))
+                        }
+                    }
+                    Triple(o.optString("question"), opts, o.optString("explanation"))
+                }.getOrNull()
+            }
+        }
+
         // Post-match rivalry standing (your perspective).
         val postH2h = eloInfo?.optJSONObject("h2h")?.let { h ->
             val p1Wins = h.optInt("p1Wins"); val p2Wins = h.optInt("p2Wins")
@@ -402,15 +424,20 @@ fun DuelGameScreen(
             // Result pops in with the reward spring; a win earns a confetti burst on top.
             var endRevealed by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) { endRevealed = true }
+            // The result can get tall (clutch banners + rating + rivalry + reasoning), so bound the
+            // card to most of the screen and let it scroll rather than clip on small devices.
+            val maxResultHeight = (LocalConfiguration.current.screenHeightDp * 0.92f).dp
             AnimatedVisibility(visible = endRevealed, enter = Motion.rewardEnter()) {
             DuoCard(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
-                    .wrapContentHeight()
+                    .heightIn(max = maxResultHeight)
                     .padding(16.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -536,6 +563,13 @@ fun DuelGameScreen(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         textAlign = TextAlign.Center
                     )
+
+                    // Reasoning beat (educational integrity): reward UNDERSTANDING the why, not just
+                    // recall speed — a "why is that right?" on one of this duel's problems. No reward
+                    // attached (can't be farmed); the duel's rating/grading are untouched.
+                    reasoning?.let { (q, opts, expl) ->
+                        ReasoningRecapCard(question = q, options = opts, explanation = expl)
+                    }
 
                     Spacer(modifier = Modifier.height(8.dp))
 

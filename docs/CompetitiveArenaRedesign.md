@@ -169,7 +169,7 @@ Scale 1–5 (Eff: 5 = cheap). ★ = shipped in Pass 1.
 | 12 | **Rivals card** in arena home — your top opponents and records | 4 | 4 | 1 | 4 | ★ |
 | 13 | **Stakes preview** pre-match — projected ±rating, "win = promotion" | 4 | 4 | 2 | 3 | ★ |
 | 14 | **Promotion-progress bar** — "N points to Gold I" | 4 | 4 | 2 | 4 | ★ |
-| 15 | **Reasoning beat** — a "why?" self-explain after a duel (educational integrity) | 4 | 2 | 5 | 3 | (P2) |
+| 15 | **Reasoning beat** — a "why?" self-explain after a duel (educational integrity) | 4 | 2 | 5 | 3 | ★ |
 | 16 | **Match-point** distinguished final/decisive question (pressure) | 4 | 3 | 1 | 3 | ★ |
 | 17 | **Opponent presence** during play — avatar + live "answering…" tell | 3 | 3 | 1 | 3 | (P2) |
 | 18 | **Arena stadium identity** — distinct surface/motion/sound for ranked | 3 | 3 | 1 | 2 | (P2) |
@@ -248,8 +248,12 @@ answer-farming. This redesign upholds that by **construction**:
   and idempotent; the client computes only its own cosmetic momentum from already-graded results.
 - **The compete→learn loop is strengthened, not bypassed.** Misses still bank to the Mistakes Bank;
   the post-match recap now frames them as growth, and duels still feed the learning engine.
-- **Deferred integrity work (P2):** a post-duel "why is that right?" reasoning beat, and intra-duel
-  adaptive difficulty, so speed-of-recall stops dominating speed-of-reasoning. Tracked in §2 #15.
+- **Reasoning beat (shipped):** the result screen now offers a "why is that right?" self-explanation
+  MCQ on one of the duel's problems (reusing the server's `selfExplainEngine`), with **no reward
+  attached** so it can't be farmed — it rewards *understanding the why* after the speed race, without
+  touching the duel's grading or rating. The duel still feeds the learning engine per answer.
+- **Deferred integrity work (P3):** intra-duel adaptive difficulty, so speed-of-recall stops
+  dominating speed-of-reasoning *within* the race itself.
 
 Anti-farming: rivalry/peak/streak are derived from *real* ranked outcomes; bot duels are excluded
 from `duel_history` (no fake rivalries) and clearly labeled.
@@ -284,6 +288,17 @@ Android:
 - New pure helpers `nextRankInfo` / `projectedEloChange` in `DuelMoments.kt` (mirror the server's
   rank thresholds + Elo math), JVM-tested.
 
+**Pass 3 (also shipped):**
+- **Reasoning beat** (§9, educational integrity #15): post-match "why is that right?" self-explanation
+  on one duel problem, reward-free, server-authored via `selfExplainEngine`. Result screen is now
+  height-bounded + scrollable so the richer card never clips.
+
+**Schema/DB note:** the new columns + `duel_history`/`arena_events` tables are defined BOTH in
+migration v47 AND idempotently in the `db.js` baseline (`safeAlter` / `CREATE TABLE IF NOT EXISTS`,
+matching how the codebase already handles user columns). This is deliberate: the live `numera.db`
+may sit at a *higher* schema version than v47 (the unmerged `feat/competitive-rating-unification`
+branch took it to v62), so a version-gated migration alone would never run there. The baseline
+guarantees the schema exists on any DB version.
+
 Deferred (P2/P3) tracked in §2–§8: true **rematch** (same-opponent re-pair — a socket offer/accept
-flow), reasoning beat (#15, the one real integrity gap), opponent live-presence, stadium sound,
-season history, spectate.
+flow), intra-duel adaptive difficulty, opponent live-presence, stadium sound, season history, spectate.

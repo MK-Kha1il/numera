@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -374,6 +375,93 @@ fun PromotionProgressBar(elo: Int, inPlacement: Boolean, modifier: Modifier = Mo
                     .background(
                         Brush.horizontalGradient(listOf(MilestoneGold.copy(alpha = 0.8f), MilestoneGold))
                     )
+            )
+        }
+    }
+}
+
+// ── Reasoning beat (educational integrity, docs/CompetitiveArenaRedesign.md §15) ─────────────────
+// After the speed race, a moment that rewards UNDERSTANDING the *why*: a "why is that right?" MCQ on
+// one problem from the duel. No rewards attached (so it can't be farmed) — purely learning. The
+// duel's grading/rating are untouched; this only fires on the result screen.
+@Composable
+fun ReasoningRecapCard(
+    question: String,
+    options: List<Pair<String, Boolean>>, // text → isCorrect
+    explanation: String,
+    modifier: Modifier = Modifier
+) {
+    if (options.isEmpty()) return
+    val accent = MaterialTheme.colorScheme.tertiary
+    var selected by remember { mutableStateOf<Int?>(null) }
+    val revealed = selected != null
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(CornerRadius.l))
+            .background(accent.copy(alpha = 0.06f))
+            .border(1.dp, accent.copy(alpha = 0.4f), RoundedCornerShape(CornerRadius.l))
+            .padding(Spacing.m),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            Text("🧠", fontSize = 15.sp)
+            Text(
+                text = "WHY IS THAT RIGHT?",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp,
+                color = accent
+            )
+        }
+        Text(
+            text = question.ifBlank { "Which statement best explains the answer?" },
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        options.forEachIndexed { idx, (text, isCorrect) ->
+            val border = when {
+                !revealed -> MaterialTheme.colorScheme.outline
+                isCorrect -> CorrectGreen
+                idx == selected -> WrongRed
+                else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+            }
+            val bg = when {
+                !revealed -> MaterialTheme.colorScheme.surface
+                isCorrect -> CorrectGreen.copy(alpha = 0.12f)
+                idx == selected -> WrongRed.copy(alpha = 0.10f)
+                else -> MaterialTheme.colorScheme.surface
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(CornerRadius.m))
+                    .background(bg)
+                    .border(1.5.dp, border, RoundedCornerShape(CornerRadius.m))
+                    .then(if (!revealed) Modifier.clickable { selected = idx } else Modifier)
+                    .padding(Spacing.s),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+            ) {
+                if (revealed && isCorrect) Text("✓", fontSize = 14.sp, fontWeight = FontWeight.Black, color = CorrectGreen)
+                else if (revealed && idx == selected) Text("✗", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WrongRed)
+                Text(
+                    text = text,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+        if (revealed) {
+            val gotIt = options.getOrNull(selected ?: -1)?.second == true
+            Text(
+                text = (if (gotIt) "✓ Reasoning confirmed. " else "Not quite — ") +
+                    explanation.ifBlank { "" },
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = if (gotIt) CorrectGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
             )
         }
     }

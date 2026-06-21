@@ -11,6 +11,8 @@ const { generateProblem, CONCEPT_TO_LEVEL } = require('./mathGenerator'); // due
 const { feedEngineOutcome } = require('./services/engineFeed'); // feed graded duel answers into the learning engine
 const { areEquivalent } = require('./mathEngine/answerEquivalence'); // server-authoritative duel grading
 const sympyCas = require('./mathEngine/cas/sympyClient'); // optional SymPy CAS for high-level duel problems
+const { conceptFromType } = require('./mathEngine/problemOrchestrator'); // template-type → concept id
+const { buildSelfExplainJson } = require('./mathEngine/selfExplainEngine'); // post-duel "why is that right?" beat
 
 // Centralized config + extracted cross-cutting middleware (see config.js, middleware/).
 // NOTE: server.js is now just bootstrap (app/middleware wiring + router mounts) and the
@@ -1144,6 +1146,24 @@ function logArenaMoments(userId, username, tags, rep) {
   if (ws && (ws === 3 || ws % 5 === 0)) arena.addArenaEvent(userId, username, 'streak', `${ws}-win streak`);
 }
 
+// Post-duel reasoning beat (educational integrity, docs/CompetitiveArenaRedesign.md §15): pick one
+// problem from the shared set that has an authored "why is this the answer?" self-explanation, so
+// the competitive loop rewards UNDERSTANDING, not just fast recall. The race itself stays untouched
+// (this is offered only after the result, never blocking gameplay). Returns { question,
+// selfExplainJson } or null. Pure — no IO, safe for any room shape (CAS rungs carry no concept key).
+function buildDuelReasoning(room) {
+  if (!room || !Array.isArray(room.problems) || !Array.isArray(room.templateTypes)) return null;
+  for (let i = 0; i < room.problems.length; i++) {
+    const tt = room.templateTypes[i];
+    const problem = room.problems[i];
+    if (!tt || !problem || !problem.question) continue;
+    let sej = '';
+    try { sej = buildSelfExplainJson(conceptFromType(tt)); } catch (e) { sej = ''; }
+    if (sej) return { question: problem.question, selfExplainJson: sej };
+  }
+  return null;
+}
+
 async function startDuel(p1, p2, isRanked) {
   const roomId = `duel_${p1.userId}_${p2.userId}_${Date.now()}`;
   // The shared duel level: the average of the two (matchmaking-paired, so already close) levels.
@@ -1376,6 +1396,8 @@ function endDuel(roomId, done) {
 // (processPlayerDuelResult), then emit duel_end and free the room. Rating moves ONLY for a ranked
 // human-vs-human duel — bots and casual stay rating-neutral. See docs/specs/Spec-RatingUnification.md.
 function finalizeDuel(roomId, room, winner, p2IsBot, done) {
+  // Post-duel reasoning prompt (shared by both players — it's about a problem from their set).
+  const reasoning = buildDuelReasoning(room);
   // Increment duels_today in user_quests for human players
   if (room.p1.id && typeof room.p1.id === 'number') {
     db.run("UPDATE user_quests SET duels_today = duels_today + 1 WHERE user_id = ?", [room.p1.id]);
@@ -1537,6 +1559,7 @@ function finalizeDuel(roomId, room, winner, p2IsBot, done) {
                           p2: p2Data,
                           isCasual: room.isCasual || false,
                           h2h: h2h ? { total: h2h.total, p1Wins: h2h.myWins, p2Wins: h2h.theirWins, draws: h2h.draws } : null,
+                          reasoning,
                         });
                         delete rooms[roomId];
                         if (done) done();
