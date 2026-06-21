@@ -1390,6 +1390,21 @@ const migrations = [
       await run("UPDATE users SET theme = 'studio' WHERE theme = 'duolingo' OR theme IS NULL");
     },
   },
+  {
+    version: 61,
+    name: 'league_stone_tiers',
+    // docs/BrandIdentity.md §8: the weekly league reused the metal rank names (Bronze..Diamond),
+    // colliding with the permanent competitive rank ladder so the two systems read as the same thing.
+    // Give the weekly league its own "stone" ladder (Quartz..Obsidian). The 1:1 remap preserves every
+    // player's relative tier; userService's promotion order now uses the stone names.
+    up: async (run) => {
+      await run("UPDATE users SET league = 'Quartz'   WHERE league = 'Bronze' OR league IS NULL");
+      await run("UPDATE users SET league = 'Onyx'     WHERE league = 'Silver'");
+      await run("UPDATE users SET league = 'Jade'     WHERE league = 'Gold'");
+      await run("UPDATE users SET league = 'Topaz'    WHERE league = 'Platinum'");
+      await run("UPDATE users SET league = 'Obsidian' WHERE league = 'Diamond'");
+    },
+  },
 ];
 
 /**

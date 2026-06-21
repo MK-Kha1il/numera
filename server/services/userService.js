@@ -50,7 +50,7 @@ function getUserWithMastery(userId, callback) {
         is_guest: user.is_guest || 0,
         display_name: user.display_name || null,
         reminders_opt_in: user.reminders_opt_in || 0,
-        league: user.league || 'Bronze',
+        league: user.league || 'Quartz',
         league_points: user.league_points || 0,
         solved_count: user.solved_count || 0,
         arena_wins: user.arena_wins || 0,
@@ -140,7 +140,7 @@ function checkAndResetQuestsAndLeagues(userId, callback) {
             }
 
             if (now - lastLeagueReset >= 7 * 86400) {
-              const currentLeague = uRow.league || 'Bronze';
+              const currentLeague = uRow.league || 'Quartz';
 
               db.all(
                 'SELECT id, league_points FROM users WHERE league = ? ORDER BY league_points DESC',
@@ -152,7 +152,9 @@ function checkAndResetQuestsAndLeagues(userId, callback) {
                   const totalInLeague = standings.length;
 
                   let newLeague = currentLeague;
-                  const leaguesOrder = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+                  // Weekly league has its OWN "stone" ladder (docs/BrandIdentity.md §8) so it stops
+                  // colliding with the permanent Bronze..Grandmaster competitive rank.
+                  const leaguesOrder = ['Quartz', 'Onyx', 'Jade', 'Topaz', 'Obsidian'];
                   const currentIdx = leaguesOrder.indexOf(currentLeague);
 
                   if (rankIndex !== -1) {

@@ -46,7 +46,7 @@ function initDb() {
           arena_wins INTEGER DEFAULT 0,
           active_banner TEXT DEFAULT 'banner_default',
           assessment_taken INTEGER DEFAULT 0,
-          league TEXT DEFAULT 'Bronze',
+          league TEXT DEFAULT 'Quartz',
           league_points INTEGER DEFAULT 0,
           last_league_reset INTEGER DEFAULT 0,
           elo INTEGER DEFAULT 1000,
@@ -72,7 +72,7 @@ function initDb() {
       safeAlter("ALTER TABLE users ADD COLUMN arena_wins INTEGER DEFAULT 0");
       safeAlter("ALTER TABLE users ADD COLUMN active_banner TEXT DEFAULT 'banner_default'");
       safeAlter("ALTER TABLE users ADD COLUMN assessment_taken INTEGER DEFAULT 0");
-      safeAlter("ALTER TABLE users ADD COLUMN league TEXT DEFAULT 'Bronze'");
+      safeAlter("ALTER TABLE users ADD COLUMN league TEXT DEFAULT 'Quartz'");
       safeAlter("ALTER TABLE users ADD COLUMN league_points INTEGER DEFAULT 0");
       safeAlter("ALTER TABLE users ADD COLUMN last_league_reset INTEGER DEFAULT 0");
       safeAlter("ALTER TABLE users ADD COLUMN elo INTEGER DEFAULT 1000");

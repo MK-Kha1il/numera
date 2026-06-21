@@ -13,7 +13,7 @@ router.get('/api/league/leaderboard', authenticateToken, (req, res) => {
     db.get('SELECT league, last_league_reset FROM users WHERE id = ?', [req.user.id], (err, currentUser) => {
       if (err || !currentUser) return res.status(500).json({ error: 'User not found' });
 
-      const userLeague = currentUser.league || 'Bronze';
+      const userLeague = currentUser.league || 'Quartz';
       const lastReset = currentUser.last_league_reset || 0;
       const now = Math.floor(Date.now() / 1000);
       const secondsRemaining = Math.max(0, 7 * 86400 - (now - lastReset));

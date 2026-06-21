@@ -412,8 +412,8 @@ fun DashboardScreen(
                 }
             }
         } else if (targetHomeSubTab == 1) {
-            val currentDivision = leagueLeaderboard?.league ?: "Bronze"
-            val showDemotion = currentDivision != "Bronze"
+            val currentDivision = leagueLeaderboard?.league ?: "Quartz"
+            val showDemotion = currentDivision != "Quartz"
 
             LazyColumn(
                 modifier = Modifier
@@ -421,15 +421,6 @@ fun DashboardScreen(
                     .padding(Spacing.l),
                 verticalArrangement = Arrangement.spacedBy(Spacing.m)
             ) {
-                val leagueEmoji = when (currentDivision) {
-                    "Bronze" -> "🪵"
-                    "Silver" -> "🪙"
-                    "Gold" -> "🥇"
-                    "Platinum" -> "💎"
-                    "Diamond" -> "👑"
-                    else -> "🏆"
-                }
-
                 item {
                     DuoCard(modifier = Modifier.fillMaxWidth()) {
                         Column(
@@ -438,7 +429,7 @@ fun DashboardScreen(
                             verticalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
                             Text(
-                                text = "$leagueEmoji $currentDivision League",
+                                text = "$currentDivision League",
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.primary,
@@ -454,7 +445,7 @@ fun DashboardScreen(
                             )
 
                             Text(
-                                text = "Weekly Standings: Earn XP to climb. Top 3 promote to next league, bottom 3 (except Bronze) demote.",
+                                text = "Weekly Standings: Earn XP to climb. Top 3 promote to next league, bottom 3 (except Quartz) demote.",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                 textAlign = TextAlign.Center
