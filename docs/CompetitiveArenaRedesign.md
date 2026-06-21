@@ -163,7 +163,7 @@ Scale 1–5 (Eff: 5 = cheap). ★ = shipped in Pass 1.
 | 6 | **Redesigned post-match** — animated rating count-up, milestone banners, rivalry update | 5 | 3 | 2 | 5 | ★ |
 | 7 | **Peak rating + win-streak** persistence and display (reputation) | 4 | 4 | 1 | 4 | ★ |
 | 8 | **Promotion moment** — full-screen celebration when you climb a tier | 5 | 4 | 1 | 4 | ★ |
-| 9 | **Rematch button** on the result screen | 4 | 3 | 1 | 5 | (P2) |
+| 9 | **Rematch button** on the result screen | 4 | 3 | 1 | 5 | ★ |
 | 10 | **Specialty** = your strongest strand, shown as identity chip | 3 | 4 | 3 | 3 | ★ |
 | 11 | **Live arena feed** — recent promotions / streaks / big wins | 4 | 3 | 1 | 4 | ★ |
 | 12 | **Rivals card** in arena home — your top opponents and records | 4 | 4 | 1 | 4 | ★ |
@@ -300,5 +300,16 @@ may sit at a *higher* schema version than v47 (the unmerged `feat/competitive-ra
 branch took it to v62), so a version-gated migration alone would never run there. The baseline
 guarantees the schema exists on any DB version.
 
-Deferred (P2/P3) tracked in §2–§8: true **rematch** (same-opponent re-pair — a socket offer/accept
-flow), intra-duel adaptive difficulty, opponent live-presence, stadium sound, season history, spectate.
+**Pass 4 (also shipped) — true rematch ("run it back"):**
+- After a HUMAN duel, either player can offer a rematch from the result screen; when both offer
+  (within a 60s window) a fresh duel starts at their CURRENT ratings. Server: `lastDuelByUser` /
+  `rematchIntent` maps + `request_rematch` / `cancel_rematch` socket events + `findSocketByUserId` +
+  `startRematch`; eligibility recorded in `finalizeDuel` (human-v-human only); torn down on
+  disconnect. Client: result-screen rematch states (idle / requested / offered / unavailable), and a
+  persistent `duel_start` listener that recreates the screen on the new room via `onRematch`
+  (pop+push the nav entry — clean state, socket stays joined). Bots are never eligible.
+- Guard test `test/rematch.test.js` (eligibility gate + reasoning prompt); full handshake is verified
+  live (it's a two-client real-time interaction, like the rest of the socket duel).
+
+Deferred (P3) tracked in §2–§8: intra-duel adaptive difficulty, opponent live-presence (avatar +
+"answering…" tell during play), stadium sound, season-history surfacing, spectate/replay.

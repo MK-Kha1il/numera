@@ -110,6 +110,18 @@ object SocketClient {
         mSocket?.off("live_room_update")
     }
 
+    // "Run it back": offer/accept a rematch against the opponent you just duelled. When both sides
+    // request, the server starts a fresh duel and emits duel_start (handled on the result screen).
+    fun requestRematch() {
+        mSocket?.emit("request_rematch")
+        Log.d(TAG, "request_rematch emitted")
+    }
+
+    fun cancelRematch() {
+        mSocket?.emit("cancel_rematch")
+        Log.d(TAG, "cancel_rematch emitted")
+    }
+
     // Send the player's ACTUAL answer (selected option / typed value), not a self-judged boolean —
     // the server is authoritative and grades it against the canonical answer it kept (which it never
     // sent us). This closes the last client-trusted scoring path in ranked duels.

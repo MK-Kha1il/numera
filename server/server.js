@@ -649,6 +649,14 @@ const casualQueue = []; // casual matchmaking queue
 const rooms = {}; // active rooms: { roomId: { p1, p2, problems, isCasual, startTime, problemLevel } }
 const friendRooms = {}; // code lobby rooms: { code: { creatorSocketId, userId, username, rank, elo } }
 
+// Rematch ("run it back") state — the "one more match" loop. After a finished HUMAN duel each
+// player can offer a rematch; when both have offered (within the window) a fresh duel starts
+// between them at their CURRENT rating. lastDuelByUser remembers who you just played; rematchIntent
+// records that you've asked. Bots are never eligible (you can just bot-duel again).
+const lastDuelByUser = {};   // userId -> { opponentId, opponentUsername, isCasual, ts }
+const rematchIntent = {};    // userId -> opponentId you've offered a rematch against
+const REMATCH_WINDOW_MS = 60000; // an offer/eligibility is only good for a minute after the duel
+
 // Live duels serve problems at the DUELLISTS' shared math level — beginners get beginner problems,
 // advanced players get advanced ones — so a duel is always level-fair. DUEL_PROBLEM_LEVEL is only the
 // fallback when a player's level is unknown; the integrity scorer's human-timing floor scales with the
@@ -934,6 +942,37 @@ io.on('connection', (socket) => {
     cleanQueue(casualQueue);
   });
 
+  // "Run it back": offer a rematch to the player you just duelled. When both have offered (within
+  // the window) a fresh duel starts; otherwise the opponent is pinged that you want one.
+  socket.on('request_rematch', () => {
+    const userId = socket.userId;
+    if (!userId) return;
+    const rec = lastDuelByUser[userId];
+    if (!rec || Date.now() - rec.ts > REMATCH_WINDOW_MS) {
+      socket.emit('rematch_unavailable', { reason: 'expired' });
+      return;
+    }
+    const oppId = rec.opponentId;
+    const oppSocket = findSocketByUserId(oppId);
+    if (!oppSocket) {
+      socket.emit('rematch_unavailable', { reason: 'opponent_left' });
+      return;
+    }
+    rematchIntent[userId] = oppId;
+    if (Number(rematchIntent[oppId]) === userId) {
+      // Both want it → run it back at current ratings.
+      startRematch(userId, socket, oppId, oppSocket, rec.isCasual);
+    } else {
+      oppSocket.emit('rematch_offered', { fromId: userId, fromName: socket.username });
+      socket.emit('rematch_waiting', {});
+    }
+  });
+
+  // Withdraw a pending rematch offer (player chose to leave instead).
+  socket.on('cancel_rematch', () => {
+    if (socket.userId) clearRematchFor(socket.userId);
+  });
+
   // Client requests current status + problems when loading DuelGameScreen
   socket.on('join_duel_room', (data) => {
     const { roomId } = data;
@@ -1083,6 +1122,9 @@ io.on('connection', (socket) => {
     };
     cleanQueue(rankedQueue);
     cleanQueue(casualQueue);
+
+    // Tear down any rematch eligibility/offer this player had (and notify a waiting opponent).
+    if (socket.userId) clearRematchFor(socket.userId);
     
     // Clean up friend codes creator lobbies
     for (const code in friendRooms) {
@@ -1158,10 +1200,72 @@ function buildDuelReasoning(room) {
     const problem = room.problems[i];
     if (!tt || !problem || !problem.question) continue;
     let sej = '';
-    try { sej = buildSelfExplainJson(conceptFromType(tt)); } catch (e) { sej = ''; }
+    try { sej = buildSelfExplainJson(conceptFromType(tt)); } catch { sej = ''; }
     if (sej) return { question: problem.question, selfExplainJson: sej };
   }
   return null;
+}
+
+// Find a connected socket by authenticated userId — a rematch must reach the opponent's CURRENT
+// socket, which may differ from the one they queued with. O(n) over sockets; fine at this scale.
+function findSocketByUserId(userId) {
+  for (const s of io.sockets.sockets.values()) {
+    if (s.userId === userId) return s;
+  }
+  return null;
+}
+
+// Remember a finished HUMAN-vs-HUMAN duel so either player can offer a rematch for the next minute.
+// Bots are never eligible (a bot duel can just be restarted from the arena).
+function recordRematchEligibility(room, p2IsBot) {
+  const aHuman = typeof room.p1.id === 'number' && room.p1.id !== 9999;
+  const bHuman = typeof room.p2.id === 'number' && !p2IsBot && room.p2.id !== 9999;
+  if (!aHuman || !bHuman) return;
+  const ts = Date.now();
+  lastDuelByUser[room.p1.id] = { opponentId: room.p2.id, opponentUsername: room.p2.username, isCasual: !!room.isCasual, ts };
+  lastDuelByUser[room.p2.id] = { opponentId: room.p1.id, opponentUsername: room.p1.username, isCasual: !!room.isCasual, ts };
+}
+
+// Forget a user's rematch eligibility/intent and tell anyone who had offered them a rematch that
+// it can no longer complete (they left). Called on disconnect.
+function clearRematchFor(userId) {
+  delete rematchIntent[userId];
+  delete lastDuelByUser[userId];
+  for (const [otherId, target] of Object.entries(rematchIntent)) {
+    if (Number(target) === userId) {
+      const s = findSocketByUserId(Number(otherId));
+      if (s) s.emit('rematch_unavailable', { reason: 'opponent_left' });
+      delete rematchIntent[otherId];
+    }
+  }
+}
+
+// Build the playerInfo startDuel expects, with the player's CURRENT rating/level — a rematch settles
+// at fresh ratings, not the ones from the duel just played.
+function buildRematchPlayer(userId, socketId, cb) {
+  db.get('SELECT username, elo, level FROM users WHERE id = ?', [userId], (err, row) => {
+    cb({
+      socketId,
+      userId,
+      username: row ? row.username : 'Challenger',
+      elo: row ? (row.elo || 1000) : 1000,
+      level: row ? (row.level || DUEL_PROBLEM_LEVEL) : DUEL_PROBLEM_LEVEL,
+    });
+  });
+}
+
+// Both players offered → start a fresh duel between them and clear the rematch bookkeeping.
+function startRematch(aId, aSocket, bId, bSocket, isCasual) {
+  buildRematchPlayer(aId, aSocket.id, (pa) => {
+    buildRematchPlayer(bId, bSocket.id, (pb) => {
+      delete rematchIntent[aId];
+      delete rematchIntent[bId];
+      delete lastDuelByUser[aId];
+      delete lastDuelByUser[bId];
+      startDuel(pa, pb, !isCasual);
+      logger.info(`Rematch started: ${pa.username} vs ${pb.username} (casual=${isCasual})`);
+    });
+  });
 }
 
 async function startDuel(p1, p2, isRanked) {
@@ -1516,6 +1620,9 @@ function finalizeDuel(roomId, room, winner, p2IsBot, done) {
                     logArenaMoments(room.p1.id, room.p1.username, p1Tags, rep1);
                     if (!p2IsBot) logArenaMoments(room.p2.id, room.p2.username, p2Tags, rep2);
 
+                    // Make this pairing rematch-eligible for the next minute (human v human only).
+                    recordRematchEligibility(room, p2IsBot);
+
                     arena.recordDuelResult({
                       p1Id: room.p1.id, p2Id: room.p2.id, winnerId: winner,
                       p1Score: room.p1.score, p2Score: room.p2.score,
@@ -1641,4 +1748,8 @@ if (require.main === module) {
 
 // `rooms` + `endDuel` are exported for the duel integration test (test/duelEndToEnd.test.js),
 // which drives a finished duel through the real rating/reward commit without a live socket.
-module.exports = { app, server, io, db, ready, rooms, endDuel, applyDuelAnswer, buildDuelProblemSet, pickDuelConcepts };
+module.exports = {
+  app, server, io, db, ready, rooms, endDuel, applyDuelAnswer, buildDuelProblemSet, pickDuelConcepts,
+  // Rematch internals exposed for unit testing the (socket-independent) eligibility gate.
+  recordRematchEligibility, lastDuelByUser, rematchIntent, buildDuelReasoning,
+};

@@ -75,7 +75,9 @@ fun DuelGameScreen(
     onFinishGame: () -> Unit,
     // Closes the compete→learn loop (ultra-review #17): jump straight from the result screen
     // into a Growth Practice session over the misses this duel just banked.
-    onReviewMisses: () -> Unit = {}
+    onReviewMisses: () -> Unit = {},
+    // "Run it back" against the same opponent — recreates this screen on a fresh duel room.
+    onRematch: (roomId: String, opponentName: String) -> Unit = { _, _ -> }
 ) {
     val scope = rememberCoroutineScope()
     var problemsList by remember { mutableStateOf<List<MathProblem>>(emptyList()) }
@@ -120,11 +122,16 @@ fun DuelGameScreen(
     // Comeback recognition: the client alone sees the live score progression, so it tracks whether
     // you were ever meaningfully behind before winning (the server can't infer this).
     var wasTrailing by remember { mutableStateOf(false) }
+    // Rematch ("run it back") UI state: idle | requested (I asked) | offered (they asked) | unavailable.
+    var rematchState by remember { mutableStateOf("idle") }
 
     DisposableEffect(Unit) {
         onDispose {
             SocketClient.socket?.off("room_status")
             SocketClient.socket?.off("duel_end")
+            SocketClient.socket?.off("rematch_offered")
+            SocketClient.socket?.off("rematch_unavailable")
+            SocketClient.socket?.off("duel_start")
         }
     }
 
@@ -239,6 +246,37 @@ fun DuelGameScreen(
                     SoundManager.playWrong()
                     com.example.numera.haptic.HapticManager.playError()
                 }
+            }
+        }
+
+        // ── Rematch ("run it back") signalling, active on the result screen ──
+        socket.on("rematch_offered") { _ ->
+            scope.launch(Dispatchers.Main) {
+                // Don't override my own pending request; only surface their offer if I'm idle.
+                if (rematchState == "idle") rematchState = "offered"
+                com.example.numera.haptic.HapticManager.playMedium()
+            }
+        }
+        socket.on("rematch_unavailable") { _ ->
+            scope.launch(Dispatchers.Main) { rematchState = "unavailable" }
+        }
+        // The rematch's fresh duel — recreate this screen on the new room (socket already joined it).
+        // Off any lingering ArenaScreen duel_start listener first so a rematch isn't double-handled
+        // (ArenaScreen re-registers its own when it next queues).
+        socket.off("duel_start")
+        socket.on("duel_start") { args ->
+            val data = args.getOrNull(0) as? JSONObject ?: return@on
+            val newRoomId = data.optString("roomId")
+            var oppName = opponentName
+            data.optJSONObject("opponent")?.let { opp ->
+                val p1 = opp.optJSONObject("p1")
+                val p2 = opp.optJSONObject("p2")
+                if (p1 != null && p2 != null) {
+                    oppName = if (p1.optInt("id") == myUserId) p2.optString("username") else p1.optString("username")
+                }
+            }
+            if (newRoomId.isNotBlank() && newRoomId != roomId) {
+                scope.launch(Dispatchers.Main) { onRematch(newRoomId, oppName) }
             }
         }
     }
@@ -572,6 +610,47 @@ fun DuelGameScreen(
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
+
+                    // "Run it back" — the one-more-match loop. Only against a human opponent (a bot
+                    // can just be re-duelled from the arena). Both players must opt in.
+                    val oppIsHuman = oppIdentity?.let { !it.isBot } ?: false
+                    if (oppIsHuman) {
+                        when (rematchState) {
+                            "idle" -> DuoButton(
+                                text = "🔁 Rematch $opponentName",
+                                onClick = {
+                                    com.example.numera.haptic.HapticManager.playMedium()
+                                    SocketClient.requestRematch()
+                                    rematchState = "requested"
+                                },
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            "requested" -> DuoButton(
+                                text = "Waiting for $opponentName…",
+                                enabled = false,
+                                onClick = {},
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            "offered" -> DuoButton(
+                                text = "⚔️ Accept $opponentName's rematch",
+                                onClick = {
+                                    com.example.numera.haptic.HapticManager.playMedium()
+                                    SocketClient.requestRematch()
+                                    rematchState = "requested"
+                                },
+                                color = CorrectGreen,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            else -> Text(
+                                text = "$opponentName left the arena — no rematch.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
 
                     // Compete→learn loop (ultra-review #17): the problems missed this duel were
                     // banked to the Mistakes Bank as they happened; offer to review them now
