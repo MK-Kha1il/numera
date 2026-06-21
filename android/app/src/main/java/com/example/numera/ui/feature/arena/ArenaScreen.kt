@@ -61,7 +61,23 @@ fun ArenaScreen(
     var showRankReveal by remember(user?.competitive_matches, user?.rank_revealed) {
         mutableStateOf((user?.competitive_matches ?: 0) >= 5 && (user?.rank_revealed ?: 0) == 0)
     }
+    // Living Arena social presence: your rivals + the community feed make the arena feel inhabited.
+    var rivals by remember { mutableStateOf<List<Rival>>(emptyList()) }
+    var feed by remember { mutableStateOf<List<ArenaEvent>>(emptyList()) }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        val token = RetrofitClient.authToken ?: return@LaunchedEffect
+        try {
+            withContext(Dispatchers.IO) {
+                val r = RetrofitClient.apiService.getArenaRivals(token)
+                val f = RetrofitClient.apiService.getArenaFeed(token)
+                withContext(Dispatchers.Main) { rivals = r.rivals; feed = f.events }
+            }
+        } catch (e: Exception) {
+            Log.e("Arena", "Arena social load failed: ${e.message}")
+        }
+    }
 
     val hasFairplayConsent = consentGrantedThisSession || (user?.telemetry_enabled ?: 0) == 1
 
@@ -463,6 +479,123 @@ fun ArenaScreen(
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                 )
+
+                                // Reputation: peak rating + current form, the markers you carry.
+                                Row(
+                                    modifier = Modifier.padding(top = Spacing.xs),
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.m),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    val peak = user?.peak_elo ?: user?.elo ?: 1000
+                                    Text(
+                                        text = "📈 Peak $peak",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MilestoneGold
+                                    )
+                                    val streak = user?.current_win_streak ?: 0
+                                    if (streak >= 2) {
+                                        Text(
+                                            text = "🔥 $streak-win streak",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.tertiary
+                                        )
+                                    }
+                                }
+
+                                // The climb: how close you are to the next rank — the always-on chase.
+                                PromotionProgressBar(
+                                    elo = user?.elo ?: 1000,
+                                    inPlacement = (user?.competitive_matches ?: 0) < 5,
+                                    modifier = Modifier.padding(top = Spacing.s)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // ── Arena Feed — recent promotions, streaks, and upsets across the arena, so the
+                // place feels inhabited even when you're not queuing. Hidden until there's signal.
+                if (feed.isNotEmpty()) {
+                    item {
+                        DuoCard(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l)) {
+                                Text(
+                                    text = "LIVE FROM THE ARENA",
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 12.sp,
+                                    letterSpacing = 1.sp,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                                Spacer(modifier = Modifier.height(Spacing.s))
+                                feed.take(4).forEach { ev ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xs),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+                                    ) {
+                                        Text(arenaFeedEmoji(ev.type), fontSize = 15.sp)
+                                        Text(
+                                            text = arenaFeedLine(ev),
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ── Rivals — your most-played opponents and the head-to-head record. The "unfinished
+                // business" hook. Hidden until you've built some history.
+                if (rivals.isNotEmpty()) {
+                    item {
+                        DuoCard(modifier = Modifier.fillMaxWidth(), borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)) {
+                            Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l)) {
+                                Text(
+                                    text = "YOUR RIVALS",
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 12.sp,
+                                    letterSpacing = 1.sp,
+                                    color = MaterialTheme.colorScheme.tertiary
+                                )
+                                Spacer(modifier = Modifier.height(Spacing.s))
+                                rivals.take(4).forEach { rival ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xs),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = rival.username,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.weight(1f),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        val lead = rival.myWins - rival.theirWins
+                                        Text(
+                                            text = "${rival.myWins}–${rival.theirWins}",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Black,
+                                            color = when {
+                                                lead > 0 -> CorrectGreen
+                                                lead < 0 -> WrongRed
+                                                else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                            }
+                                        )
+                                        Text(
+                                            text = "  ·  ${rival.total} ${if (rival.total == 1) "duel" else "duels"}",
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -900,5 +1033,25 @@ private fun ArenaModeTile(
                 )
             }
         }
+    }
+}
+
+// Map an arena feed event type to its glyph + one-line story.
+private fun arenaFeedEmoji(type: String): String = when (type) {
+    "promotion" -> "⬆️"
+    "upset" -> "🐉"
+    "streak" -> "🔥"
+    "peak" -> "📈"
+    else -> "⚔️"
+}
+
+private fun arenaFeedLine(ev: ArenaEvent): String {
+    val who = ev.username.ifBlank { "A competitor" }
+    return when (ev.type) {
+        "promotion" -> "$who promoted to ${ev.detail ?: "a new rank"}"
+        "upset" -> "$who pulled off an upset win"
+        "streak" -> "$who is on a ${ev.detail ?: "win streak"}"
+        "peak" -> "$who hit a new peak (${ev.detail ?: "rating"})"
+        else -> "$who ${ev.detail ?: "competed"}"
     }
 }

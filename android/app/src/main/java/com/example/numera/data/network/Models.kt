@@ -129,6 +129,10 @@ data class User(
     val solved_count: Int? = null,
     val arena_wins: Int? = null,
     val elo: Int? = null,
+    // Living-Arena reputation (server migration v47): permanent high-water mark + form.
+    val peak_elo: Int? = null,
+    val current_win_streak: Int? = 0,
+    val best_win_streak: Int? = 0,
     val competitive_matches: Int? = null,
     val competitive_rank: String? = null, // unified competitive rank (mirror of user_ratings global)
     val rank_revealed: Int? = 0,          // one-time placement rank-reveal ceremony fired (audit #20)
@@ -2149,4 +2153,54 @@ data class CasSolveResponse(
     val source: String? = null,
     val error: String? = null,
     val detail: String? = null
+)
+
+// ── Living Arena (docs/CompetitiveArenaRedesign.md) ───────────────────────────────────────────
+// A competitor's reputation, shown on the pre-match player card. Mirrors the server's
+// arenaService.loadArenaIdentity payload (ships inside duel_start / room_status `identities`).
+@Serializable
+data class ArenaIdentity(
+    val id: Int = 0,
+    val username: String = "",
+    val isBot: Boolean = false,
+    val rank: String = "Unranked",
+    val elo: Int = 1000,
+    val peak_elo: Int = 1000,
+    val current_win_streak: Int = 0,
+    val best_win_streak: Int = 0,
+    val competitive_matches: Int = 0,
+    val specialty: String? = null
+)
+
+// Your head-to-head record against an opponent, from YOUR perspective.
+@Serializable
+data class HeadToHead(
+    val total: Int = 0,
+    val myWins: Int = 0,
+    val theirWins: Int = 0,
+    val draws: Int = 0
+)
+
+@Serializable
+data class RivalsResponse(val rivals: List<Rival> = emptyList())
+
+@Serializable
+data class Rival(
+    val opponentId: Int = 0,
+    val username: String = "",
+    val total: Int = 0,
+    val myWins: Int = 0,
+    val theirWins: Int = 0,
+    val lastPlayed: Long = 0
+)
+
+@Serializable
+data class ArenaFeedResponse(val events: List<ArenaEvent> = emptyList())
+
+@Serializable
+data class ArenaEvent(
+    val username: String = "",
+    val type: String = "",
+    val detail: String? = null,
+    val created_at: Long = 0
 )

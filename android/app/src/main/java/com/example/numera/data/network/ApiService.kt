@@ -31,6 +31,19 @@ interface ApiService {
     @GET("api/auth/me")
     suspend fun getProfile(@Header("Authorization") token: String): User
 
+    // ---- Living Arena (docs/CompetitiveArenaRedesign.md): rivals + social feed + head-to-head ----
+    @GET("api/arena/rivals")
+    suspend fun getArenaRivals(@Header("Authorization") token: String): RivalsResponse
+
+    @GET("api/arena/feed")
+    suspend fun getArenaFeed(@Header("Authorization") token: String): ArenaFeedResponse
+
+    @GET("api/arena/h2h/{opponentId}")
+    suspend fun getHeadToHead(
+        @Header("Authorization") token: String,
+        @retrofit2.http.Path("opponentId") opponentId: Int
+    ): HeadToHead
+
     // ---- Password reset ----
     @POST("api/auth/forgot-password")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): GenericMessageResponse

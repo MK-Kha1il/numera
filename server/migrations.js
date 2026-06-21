@@ -1425,6 +1425,60 @@ const migrations = [
       await addColumn("ALTER TABLE users ADD COLUMN active_frame TEXT DEFAULT ''");
     },
   },
+  {
+    version: 63,
+    name: 'competitive_arena_redesign',
+    // "The Living Arena" (docs/CompetitiveArenaRedesign.md): the substrate for rivalries, identity,
+    // and social presence. Before this, a finished duel left NO trace — so head-to-head, peak
+    // rating, win streaks, and a community feed were all impossible. This adds:
+    //   • reputation columns on users (peak rating, current/best win streak, last-duel time)
+    //   • duel_history: every finalized HUMAN-vs-HUMAN ranked/casual duel (bots excluded — no fake
+    //     rivalries), the source of truth for H2H + rivals + match log
+    //   • arena_events: a lightweight social feed (promotions, peak ratings, streak milestones)
+    up: async (run) => {
+      const addCol = async (sql) => {
+        try { await run(sql); }
+        catch (e) { if (!/duplicate column name/i.test(e.message)) throw e; }
+      };
+      // Reputation. peak_elo seeds from the current elo so existing players don't start "below peak".
+      await addCol('ALTER TABLE users ADD COLUMN peak_elo INTEGER DEFAULT 1000');
+      await addCol('ALTER TABLE users ADD COLUMN current_win_streak INTEGER DEFAULT 0');
+      await addCol('ALTER TABLE users ADD COLUMN best_win_streak INTEGER DEFAULT 0');
+      await addCol('ALTER TABLE users ADD COLUMN last_duel_at INTEGER DEFAULT 0');
+      await run('UPDATE users SET peak_elo = elo WHERE peak_elo IS NULL OR peak_elo < elo');
+
+      await run(`
+        CREATE TABLE IF NOT EXISTS duel_history (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          p1_id       INTEGER NOT NULL,
+          p2_id       INTEGER NOT NULL,
+          winner_id   INTEGER,            -- NULL = draw / double-DQ
+          p1_score    INTEGER NOT NULL,
+          p2_score    INTEGER NOT NULL,
+          p1_elo_change INTEGER DEFAULT 0,
+          p2_elo_change INTEGER DEFAULT 0,
+          mode        TEXT NOT NULL,      -- 'ranked' | 'casual' | 'friend'
+          created_at  INTEGER NOT NULL
+        )
+      `);
+      // H2H + rivals query both directions, so index each participant.
+      await run('CREATE INDEX IF NOT EXISTS idx_duel_history_p1 ON duel_history(p1_id, p2_id)');
+      await run('CREATE INDEX IF NOT EXISTS idx_duel_history_p2 ON duel_history(p2_id, p1_id)');
+      await run('CREATE INDEX IF NOT EXISTS idx_duel_history_created ON duel_history(created_at)');
+
+      await run(`
+        CREATE TABLE IF NOT EXISTS arena_events (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id    INTEGER NOT NULL,
+          username   TEXT NOT NULL,
+          type       TEXT NOT NULL,       -- 'promotion' | 'peak' | 'streak' | 'upset'
+          detail     TEXT,                -- e.g. 'Gold II', '7-win streak', '+upset vs Master'
+          created_at INTEGER NOT NULL
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_arena_events_created ON arena_events(created_at)');
+    },
+  },
 ];
 
 /**

@@ -28,6 +28,8 @@ const { categoryToDomain, matchAcceptable, SIGMA_INIT: NRS_SIGMA_INIT } = requir
 const { updateAchievements } = require('./services/achievementService');
 const { grantRankRewards } = require('./services/rankRewardService');
 const { flagAnswer, resolveDuel, rankedMatchmakingError } = require('./lib/duelIntegrity');
+const { computeClutchTags } = require('./lib/duelMoments');
+const arena = require('./services/arenaService');
 
 const app = express();
 
@@ -108,6 +110,7 @@ app.use(require('./routes/liveRoom'));
 app.use(require('./routes/publicProfilePage'));
 app.use(require('./routes/cas'));
 // publicProfile owns /api/user/:userId — mount LAST so it doesn't shadow account.js routes.
+app.use(require('./routes/arena'));
 app.use(require('./routes/publicProfile'));
 
 // Landing Page & Status Dashboard
@@ -938,7 +941,8 @@ io.on('connection', (socket) => {
       socket.emit('room_status', {
         p1: room.p1,
         p2: room.p2,
-        problems: room.problems
+        problems: room.problems,
+        identities: room.identities || null
       });
       logger.info(`Socket ${socket.id} joined duel room ${roomId}`);
     }
@@ -1019,12 +1023,8 @@ io.on('connection', (socket) => {
       creatorSocket?.join(roomId);
       socket.join(roomId);
 
-      // Trigger match start
-      io.to(roomId).emit('duel_start', {
-        roomId,
-        opponent: { p1: rooms[roomId].p1, p2: rooms[roomId].p2 },
-        problems
-      });
+      // Trigger match start (enriched with both competitors' identities + H2H).
+      emitDuelStart(roomId);
 
       delete friendRooms[roomCode];
     });
@@ -1091,6 +1091,59 @@ io.on('connection', (socket) => {
   });
 });
 
+// Emit an ENRICHED duel_start: besides the raw room players + problems, attach each competitor's
+// arena identity (rank, rating, peak, win streak, specialty) and the head-to-head record, so the
+// client can render a real pre-match player card instead of a bare name. Shared by every duel
+// path (matchmade, friend, bot). H2H is sent neutrally keyed by p1/p2 so each client can take its
+// own perspective. Graceful: identity loads fall back to a fresh-account shape, never blocking.
+function emitDuelStart(roomId) {
+  const room = rooms[roomId];
+  if (!room) return;
+  arena.loadArenaIdentity(room.p1.id, (e1, id1) => {
+    arena.loadArenaIdentity(room.p2.id, (e2, id2) => {
+      arena.getHeadToHead(room.p1.id, room.p2.id, (e3, h2h) => {
+        // Stash on the room so a (re)joining client gets the same identity payload via room_status,
+        // not only the one-shot duel_start broadcast (survives reconnect / late join).
+        const identities = {
+          p1: id1,
+          p2: id2,
+          h2h: { total: h2h.total, p1Wins: h2h.myWins, p2Wins: h2h.theirWins, draws: h2h.draws },
+          ranked: !room.isCasual,
+        };
+        room.identities = identities;
+        io.to(roomId).emit('duel_start', {
+          roomId,
+          opponent: { p1: room.p1, p2: room.p2 },
+          problems: room.problems,
+          identities,
+        });
+      });
+    });
+  });
+}
+
+// Read a player's pre-match rank + active win streak BEFORE the rating writes mutate them. Returns
+// nulls for a bot/missing id (never assessed). Used to detect promotions and streak-breakers.
+function readDuelPreSnapshot(userId, cb) {
+  if (!userId || userId === 9999) return cb({ rank: null, streak: 0 });
+  db.get('SELECT rank, current_win_streak FROM users WHERE id = ?', [userId], (err, row) => {
+    cb({ rank: row ? row.rank : null, streak: row ? (row.current_win_streak || 0) : 0 });
+  });
+}
+
+// Append the noteworthy moments of a finished duel to the social feed. Selective on purpose —
+// promotions and upsets always post; streaks only at milestones — so the feed stays a highlight
+// reel, not a log. Human players only (bots never have an id worth feeding).
+function logArenaMoments(userId, username, tags, rep) {
+  if (!userId || userId === 9999 || !Array.isArray(tags)) return;
+  for (const t of tags) {
+    if (t.key === 'promotion') arena.addArenaEvent(userId, username, 'promotion', t.label.replace('Promoted to ', ''));
+    else if (t.key === 'upset') arena.addArenaEvent(userId, username, 'upset', 'Upset win');
+  }
+  const ws = rep ? rep.winStreak : 0;
+  if (ws && (ws === 3 || ws % 5 === 0)) arena.addArenaEvent(userId, username, 'streak', `${ws}-win streak`);
+}
+
 async function startDuel(p1, p2, isRanked) {
   const roomId = `duel_${p1.userId}_${p2.userId}_${Date.now()}`;
   // The shared duel level: the average of the two (matchmaking-paired, so already close) levels.
@@ -1119,11 +1172,7 @@ async function startDuel(p1, p2, isRanked) {
   io.sockets.sockets.get(p1.socketId)?.join(roomId);
   io.sockets.sockets.get(p2.socketId)?.join(roomId);
 
-  io.to(roomId).emit('duel_start', {
-    roomId,
-    opponent: { p1: rooms[roomId].p1, p2: rooms[roomId].p2 },
-    problems
-  });
+  emitDuelStart(roomId);
   logger.info(`Duel started: ${p1.username} (L${p1.level}) vs ${p2.username} (L${p2.level}) at level ${duelLevel}. Ranked: ${isRanked}`);
 }
 
@@ -1157,11 +1206,7 @@ async function startDuelWithBot(player, isRanked) {
   const socket = io.sockets.sockets.get(player.socketId);
   socket?.join(roomId);
 
-  socket?.emit('duel_start', {
-    roomId,
-    opponent: { p1: rooms[roomId].p1, p2: rooms[roomId].p2 },
-    problems
-  });
+  emitDuelStart(roomId);
 
   simulateBot(roomId);
   logger.info(`Duel started with Bot for user ${player.username}. Ranked: ${isRanked}`);
@@ -1383,7 +1428,7 @@ function finalizeDuel(roomId, room, winner, p2IsBot, done) {
       };
 
       withRatings((r1, r2) => {
-        const proceed = () => {
+        const proceed = (pre1, pre2) => {
           processPlayerDuelResult(room.p1.id, {
             isWinner: winner === room.p1.id,
             ratingMoves,
@@ -1402,37 +1447,17 @@ function finalizeDuel(roomId, room, winner, p2IsBot, done) {
               domain: contestedDomain,
               coinMultiplier: p2CoinMult,
             }, (err2, p2Res) => {
-              const p1Data = {
-                ...room.p1,
-                ratingMoved: ratingMoves,
-                ratingDelta: p1Res.ratingDelta,
-                newElo: p1Res.newElo,
-                newDisplayRating: p1Res.newDisplayRating,
-                newRank: p1Res.newRank,
-                promoted: p1Res.promoted || false,
-                cheated: room.p1.cheated || false,
-                ticketUsed: p1HasTicket && !room.isCasual,
-              };
+              const maxScore = (room.problems ? room.problems.length : 5) * 20;
+              const p1Won = winner === room.p1.id;
+              const p2Won = winner === room.p2.id;
 
-              const p2Data = {
-                ...room.p2,
-                ratingMoved: ratingMoves,
-                ratingDelta: p2IsBot ? 0 : p2Res.ratingDelta,
-                newElo: p2IsBot ? 0 : p2Res.newElo,
-                newDisplayRating: p2IsBot ? null : p2Res.newDisplayRating,
-                newRank: p2IsBot ? 'MathBot' : p2Res.newRank,
-                promoted: p2IsBot ? false : (p2Res.promoted || false),
-                cheated: room.p2.cheated || false,
-                ticketUsed: p2HasTicket && !room.isCasual && !p2IsBot,
-              };
-
-              // Record the match for each human player's history (best-effort; never blocks the end).
+              // Record match_log rows (best-effort; different table from duel_history).
               if (p1IsHuman) {
                 recordMatch(db, {
                   userId: room.p1.id, mode: 'duel',
                   opponentId: p2IsHuman ? room.p2.id : null, opponentName: room.p2.username,
                   myScore: room.p1.score, oppScore: room.p2.score,
-                  result: winner === room.p1.id ? 'win' : winner === null ? 'draw' : 'loss',
+                  result: p1Won ? 'win' : winner === null ? 'draw' : 'loss',
                   ratingDelta: p1Res.ratingDelta || 0,
                 });
               }
@@ -1441,44 +1466,121 @@ function finalizeDuel(roomId, room, winner, p2IsBot, done) {
                   userId: room.p2.id, mode: 'duel',
                   opponentId: room.p1.id, opponentName: room.p1.username,
                   myScore: room.p2.score, oppScore: room.p1.score,
-                  result: winner === room.p2.id ? 'win' : winner === null ? 'draw' : 'loss',
+                  result: p2Won ? 'win' : winner === null ? 'draw' : 'loss',
                   ratingDelta: p2Res.ratingDelta || 0,
                 });
               }
 
-              io.to(roomId).emit('duel_end', {
-                winnerId: winner,
-                winner,
-                p1: p1Data,
-                p2: p2Data,
-                isCasual: room.isCasual || false,
-              });
-              delete rooms[roomId];
-              if (done) done();
+              arena.updateReputation(
+                room.p1.id,
+                { didWin: p1Won, newElo: p1Res.newElo, isCasual: room.isCasual },
+                (eR1, rep1) => {
+                  const afterRep = (rep2) => {
+                    const p1Tags = room.isCasual ? [] : computeClutchTags({
+                      didWin: p1Won, myScore: room.p1.score, oppScore: room.p2.score, maxScore,
+                      myRating: room.p1.elo || 1000, oppRating: room.p2.elo || 1000,
+                      oldRank: pre1 ? pre1.rank : null, newRank: p1Res.newRank,
+                      oppPriorStreak: pre2 ? pre2.streak : 0,
+                      winStreak: rep1 ? rep1.winStreak : 0, newPeak: rep1 ? rep1.newPeak : false,
+                    });
+                    const p2Tags = (room.isCasual || p2IsBot) ? [] : computeClutchTags({
+                      didWin: p2Won, myScore: room.p2.score, oppScore: room.p1.score, maxScore,
+                      myRating: room.p2.elo || 1000, oppRating: room.p1.elo || 1000,
+                      oldRank: pre2 ? pre2.rank : null, newRank: p2Res.newRank,
+                      oppPriorStreak: pre1 ? pre1.streak : 0,
+                      winStreak: rep2 ? rep2.winStreak : 0, newPeak: rep2 ? rep2.newPeak : false,
+                    });
+
+                    logArenaMoments(room.p1.id, room.p1.username, p1Tags, rep1);
+                    if (!p2IsBot) logArenaMoments(room.p2.id, room.p2.username, p2Tags, rep2);
+
+                    arena.recordDuelResult({
+                      p1Id: room.p1.id, p2Id: room.p2.id, winnerId: winner,
+                      p1Score: room.p1.score, p2Score: room.p2.score,
+                      p1EloChange: p1Res.ratingDelta || 0, p2EloChange: p2Res.ratingDelta || 0,
+                      mode: room.isCasual ? 'casual' : 'ranked',
+                    }, () => {
+                      arena.getHeadToHead(room.p1.id, room.p2.id, (eH, h2h) => {
+                        const p1Data = {
+                          ...room.p1,
+                          ratingMoved: ratingMoves,
+                          ratingDelta: p1Res.ratingDelta,
+                          newElo: p1Res.newElo,
+                          newDisplayRating: p1Res.newDisplayRating,
+                          newRank: p1Res.newRank,
+                          promoted: p1Res.promoted || false,
+                          cheated: room.p1.cheated || false,
+                          ticketUsed: p1HasTicket && !room.isCasual,
+                          clutchTags: p1Tags,
+                          winStreak: rep1 ? rep1.winStreak : 0, bestStreak: rep1 ? rep1.bestStreak : 0,
+                          newPeak: rep1 ? rep1.newPeak : false, peakElo: rep1 ? rep1.peakElo : null,
+                        };
+                        const p2Data = {
+                          ...room.p2,
+                          ratingMoved: ratingMoves,
+                          ratingDelta: p2IsBot ? 0 : p2Res.ratingDelta,
+                          newElo: p2IsBot ? 0 : p2Res.newElo,
+                          newDisplayRating: p2IsBot ? null : p2Res.newDisplayRating,
+                          newRank: p2IsBot ? 'MathBot' : p2Res.newRank,
+                          promoted: p2IsBot ? false : (p2Res.promoted || false),
+                          cheated: room.p2.cheated || false,
+                          ticketUsed: p2HasTicket && !room.isCasual && !p2IsBot,
+                          clutchTags: p2Tags,
+                          winStreak: rep2 ? rep2.winStreak : 0, bestStreak: rep2 ? rep2.bestStreak : 0,
+                          newPeak: rep2 ? rep2.newPeak : false, peakElo: rep2 ? rep2.peakElo : null,
+                        };
+
+                        io.to(roomId).emit('duel_end', {
+                          winnerId: winner,
+                          winner,
+                          p1: p1Data,
+                          p2: p2Data,
+                          isCasual: room.isCasual || false,
+                          h2h: h2h ? { total: h2h.total, p1Wins: h2h.myWins, p2Wins: h2h.theirWins, draws: h2h.draws } : null,
+                        });
+                        delete rooms[roomId];
+                        if (done) done();
+                      });
+                    });
+                  };
+
+                  if (p2IsBot) afterRep(null);
+                  else arena.updateReputation(
+                    room.p2.id,
+                    { didWin: p2Won, newElo: p2Res.newElo, isCasual: room.isCasual },
+                    (eR2, rep2) => afterRep(rep2)
+                  );
+                }
+              );
             });
           });
         };
 
-        // Consume tickets (ranked only), then commit.
-        let pendingTasks = 0;
-        if (p1HasTicket && !room.isCasual) {
-          pendingTasks++;
-          db.run("UPDATE user_utilities SET quantity = quantity - 1 WHERE user_id = ? AND item_id = 'item_challenge_ticket'", [room.p1.id], () => {
-            pendingTasks--;
-            if (pendingTasks === 0) proceed();
-          });
-        }
-        if (p2HasTicket && !room.isCasual && !p2IsBot) {
-          pendingTasks++;
-          db.run("UPDATE user_utilities SET quantity = quantity - 1 WHERE user_id = ? AND item_id = 'item_challenge_ticket'", [room.p2.id], () => {
-            pendingTasks--;
-            if (pendingTasks === 0) proceed();
-          });
-        }
+        // Read pre-match snapshots (rank + streak) before any writes, then consume tickets, then proceed.
+        readDuelPreSnapshot(room.p1.id, (pre1) => {
+          readDuelPreSnapshot(p2IsBot ? null : room.p2.id, (pre2) => {
+            // Consume tickets (ranked only), then commit.
+            let pendingTasks = 0;
+            if (p1HasTicket && !room.isCasual) {
+              pendingTasks++;
+              db.run("UPDATE user_utilities SET quantity = quantity - 1 WHERE user_id = ? AND item_id = 'item_challenge_ticket'", [room.p1.id], () => {
+                pendingTasks--;
+                if (pendingTasks === 0) proceed(pre1, pre2);
+              });
+            }
+            if (p2HasTicket && !room.isCasual && !p2IsBot) {
+              pendingTasks++;
+              db.run("UPDATE user_utilities SET quantity = quantity - 1 WHERE user_id = ? AND item_id = 'item_challenge_ticket'", [room.p2.id], () => {
+                pendingTasks--;
+                if (pendingTasks === 0) proceed(pre1, pre2);
+              });
+            }
 
-        if (pendingTasks === 0) {
-          proceed();
-        }
+            if (pendingTasks === 0) {
+              proceed(pre1, pre2);
+            }
+          });
+        });
       });
     });
   });

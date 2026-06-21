@@ -44,6 +44,16 @@ import com.example.numera.ui.components.RankBadge
 import com.example.numera.ui.components.NumeraPremiumLoader
 import com.example.numera.ui.components.MathIconSpinner
 import com.example.numera.data.network.SocketClient
+import com.example.numera.data.network.ArenaIdentity
+import com.example.numera.data.network.HeadToHead
+import com.example.numera.ui.feature.arena.ClutchBanners
+import com.example.numera.ui.feature.arena.ClutchTag
+import com.example.numera.ui.feature.arena.Momentum
+import com.example.numera.ui.feature.arena.MomentumBanner
+import com.example.numera.ui.feature.arena.PlayerIdentityCard
+import com.example.numera.ui.feature.arena.RatingCountUp
+import com.example.numera.ui.feature.arena.momentumFor
+import com.example.numera.ui.feature.arena.rivalryLine
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
@@ -51,6 +61,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 
 @Composable
@@ -95,6 +106,16 @@ fun DuelGameScreen(
     var myUserId by remember { mutableIntStateOf(0) }
     var eloInfo by remember { mutableStateOf<JSONObject?>(null) }
     var favoritedQuestions by remember { mutableStateOf<Set<String>>(emptySet()) }
+
+    // Living-Arena identity (docs/CompetitiveArenaRedesign.md): the opponent is a real competitor,
+    // not a bare name. These ride along on room_status (server stashes them on the room).
+    var myIdentity by remember { mutableStateOf<ArenaIdentity?>(null) }
+    var oppIdentity by remember { mutableStateOf<ArenaIdentity?>(null) }
+    var h2h by remember { mutableStateOf<HeadToHead?>(null) }
+    var isRanked by remember { mutableStateOf(true) }
+    // Comeback recognition: the client alone sees the live score progression, so it tracks whether
+    // you were ever meaningfully behind before winning (the server can't infer this).
+    var wasTrailing by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -142,6 +163,31 @@ fun DuelGameScreen(
                     problemsList = Gson().fromJson(pArray, type)
                 }
 
+                // Identities (opponent player card + rivalry) — parsed once, perspective-corrected.
+                val identitiesObj = data.optJSONObject("identities")
+                if (identitiesObj != null && oppIdentity == null) {
+                    val p1 = identitiesObj.optJSONObject("p1")
+                    val p2 = identitiesObj.optJSONObject("p2")
+                    if (p1 != null && p2 != null) {
+                        val mineIsP1 = p1.optInt("id") == myUserId
+                        val mineObj = if (mineIsP1) p1 else p2
+                        val oppObj = if (mineIsP1) p2 else p1
+                        myIdentity = parseArenaIdentity(mineObj)
+                        oppIdentity = parseArenaIdentity(oppObj)
+                        isRanked = identitiesObj.optBoolean("ranked", true)
+                        identitiesObj.optJSONObject("h2h")?.let { h ->
+                            val p1Wins = h.optInt("p1Wins")
+                            val p2Wins = h.optInt("p2Wins")
+                            h2h = HeadToHead(
+                                total = h.optInt("total"),
+                                myWins = if (mineIsP1) p1Wins else p2Wins,
+                                theirWins = if (mineIsP1) p2Wins else p1Wins,
+                                draws = h.optInt("draws")
+                            )
+                        }
+                    }
+                }
+
                 if (data.has("p1")) {
                     val p1Obj = data.getJSONObject("p1")
                     val p1Id = p1Obj.getInt("id")
@@ -170,6 +216,8 @@ fun DuelGameScreen(
                         oppPoints = p2Score
                     }
                 }
+                // Comeback bookkeeping: remember if the opponent ever pulled meaningfully ahead.
+                if (oppPoints > myPoints) wasTrailing = true
             }
         }
 
@@ -207,7 +255,9 @@ fun DuelGameScreen(
         LaunchedEffect(Unit) {
             introShown = true
             com.example.numera.haptic.HapticManager.playMedium()
-            kotlinx.coroutines.delay(1800)
+            // A touch longer than before so the opponent's player card has time to arrive and the
+            // matchup actually registers as a face-off, not a flash.
+            kotlinx.coroutines.delay(2200)
             showVsIntro = false
         }
         Box(
@@ -216,37 +266,82 @@ fun DuelGameScreen(
         ) {
             AnimatedVisibility(visible = introShown, enter = Motion.rewardEnter()) {
                 Column(
+                    modifier = Modifier.fillMaxWidth().padding(Spacing.xl),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(Spacing.m)
                 ) {
                     Text(
-                        text = myUsername,
-                        fontSize = 26.sp,
+                        text = if (isRanked) "RANKED DUEL" else "CASUAL DUEL",
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.primary,
-                        textAlign = TextAlign.Center
+                        letterSpacing = 4.sp,
+                        color = MaterialTheme.colorScheme.primary
                     )
-                    Text(text = "⚔️", fontSize = 54.sp)
-                    Text(
-                        text = "VS",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 6.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                    Text(
-                        text = opponentName,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.secondary,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(Spacing.s))
+
+                    val mine = myIdentity
+                    val opp = oppIdentity
+                    if (mine != null && opp != null) {
+                        PlayerIdentityCard(identity = mine, isYou = true, accent = MaterialTheme.colorScheme.primary)
+                        Text(
+                            text = "VS",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 6.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                        )
+                        PlayerIdentityCard(identity = opp, isYou = false, accent = MaterialTheme.colorScheme.secondary)
+                        h2h?.let { record ->
+                            Text(
+                                text = rivalryLine(record, opp.username),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+
+                        // Stakes preview — ranked only: what's on the line this match, and whether a
+                        // win promotes you. Computed client-side from the same Elo math the server uses.
+                        if (isRanked) {
+                            val winChange = com.example.numera.ui.feature.arena.projectedEloChange(mine.elo, opp.elo, win = true, oppIsBot = opp.isBot)
+                            val loseChange = com.example.numera.ui.feature.arena.projectedEloChange(mine.elo, opp.elo, win = false, oppIsBot = opp.isBot)
+                            Text(
+                                text = "On the line:  win +$winChange   ·   lose $loseChange",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center
+                            )
+                            com.example.numera.ui.feature.arena.nextRankInfo(mine.elo)?.let { nx ->
+                                if (winChange >= nx.pointsToNext) {
+                                    Text(
+                                        text = "🏆 Win this to reach ${nx.label}!",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = MilestoneGold,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        // Identities not arrived yet — fall back to the classic name face-off.
+                        Text(myUsername, fontSize = 26.sp, fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
+                        Text("⚔️", fontSize = 54.sp)
+                        Text("VS", fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 6.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text(opponentName, fontSize = 26.sp, fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.secondary, textAlign = TextAlign.Center)
+                    }
+
+                    Spacer(modifier = Modifier.height(Spacing.xs))
                     Text(
                         text = "${problemsList.size} problems · fastest correct answers win",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -260,28 +355,44 @@ fun DuelGameScreen(
         // Unified rating (docs/specs/Spec-RatingUnification.md): duels move the SAME per-domain NRS
         // rating as solo play. The debrief shows the conservative display rating + its delta. A ranked
         // duel vs the bot fallback is rating-neutral (ratingMoved=false), so we don't show a change.
-        var myChange = 0
-        var myNewRating = 0
-        var myNewRank = ""
-        var myRatingMoved = false
-        var didIGetPromoted = false
-        var didICheat = false
 
         val p1Obj = eloInfo?.optJSONObject("p1")
         val p2Obj = eloInfo?.optJSONObject("p2")
-
-        val mine = when {
-            p1Obj != null && p1Obj.optInt("id") == myUserId -> p1Obj
-            p2Obj != null && p2Obj.optInt("id") == myUserId -> p2Obj
+        val meIsP1 = p1Obj?.optInt("id") == myUserId
+        val meObj = when {
+            p1Obj?.optInt("id") == myUserId -> p1Obj
+            p2Obj?.optInt("id") == myUserId -> p2Obj
             else -> null
         }
-        if (mine != null) {
-            myChange = mine.optInt("ratingDelta")
-            myNewRating = mine.optInt("newDisplayRating")
-            myNewRank = mine.optString("newRank")
-            myRatingMoved = mine.optBoolean("ratingMoved", false)
-            didIGetPromoted = mine.optBoolean("promoted", false)
-            didICheat = mine.optBoolean("cheated", false)
+
+        val myChange = meObj?.optInt("ratingDelta") ?: 0
+        val myNewRating = meObj?.optInt("newDisplayRating") ?: 1000
+        val myNewRank = meObj?.optString("newRank") ?: ""
+        val myRatingMoved = meObj?.optBoolean("ratingMoved", false) ?: false
+        val didIGetPromoted = meObj?.optBoolean("promoted", false) ?: false
+        val didICheat = meObj?.optBoolean("cheated", false) ?: false
+        val myWinStreak = meObj?.optInt("winStreak", 0) ?: 0
+        val myNewPeak = meObj?.optBoolean("newPeak", false) ?: false
+        val myPeakElo = meObj?.optInt("peakElo", 0) ?: 0
+
+        // Clutch moments (server-authored) + the client-only comeback it observed live.
+        val serverTags = parseClutchTags(meObj?.optJSONArray("clutchTags"))
+        val clutchTags = remember(serverTags, didIWin, wasTrailing) {
+            if (didIWin && wasTrailing && serverTags.none { it.key == "comeback" }) {
+                val comeback = ClutchTag("comeback", "Comeback", "🔥", "amber")
+                if (serverTags.isEmpty()) listOf(comeback) else listOf(serverTags.first(), comeback) + serverTags.drop(1)
+            } else serverTags
+        }
+
+        // Post-match rivalry standing (your perspective).
+        val postH2h = eloInfo?.optJSONObject("h2h")?.let { h ->
+            val p1Wins = h.optInt("p1Wins"); val p2Wins = h.optInt("p2Wins")
+            HeadToHead(
+                total = h.optInt("total"),
+                myWins = if (meIsP1) p1Wins else p2Wins,
+                theirWins = if (meIsP1) p2Wins else p1Wins,
+                draws = h.optInt("draws")
+            )
         }
 
         Box(
@@ -318,27 +429,15 @@ fun DuelGameScreen(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = if (isCasual) {
-                            "Casual Match Practice"
-                        } else {
-                            "Ranked League Battle"
-                        },
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    // Clutch moments — the memorable headline of a win (comeback / perfect / upset /
+                    // streak-break / promotion / new peak). Nothing renders on a plain win or a loss.
+                    if (clutchTags.isNotEmpty()) {
+                        ClutchBanners(tags = clutchTags)
+                    }
 
                     if (!isCasual) {
                         if (myRatingMoved) {
-                            Text(
-                                text = "New Rating: $myNewRating (${if (myChange >= 0) "+" else ""}$myChange)",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
+                            RatingCountUp(oldElo = myNewRating - myChange, newElo = myNewRating, delta = myChange)
                         } else {
                             // Ranked bot fallback: a practice opponent, so the rating is untouched.
                             Text(
@@ -356,10 +455,10 @@ fun DuelGameScreen(
                         ) {
                             RankBadge(rankName = myNewRank, modifier = Modifier.size(32.dp))
                             Text(
-                                text = "Rank: $myNewRank",
+                                text = myNewRank,
                                 fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                         }
 
@@ -373,6 +472,29 @@ fun DuelGameScreen(
                             )
                         }
 
+                        // Reputation recap: your form and high-water mark, surfaced in the moment.
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.s),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (myWinStreak >= 2) {
+                                Text(
+                                    text = "🔥 $myWinStreak-win streak",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.tertiary
+                                )
+                            }
+                            if (myNewPeak && myPeakElo > 0) {
+                                Text(
+                                    text = "📈 New peak $myPeakElo",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MilestoneGold
+                                )
+                            }
+                        }
+
                         if (didICheat) {
                             Text(
                                 text = "⚠️ Suspicious solve times detected.\nThis ranked match was forfeited.",
@@ -382,22 +504,40 @@ fun DuelGameScreen(
                                 textAlign = TextAlign.Center
                             )
                         }
+                    } else {
+                        Text(
+                            text = "Casual match · rating unaffected",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    // Rivalry update — the story this match wrote, so the loop has unfinished business.
+                    postH2h?.let { record ->
+                        if (record.total > 0) {
+                            Text(
+                                text = rivalryLine(record, opponentName),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
 
                     Text(
                         text = if (didIWin) {
-                            "You dominated the Arena! Received 🪙 +50 Coins."
+                            "Match won · 🪙 +50 coins"
                         } else {
-                            "Opponent was faster this time."
+                            "Out-raced this time — study the misses and run it back."
                         },
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         textAlign = TextAlign.Center
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     // Compete→learn loop (ultra-review #17): the problems missed this duel were
                     // banked to the Mistakes Bank as they happened; offer to review them now
@@ -459,6 +599,9 @@ fun DuelGameScreen(
         val total = problemsList.size.coerceAtLeast(1)
         val myBar by animateFloatAsState(myProgress / total.toFloat(), Motion.standard(), label = "myBar")
         val oppBar by animateFloatAsState(oppProgress / total.toFloat(), Motion.standard(), label = "oppBar")
+        // Cosmetic momentum (shared by the header banner, the match-point treatment, and the card glow).
+        val momentum = momentumFor(streakCount, currentProblemIdx, total, myPoints, oppPoints)
+        val isMatchPoint = momentum == Momentum.CLUTCH && !hasAnswered
         DuoCard(
             modifier = Modifier.fillMaxWidth(),
             backgroundColor = MaterialTheme.colorScheme.surfaceVariant
@@ -536,14 +679,9 @@ fun DuelGameScreen(
                         },
                         modifier = Modifier.weight(1f)
                     )
-                    if (streakCount >= 2) {
-                        Text(
-                            text = "🔥 ×$streakCount",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                    }
+                    // Momentum (cosmetic) subsumes the old streak chip: it reads the streak AND the
+                    // live race to surface In Rhythm / Locked In / On Fire / Clutch.
+                    MomentumBanner(momentum = momentum)
                     Text(
                         text = "Q ${(currentProblemIdx + 1).coerceAtMost(total)}/$total",
                         fontSize = 11.sp,
@@ -551,6 +689,13 @@ fun DuelGameScreen(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
+            }
+        }
+
+        // Match point — the decisive final question gets its own climax beat.
+        if (isMatchPoint) {
+            Box(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), contentAlignment = Alignment.Center) {
+                com.example.numera.ui.feature.arena.MatchPointBanner()
             }
         }
 
@@ -562,6 +707,8 @@ fun DuelGameScreen(
                 .padding(vertical = 16.dp),
             borderColor = if (hasAnswered && revealedCorrectAnswer.isNotEmpty()) {
                 if (selectedAnswer == revealedCorrectAnswer) CorrectGreen else WrongRed
+            } else if (isMatchPoint) {
+                MilestoneGold
             } else {
                 MaterialTheme.colorScheme.outline
             }
@@ -834,4 +981,36 @@ fun DuelGameScreen(
     // column, so the correct-answer burst was painted underneath and never visible.)
     VictoryParticles(trigger = showParticles) { showParticles = false }
     }
+}
+
+// Parse a server arena-identity JSON object into the client model (perspective-agnostic).
+private fun parseArenaIdentity(o: JSONObject): ArenaIdentity = ArenaIdentity(
+    id = o.optInt("id"),
+    username = o.optString("username", "Opponent"),
+    isBot = o.optBoolean("isBot", false),
+    rank = o.optString("rank", "Unranked"),
+    elo = o.optInt("elo", 1000),
+    peak_elo = o.optInt("peak_elo", o.optInt("elo", 1000)),
+    current_win_streak = o.optInt("current_win_streak", 0),
+    best_win_streak = o.optInt("best_win_streak", 0),
+    competitive_matches = o.optInt("competitive_matches", 0),
+    specialty = if (o.isNull("specialty")) null else o.optString("specialty", null)
+)
+
+// Parse the server's clutchTags array (post-match) into client models.
+private fun parseClutchTags(arr: JSONArray?): List<ClutchTag> {
+    if (arr == null) return emptyList()
+    val out = ArrayList<ClutchTag>(arr.length())
+    for (i in 0 until arr.length()) {
+        val t = arr.optJSONObject(i) ?: continue
+        out.add(
+            ClutchTag(
+                key = t.optString("key"),
+                label = t.optString("label"),
+                emoji = t.optString("emoji"),
+                accent = t.optString("accent", "blue")
+            )
+        )
+    }
+    return out
 }
