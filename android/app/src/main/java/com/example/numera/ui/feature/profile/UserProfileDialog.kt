@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import com.example.numera.theme.*
 import com.example.numera.ui.components.ProfileBanner
 import com.example.numera.ui.components.MathAvatar
+import com.example.numera.ui.components.CosmeticAvatar
 import com.example.numera.ui.components.RankBadge
 import com.example.numera.ui.components.NumeraIcon
 import com.example.numera.ui.components.NumeraIconType
@@ -80,23 +81,17 @@ fun UserProfileDialog(
                                 modifier = Modifier.size(IconSize.s)
                             )
                         }
-                        // Avatar overlapping banner
-                        Box(
+                        // Avatar overlapping banner — wearing this player's equipped frame ring + effect.
+                        CosmeticAvatar(
+                            avatarKey = profile.avatar,
+                            frameKey = profile.active_frame,
+                            effectKey = profile.active_effect,
+                            fontSize = 32.sp,
                             modifier = Modifier
                                 .align(Alignment.BottomStart)
                                 .padding(start = Spacing.l)
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surface)
-                                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            MathAvatar(
-                                avatarKey = profile.avatar,
-                                modifier = Modifier.fillMaxSize(),
-                                fontSize = 32.sp
-                            )
-                        }
+                                .size(64.dp),
+                        )
                     }
 
                     Column(

@@ -30,6 +30,7 @@ import com.example.numera.sound.SoundManager
 import com.example.numera.theme.*
 import com.example.numera.ui.components.ProfileBanner
 import com.example.numera.ui.components.MathAvatar
+import com.example.numera.ui.components.CosmeticAvatar
 import com.example.numera.ui.components.RankBadge
 import com.example.numera.ui.components.AchievementBadge
 import com.example.numera.ui.components.NumeraIcon
@@ -324,22 +325,18 @@ fun ProfileScreen(
                 bannerKey = user?.active_banner,
                 modifier = Modifier.fillMaxWidth().height(140.dp)
             )
-            Box(
+            // Avatar wearing its equipped cosmetics — earned mastery frame ring + profile-effect aura
+            // (docs/ShopOverhaul.md §8). Falls back to the plain bordered circle when nothing's equipped.
+            CosmeticAvatar(
+                avatarKey = user?.avatar,
+                frameKey = user?.active_frame,
+                effectKey = user?.active_effect,
+                fontSize = 46.sp,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(start = Spacing.xl)
-                    .size(88.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                MathAvatar(
-                    avatarKey = user?.avatar,
-                    modifier = Modifier.fillMaxSize(),
-                    fontSize = 46.sp
-                )
-            }
+                    .size(88.dp),
+            )
         }
 
         // User info details

@@ -133,6 +133,10 @@ val SunsetBorder = Color(0xFFFDD5C0)
 // Bright "trophy" gold (cross-theme) — medals, stars, coin/level accents. The brighter sibling
 // of MilestoneGold; previously inlined as Color(0xFFFFD700) in a dozen places.
 val MedalGold          = Color(0xFFFFD700)
+// Warm "season" gold — the Season-Token / seasonal-cosmetic economy accent in the shop. A softer,
+// less metallic gold than MedalGold so the token economy reads distinct from medals/levels.
+// (Promoted from a private literal in the shop cards so the wallet + prestige cards share one hue.)
+val SeasonGold         = Color(0xFFFFD54A)
 // Podium siblings of MedalGold — 2nd/3rd place. Complete the medal set so leaderboard ranks
 // pull from one place instead of inlining silver/bronze hexes.
 val MedalSilver        = Color(0xFFC0C0C0)

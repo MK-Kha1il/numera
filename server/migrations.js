@@ -1405,6 +1405,26 @@ const migrations = [
       await run("UPDATE users SET league = 'Obsidian' WHERE league = 'Diamond'");
     },
   },
+  {
+    version: 62,
+    name: 'cosmetic_equip_slots',
+    // docs/ShopOverhaul.md §8 (Stage D): the Vault gains new cosmetic *types* — profile effects,
+    // duel victory effects, tap effects, and earned mastery frames. Each needs its own equip slot
+    // on the user (titles reuse the existing active_title). Empty string = nothing equipped.
+    up: async (run) => {
+      const addColumn = async (sql) => {
+        try {
+          await run(sql);
+        } catch (e) {
+          if (!/duplicate column name/i.test(e.message)) throw e;
+        }
+      };
+      await addColumn("ALTER TABLE users ADD COLUMN active_effect TEXT DEFAULT ''");
+      await addColumn("ALTER TABLE users ADD COLUMN active_victory TEXT DEFAULT ''");
+      await addColumn("ALTER TABLE users ADD COLUMN active_tap TEXT DEFAULT ''");
+      await addColumn("ALTER TABLE users ADD COLUMN active_frame TEXT DEFAULT ''");
+    },
+  },
 ];
 
 /**

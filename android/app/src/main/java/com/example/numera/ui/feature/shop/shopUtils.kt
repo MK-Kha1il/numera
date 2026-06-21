@@ -54,3 +54,20 @@ fun formatDuration(seconds: Long): String {
         "${hours}h ${minutes}m"
     }
 }
+
+// Per-item state, derived once so the grid card, the preview sheet, and the tabs all agree.
+fun ShopItem.isEquippedBy(user: User?): Boolean = when (type) {
+    "theme" -> user?.theme == value
+    "avatar" -> user?.avatar == value
+    "badge" -> user?.active_badge == value
+    "banner" -> user?.active_banner == value
+    "title" -> user?.active_title == value
+    "effect" -> user?.active_effect == value
+    "victory" -> user?.active_victory == value
+    "tap" -> user?.active_tap == value
+    "frame" -> user?.active_frame == value
+    else -> false
+}
+
+fun ShopItem.isLockedFor(user: User?): Boolean =
+    required_rank?.let { getRankValue(user?.rank ?: "") < getRankValue(it) } ?: false

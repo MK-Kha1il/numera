@@ -145,6 +145,9 @@ fun MainTabsScreen(
                 }
                 withContext(Dispatchers.Main) {
                     currentUser = user
+                    // Cache equipped effects the gameplay/duel screens read (they have no User object).
+                    RetrofitClient.equippedVictoryKey = user.active_victory
+                    RetrofitClient.equippedTapKey = user.active_tap
                     ThemeManager.currentTheme = user.theme ?: "studio"
                     if (commitment != null) {
                         unlockedRelicIds = commitment.relics.map { it.relic_id }.toSet()

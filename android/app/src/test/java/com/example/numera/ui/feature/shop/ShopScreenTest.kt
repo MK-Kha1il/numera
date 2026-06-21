@@ -4,6 +4,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.example.numera.data.network.ApiService
 import com.example.numera.data.network.RetrofitClient
 import com.example.numera.data.network.ShopItem
@@ -20,9 +22,10 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Screen-level test (review #81) that also verifies this session's seasonal-sink client wiring
- * end-to-end: a mocked shop with a season-exclusive cosmetic renders the "This Season" item and
- * the Season Tokens wallet.
+ * Screen-level test (review #81) that also verifies the seasonal-sink client wiring end-to-end: a
+ * mocked shop with a season-exclusive cosmetic renders the season item + Season Tokens wallet. After
+ * the Vault was tabbed (docs/ShopOverhaul.md Stage B), that content lives on the "Seasonal" tab, so
+ * the test selects it first.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], qualifiers = "w411dp-h891dp")
@@ -50,6 +53,13 @@ class ShopScreenTest {
         RetrofitClient.setApiServiceForTest(fakeApi)
 
         compose.setContent { ShopScreen(user = me, onPurchaseComplete = {}) }
+
+        // The Vault is tabbed; seasonal content lives on the "Seasonal" tab. Select it (scrolling the
+        // chip row into view first, since it sits past the visible chips).
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithText("Seasonal", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Seasonal", substring = true).performScrollTo().performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithText("Comet Avatar", substring = true).fetchSemanticsNodes().isNotEmpty()

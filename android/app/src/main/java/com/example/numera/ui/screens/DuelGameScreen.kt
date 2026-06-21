@@ -38,6 +38,7 @@ import com.example.numera.theme.*
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.VictoryParticles
+import com.example.numera.ui.components.VictoryEffectOverlay
 import com.example.numera.ui.components.MathText
 import com.example.numera.ui.components.RankBadge
 import com.example.numera.ui.components.NumeraPremiumLoader
@@ -429,8 +430,16 @@ fun DuelGameScreen(
             }
 
             if (didIWin) {
-                var winBurst by remember { mutableStateOf(true) }
-                VictoryParticles(trigger = winBurst) { winBurst = false }
+                // An equipped Victory Effect (docs/ShopOverhaul.md §8) plays instead of the default
+                // confetti — elegant, not explosive. Cached on RetrofitClient (the duel screen has no
+                // User object). Falls back to confetti when nothing is equipped.
+                val victoryKey = remember { RetrofitClient.equippedVictoryKey }
+                if (!victoryKey.isNullOrEmpty()) {
+                    VictoryEffectOverlay(victoryKey = victoryKey, modifier = Modifier.fillMaxSize())
+                } else {
+                    var winBurst by remember { mutableStateOf(true) }
+                    VictoryParticles(trigger = winBurst) { winBurst = false }
+                }
             }
         }
         return

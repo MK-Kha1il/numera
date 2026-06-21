@@ -16,7 +16,7 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
 
   db.get(
     `
-    SELECT id, username, xp, level, coins, rank, competitive_rank, active_title, active_badge, theme, avatar, active_banner, solved_count, arena_wins, elo, competitive_matches, profile_private
+    SELECT id, username, xp, level, coins, rank, competitive_rank, active_title, active_badge, theme, avatar, active_banner, active_frame, active_effect, solved_count, arena_wins, elo, competitive_matches, profile_private
     FROM users
     WHERE id = ?
   `,
@@ -67,6 +67,10 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
           theme: user.theme,
           avatar: user.avatar,
           active_banner: user.active_banner,
+          // Equipped cosmetics shown to others (docs/ShopOverhaul.md §8): the earned mastery-frame ring
+          // and the profile-effect aura, so prestige reads on another player's profile too.
+          active_frame: user.active_frame || '',
+          active_effect: user.active_effect || '',
           solved_count: user.solved_count || 0,
           arena_wins: user.arena_wins || 0,
           elo: user.elo,

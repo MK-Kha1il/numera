@@ -561,14 +561,23 @@ function computeTitleStats(userId, cb) {
             db.all('SELECT peak_rank FROM season_awards WHERE user_id = ?', [userId], (e4, awards) => {
               let peakTier = NRS.rankToTierIndex(u ? u.competitive_rank : '');
               for (const a of awards || []) peakTier = Math.max(peakTier, NRS.rankToTierIndex(a.peak_rank));
-              cb({
-                activeTitle: (u && u.active_title) || '',
-                placed: !!(u && u.competitive_matches >= 5),
-                duels: (mc && mc.duels) || 0,
-                reasoning: (mc && mc.reasoning) || 0,
-                peakTier,
-                maxH2HWins: (h2h && h2h.maxW) || 0,
-              });
+              // Purchasable titles (shop_items type 'title') count as "earned" once owned — fetch the
+              // catalog ids the player owns so isTitleEarned can resolve them (docs/ShopOverhaul.md §8).
+              db.all(
+                "SELECT s.value AS tid FROM user_inventory ui JOIN shop_items s ON ui.item_id = s.id WHERE ui.user_id = ? AND s.type = 'title'",
+                [userId],
+                (e5, owned) => {
+                  cb({
+                    activeTitle: (u && u.active_title) || '',
+                    placed: !!(u && u.competitive_matches >= 5),
+                    duels: (mc && mc.duels) || 0,
+                    reasoning: (mc && mc.reasoning) || 0,
+                    peakTier,
+                    maxH2HWins: (h2h && h2h.maxW) || 0,
+                    ownedTitles: (owned || []).map((r) => r.tid),
+                  });
+                }
+              );
             });
           }
         );

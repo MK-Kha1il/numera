@@ -12,10 +12,23 @@ const TITLE_CATALOG = [
   { id: 'diamondmind', name: 'Diamond Mind', desc: 'Reach Diamond.' },
   { id: 'numerist', name: 'Numerist', desc: 'Reach Grandmaster — the apex.' },
   { id: 'nemesis', name: 'Nemesis', desc: 'Beat one rival 3 times.' },
+  // Purchasable cosmetic titles (docs/ShopOverhaul.md §8). Bought in the Vault (shop_items type
+  // 'title', value = these ids); "earned" = owned. They resolve to display names here the same way
+  // earned titles do, so a bought title shows on the profile/public card just like a climbed one.
+  { id: 'pattern_seeker', name: 'Pattern Seeker', desc: 'A Vault title for the eternally curious.', purchasable: true },
+  { id: 'equation_apprentice', name: 'Equation Apprentice', desc: 'A Vault title for the rising solver.', purchasable: true },
+  { id: 'the_geometer', name: 'The Geometer', desc: 'A Vault title for lovers of shape and proof.', purchasable: true },
+  { id: 'proof_explorer', name: 'Proof Explorer', desc: 'A Vault title for the relentlessly rigorous.', purchasable: true },
+  { id: 'the_strategist', name: 'The Strategist', desc: 'A Vault title for the calculating mind.', purchasable: true },
+  { id: 'legend_of_numbers', name: 'Legend of Numbers', desc: 'A Vault title for the truly devoted.', purchasable: true },
 ];
+
+// Titles you buy rather than climb to — "earned" means owned in inventory (see computeTitleStats).
+const PURCHASABLE_TITLES = new Set(TITLE_CATALOG.filter((t) => t.purchasable).map((t) => t.id));
 
 // Tier indices match NRS.RANK_TIERS (Gold=2, Diamond=4, Grandmaster=6).
 function isTitleEarned(id, s) {
+  if (PURCHASABLE_TITLES.has(id)) return !!(s.ownedTitles && s.ownedTitles.includes(id));
   switch (id) {
     case 'novice': return true;
     case 'ranked': return !!s.placed;

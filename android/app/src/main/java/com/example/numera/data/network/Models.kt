@@ -113,6 +113,12 @@ data class User(
     val theme: String? = null,
     val avatar: String? = null,
     val active_banner: String? = null,
+    // New cosmetic equip slots (docs/ShopOverhaul.md §8, Stage D)
+    val active_title: String? = null,
+    val active_effect: String? = null,
+    val active_victory: String? = null,
+    val active_tap: String? = null,
+    val active_frame: String? = null,
     val assessment_taken: Int? = null,
     val onboarding_complete: Int? = 0,
     val is_guest: Int? = 0,
@@ -151,6 +157,8 @@ data class PublicProfile(
     val theme: String? = null,
     val avatar: String? = null,
     val active_banner: String? = null,
+    val active_frame: String? = null,
+    val active_effect: String? = null,
     val solved_count: Int,
     val arena_wins: Int,
     val competitive_rank: String? = null,
@@ -818,6 +826,7 @@ data class ShopResponse(
     val seasonItems: List<ShopItem>? = null,
     val tokenItems: List<ShopItem>? = null,
     val ownedItems: List<ShopItem>? = null, // every owned cosmetic (incl. earn-only) — equip anytime
+    val earnableItems: List<ShopItem>? = null, // earn-only prestige NOT yet owned (the "Earnable" tab)
     val seasonInfo: ShopSeasonInfo? = null,
     val seasonTokens: Int? = 0,
     val utilities: List<UtilityBalance>? = null,

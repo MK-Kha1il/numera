@@ -23,6 +23,13 @@ object RetrofitClient {
     val isUserLoggedIn: Boolean
         get() = authToken != null
 
+    // The local player's equipped victory effect (docs/ShopOverhaul.md §8), cached so the realtime
+    // DuelGameScreen — which has no User object — can play it on a win. Kept fresh by MainTabsScreen's
+    // profile refresh (start + after every equip). Empty/null = none equipped → default confetti.
+    @Volatile var equippedVictoryKey: String? = null
+    // The equipped tap effect, cached the same way for the gameplay screens. Empty/null = no flourish.
+    @Volatile var equippedTapKey: String? = null
+
     private val _profileRefreshFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val profileRefreshFlow = _profileRefreshFlow.asSharedFlow()
 

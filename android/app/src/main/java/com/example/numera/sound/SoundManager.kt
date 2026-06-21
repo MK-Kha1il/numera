@@ -99,6 +99,48 @@ object SoundManager {
         )
     }
 
+    /**
+     * Per-rarity unlock fanfare (docs/ShopOverhaul.md §7). [tier] is the Rarity ordinal
+     * (0=Common … 4=Mythic): higher tiers add notes, climb higher, shimmer (tremolo) and ring
+     * longer, so the ear knows how rare the unlock was. Mythic ends on a high sparkle tail.
+     */
+    fun playUnlock(tier: Int) = play {
+        when (tier.coerceIn(0, 4)) {
+            0 -> listOf( // Common — a clean, brief two-note chime
+                Tone(523.25f,  0, 300, 0.40f, 0.15f),
+                Tone(659.25f, 60, 360, 0.38f, 0.18f)
+            )
+            1 -> listOf( // Rare — three ascending notes
+                Tone(523.25f,   0, 340, 0.42f, 0.18f),
+                Tone(659.25f,  60, 380, 0.40f, 0.20f),
+                Tone(783.99f, 120, 440, 0.36f, 0.24f)
+            )
+            2 -> listOf( // Epic — brighter, shimmering
+                Tone(523.25f,   0, 380, 0.45f, 0.20f, hasTremolo = true),
+                Tone(659.25f,  70, 420, 0.42f, 0.22f, hasTremolo = true),
+                Tone(783.99f, 140, 460, 0.40f, 0.26f, hasTremolo = true),
+                Tone(1046.50f,210, 540, 0.36f, 0.30f)
+            )
+            3 -> listOf( // Legendary — a full fanfare
+                Tone(523.25f,   0, 500, 0.50f, 0.30f, hasTremolo = true),
+                Tone(659.25f,  80, 520, 0.48f, 0.32f, hasTremolo = true),
+                Tone(783.99f, 160, 560, 0.45f, 0.36f, hasTremolo = true),
+                Tone(1046.50f,240, 640, 0.42f, 0.44f, hasTremolo = true),
+                Tone(1318.51f,330, 720, 0.38f, 0.55f),
+                Tone(1567.98f,420, 820, 0.34f, 0.65f)
+            )
+            else -> listOf( // Mythic — shimmering arpeggio with a high sparkle tail
+                Tone(659.25f,   0, 600, 0.45f, 0.40f, hasTremolo = true),
+                Tone(987.77f,  90, 660, 0.42f, 0.46f, hasTremolo = true),
+                Tone(1318.51f,180, 720, 0.40f, 0.52f, hasTremolo = true),
+                Tone(1567.98f,270, 820, 0.38f, 0.62f, hasTremolo = true),
+                Tone(1975.53f,380, 920, 0.34f, 0.74f, hasTremolo = true),
+                Tone(2637.02f,500,1120, 0.28f, 0.92f),
+                Tone(3135.96f,600,1240, 0.20f, 1.00f)
+            )
+        }
+    }
+
     // ── Internal ─────────────────────────────────────────────────────────────
 
     private data class Tone(

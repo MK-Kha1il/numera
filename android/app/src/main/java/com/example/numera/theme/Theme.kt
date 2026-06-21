@@ -1,6 +1,7 @@
 package com.example.numera.theme
 
 import android.content.Context
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -374,41 +375,43 @@ object ThemeManager {
     }
 }
 
+// Theme-key → color scheme. Extracted so NumeraTheme, VaultTheme, and any future focused surface
+// resolve the same mapping instead of re-listing every theme. Unknown keys fall back to Studio.
+internal fun darkColorSchemeFor(themeKey: String): ColorScheme = when (themeKey) {
+    "duolingo", "theme_duolingo" -> DuoDarkColorScheme
+    "cyberpunk", "theme_cyberpunk" -> CyberDarkColorScheme
+    "eclipse", "theme_eclipse", "neon_eclipse", "theme_neon_eclipse" -> EclipseDarkColorScheme
+    "emerald", "theme_emerald", "emerald_abyss", "theme_emerald_abyss" -> EmeraldDarkColorScheme
+    "crimson", "theme_crimson", "crimson_nebula", "theme_crimson_nebula" -> CrimsonDarkColorScheme
+    "aurora", "theme_aurora" -> AuroraDarkColorScheme
+    "ocean", "theme_ocean" -> OceanDarkColorScheme
+    "sunset", "theme_sunset" -> SunsetDarkColorScheme
+    "midnight", "theme_midnight" -> MidnightDarkColorScheme
+    "studio", "theme_studio" -> StudioDarkColorScheme
+    else -> StudioDarkColorScheme
+}
+
+internal fun lightColorSchemeFor(themeKey: String): ColorScheme = when (themeKey) {
+    "duolingo", "theme_duolingo" -> DuoColorScheme
+    "cyberpunk", "theme_cyberpunk" -> CyberColorScheme
+    "eclipse", "theme_eclipse", "neon_eclipse", "theme_neon_eclipse" -> EclipseColorScheme
+    "emerald", "theme_emerald", "emerald_abyss", "theme_emerald_abyss" -> EmeraldColorScheme
+    "crimson", "theme_crimson", "crimson_nebula", "theme_crimson_nebula" -> CrimsonColorScheme
+    "aurora", "theme_aurora" -> AuroraColorScheme
+    "ocean", "theme_ocean" -> OceanColorScheme
+    "sunset", "theme_sunset" -> SunsetColorScheme
+    "midnight", "theme_midnight" -> MidnightColorScheme
+    "studio", "theme_studio" -> StudioColorScheme
+    else -> StudioColorScheme
+}
+
 @Composable
 fun NumeraTheme(
     darkTheme: Boolean = ThemeManager.isDarkMode,
     content: @Composable () -> Unit
 ) {
     val themeKey = ThemeManager.currentTheme
-    val colorScheme = if (darkTheme) {
-        when (themeKey) {
-            "duolingo", "theme_duolingo" -> DuoDarkColorScheme
-            "cyberpunk", "theme_cyberpunk" -> CyberDarkColorScheme
-            "eclipse", "theme_eclipse", "neon_eclipse", "theme_neon_eclipse" -> EclipseDarkColorScheme
-            "emerald", "theme_emerald", "emerald_abyss", "theme_emerald_abyss" -> EmeraldDarkColorScheme
-            "crimson", "theme_crimson", "crimson_nebula", "theme_crimson_nebula" -> CrimsonDarkColorScheme
-            "aurora", "theme_aurora" -> AuroraDarkColorScheme
-            "ocean", "theme_ocean" -> OceanDarkColorScheme
-            "sunset", "theme_sunset" -> SunsetDarkColorScheme
-            "midnight", "theme_midnight" -> MidnightDarkColorScheme
-            "studio", "theme_studio" -> StudioDarkColorScheme
-            else -> StudioDarkColorScheme
-        }
-    } else {
-        when (themeKey) {
-            "duolingo", "theme_duolingo" -> DuoColorScheme
-            "cyberpunk", "theme_cyberpunk" -> CyberColorScheme
-            "eclipse", "theme_eclipse", "neon_eclipse", "theme_neon_eclipse" -> EclipseColorScheme
-            "emerald", "theme_emerald", "emerald_abyss", "theme_emerald_abyss" -> EmeraldColorScheme
-            "crimson", "theme_crimson", "crimson_nebula", "theme_crimson_nebula" -> CrimsonColorScheme
-            "aurora", "theme_aurora" -> AuroraColorScheme
-            "ocean", "theme_ocean" -> OceanColorScheme
-            "sunset", "theme_sunset" -> SunsetColorScheme
-            "midnight", "theme_midnight" -> MidnightColorScheme
-            "studio", "theme_studio" -> StudioColorScheme
-            else -> StudioColorScheme
-        }
-    }
+    val colorScheme = if (darkTheme) darkColorSchemeFor(themeKey) else lightColorSchemeFor(themeKey)
 
     MaterialTheme(
         colorScheme = colorScheme,
@@ -427,6 +430,22 @@ fun NumeraTheme(
 fun ArenaStadiumTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = StudioDarkColorScheme,
+        typography = Typography,
+        content = content,
+    )
+}
+
+/**
+ * The Shop "Vault" surface (docs/ShopOverhaul.md §3). The shop is a premium, museum-case dark
+ * surface — its rarity frames, glows, and light-on-dark text depend on a dark ground — but unlike
+ * the Arena it **tints to the player's equipped theme** (Studio → graphite-indigo + amber, Ocean →
+ * navy + cyan, …) rather than always Studio, so the Vault feels like *their* collection. Wrap the
+ * shop in this; everything inside reads `MaterialTheme.colorScheme.*` and restyles automatically.
+ */
+@Composable
+fun VaultTheme(content: @Composable () -> Unit) {
+    MaterialTheme(
+        colorScheme = darkColorSchemeFor(ThemeManager.currentTheme),
         typography = Typography,
         content = content,
     )
