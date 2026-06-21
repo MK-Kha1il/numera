@@ -416,3 +416,18 @@ fun NumeraTheme(
         content = content
     )
 }
+
+/**
+ * The Arena "stadium" surface (docs/BrandIdentity.md §4.2). Live matches always render on the
+ * focused, higher-contrast dark Studio scheme — regardless of the player's chosen theme — so a match
+ * *feels* like a match (the "lobby vs. stadium" rule). Wrap a duel/match screen in this; screens that
+ * use `MaterialTheme.colorScheme.*` tokens (no hardcoded colors) restyle automatically.
+ */
+@Composable
+fun ArenaStadiumTheme(content: @Composable () -> Unit) {
+    MaterialTheme(
+        colorScheme = StudioDarkColorScheme,
+        typography = Typography,
+        content = content,
+    )
+}

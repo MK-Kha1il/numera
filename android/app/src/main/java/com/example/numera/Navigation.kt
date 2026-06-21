@@ -187,17 +187,21 @@ fun MainNavigation() {
           )
         }
         entry<DuelGame> { navKey ->
-          DuelGameScreen(
-            roomId = navKey.roomId,
-            opponentName = navKey.opponentName,
-            onFinishGame = { backStack.removeLastOrNull() },
-            // Replace the duel on the stack with a Growth Practice session over its misses,
-            // so "back" from review returns to where the duel was launched, not the dead duel.
-            onReviewMisses = {
-              backStack.removeLastOrNull()
-              backStack.add(SoloGame(category = "General", level = 0, gameMode = "mistakes_practice"))
-            }
-          )
+          // Live ranked match → the Arena "stadium" surface (BrandIdentity §4.2): a match always
+          // renders on the focused dark Studio scheme, whatever theme the player picked.
+          com.example.numera.theme.ArenaStadiumTheme {
+            DuelGameScreen(
+              roomId = navKey.roomId,
+              opponentName = navKey.opponentName,
+              onFinishGame = { backStack.removeLastOrNull() },
+              // Replace the duel on the stack with a Growth Practice session over its misses,
+              // so "back" from review returns to where the duel was launched, not the dead duel.
+              onReviewMisses = {
+                backStack.removeLastOrNull()
+                backStack.add(SoloGame(category = "General", level = 0, gameMode = "mistakes_practice"))
+              }
+            )
+          }
         }
         entry<LegacyGame> { navKey ->
           SoloGameScreen(
