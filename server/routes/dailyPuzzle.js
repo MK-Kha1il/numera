@@ -4,11 +4,12 @@ const express = require('express');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { idempotency } = require('../idempotency');
-const { generateArchiveProblem, getLessonForArchive } = require('../mathGenerator');
+const { generateArchiveProblem, getLessonForArchiveProblem } = require('../mathGenerator');
 const { attachTipToProblem } = require('../services/tipService');
 const { updateAchievements } = require('../services/achievementService');
 const ExerciseMemory = require('../mathEngine/exerciseMemory');
 const LessonSafety = require('../mathEngine/lessonSafety');
+const { buildVisualSpecJson } = require('../mathEngine/visualEngine');
 
 const router = express.Router();
 
@@ -42,10 +43,22 @@ router.get('/api/math/daily-puzzle', authenticateToken, async (req, res) => {
     );
     const puzzle = picked.problem;
 
-    const baseLesson = getLessonForArchive(puzzle.title, puzzle.category, puzzle.stars);
+    // Concept-anchored: the lesson resolves from the puzzle's own conceptKey (no fuzzy title match).
+    const baseLesson = getLessonForArchiveProblem(puzzle);
     // Phase 8: the lesson teaches the concept — it must not contain a worked example that
     // solves (or merely restates) today's puzzle.
     const { lesson } = LessonSafety.sanitizeLesson(baseLesson, puzzle);
+
+    // Concept-anchored visual: build a manipulative from the puzzle's OWN concept (not a regex guess),
+    // answer-stripped. Most advanced daily concepts yield none; the ones that do (e.g. expected value)
+    // get a coherent, on-concept manipulative. See docs/ContentEngineAudit-2026-06.md §4 (Phase 2).
+    let interactiveVisualJson = null;
+    try {
+      interactiveVisualJson = buildVisualSpecJson(puzzle, puzzle.conceptKey, null);
+      if (interactiveVisualJson) interactiveVisualJson = LessonSafety.sanitizeVisualJson(interactiveVisualJson);
+    } catch (_) {
+      interactiveVisualJson = null;
+    }
 
     const q = await new Promise((resolve) =>
       db.get('SELECT daily_puzzle_today FROM user_quests WHERE user_id = ?', [userId], (e, r) => resolve(r))
@@ -76,6 +89,8 @@ router.get('/api/math/daily-puzzle', authenticateToken, async (req, res) => {
       category: puzzle.category,
       stars: puzzle.stars,
       source: puzzle.source,
+      conceptKey: puzzle.conceptKey,
+      interactiveVisualJson,
       solved_today: solved,
       lessonTitle: lesson.lessonTitle,
       lessonContent: lesson.lessonContent,

@@ -74,6 +74,25 @@ test('fraction comparison prompts predict-first', () => {
   assert.match(spec.prompt, /[Pp]redict/);
 });
 
+test('concept gate blocks a manipulative the question would coincidentally trigger', () => {
+  // A fraction in the question would normally build a fraction_bar — but if the learner's concept is
+  // a recognized NON-fraction visual concept, the gate must suppress it (no wrong-context visual).
+  const spec = buildVisualSpec(
+    { question: 'Which is larger: $\\frac{2}{3}$ or $\\frac{3}{5}$?' },
+    'linear_two_step', NOVICE
+  );
+  assert.equal(spec, null, 'a fraction bar must not attach to a linear-equation concept');
+});
+
+test('concept gate still serves the concept its OWN manipulative', () => {
+  const spec = buildVisualSpec(
+    { question: 'Which is larger: $\\frac{2}{3}$ or $\\frac{3}{5}$?' },
+    'fraction_compare', NOVICE
+  );
+  assert.ok(spec, 'fraction_compare should still get a fraction bar');
+  assert.equal(spec.type, 'fraction_bar');
+});
+
 test('expert learners get no visual at all', () => {
   const spec = buildVisualSpec(
     { question: 'Solve for x: $3x + 4 = 19$' }, 'linear_equations',

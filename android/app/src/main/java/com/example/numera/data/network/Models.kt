@@ -377,7 +377,10 @@ data class DailyPuzzle(
     val examples: List<MathExample>? = null,
     val lessonSections: LessonSections? = null,
     val tip: String? = null,
-    val tipMetadata: TipMetadata? = null
+    val tipMetadata: TipMetadata? = null,
+    // Concept-anchored interactive manipulative (JSON string) for the puzzle's own concept; null when
+    // the concept has no useful visual. Rendered the same way as MathProblem.interactiveVisualJson.
+    val interactiveVisualJson: String? = null
 )
 
 @Serializable

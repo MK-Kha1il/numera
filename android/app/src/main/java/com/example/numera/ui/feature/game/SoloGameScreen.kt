@@ -329,7 +329,8 @@ fun SoloGameScreen(
                                 question = puzzle.question ?: "",
                                 correctAnswer = puzzle.correct_answer ?: "",
                                 options = puzzle.options ?: emptyList(),
-                                explanation = puzzle.explanation ?: ""
+                                explanation = puzzle.explanation ?: "",
+                                interactiveVisualJson = puzzle.interactiveVisualJson
                             )
                         )
                         val lessonT = puzzle.lessonTitle

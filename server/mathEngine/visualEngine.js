@@ -252,16 +252,25 @@ function buildRatioLine(question, conceptId) {
 // ----------------------------------------------------------------------------
 // Master dispatcher
 // ----------------------------------------------------------------------------
+// Each builder declares the concepts it legitimately serves. When the learner's concept is a KNOWN
+// visual concept we run ONLY that concept's builders, so a stray pattern in the question text (e.g.
+// a `\frac` inside a non-fraction problem, or "p% of N" inside a non-percent one) can't attach the
+// wrong manipulative. When the concept is null/unknown we fall back to trying every builder (the spec
+// is still pattern-validated and answer-safe). See docs/ContentEngineAudit-2026-06.md §3.3.
 const BUILDERS = [
-  (problem) => buildLinearScale(problem.question),
-  (problem) => buildParabola(problem.question),
-  (problem, conceptId) => buildRightTriangle(problem.question, conceptId),
-  (problem) => buildPercentBar(problem.question),
-  (problem, conceptId) => buildRatioLine(problem.question, conceptId),
-  (problem) => buildFractionBar(problem.question),
-  (problem) => buildDiceSim(problem.question),
-  (problem, conceptId) => buildNumberLine(problem.question, conceptId)
+  { name: 'balance_scale', concepts: ['linear_one_step', 'linear_two_step', 'linear_variable_both_sides', 'linear_system', 'eqn_onestep_div', 'eqn_fraction_coeff', 'eqn_clear_denom', 'eqn_proportion', 'eqn_two_step_fraction'], build: (p, c) => buildLinearScale(p.question, c) },
+  { name: 'parabola', concepts: ['quadratic', 'quadratic_factoring', 'quadratic_formula', 'discriminant_roots', 'complete_the_square'], build: (p) => buildParabola(p.question) },
+  { name: 'right_triangle', concepts: ['pythagorean', 'distance_formula'], build: (p, c) => buildRightTriangle(p.question, c) },
+  { name: 'percent_bar', concepts: ['percentage_of', 'percentage', 'percent_change', 'percent_discount', 'percent_markup', 'percent_error', 'simple_interest'], build: (p) => buildPercentBar(p.question) },
+  { name: 'ratio_line', concepts: ['ratio_solve', 'proportion_solve', 'unit_rate', 'ratios', 'proportions', 'ratio_simplify', 'ratio_share', 'unit_price', 'scale_factor'], build: (p, c) => buildRatioLine(p.question, c) },
+  { name: 'fraction_bar', concepts: ['fraction_simplify', 'fraction_add', 'fraction_sub', 'fraction_mult', 'fraction_div', 'fraction_compare', 'mixed_number', 'fraction_of', 'fraction_negative', 'fraction_decimal_convert'], build: (p) => buildFractionBar(p.question) },
+  { name: 'dice_sim', concepts: ['stat_probability', 'compound_probability', 'probability_complement', 'stat_theoretical_prob', 'stat_experimental_prob', 'prob_without_replacement', 'expected_value'], build: (p) => buildDiceSim(p.question) },
+  { name: 'number_line', concepts: ['arithmetic_add', 'arithmetic_sub', 'modular_arithmetic', 'integer_add', 'integer_sub', 'integer_compare'], build: (p, c) => buildNumberLine(p.question, c) }
 ];
+
+// The union of every concept that maps to some manipulative — used only to decide whether the
+// concept gate is active (i.e. whether we *recognize* this concept as a visual concept).
+const VISUAL_CONCEPTS = new Set(BUILDERS.flatMap((b) => b.concepts));
 
 // Returns a full spec (with adaptive metadata) or null.
 //   problem        : { question, correctAnswer, ... }
@@ -273,10 +282,15 @@ function buildVisualSpec(problem, conceptId, learnerProfile) {
   const complexity = decideComplexity(learnerProfile);
   if (!complexity) return null; // expert — no dependence on visual supports
 
+  // Concept gate: only active when we recognize the concept as a visual concept (so null/unknown
+  // concepts keep the legacy try-all behavior). When active, a builder runs only if it serves this
+  // concept — blocking a manipulative that the question text would otherwise coincidentally trigger.
+  const gate = !!conceptId && VISUAL_CONCEPTS.has(conceptId);
   let spec = null;
-  for (const build of BUILDERS) {
+  for (const b of BUILDERS) {
+    if (gate && !b.concepts.includes(conceptId)) continue;
     try {
-      spec = build(problem, conceptId);
+      spec = b.build(problem, conceptId);
     } catch (_) {
       spec = null;
     }
@@ -298,8 +312,17 @@ function buildVisualSpecJson(problem, conceptId, learnerProfile) {
   return spec ? JSON.stringify(spec) : null;
 }
 
+// The name of the manipulative a concept maps to (e.g. 'fraction_bar'), or null if the concept has
+// no interactive model. Lets the knowledge graph answer "what visual model does this node have?".
+function visualModelFor(conceptId) {
+  if (!conceptId) return null;
+  const b = BUILDERS.find((x) => x.concepts.includes(conceptId));
+  return b ? b.name : null;
+}
+
 module.exports = {
   buildVisualSpec,
   buildVisualSpecJson,
-  decideComplexity
+  decideComplexity,
+  visualModelFor
 };
