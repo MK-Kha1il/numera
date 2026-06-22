@@ -4,8 +4,10 @@ Numera is a full-stack, gamified math-learning app: a **Jetpack Compose Android 
 talking to a **Node.js/Express + SQLite server** that owns all game logic and progression.
 The server is authoritative; the client never computes rewards or touches the DB directly.
 
-> New here? Read [docs/Architecture.md](docs/Architecture.md) first, then the domain docs
-> linked below. This file is the fast index; the `docs/` folder has the depth.
+> New here? Start at **[PROJECT_INDEX.md](PROJECT_INDEX.md)** — the single entry point (repo map,
+> run/verify, invariants). AI assistants: the token-efficient briefs in **[ai/](ai/README.md)** let
+> you orient without reading the tree (e.g. [ai/feature-map.md](ai/feature-map.md) maps each feature
+> to its files). This file is the fast index; `docs/` has the human depth.
 
 ## Repository layout
 
@@ -130,3 +132,6 @@ See the sprint plan and `docs/Architecture.md`.
   [AchievementSystem](docs/AchievementSystem.md) · [DesignSystem](docs/DesignSystem.md)
 - [BrandIdentity](docs/BrandIdentity.md) — the world/voice/visual/motion identity system (what the
   app should *feel* like); DesignSystem.md is the tokens that implement it.
+- [CodebaseAudit-2026-06](docs/CodebaseAudit-2026-06.md) — Staff-Engineer maintainability/quality
+  pass (added the [ai/](ai/README.md) briefs + [PROJECT_INDEX.md](PROJECT_INDEX.md); dead-code +
+  lint→0); lists remaining risks (oversized Android screens, token-heavy data files).

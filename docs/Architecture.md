@@ -29,11 +29,14 @@ without shipping a new APK.
 2. **Middleware (`middleware/`)** — `auth.js` (stateful JWT: a valid signature must also map
    to a live row in `user_sessions`), `rateLimit.js` (global + per-route + brute-force),
    `security.js` (hardening headers, audit logging, private-IP detection).
-3. **Routes (`routes/`)** — ~75 endpoints grouped into **20 domain routers** (auth, math,
-   assessment, srs, archive, mistakes, quests, dailyPuzzle, league, shop, account,
-   achievements, friends, leaderboard, library, notifications, engine, rating, publicProfile,
-   commitment), each an `express.Router()` mounted in `server.js`. DB-touching logic shared
-   across routers lives in `services/`; pure helpers in `lib/`.
+3. **Routes (`routes/`)** — ~75+ endpoints grouped into **43 domain routers**, each an
+   `express.Router()` mounted in `server.js` (auth, math, assessment, srs, archive, mistakes,
+   quests, dailyPuzzle, league, shop, account, achievements, friends, leaderboard, library,
+   notifications, engine, rating, publicProfile, commitment, arena, botDuel, asyncDuel,
+   reasoningDuel, tournaments, challenges, liveRoom, clubs, clubWars, classes, discussion,
+   moderation, feedback, crash, analytics, today, learn, worksheet, transfer, cas, onboarding,
+   puzzleRush, publicProfilePage). DB-touching logic shared across routers lives in `services/`;
+   pure helpers in `lib/`. For the feature→file lookup table, see [../ai/feature-map.md](../ai/feature-map.md).
 4. **Math/learning engine (`mathEngine/`)** — see [MathEngine.md](MathEngine.md). Pure-ish
    modules: generation, validation, adaptivity, rating, retention, misconceptions, lessons.
 5. **Data access** — `db.js` (the main read connection + schema baseline), `dbx.js` (a
@@ -61,16 +64,22 @@ from the main connection's autocommit reads/writes. Reward routes use `withTrans
   via CompositionLocals (`LocalToast`, `LocalCommandPalette`) in `MainTabsScreen`.
 - **`theme/`** — design tokens + Material3 theme. See [DesignSystem.md](DesignSystem.md).
 
-## Known architectural debt (stabilization sprint)
+## Architectural status (God-file splits complete)
 
-- **God files:** the server `server.js` God file has been **fully decomposed** (5k → ~1.1k
-  lines: `config.js`, `middleware/`, `lib/`, `services/`, 20 `routes/*` routers; what remains
-  is bootstrap + the Socket.IO duel logic). The Android `MainTabsScreen.kt` (~9.9k) /
-  `SoloGameScreen.kt` (~2.8k) remain to be split into `ui/feature/<domain>/*` — the next major
-  refactor.
-- **No UI test net:** server has node:test coverage; the Android side relies on the compiler.
+- **God files fully decomposed.** Server `server.js`: 5k → ~1.85k lines (`config.js`,
+  `middleware/`, `lib/`, `services/`, 43 `routes/*` routers; what remains is bootstrap + the
+  Socket.IO duel logic). Android `MainTabsScreen.kt`: ~9.9k → ~865 lines (shell only), screens
+  moved into `ui/feature/<domain>/`. `SoloGameScreen.kt`: ~2.8k → ~1k, with `GameplayScreen`,
+  `RecapScreen`, lesson/overlay helpers carved out.
+- **Test nets in place both sides.** Server: 107 `node:test` files. Android: a 41-file
+  Robolectric Compose UI net (`gradlew testDebugUnitTest`, no device).
+- **Largest remaining files are content/data**, not tangled logic (`mathEngine/conceptLessons.js`,
+  `templates.js`, `db.js`) — treat them as data; a few Android screens
+  (`SettingsScreen`, `ProfileScreen`) are the main UI-split candidates left.
 
 ## Quality gates
 
-`server/`: `npm test` (smoke + unit) and `npm run lint` (ESLint v9). `android/`:
-`gradlew assembleDebug`. All three must be green before a change is considered done.
+`server/`: `npm test` (107 files) and `npm run lint` (ESLint v9, 0 errors). `android/`:
+`gradlew assembleDebug` and `gradlew testDebugUnitTest` (Robolectric). All must be green before
+a change is considered done. CI (`.github/workflows/ci.yml`) runs both suites on push to `main`
+and on PRs.
