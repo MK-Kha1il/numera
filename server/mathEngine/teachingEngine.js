@@ -83,7 +83,7 @@ function adaptExplanation(explanation, styleProfile) {
 
 // Infer a style signal from a problem result
 // Called by the orchestrator after every answer
-function inferSignalFromResult(event, conceptId) {
+function inferSignalFromResult(event, _conceptId) {
   // If user was fast and correct → their dominant style worked
   // If user was slow or wrong → their dominant style may not fit
   const signals = [];

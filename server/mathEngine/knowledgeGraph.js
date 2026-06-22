@@ -113,7 +113,7 @@ const concepts = {
     prereqs: ["arithmetic_mult"],
     baseElo: 1200,
     misconceptions: [
-      { id: "linear_factorial", label: "Total factorial without repeats division", rule: (ans, p) => ans * 2 }
+      { id: "linear_factorial", label: "Total factorial without repeats division", rule: (ans) => ans * 2 }
     ]
   },
   "combinations": {
@@ -139,7 +139,7 @@ const concepts = {
     prereqs: ["linear_two_step"],
     baseElo: 1400,
     misconceptions: [
-      { id: "exponent_multiply", label: "Multiplied instead of subtracting exponent", rule: (ans, p) => ans + 2 }
+      { id: "exponent_multiply", label: "Multiplied instead of subtracting exponent", rule: (ans) => ans + 2 }
     ]
   },
   "integral": {
@@ -147,7 +147,7 @@ const concepts = {
     prereqs: ["derivative"],
     baseElo: 1500,
     misconceptions: [
-      { id: "derivative_instead_integral", label: "Differentiated instead of integrating", rule: (ans, p) => Math.round(ans / 4) }
+      { id: "derivative_instead_integral", label: "Differentiated instead of integrating", rule: (ans) => Math.round(ans / 4) }
     ]
   },
 
@@ -948,8 +948,8 @@ const concepts = {
     prereqs: ["geo_angles_triangle"],
     baseElo: 980,
     misconceptions: [
-      { id: "supplement_for_vertical", label: "Subtracted from 180° for a vertical angle (which is simply equal)", rule: (ans, p) => 180 - ans },
-      { id: "complement_confusion", label: "Used 90° where the straight line demands 180°", rule: (ans, p) => 90 - (180 - ans) }
+      { id: "supplement_for_vertical", label: "Subtracted from 180° for a vertical angle (which is simply equal)", rule: (ans) => 180 - ans },
+      { id: "complement_confusion", label: "Used 90° where the straight line demands 180°", rule: (ans) => 90 - (180 - ans) }
     ]
   },
 

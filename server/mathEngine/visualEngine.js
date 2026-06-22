@@ -253,13 +253,13 @@ function buildRatioLine(question, conceptId) {
 // Master dispatcher
 // ----------------------------------------------------------------------------
 const BUILDERS = [
-  (problem, conceptId) => buildLinearScale(problem.question),
-  (problem, conceptId) => buildParabola(problem.question),
+  (problem) => buildLinearScale(problem.question),
+  (problem) => buildParabola(problem.question),
   (problem, conceptId) => buildRightTriangle(problem.question, conceptId),
-  (problem, conceptId) => buildPercentBar(problem.question),
+  (problem) => buildPercentBar(problem.question),
   (problem, conceptId) => buildRatioLine(problem.question, conceptId),
-  (problem, conceptId) => buildFractionBar(problem.question),
-  (problem, conceptId) => buildDiceSim(problem.question),
+  (problem) => buildFractionBar(problem.question),
+  (problem) => buildDiceSim(problem.question),
   (problem, conceptId) => buildNumberLine(problem.question, conceptId)
 ];
 

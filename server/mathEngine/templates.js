@@ -2,14 +2,9 @@
 const {
   factorial,
   gcd,
-  lcm,
-  isPrime,
-  getPrimeFactors,
-  getDivisors,
   generatePythagoreanTriple,
   generateQuadraticEquation,
-  generateMatrix2x2,
-  derangement
+  generateMatrix2x2
 } = require('./symbolic');
 
 const templates = {};
@@ -323,7 +318,7 @@ templates.algebra = {
       type: "linear_variable_both_sides"
     };
   },
-  15: (diffFactor, idx) => {
+  15: (diffFactor, _idx) => {
     // Quadratic equation
     const quad = generateQuadraticEquation(diffFactor);
     const sumRoots = quad.x1 + quad.x2;
@@ -378,7 +373,7 @@ templates.algebra = {
       xVal, yVal
     };
   },
-  17: (diffFactor, idx) => {
+  17: (diffFactor, _idx) => {
     // Trace of 2x2 matrix
     const matrix = generateMatrix2x2(diffFactor);
     return {

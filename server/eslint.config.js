@@ -31,7 +31,13 @@ module.exports = [
       },
     },
     rules: {
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      // Unused vars catch real dead code; the exemptions encode deliberate idioms used here:
+      //   _-prefix = "intentionally ignored", rest-siblings = "omit a key from a response object",
+      //   caughtErrors:none = pragmatic catch blocks (matches allowEmptyCatch below).
+      'no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true, caughtErrors: 'none' },
+      ],
       'no-console': 'off', // server intentionally logs to stdout; structured logger lands in Phase 5
       'no-empty': ['warn', { allowEmptyCatch: true }],
       'prefer-const': 'warn',

@@ -7,13 +7,6 @@ const { templates } = require('./mathEngine/templates');
 const { getLessonAndExamples, getLessonForArchive } = require('./mathEngine/lessons');
 const {
   factorial,
-  gcd,
-  lcm,
-  isPrime,
-  getPrimeFactors,
-  getDivisors,
-  generatePythagoreanTriple,
-  generateQuadraticEquation,
   generateMatrix2x2,
   derangement
 } = require('./mathEngine/symbolic');

@@ -1,5 +1,4 @@
 // Symbolic Validation Layer for Advanced Ingestion & Synthesis
-const { gcd, isPrime } = require('./symbolic');
 
 /**
  * Validates a mathematical template structure by running test instances.

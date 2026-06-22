@@ -349,7 +349,7 @@ async function selectNextConcept(db, userId, currentCategory, currentLevel) {
 }
 
 // Map category + level to the expected concept IDs for that range
-function getCategoryConceptIds(category, level) {
+function getCategoryConceptIds(category, _level) {
   const map = {
     arithmetic:    ['arithmetic_add', 'arithmetic_sub', 'arithmetic_mult', 'arithmetic_div', 'pemdas'],
     algebra:       ['linear_one_step', 'linear_two_step', 'linear_variable_both_sides', 'quadratic', 'linear_system', 'matrix_trace', 'matrix_determinant', 'linear_system_substitution', 'linear_system_elimination', 'linear_system_solution_types', 'quadratic_factoring', 'quadratic_formula', 'discriminant_roots', 'complete_the_square'],

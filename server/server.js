@@ -737,7 +737,6 @@ async function buildDuelProblemSet(targetLevel = DUEL_PROBLEM_LEVEL, count = 5) 
   // `explanation` and `socraticJson` — both contain the answer in plaintext ("= 32", probe text),
   // so leaving them in the live payload would let a tampering client read the answer before
   // submitting. The worked solution is delivered post-answer instead (via the submit_answer ack).
-  // eslint-disable-next-line no-unused-vars
   const problems = full.map(({ correctAnswer, explanation, socraticJson, ...rest }) => rest);
   const answers = full.map((p) => p.correctAnswer);       // server-only answer key
   const explanations = full.map((p) => p.explanation || ''); // server-only; revealed post-answer
@@ -996,7 +995,7 @@ io.on('connection', (socket) => {
   });
 
   // Create lobby code for friend battle
-  socket.on('create_friend_room', (data) => {
+  socket.on('create_friend_room', (_data) => {
     const userId = socket.userId;
     const username = socket.username;
     
@@ -1035,7 +1034,6 @@ io.on('connection', (socket) => {
 
     db.get("SELECT elo, rank, level FROM users WHERE id = ?", [userId], async (err, row) => {
       const elo = row ? (row.elo || 1000) : 1000;
-      const rank = row ? row.rank : 'Unranked (Placement: 0/5)';
       const level = row ? (row.level || DUEL_PROBLEM_LEVEL) : DUEL_PROBLEM_LEVEL;
 
       socket.join(roomCode);
@@ -1827,7 +1825,7 @@ function setupAdbReverse() {
   
   exec(cmd, (err) => {
     if (err) {
-      exec(fallbackCmd, (fallbackErr) => {
+      exec(fallbackCmd, (_fallbackErr) => {
         // Fail silently to avoid cluttering logs
       });
     }

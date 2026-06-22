@@ -13,7 +13,7 @@ const dbRun = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.run(sql, p, 
 const idOf = (username) => new Promise((res, rej) => ctx.mod.db.get('SELECT id FROM users WHERE username = ?', [username], (e, r) => (e ? rej(e) : res(r.id))));
 
 async function playPerfect(user, tournamentId) {
-  const start = await api(ctx.base, 'POST', `/api/tournaments/${tournamentId}/start`, { token: user.token, body: {} });
+  await api(ctx.base, 'POST', `/api/tournaments/${tournamentId}/start`, { token: user.token, body: {} });
   const stored = JSON.parse((await dbGet('SELECT problems_json FROM tournaments WHERE id = ?', [tournamentId])).problems_json);
   return api(ctx.base, 'POST', `/api/tournaments/${tournamentId}/play`, { token: user.token, body: { answers: stored.map((p) => p.answer) } });
 }
