@@ -1703,7 +1703,77 @@ function getDependencies(conceptId) {
   return Array.from(visited);
 }
 
+// Reverse-edge index: which concepts list THIS one as a prerequisite (i.e. what it unlocks). Built
+// once from the forward prereq edges so the graph is navigable in both directions. (Knowledge-graph
+// consolidation, docs/ContentEngineAudit-2026-06.md §4 / Phase 4 — "every node knows its dependents".)
+const dependentsOf = {};
+for (const id of Object.keys(concepts)) dependentsOf[id] = [];
+for (const id of Object.keys(concepts)) {
+  for (const pre of concepts[id].prereqs || []) {
+    if (dependentsOf[pre]) dependentsOf[pre].push(id);
+  }
+}
+
+// Direct dependents — concepts that list `conceptId` as an immediate prerequisite.
+function getDependents(conceptId) {
+  return (dependentsOf[conceptId] || []).slice();
+}
+
+// All concepts that transitively depend on `conceptId` (everything it eventually unlocks).
+function getDescendants(conceptId) {
+  const visited = new Set();
+  function visit(id) {
+    for (const dep of dependentsOf[id] || []) {
+      if (!visited.has(dep)) {
+        visited.add(dep);
+        visit(dep);
+      }
+    }
+  }
+  visit(conceptId);
+  return Array.from(visited);
+}
+
+// Unified node description: the mission's "every node knows its prerequisites, dependents,
+// misconceptions, visual model, representations, and learning objective" in one place. Joins the
+// graph (prereqs/dependents/misconceptions/standard) with the rich lesson (representations +
+// objective) and the visual engine (the manipulative this concept maps to). Returns null for an
+// unknown concept. Lazy-requires the data modules to avoid load-order coupling.
+function describeConcept(conceptId) {
+  const node = concepts[conceptId];
+  if (!node) return null;
+  let representations = [];
+  let learningObjective = null;
+  try {
+    const { getConceptLesson } = require('./conceptLessons');
+    const lesson = getConceptLesson(conceptId);
+    if (lesson) {
+      representations = (lesson.representations || []).map((r) => ({ kind: r.kind, label: r.label }));
+      learningObjective = lesson.oneLineSummary || null;
+    }
+  } catch (_) { /* lesson catalog optional */ }
+  let visualModel = null;
+  try {
+    visualModel = require('./visualEngine').visualModelFor(conceptId);
+  } catch (_) { /* visual engine optional */ }
+  return {
+    id: conceptId,
+    name: node.name,
+    standard: node.standard || null,
+    baseElo: node.baseElo || null,
+    prereqs: (node.prereqs || []).slice(),
+    dependents: getDependents(conceptId),
+    misconceptions: (node.misconceptions || []).map((m) => ({ id: m.id, label: m.label })),
+    representations,
+    visualModel,
+    learningObjective
+  };
+}
+
 module.exports = {
   concepts,
-  getDependencies
+  getDependencies,
+  getDependents,
+  getDescendants,
+  describeConcept
 };
