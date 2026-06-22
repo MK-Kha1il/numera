@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.ArenaIdentity
+import com.example.numera.data.network.DomainRating
 import com.example.numera.data.network.HeadToHead
 import com.example.numera.theme.*
 import com.example.numera.ui.components.RankBadge
@@ -308,54 +309,29 @@ fun rivalryLine(h2h: HeadToHead, opponentName: String): String = when {
     else -> "Rivalry tied ${h2h.myWins}–${h2h.theirWins}."
 }
 
-// ── The climb: rank thresholds + rating projection ───────────────────────────────────────────────
-// Mirrors server lib/progression.calculateRankFromElo so the client can show "how close to the next
-// rank" and "what's on the line this match" without a round-trip. Keep in sync with the server.
-private val rankBoundaries = listOf(
-    1100 to "Bronze III", 1200 to "Bronze II", 1300 to "Bronze I",
-    1400 to "Silver III", 1500 to "Silver II", 1600 to "Silver I",
-    1700 to "Gold III", 1800 to "Gold II", 1900 to "Gold I",
-    2000 to "Platinum III", 2100 to "Platinum II", 2200 to "Platinum I",
-    2300 to "Diamond III", 2400 to "Diamond II", 2500 to "Diamond I",
-    2700 to "Master"
-)
+// ── The climb + pre-match stakes (server-authoritative) ──────────────────────────────────────────
+// The rating substrate is NRS (mu/sigma → conservative display rating), so the client can't
+// reproduce the rank ladder or the rating swing locally — the old classic-Elo K=32 guess and the
+// 1100–2700 `calculateRankFromElo` mirror were both retired on the server and produced numbers that
+// disagreed with what it actually assigns. Both the climb bar and the duel stakes are now fed by the
+// server (GET /api/rating/profile · duel_start `identities.stakes`), so they can never drift again.
 
-data class NextRank(val label: String, val pointsToNext: Int, val bandFraction: Float)
+// What a ranked duel puts on the line for you, projected by the server with the SAME NRS engine that
+// settles it (so it matches the post-match count-up). Null when the duel is rating-neutral (casual,
+// friend, or a bot fallback) — the client then shows no stakes rather than a fabricated one.
+data class DuelStakes(val winDelta: Int, val loseDelta: Int, val promoteOnWin: Boolean, val nextRank: String?)
 
-// The next rank up + how many rating points away, plus progress through the current band (0..1).
-// Null when already Grandmaster (nothing left to climb).
-fun nextRankInfo(elo: Int): NextRank? {
-    for (i in rankBoundaries.indices) {
-        val (upper, _) = rankBoundaries[i]
-        if (elo < upper) {
-            val lower = if (i > 0) rankBoundaries[i - 1].first else upper - 100
-            val nextLabel = if (i + 1 < rankBoundaries.size) rankBoundaries[i + 1].second else "Grandmaster"
-            val frac = ((elo - lower).toFloat() / (upper - lower).toFloat()).coerceIn(0f, 1f)
-            return NextRank(nextLabel, upper - elo, frac)
-        }
-    }
-    return null
-}
-
-// Projected rating change for a win/loss, using the same Elo K=32 the server settles with. Bot
-// duels use the server's fixed deltas (+15 / −10).
-fun projectedEloChange(myRating: Int, oppRating: Int, win: Boolean, oppIsBot: Boolean): Int {
-    if (oppIsBot) return if (win) 15 else -10
-    val k = 32.0
-    val exp = 1.0 / (1.0 + Math.pow(10.0, (oppRating - myRating) / 400.0))
-    val actual = if (win) 1.0 else 0.0
-    return Math.round(k * (actual - exp)).toInt()
-}
-
-// A compact "the climb" bar for the arena home: progress through the current rank band + "N to Next".
-// Renders nothing for placement players (no rank yet) or Grandmaster (maxed).
+// A compact "the climb" bar for the arena home: progress through the current division + "N to Next".
+// Driven by the server's NRS rank math (DomainRating). Renders nothing for a player still in
+// placement or already at the top (no next division).
 @Composable
-fun PromotionProgressBar(elo: Int, inPlacement: Boolean, modifier: Modifier = Modifier) {
-    if (inPlacement) return
-    val next = nextRankInfo(elo) ?: return
+fun PromotionProgressBar(rating: DomainRating?, modifier: Modifier = Modifier) {
+    if (rating == null) return
+    val nextRank = rating.nextRank ?: return
+    val pointsToNext = rating.pointsToNext ?: return
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
-            text = "${next.pointsToNext} to ${next.label}",
+            text = "$pointsToNext to $nextRank",
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
@@ -369,7 +345,7 @@ fun PromotionProgressBar(elo: Int, inPlacement: Boolean, modifier: Modifier = Mo
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(next.bandFraction)
+                    .fillMaxWidth(rating.progress.coerceIn(0f, 1f))
                     .height(6.dp)
                     .clip(RoundedCornerShape(CornerRadius.full))
                     .background(

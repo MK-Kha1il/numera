@@ -26,7 +26,8 @@ const { globalRateLimiter } = require('./middleware/rateLimit');
 // docs/specs/Spec-RatingUnification.md.
 const { applyDuelResultToRatings, getRatingRow } = require('./services/ratingService');
 const { recordMatch } = require('./services/matchLog');
-const { categoryToDomain, matchAcceptable, SIGMA_INIT: NRS_SIGMA_INIT } = require('./mathEngine/ratingEngine'); // attribute a duel to its dominant domain; hidden-MMR pairing gate
+const { categoryToDomain, matchAcceptable, SIGMA_INIT: NRS_SIGMA_INIT,
+  applyDuelOutcomeToRating, displayRatingToRank, rankProgress } = require('./mathEngine/ratingEngine'); // attribute a duel to its dominant domain; hidden-MMR pairing gate; pre-match stakes projection
 const { updateAchievements } = require('./services/achievementService');
 const { grantRankRewards } = require('./services/rankRewardService');
 const { flagAnswer, resolveDuel, rankedMatchmakingError } = require('./lib/duelIntegrity');
@@ -782,6 +783,8 @@ function applyDuelAnswer(room, playerKey, { answer }) {
 
   room[playerKey].problemStartTime = now;
   room[playerKey].progress = currentIndex + 1; // server advances the index; the client's value is ignored
+  // Accumulate total answer time so an equal-score duel is settled by speed (the race tiebreak).
+  room[playerKey].totalAnswerMs = (room[playerKey].totalAnswerMs || 0) + elapsed;
   if (isCorrect) room[playerKey].score += 20;
 
   const ended = room.p1.progress >= maxProblems && room.p2.progress >= maxProblems;
@@ -798,8 +801,11 @@ function matchmake(queueArray, isRanked) {
     const elapsed = (Date.now() - p1.joinTime) / 1000;
     const p1IsBeginner = p1.competitiveMatches < 5;
 
-    // Bot fallback: after 10 seconds of queuing, match with a bot
-    if (elapsed >= 10.0) {
+    // Bot fallback: give real human matchmaking a fair window first (the queue widens its acceptance
+    // as players wait), then fall back to a bot. 20s matches the client's "guaranteed match" framing
+    // and sits AFTER the client's manual "duel a bot instead" offer, so the two never pre-empt each
+    // other (the old 10s value silently force-matched a bot before that offer could even appear).
+    if (elapsed >= 20.0) {
       queueArray.splice(i, 1);
       startDuelWithBot(p1, isRanked);
       i--;
@@ -1125,7 +1131,12 @@ io.on('connection', (socket) => {
 
     // Tear down any rematch eligibility/offer this player had (and notify a waiting opponent).
     if (socket.userId) clearRematchFor(socket.userId);
-    
+
+    // End any live duel this player abandoned: forfeit to the opponent still present (human duel)
+    // or just free the room (bot duel). Without this the surviving player hangs on the result
+    // screen forever — the duel's both-players-finished end condition can never be met.
+    if (socket.userId) handleDuelDisconnectForUser(socket.userId);
+
     // Clean up friend codes creator lobbies
     for (const code in friendRooms) {
       if (friendRooms[code].creatorSocketId === socket.id) {
@@ -1134,6 +1145,40 @@ io.on('connection', (socket) => {
     }
   });
 });
+
+// Project the DISPLAY-rating swing a ranked duel puts on the line for each player, computed with the
+// SAME NRS engine that settles it — so the pre-match "on the line: win +X / lose Y" preview matches
+// the post-match count-up exactly (the old client-side classic-Elo K=32 guess never could). Returns
+// { p1, p2 } of { winDelta, loseDelta, promoteOnWin, nextRank }, or null when the duel is
+// rating-neutral (casual, friend, or a bot fallback) so the client shows no false stakes.
+function buildDuelStakes(room, cb) {
+  const p2IsBot = room.p2.id === 9999 || room.p2.isBot;
+  const p1Human = typeof room.p1.id === 'number' && room.p1.id !== 9999;
+  const p2Human = typeof room.p2.id === 'number' && !p2IsBot;
+  if (room.isCasual || !p1Human || !p2Human) return cb(null);
+
+  getRatingRow(room.p1.id, 'global', (e1, r1) => {
+    getRatingRow(room.p2.id, 'global', (e2, r2) => {
+      if (!r1 || !r2) return cb(null);
+      const stakeFor = (me, opp) => {
+        const before = me.display_rating || 0;
+        const sessions = me.sessions_count || 0;
+        const afterWin = applyDuelOutcomeToRating(me, { outcome: 1, opponentMu: opp.mu, opponentSigma: opp.sigma });
+        const afterLoss = applyDuelOutcomeToRating(me, { outcome: 0, opponentMu: opp.mu, opponentSigma: opp.sigma });
+        const curRank = displayRatingToRank(before, sessions);
+        const winRank = displayRatingToRank(afterWin.displayRating, sessions + 1);
+        const promoteOnWin = !winRank.startsWith('Unranked') && winRank !== curRank && afterWin.displayRating > before;
+        return {
+          winDelta: afterWin.displayRating - before,
+          loseDelta: afterLoss.displayRating - before,
+          promoteOnWin,
+          nextRank: rankProgress(before, sessions).nextRank,
+        };
+      };
+      cb({ p1: stakeFor(r1, r2), p2: stakeFor(r2, r1) });
+    });
+  });
+}
 
 // Emit an ENRICHED duel_start: besides the raw room players + problems, attach each competitor's
 // arena identity (rank, rating, peak, win streak, specialty) and the head-to-head record, so the
@@ -1146,20 +1191,24 @@ function emitDuelStart(roomId) {
   arena.loadArenaIdentity(room.p1.id, (e1, id1) => {
     arena.loadArenaIdentity(room.p2.id, (e2, id2) => {
       arena.getHeadToHead(room.p1.id, room.p2.id, (e3, h2h) => {
-        // Stash on the room so a (re)joining client gets the same identity payload via room_status,
-        // not only the one-shot duel_start broadcast (survives reconnect / late join).
-        const identities = {
-          p1: id1,
-          p2: id2,
-          h2h: { total: h2h.total, p1Wins: h2h.myWins, p2Wins: h2h.theirWins, draws: h2h.draws },
-          ranked: !room.isCasual,
-        };
-        room.identities = identities;
-        io.to(roomId).emit('duel_start', {
-          roomId,
-          opponent: { p1: room.p1, p2: room.p2 },
-          problems: room.problems,
-          identities,
+        buildDuelStakes(room, (stakes) => {
+          // Stash on the room so a (re)joining client gets the same identity payload via room_status,
+          // not only the one-shot duel_start broadcast (survives reconnect / late join).
+          const identities = {
+            p1: id1,
+            p2: id2,
+            h2h: { total: h2h.total, p1Wins: h2h.myWins, p2Wins: h2h.theirWins, draws: h2h.draws },
+            ranked: !room.isCasual,
+            // Per-player display-rating swing on the line (NRS-accurate); null when rating-neutral.
+            stakes,
+          };
+          room.identities = identities;
+          io.to(roomId).emit('duel_start', {
+            roomId,
+            opponent: { p1: room.p1, p2: room.p2 },
+            problems: room.problems,
+            identities,
+          });
         });
       });
     });
@@ -1213,6 +1262,34 @@ function findSocketByUserId(userId) {
     if (s.userId === userId) return s;
   }
   return null;
+}
+
+// A player dropped: resolve every active duel they were in so the opponent isn't left hanging.
+// Against a human → forfeit to the player still present (endDuel honors room.forfeitedBy). Against
+// the bot → just tear the room down (no result, no rating). Idempotent via room.finalizing.
+function handleDuelDisconnectForUser(userId) {
+  if (!userId || userId === 9999) return;
+  for (const roomId of Object.keys(rooms)) {
+    const room = rooms[roomId];
+    if (!room || room.finalizing) continue;
+    const isP1 = room.p1.id === userId;
+    const isP2 = room.p2.id === userId;
+    if (!isP1 && !isP2) continue;
+
+    const other = isP1 ? room.p2 : room.p1;
+    const otherIsBot = other.id === 9999 || other.isBot;
+    if (otherIsBot) {
+      // The human walked out of a practice/bot duel — stop the bot loop and free the room.
+      if (room.botTimer) { clearInterval(room.botTimer); room.botTimer = null; }
+      delete rooms[roomId];
+      logger.info(`Duel ${roomId} abandoned vs bot by user ${userId}; room cleared.`);
+      continue;
+    }
+    // Human-vs-human: the leaver forfeits to the opponent still present.
+    room.forfeitedBy = userId;
+    logger.info(`User ${userId} left duel ${roomId} mid-match; forfeiting to the opponent.`);
+    endDuel(roomId);
+  }
 }
 
 // Remember a finished HUMAN-vs-HUMAN duel so either player can offer a rematch for the next minute.
@@ -1341,6 +1418,7 @@ function simulateBot(roomId) {
   if (!room) return;
 
   let currentProblem = 0;
+  const period = 3000 + Math.random() * 2000; // the bot's per-problem cadence
   const timer = setInterval(() => {
     const activeRoom = rooms[roomId];
     if (!activeRoom) {
@@ -1350,6 +1428,9 @@ function simulateBot(roomId) {
 
     currentProblem += 1;
     activeRoom.p2.progress = currentProblem;
+    // Mirror the bot's pace into its total answer time so an equal-score human-vs-bot duel resolves
+    // by the same speed tiebreak humans get.
+    activeRoom.p2.totalAnswerMs = (activeRoom.p2.totalAnswerMs || 0) + period;
     // 80% accuracy
     if (Math.random() < 0.8) {
       activeRoom.p2.score += 20;
@@ -1362,11 +1443,14 @@ function simulateBot(roomId) {
 
     if (currentProblem >= activeRoom.problems.length) {
       clearInterval(timer);
+      activeRoom.botTimer = null;
       if (activeRoom.p1.progress >= activeRoom.problems.length) {
         endDuel(roomId);
       }
     }
-  }, 3000 + Math.random() * 2000);
+  }, period);
+  // Remember the handle so a mid-duel disconnect can stop the bot loop and free the room.
+  room.botTimer = timer;
 }
 
 // Commit one player's duel result. RATING is updated through the unified NRS path
@@ -1411,7 +1495,8 @@ function processPlayerDuelResult(userId, opts, callback) {
           updateAchievements(userId, () => {
             grantRankRewards(userId, newRank, () => {
               callback(null, {
-                ratingDelta: after ? +after.delta.toFixed(1) : 0,
+                // The display-rating change (integer) the debrief animates — matches newDisplayRating.
+                ratingDelta: after ? after.displayDelta : 0,
                 newElo,
                 newDisplayRating: after ? after.displayRating : null,
                 newRank,
@@ -1451,6 +1536,11 @@ function getTelemetryEnabled(userId, cb) {
 function endDuel(roomId, done) {
   const room = rooms[roomId];
   if (!room) { if (done) done(); return; }
+  // Idempotency: a duel commits exactly once. The long async commit below runs before the room is
+  // freed, so without this guard a second trigger (a duplicate final submit, or a disconnect racing
+  // the last answer) would double-grant coins/wins/rating and write duplicate history rows.
+  if (room.finalizing) { if (done) done(); return; }
+  room.finalizing = true;
 
   const p2IsBot = room.p2.id === 9999 || room.p2.isBot;
   const p1IsHuman = typeof room.p1.id === 'number' && room.p1.id !== 9999;
@@ -1469,12 +1559,21 @@ function endDuel(roomId, done) {
         p2IntegrityEnabled,
         p2IsBot,
         isCasual: !!room.isCasual,
+        // Speed tiebreak: an equal-score duel goes to whoever answered faster overall.
+        p1TimeMs: room.p1.totalAnswerMs != null ? room.p1.totalAnswerMs : null,
+        p2TimeMs: room.p2.totalAnswerMs != null ? room.p2.totalAnswerMs : null,
       });
 
       // Map the pure 'p1'/'p2'/null winner back to a userId for the emit + DB commit.
       let winner = null;
       if (resolution.winner === 'p1') winner = room.p1.id;
       else if (resolution.winner === 'p2') winner = room.p2.id;
+
+      // Forfeit override: a player who left mid-duel loses to whoever is still present, regardless of
+      // the score on the board when they dropped.
+      if (room.forfeitedBy != null) {
+        winner = room.forfeitedBy === room.p1.id ? room.p2.id : room.p1.id;
+      }
 
       // Surface WHY a flagged player was disqualified (spec §5: no silent shadow-bans). The
       // reason rides along on room.pN (spread into the duel_end payload) for the client debrief.

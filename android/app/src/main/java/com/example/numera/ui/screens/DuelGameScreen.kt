@@ -117,6 +117,9 @@ fun DuelGameScreen(
     var oppIdentity by remember { mutableStateOf<ArenaIdentity?>(null) }
     var h2h by remember { mutableStateOf<HeadToHead?>(null) }
     var isRanked by remember { mutableStateOf(true) }
+    // Pre-match stakes — the server's NRS projection of the rating swing on the line. Null when the
+    // duel is rating-neutral (casual / friend / bot fallback), so no false stakes are shown.
+    var stakes by remember { mutableStateOf<com.example.numera.ui.feature.arena.DuelStakes?>(null) }
     // Comeback recognition: the client alone sees the live score progression, so it tracks whether
     // you were ever meaningfully behind before winning (the server can't infer this).
     var wasTrailing by remember { mutableStateOf(false) }
@@ -208,6 +211,16 @@ fun DuelGameScreen(
                                 draws = h.optInt("draws")
                             )
                         }
+                        // Stakes (server-authoritative); keyed p1/p2 — take my side.
+                        identitiesObj.optJSONObject("stakes")
+                            ?.optJSONObject(if (mineIsP1) "p1" else "p2")?.let { s ->
+                                stakes = com.example.numera.ui.feature.arena.DuelStakes(
+                                    winDelta = s.optInt("winDelta"),
+                                    loseDelta = s.optInt("loseDelta"),
+                                    promoteOnWin = s.optBoolean("promoteOnWin", false),
+                                    nextRank = if (s.isNull("nextRank")) null else s.optString("nextRank")
+                                )
+                            }
                     }
                 }
 
@@ -296,6 +309,7 @@ fun DuelGameScreen(
                 duelWinnerId = -1
                 eloInfo = null
                 myIdentity = null; oppIdentity = null; h2h = null; wasTrailing = false
+                stakes = null
                 rematchState = "idle"
                 com.example.numera.haptic.HapticManager.playMedium()
                 // Join the new room to receive its problems + identities via room_status.
@@ -365,28 +379,25 @@ fun DuelGameScreen(
                             )
                         }
 
-                        // Stakes preview — ranked only: what's on the line this match, and whether a
-                        // win promotes you. Computed client-side from the same Elo math the server uses.
-                        if (isRanked) {
-                            val winChange = com.example.numera.ui.feature.arena.projectedEloChange(mine.elo, opp.elo, win = true, oppIsBot = opp.isBot)
-                            val loseChange = com.example.numera.ui.feature.arena.projectedEloChange(mine.elo, opp.elo, win = false, oppIsBot = opp.isBot)
+                        // Stakes preview — what's on the line, projected server-side with the SAME NRS
+                        // engine that settles the duel (so it matches the post-match count-up). Shown
+                        // only for a rating-moving duel; casual/bot fallbacks carry no stakes.
+                        stakes?.let { s ->
                             Text(
-                                text = "On the line:  win +$winChange   ·   lose $loseChange",
+                                text = "On the line:  win +${s.winDelta}   ·   lose ${s.loseDelta}",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 textAlign = TextAlign.Center
                             )
-                            com.example.numera.ui.feature.arena.nextRankInfo(mine.elo)?.let { nx ->
-                                if (winChange >= nx.pointsToNext) {
-                                    Text(
-                                        text = "🏆 Win this to reach ${nx.label}!",
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Black,
-                                        color = MilestoneGold,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
+                            if (s.promoteOnWin && s.nextRank != null) {
+                                Text(
+                                    text = "🏆 Win this to reach ${s.nextRank}!",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = MilestoneGold,
+                                    textAlign = TextAlign.Center
+                                )
                             }
                         }
                     } else {

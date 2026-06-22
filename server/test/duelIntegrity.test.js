@@ -97,3 +97,21 @@ test('cheatThreshold boundary matches integrityEngine config (3 flags)', () => {
   assert.equal(resolveDuel({ p1Score: 1, p2Score: 0, p1FlaggedCount: cfg.cheatThreshold - 1 }).p1Cheated, false);
   assert.equal(resolveDuel({ p1Score: 1, p2Score: 0, p1FlaggedCount: cfg.cheatThreshold }).p1Cheated, true);
 });
+
+test('equal score → the faster racer wins ("fastest correct answers win")', () => {
+  assert.equal(resolveDuel({ p1Score: 80, p2Score: 80, p1TimeMs: 9000, p2TimeMs: 12000 }).winner, 'p1');
+  assert.equal(resolveDuel({ p1Score: 80, p2Score: 80, p1TimeMs: 12000, p2TimeMs: 9000 }).winner, 'p2');
+});
+
+test('equal score stays a draw on a genuine dead heat, a 0–0, or when timing is unknown', () => {
+  assert.equal(resolveDuel({ p1Score: 80, p2Score: 80, p1TimeMs: 9000, p2TimeMs: 9000 }).winner, null, 'identical time → draw');
+  assert.equal(resolveDuel({ p1Score: 0, p2Score: 0, p1TimeMs: 1, p2TimeMs: 9000 }).winner, null, 'nobody scored → draw');
+  assert.equal(resolveDuel({ p1Score: 80, p2Score: 80 }).winner, null, 'no timing → draw');
+});
+
+test('the speed tiebreak never overrides a cheat verdict', () => {
+  // p1 was faster (would win the tiebreak) but is a cheat → forfeits to the clean opponent.
+  const r = resolveDuel({ p1Score: 80, p2Score: 80, p1TimeMs: 8000, p2TimeMs: 12000, p1FlaggedCount: 3 });
+  assert.equal(r.p1Cheated, true);
+  assert.equal(r.winner, 'p2');
+});

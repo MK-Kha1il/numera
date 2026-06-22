@@ -54,36 +54,8 @@ class DuelMomentsTest {
         assertEquals(clutchAccentColor("blue"), clutchAccentColor("totally-unknown"))
     }
 
-    @Test
-    fun nextRankInfoFindsTheBoundaryAndPointsRemaining() {
-        // 1150 → Bronze II band [1100,1200); next rank Bronze I, 50 points away.
-        val n = nextRankInfo(1150)!!
-        assertEquals("Bronze I", n.label)
-        assertEquals(50, n.pointsToNext)
-        assertEquals(0.5f, n.bandFraction, 0.001f)
-    }
-
-    @Test
-    fun nextRankInfoBridgesIntoGrandmaster() {
-        val n = nextRankInfo(2650)!! // Master band [2500,2700) → Grandmaster at 2700
-        assertEquals("Grandmaster", n.label)
-        assertEquals(50, n.pointsToNext)
-    }
-
-    @Test
-    fun nextRankInfoNullAtTheTop() {
-        assertEquals(null, nextRankInfo(2800)) // already Grandmaster — nothing to climb
-    }
-
-    @Test
-    fun projectedEloMatchesServerKFactorAndBotDeltas() {
-        // Even ratings → ±16 at K=32 (matches the server's duelEndToEnd expectation).
-        assertEquals(16, projectedEloChange(1000, 1000, win = true, oppIsBot = false))
-        assertEquals(-16, projectedEloChange(1000, 1000, win = false, oppIsBot = false))
-        // Beating a stronger opponent pays more than beating an even one.
-        assertTrue(projectedEloChange(1000, 1300, win = true, oppIsBot = false) > 16)
-        // Bots use the server's fixed deltas.
-        assertEquals(15, projectedEloChange(1500, 1000, win = true, oppIsBot = true))
-        assertEquals(-10, projectedEloChange(1500, 1000, win = false, oppIsBot = true))
-    }
+    // NB: the old client-side rank ladder (nextRankInfo) and Elo projection (projectedEloChange) were
+    // removed — they mirrored the RETIRED classic-Elo scale and disagreed with the server's NRS rank
+    // math. The climb bar + duel stakes are now fed by the server (DomainRating · duel_start stakes),
+    // so there is no client rating math left to unit-test here.
 }

@@ -165,6 +165,10 @@ function applyDuelResultToRatings({ userId, opponentMu, opponentSigma, outcome, 
     const previousRank = NRS.displayRatingToRank(before.display_rating, before.sessions_count);
     const newRank = NRS.displayRatingToRank(after.displayRating, after.sessionsCount);
     after.previousRank = previousRank;
+    // The DEBRIEF animates the conservative DISPLAY rating, so the delta it shows must be the change
+    // in display rating — not `after.delta`, which is the mu delta (display also shifts as sigma
+    // tightens). Surfacing the display delta keeps the count-up's old→new math exact and integral.
+    after.displayDelta = after.displayRating - (before.display_rating || 0);
     after.promoted = !newRank.startsWith('Unranked') && (
       previousRank.startsWith('Unranked') ||
       (newRank !== previousRank && after.displayRating > before.display_rating)

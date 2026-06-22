@@ -65,6 +65,9 @@ fun ArenaScreen(
     var rivals by remember { mutableStateOf<List<Rival>>(emptyList()) }
     var feed by remember { mutableStateOf<List<ArenaEvent>>(emptyList()) }
     var history by remember { mutableStateOf<List<MatchRecord>>(emptyList()) }
+    // The server's NRS rank standing for the global rating — drives the "the climb" bar so it can
+    // never drift from the rank the server actually assigns.
+    var globalRating by remember { mutableStateOf<DomainRating?>(null) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -74,7 +77,8 @@ fun ArenaScreen(
                 val r = RetrofitClient.apiService.getArenaRivals(token)
                 val f = RetrofitClient.apiService.getArenaFeed(token)
                 val h = RetrofitClient.apiService.getArenaHistory(token)
-                withContext(Dispatchers.Main) { rivals = r.rivals; feed = f.events; history = h.matches }
+                val rp = runCatching { RetrofitClient.apiService.getRatingProfile(token).profile["global"] }.getOrNull()
+                withContext(Dispatchers.Main) { rivals = r.rivals; feed = f.events; history = h.matches; globalRating = rp }
             }
         } catch (e: Exception) {
             Log.e("Arena", "Arena social load failed: ${e.message}")
@@ -85,8 +89,11 @@ fun ArenaScreen(
 
     DisposableEffect(Unit) {
         onDispose {
+            // Leave the matchmaking queue, but DON'T disconnect the socket here. When a match is found
+            // we navigate to DuelGameScreen, which covers (and disposes) this screen — disconnecting
+            // on dispose would tear down the very socket the live duel is running on, freezing the
+            // match. The duel screen owns the disconnect once the match is over.
             SocketClient.leaveQueue()
-            SocketClient.disconnect()
         }
     }
 
@@ -255,10 +262,11 @@ fun ArenaScreen(
                         Spacer(modifier = Modifier.height(Spacing.l))
 
                         // Guaranteed match: at current population the queue can sit empty
-                        // forever — after 20s offer a clearly-labeled bot duel instead of
-                        // an unbounded spinner. Leaving matchmaking happens via the same
-                        // state reset the Cancel button uses (the effect calls leaveQueue).
-                        if (queueSecondsElapsed >= 20) {
+                        // forever — after a short search offer a clearly-labeled bot duel as an
+                        // early opt-in. This shows BEFORE the server's own 20s bot fallback, so an
+                        // impatient player can grab a bot themselves rather than being auto-matched.
+                        // Leaving matchmaking happens via the same state reset the Cancel button uses.
+                        if (queueSecondsElapsed >= 12) {
                             Text(
                                 text = "Quiet out there right now — sharpen up against a training bot while you wait?",
                                 fontSize = 13.sp,
@@ -508,8 +516,7 @@ fun ArenaScreen(
 
                                 // The climb: how close you are to the next rank — the always-on chase.
                                 PromotionProgressBar(
-                                    elo = user?.elo ?: 1000,
-                                    inPlacement = (user?.competitive_matches ?: 0) < 5,
+                                    rating = globalRating,
                                     modifier = Modifier.padding(top = Spacing.s)
                                 )
                             }

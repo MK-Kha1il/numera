@@ -55,11 +55,24 @@ function resolveDuel({
   p2IntegrityEnabled = true,
   p2IsBot = false,
   isCasual = false,
+  // Total time each player spent answering (ms). Used ONLY to break an equal-score tie — the duel is
+  // billed as a race ("fastest correct answers win"), so equal accuracy is decided by who was faster.
+  p1TimeMs = null,
+  p2TimeMs = null,
 } = {}) {
   // Raw outcome by score.
   let winner = null;
   if (p1Score > p2Score) winner = 'p1';
   else if (p2Score > p1Score) winner = 'p2';
+  else if (
+    p1Score === p2Score && p1Score > 0 &&
+    p1TimeMs != null && p2TimeMs != null && p1TimeMs !== p2TimeMs
+  ) {
+    // Equal correct answers → the faster racer takes it. Without this, the speed-race framing was a
+    // lie: every even match drew regardless of who answered quicker. A genuine dead heat (identical
+    // time, or nobody scored) still draws.
+    winner = p1TimeMs < p2TimeMs ? 'p1' : 'p2';
+  }
 
   // Verdicts. Bots and telemetry-opted-out players are never flagged.
   const p1Effective = p1IntegrityEnabled ? p1FlaggedCount : 0;
