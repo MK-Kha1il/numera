@@ -903,7 +903,123 @@ function getLessonForArchive(title, category, stars) {
   return getLessonAndExamples(category, fakeLevel);
 }
 
+// ------------------------------------------------------------------------------------
+// Concept-anchored archive/daily lesson resolution (docs/ContentEngineAudit-2026-06.md §4)
+// ------------------------------------------------------------------------------------
+// The Archive and Daily Puzzle USED to re-derive a problem's lesson by fuzzy keyword matching on
+// its rendered title, with a star→fakeLevel fallback that silently bound unrelated concepts. Now the
+// generator stamps each problem with a canonical `conceptKey`, and we resolve the lesson from THAT —
+// deterministically — via one of three sources:
+//   1. EXTRA_ARCHIVE_LESSONS  — authored lessons for archive concepts that have no graph node and no
+//                               existing curated title case (telescoping, geometric series, etc.).
+//   2. GRAPH_BACKED_ARCHIVE   — concepts that already have a rich 5-part lesson; resolve via level.
+//   3. ARCHIVE_PROBE_TITLE    — concepts whose curated lesson already lives in getLessonForArchive;
+//                               reuse that body via a probe title (zero duplication).
+
+const EXTRA_ARCHIVE_LESSONS = {
+  telescoping_series: {
+    lessonTitle: "Telescoping Series",
+    lessonContent: "A telescoping series is an infinite sum whose general term splits into a difference of two pieces, so consecutive terms cancel and almost everything collapses. The key move is partial fractions: rewrite $\\frac{1}{n(n+1)}$ as $\\frac{1}{n} - \\frac{1}{n+1}$, then watch neighbours annihilate, leaving only the first surviving piece (the tail vanishes).",
+    lessonFormula: "\\sum_{n=1}^{\\infty} \\left(a_n - a_{n+1}\\right) = a_1 - \\lim_{n\\to\\infty} a_{n+1}",
+    examples: [
+      { question: "Evaluate $\\sum_{n=2}^{\\infty}\\left(\\frac{1}{n} - \\frac{1}{n+1}\\right)$.", answer: "1/2", explanation: "The partial sums collapse to the first surviving term $\\tfrac12$; the tail $\\tfrac1{n+1}\\to 0$." },
+      { question: "Find $\\sum_{n=1}^{\\infty} \\frac{1}{n(n+2)}$ using $\\frac{1}{n(n+2)} = \\tfrac12\\left(\\tfrac1n - \\tfrac1{n+2}\\right)$.", answer: "3/4", explanation: "Two staggered telescopes leave $\\tfrac12\\left(1 + \\tfrac12\\right) = \\tfrac34$." }
+    ]
+  },
+  geometric_series: {
+    lessonTitle: "Convergent Geometric Series",
+    lessonContent: "A geometric series adds terms that each multiply the previous by a fixed ratio $r$. When $|r| < 1$ the terms shrink fast enough that the infinite sum settles on a finite value. The closed form $\\frac{a}{1-r}$ (first term over one-minus-ratio) is the workhorse behind countless infinite-sum arguments.",
+    lessonFormula: "\\sum_{n=0}^{\\infty} a\\,r^n = \\frac{a}{1-r}, \\quad |r| < 1",
+    examples: [
+      { question: "Evaluate $\\sum_{n=0}^{\\infty} \\frac{1}{3^n}$.", answer: "3/2", explanation: "$a=1$, $r=\\tfrac13$: $\\frac{1}{1-\\tfrac13} = \\frac{1}{\\tfrac23} = \\tfrac32$." },
+      { question: "Evaluate $\\sum_{n=1}^{\\infty} \\frac{1}{4^n}$.", answer: "1/3", explanation: "Starting at $n=1$: $\\frac{\\tfrac14}{1-\\tfrac14} = \\frac{\\tfrac14}{\\tfrac34} = \\tfrac13$." }
+    ]
+  },
+  geometric_progression: {
+    lessonTitle: "Geometric Progressions & Doubling",
+    lessonContent: "In a geometric progression each term is the previous one times a fixed ratio. Doubling is the ratio-2 case: $1, 2, 4, 8, \\dots$, where the $n$-th term is $2^{n-1}$ and the sum of the first $n$ terms is $2^n - 1$. Geometric growth is explosive — the chessboard-and-wheat legend ends in astronomically large numbers for exactly this reason.",
+    lessonFormula: "a_n = a\\,r^{\\,n-1}, \\qquad \\sum_{i=0}^{n-1} a\\,r^i = a\\,\\frac{r^n - 1}{r - 1}",
+    examples: [
+      { question: "What is the 4th term of $1, 2, 4, 8, \\dots$?", answer: "8", explanation: "The $n$-th term is $2^{n-1}$, so the 4th is $2^3 = 8$." },
+      { question: "Sum the first 5 terms of $1, 2, 4, 8, \\dots$.", answer: "31", explanation: "$2^5 - 1 = 31$ — always one short of the next power of two." }
+    ]
+  },
+  conditional_probability: {
+    lessonTitle: "Conditional Probability",
+    lessonContent: "Conditional probability asks: given that event $B$ already happened, how likely is event $A$? Knowing $B$ shrinks the sample space to only the outcomes consistent with $B$, and we re-weigh $A$ inside that smaller world. This is why 'at least one is a boy' changes the odds that both children are boys — it eliminates one of four equally likely family types.",
+    lessonFormula: "P(A \\mid B) = \\frac{P(A \\cap B)}{P(B)}",
+    examples: [
+      { question: "A fair die is rolled. Given the result is even, what is the probability it is a 6?", answer: "1/3", explanation: "'Even' restricts the space to $\\{2,4,6\\}$; one of three is a 6." },
+      { question: "A card is drawn from a standard deck. Given it is a face card, what is the probability it is a King?", answer: "1/3", explanation: "Face cards per suit are J, Q, K; one of the three ranks is a King, so $4/12 = 1/3$." }
+    ]
+  },
+  linear_word: {
+    lessonTitle: "Word Problems as Linear Equations",
+    lessonContent: "Many word puzzles become easy once translated into a single linear equation: name the unknown with a variable, turn each sentence into algebra, then solve. For consecutive integers, centre them on a middle value $x$ as $x-1,\\,x,\\,x+1$, so their sum is simply $3x$ — the symmetry does the work.",
+    lessonFormula: "(x-1) + x + (x+1) = 3x",
+    examples: [
+      { question: "Three consecutive integers sum to 33. What is the largest?", answer: "12", explanation: "$3x = 33 \\Rightarrow x = 11$ (the middle), so the largest is $12$." },
+      { question: "Two consecutive even numbers sum to 30. What is the larger?", answer: "16", explanation: "$x + (x+2) = 30 \\Rightarrow x = 14$, so the larger is $16$." }
+    ]
+  }
+};
+
+// conceptKey → [category, level] for concepts that already own a rich 5-part lesson.
+const GRAPH_BACKED_ARCHIVE = {
+  fermat_little:      ['number theory', 20], // milestone "Fermat's Little Theorem" lesson
+  totient:            ['number theory', 49],
+  combinations:       ['combinatorics', 25],
+  integral:           ['calculus', 35],
+  matrix_determinant: ['algebra', 18]
+};
+
+// conceptKey → a probe title that deterministically hits the matching curated case in
+// getLessonForArchive (reuses those authored bodies with no duplication).
+const ARCHIVE_PROBE_TITLE = {
+  chinese_remainder: 'Chinese Remainder Theorem',
+  derangements:      'Derangements',
+  stars_and_bars:    'Stars and Bars',
+  taylor_series:     'Taylor Series',
+  basel:             'Basel',
+  eigenvalues:       'Eigenvalues',
+  cayley_hamilton:   'Cayley-Hamilton',
+  expected_value:    'Expected Value',
+  bayes:             'Bayes',
+  monty_hall:        'Monty Hall',
+  gauss_sum:         'Gauss Summation',
+  diophantus:        'Diophantus'
+};
+
+// Resolve a lesson from a canonical conceptKey (returns null for an unknown key so the caller can
+// fall back to the legacy title path).
+function getLessonForConcept(conceptKey, category, stars) {
+  if (!conceptKey) return null;
+  if (EXTRA_ARCHIVE_LESSONS[conceptKey]) return EXTRA_ARCHIVE_LESSONS[conceptKey];
+  if (GRAPH_BACKED_ARCHIVE[conceptKey]) {
+    const [cat, lvl] = GRAPH_BACKED_ARCHIVE[conceptKey];
+    return getLessonAndExamples(cat, lvl);
+  }
+  if (ARCHIVE_PROBE_TITLE[conceptKey]) {
+    return getLessonForArchive(ARCHIVE_PROBE_TITLE[conceptKey], category, stars);
+  }
+  return null;
+}
+
+// Resolve the lesson for any archive/daily problem object. Prefers the generator-stamped conceptKey
+// (the concept-anchored path); falls back to the legacy title matcher only for DB-seeded rows that
+// carry no conceptKey but do carry a curated title.
+function getLessonForArchiveProblem(problem) {
+  if (!problem) return getLessonForArchive('', '', 0);
+  if (problem.conceptKey) {
+    const lesson = getLessonForConcept(problem.conceptKey, problem.category, problem.stars);
+    if (lesson) return lesson;
+  }
+  return getLessonForArchive(problem.title, problem.category, problem.stars);
+}
+
 module.exports = {
   getLessonAndExamples,
-  getLessonForArchive
+  getLessonForArchive,
+  getLessonForConcept,
+  getLessonForArchiveProblem
 };

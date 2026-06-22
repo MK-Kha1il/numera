@@ -4,7 +4,7 @@
 const express = require('express');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
-const { generateArchiveProblem, getLessonForArchive } = require('../mathGenerator');
+const { generateArchiveProblem, getLessonForArchiveProblem } = require('../mathGenerator');
 const { attachTipToProblem } = require('../services/tipService');
 const ExerciseMemory = require('../mathEngine/exerciseMemory');
 const LessonSafety = require('../mathEngine/lessonSafety');
@@ -15,7 +15,9 @@ const stripLatex = (s) => s.replace(/\$/g, '').replace(/\\dots/g, '...').replace
 
 // Attach the (answer-leak-sanitized) lesson + normalized answer to a row.
 function decorate(row, parsedOpts) {
-  const baseLesson = getLessonForArchive(row.title, row.category, row.stars);
+  // Concept-anchored: generated rows carry a conceptKey → lesson resolves from that exact concept;
+  // DB-seeded rows (no conceptKey) fall back to the legacy title matcher inside this helper.
+  const baseLesson = getLessonForArchiveProblem(row);
   const { lesson } = LessonSafety.sanitizeLesson(baseLesson, row);
   let normalizedAnswer = row.correct_answer;
   if (parsedOpts && parsedOpts.length > 0 && !parsedOpts.includes(normalizedAnswer)) {

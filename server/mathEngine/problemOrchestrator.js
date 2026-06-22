@@ -178,10 +178,15 @@ const TYPE_TO_CONCEPT = {
   fibonacci_next:               'fibonacci_next'
 };
 
-// Resolve a concept from a template type string
+// Resolve a concept from a template type string. Exact match wins first — otherwise a parent key
+// (e.g. 'linear_system') would capture a more specific type ('linear_system_substitution') merely
+// because it is a substring, mis-routing Socratic/self-explain to the wrong concept. The substring
+// pass is preserved as a fallback (some template types are supersets of their conceptId, and the
+// foil/square/binomial ordering relies on insertion order). See docs/ContentEngineAudit-2026-06.md §3.2.
 function conceptFromType(type) {
   if (!type) return null;
   const lower = type.toLowerCase();
+  if (TYPE_TO_CONCEPT[lower]) return TYPE_TO_CONCEPT[lower];
   for (const [key, val] of Object.entries(TYPE_TO_CONCEPT)) {
     if (lower.includes(key)) return val;
   }

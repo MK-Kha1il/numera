@@ -3,6 +3,35 @@
 const { tipsMap } = require('../mathEngine/tips');
 const { buildHintLadder } = require('../mathEngine/hintLadder');
 
+// Canonical conceptKey → tip template key. The generator now stamps every archive/daily problem
+// with a conceptKey (mathGenerator.ARCHIVE_TITLE_TO_CONCEPT); resolving the hint from THAT keeps the
+// tip on the same concept as the lesson, instead of re-guessing it by fuzzy title matching (which
+// produced e.g. a PEMDAS tip on a chessboard-doubling problem). See docs/ContentEngineAudit-2026-06.md.
+const CONCEPT_KEY_TO_TIP = {
+  fermat_little:           'fermat_little',
+  totient:                 'euler_totient',
+  chinese_remainder:       'modulo',
+  combinations:            'combinations',
+  derangements:            'permutations',
+  stars_and_bars:          'combinations',
+  integral:                'integral',
+  taylor_series:           'derivative',
+  basel:                   'limit',
+  telescoping_series:      'limit',
+  geometric_series:        'limit',
+  geometric_progression:   'limit',
+  matrix_determinant:      'matrix_determinant',
+  eigenvalues:             'matrix_determinant',
+  cayley_hamilton:         'matrix_determinant',
+  expected_value:          'probability',
+  bayes:                   'probability',
+  monty_hall:              'probability',
+  conditional_probability: 'probability',
+  gauss_sum:               'arithmetic_add',
+  diophantus:              'linear_two_step',
+  linear_word:             'linear_two_step'
+};
+
 // Best-effort classification of an archive problem into a tip template key from its
 // title/category.
 function getArchiveTemplateType(title, category) {
@@ -63,7 +92,9 @@ function checkTipSafety(tipText, correctAnswer) {
 // when no tip exists or the tip would leak the answer.
 function attachTipToProblem(problem, isArchive) {
   if (!problem) return problem;
-  const templateType = problem.templateType || getArchiveTemplateType(problem.title, problem.category);
+  const templateType = problem.templateType
+    || (problem.conceptKey && CONCEPT_KEY_TO_TIP[problem.conceptKey])
+    || getArchiveTemplateType(problem.title, problem.category);
   const tipData = tipsMap[templateType];
   const correctAnswer = problem.correctAnswer || problem.correct_answer || '';
 

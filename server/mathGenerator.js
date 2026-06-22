@@ -4,7 +4,7 @@
 const { calculateDifficultyProfile, calculateAdaptiveDifficulty } = require('./mathEngine/adaptive');
 const { generateDistractors } = require('./mathEngine/distractors');
 const { templates } = require('./mathEngine/templates');
-const { getLessonAndExamples, getLessonForArchive } = require('./mathEngine/lessons');
+const { getLessonAndExamples, getLessonForArchive, getLessonForConcept, getLessonForArchiveProblem } = require('./mathEngine/lessons');
 const {
   factorial,
   generateMatrix2x2,
@@ -215,6 +215,42 @@ const CONCEPT_TO_LEVEL = {
   // Promoted from a variety template: the level-47 generator already counted divisors.
   divisor_count:        { category: 'number_theory', level: 47 },
   totient:              { category: 'number_theory', level: 49 }
+};
+
+// Canonical concept identity for every problem the Archive/Daily generator can emit. This is the
+// SINGLE SOURCE OF TRUTH for "what is this problem about" — keyed by the EXACT title string each
+// branch of generateArchiveProblemInstance produces. Downstream (lesson, hint, visual) resolves from
+// this conceptKey instead of re-guessing it by fuzzy title matching, which silently bound unrelated
+// concepts (e.g. a Euler-totient problem taught with the Binomial Theorem lesson). See
+// docs/ContentEngineAudit-2026-06.md §2. archiveCoherence.test.js asserts every generated title is
+// present here, so a future title can't silently fall back to the broken path.
+const ARCHIVE_TITLE_TO_CONCEPT = {
+  "Fermat's Little Theorem Modular Exponent":          'fermat_little',
+  "Euler Totient of Prime Product":                    'totient',
+  "Diophantine Chinese Remainder Theorem":             'chinese_remainder',
+  "Combinatorial Subset Selection":                    'combinations',
+  "Derangements and Subfactorials":                    'derangements',
+  "Indistinguishable Distribution via Stars and Bars": 'stars_and_bars',
+  "Reverse Power Rule Integration":                    'integral',
+  "Taylor Series Expansion":                           'taylor_series',
+  "The Basel Problem Evaluation":                      'basel',
+  "Telescoping Series Evaluation":                     'telescoping_series',
+  "Convergent Geometric Series":                       'geometric_series',
+  "Matrix Determinant Calculation":                    'matrix_determinant',
+  "Eigenvalues of Symmetric Matrix":                   'eigenvalues',
+  "Cayley-Hamilton Matrix Powers":                     'cayley_hamilton',
+  "Expected Value of a Fair Die":                      'expected_value',
+  "Expected Value of Two Dice":                        'expected_value',
+  "Bayesian Diagnostics Probability":                  'bayes',
+  "The Monty Hall Paradox (Switch)":                   'monty_hall',
+  "The Monty Hall Paradox (Stay)":                     'monty_hall',
+  "The Boy-or-Girl Paradox":                           'conditional_probability',
+  "Gauss Summation Series":                            'gauss_sum',
+  "Sum of the First Even Numbers":                     'gauss_sum',
+  "Diophantus Linear Life Epitaph":                    'diophantus',
+  "Consecutive Integers Puzzle":                       'linear_word',
+  "Wheat and Chessboard Geometric Progression":        'geometric_progression',
+  "Doubling on a Single Square":                        'geometric_progression'
 };
 
 let ingestedTemplatesCache = [];
@@ -909,10 +945,14 @@ function generateArchiveProblemInstance(category, stars) {
     }
   }
   
+  // Canonical concept identity (exact-match on the title this branch produced). Drives
+  // concept-anchored lesson/hint/visual resolution downstream — see ARCHIVE_TITLE_TO_CONCEPT.
+  const conceptKey = ARCHIVE_TITLE_TO_CONCEPT[title] || null;
+
   // Deduplicate and pad options
   const uniqueOptions = new Set();
   uniqueOptions.add(correctAnswer);
-  
+
   for (const opt of rawOptions) {
     if (uniqueOptions.size >= 4) break;
     uniqueOptions.add(opt.toString());
@@ -950,7 +990,8 @@ function generateArchiveProblemInstance(category, stars) {
     difficulty: stars >= 4 ? "Sage" : stars === 3 ? "Scholar" : "Apprentice",
     category,
     stars,
-    source
+    source,
+    conceptKey
   };
 }
 
@@ -972,6 +1013,9 @@ module.exports = {
   generateArchiveProblem,
   getLessonAndExamples,
   getLessonForArchive,
+  getLessonForConcept,
+  getLessonForArchiveProblem,
   refreshIngestedTemplates,
-  CONCEPT_TO_LEVEL
+  CONCEPT_TO_LEVEL,
+  ARCHIVE_TITLE_TO_CONCEPT
 };
