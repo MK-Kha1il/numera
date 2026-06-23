@@ -13,6 +13,10 @@
   #goal { font-size:11px; line-height:1.3; padding:0 16px 10px 16px; opacity:0.62; font-style:italic; flex:0 0 auto; }
   #cover { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
   #coverBtn { padding:11px 20px; border-radius:16px; font-size:13px; font-weight:800; border:none; box-shadow:0 6px 16px rgba(0,0,0,0.18); }
+  /* Explain step: a soft reflection banner that drops in over the stage after the
+     learner has verified — closes the loop with "why?" (retention/transfer). */
+  #reflect { position:absolute; left:8px; right:8px; bottom:8px; padding:9px 13px; border-radius:13px;
+    font-size:12px; line-height:1.35; font-weight:700; text-align:center; box-shadow:0 4px 14px rgba(0,0,0,0.12); }
   #dbg { position:absolute; left:8px; bottom:4px; font-size:9px; color:#c0392b; font-family:monospace; pointer-events:none; white-space:pre; display:none; }
   .hidden { display:none !important; }
 </style>
@@ -23,6 +27,7 @@
   <div id="stage">
     <canvas id="cv"></canvas>
     <div id="cover" class="hidden"><button id="coverBtn">Tap to explore ✦</button></div>
+    <div id="reflect" class="hidden"></div>
     <div id="dbg"></div>
   </div>
   <div id="goal"></div>
@@ -38,18 +43,38 @@ var THEME = { bg:"#FFFFFF", surface:"#F2F2F7", primary:"#58CC02", secondary:"#18
   correct:"#58CC02", wrong:"#EA2B2B" };
 var SPEC = { type:"none", params:{}, prompt:"", goal:"" };
 var HOST_H = 0;
+var REDUCE = false;  // reduce-motion: suppress confetti + entrance animation
 
 try { if (window.AndroidBridge && AndroidBridge.getTheme)   THEME   = JSON.parse(AndroidBridge.getTheme()); } catch(e){}
 try { if (window.AndroidBridge && AndroidBridge.getSpec)    SPEC    = JSON.parse(AndroidBridge.getSpec());  } catch(e){}
 try { if (window.AndroidBridge && AndroidBridge.getHeightDp) HOST_H = AndroidBridge.getHeightDp() || 0;     } catch(e){}
+try { if (window.AndroidBridge && AndroidBridge.getReduceMotion) REDUCE = !!AndroidBridge.getReduceMotion(); } catch(e){}
 try {
   var qs = new URLSearchParams(window.location.search);
   if (qs.get("spec"))   SPEC   = JSON.parse(decodeURIComponent(qs.get("spec")));
   if (qs.get("theme"))  THEME  = JSON.parse(decodeURIComponent(qs.get("theme")));
   if (qs.get("h"))      HOST_H = parseInt(qs.get("h"), 10) || 0;
+  if (qs.get("reduce")) REDUCE = qs.get("reduce") === "1";
 } catch(e){}
 
-function postEvent(o){ try { o.type = o.type || SPEC.type; if (window.AndroidBridge && AndroidBridge.onEvent) AndroidBridge.onEvent(JSON.stringify(o)); } catch(e){} }
+// --- Explain step -----------------------------------------------------------
+// After the learner reaches their first verified insight (solve/discover), drop a
+// reflection prompt ("why?"). Closing the loop with self-explanation is the single
+// strongest retention/transfer lever — and it never reveals the answer.
+var reflectShown = false;
+function maybeReflect(){
+  if (reflectShown || !SPEC.reflectionPrompt) return;
+  reflectShown = true;
+  var r = document.getElementById("reflect");
+  if (r){ r.textContent = "🤔 " + SPEC.reflectionPrompt; r.style.color = THEME.onSurface;
+    r.style.background = rgba(THEME.tertiary, 0.12); r.classList.remove("hidden"); }
+  try { if (window.AndroidBridge && AndroidBridge.onEvent)
+    AndroidBridge.onEvent(JSON.stringify({ type:SPEC.type, event:"reflect" })); } catch(e){}
+}
+
+function postEvent(o){ try { o.type = o.type || SPEC.type;
+  if (!reflectShown && (o.event === "solve" || o.event === "discover")) maybeReflect();
+  if (window.AndroidBridge && AndroidBridge.onEvent) AndroidBridge.onEvent(JSON.stringify(o)); } catch(e){} }
 
 // ---------------------------------------------------------------------------
 // Adaptive scaffolding level (Adaptive Visual Intelligence, inside the canvas).
@@ -214,7 +239,7 @@ function paint(){
     var d=document.getElementById("dbg"); if(d){ d.style.display="block"; d.textContent="ERR "+lastErr; } }
   needsDraw=false;
 }
-function celebrate(x,y){ burst(x,y,[THEME.primary,THEME.secondary,THEME.tertiary,"#FFD54A"],30); requestRender(); }
+function celebrate(x,y){ if(!REDUCE) burst(x,y,[THEME.primary,THEME.secondary,THEME.tertiary,"#FFD54A"],30); requestRender(); }
 
 // ===========================================================================
 //  MODULE REGISTRY
@@ -581,8 +606,9 @@ MODULES.parabola = (function(){
 
 // =================== DICE SIM ==============================================
 MODULES.dice_sim = (function(){
-  var counts,rolls,sum,face,roll,queue,meanS;
-  function init(s){ counts=[0,0,0,0,0,0]; rolls=0; sum=0; face=1; roll=0; queue=0; meanS=new Spring(3.5,0.1); }
+  var counts,rolls,sum,face,roll,queue,meanS,guess,predicted,dragG,trackGeo;
+  function init(s){ counts=[0,0,0,0,0,0]; rolls=0; sum=0; face=1; roll=0; queue=0; meanS=new Spring(3.5,0.1);
+    guess=3.5; predicted=false; dragG=false; }
   function layout(){}
   function rollOnce(){ var v=1+(Math.random()*6|0); counts[v-1]++; rolls++; sum+=v; face=v; }
   function update(dt){
@@ -603,7 +629,21 @@ MODULES.dice_sim = (function(){
     text("rolls", sx, dy+8, 11, THEME.subtext,"left","600"); text(""+rolls, sx+44, dy+8, 13, THEME.onSurface,"left","800");
     text("average", sx, dy+30, 11, THEME.subtext,"left","600"); text(""+(rolls?Math.round(meanS.cur*100)/100:"—"), sx+58, dy+30, 16, THEME.primary,"left","800");
     // No "expected = …" label: watching the average SETTLE is the discovery.
-    if(guided()) text("keep rolling — where does it settle?", sx, dy+52, 11.5, THEME.subtext,"left","600");
+    // ---- predict before verify: commit a guess for the long-run average first ----
+    var tY=H*0.42, tx0=30, tx1=W-30, tw=tx1-tx0; trackGeo={y:tY,x0:tx0,w:tw};
+    if(!predicted) text(guided()?"predict the long-run average first — drag the orange marker":"predict the average first",
+      W/2, tY-30, 11.5, THEME.tertiary,"center","700");
+    ctx.strokeStyle=rgba(THEME.subtext,0.3); ctx.lineWidth=4; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(tx0,tY); ctx.lineTo(tx1,tY); ctx.stroke();
+    for(var t=1;t<=6;t++){ var ttx=tx0+(t-1)/5*tw; ctx.strokeStyle=rgba(THEME.subtext,0.35); ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(ttx,tY-6); ctx.lineTo(ttx,tY+6); ctx.stroke(); text(""+t, ttx, tY+18, 10, THEME.subtext,"center","600"); }
+    if(rolls>0){ var mp=tx0+(clamp(meanS.cur,1,6)-1)/5*tw; glow(mp,tY,12,THEME.primary,0.4);
+      ctx.fillStyle=THEME.primary; ctx.beginPath(); ctx.arc(mp,tY,6,0,TAU); ctx.fill(); ctx.strokeStyle="#FFF"; ctx.lineWidth=2; ctx.stroke();
+      text("average", mp, tY-13, 9.5, THEME.primary,"center","700"); }
+    var gp=tx0+(clamp(guess,1,6)-1)/5*tw;
+    shadowOn(8,rgba(THEME.tertiary,0.55),3); ctx.fillStyle=THEME.tertiary; ctx.beginPath(); ctx.arc(gp,tY,10,0,TAU); ctx.fill(); shadowOff();
+    ctx.strokeStyle="#FFF"; ctx.lineWidth=2.5; ctx.stroke();
+    if(predicted) text("your guess", gp, tY+32, 9.5, THEME.tertiary,"center","700");
     // histogram
     var hx=22, hy=H-128, hw=W-44, hh=64, bw=hw/6, mx=Math.max(1,Math.max.apply(null,counts));
     // expected line
@@ -612,17 +652,23 @@ MODULES.dice_sim = (function(){
       if(bh>1){ shadowOn(6,rgba(THEME.secondary,0.35),2); gradRR(bx,by,bw-8,bh,5,THEME.secondary); shadowOff(); }
       text(""+(i+1), hx+i*bw+bw/2, hy+hh+13, 11, THEME.subtext,"center","600");
       if(counts[i]>0) text(""+counts[i], hx+i*bw+bw/2, by-9, 10, THEME.onSurface,"center","700"); }
-    // buttons
+    // buttons — locked until the learner has committed a prediction (predict before verify)
     var by2=H-46, bwd=(W-54)/2;
-    button("roll", 22, by2, bwd, 40, "Roll", THEME.primary, false, function(){ face=1+(Math.random()*6|0); roll=0.45; rollOnce(); requestRender(); });
-    button("roll50", 32+bwd, by2, bwd, 40, "Roll ×50", THEME.secondary, false, function(){ queue+=50; requestRender(); });
+    button("roll", 22, by2, bwd, 40, "Roll", THEME.primary, !predicted, function(){ if(!predicted) return; face=1+(Math.random()*6|0); roll=0.45; rollOnce(); requestRender(); });
+    button("roll50", 32+bwd, by2, bwd, 40, "Roll ×50", THEME.secondary, !predicted, function(){ if(!predicted) return; queue+=50; requestRender(); });
   }
   function pips(s,v){ var r=s*0.075; var m={1:[[.5,.5]],2:[[.3,.3],[.7,.7]],3:[[.3,.3],[.5,.5],[.7,.7]],
     4:[[.3,.3],[.7,.3],[.3,.7],[.7,.7]],5:[[.3,.3],[.7,.3],[.5,.5],[.3,.7],[.7,.7]],
     6:[[.3,.25],[.7,.25],[.3,.5],[.7,.5],[.3,.75],[.7,.75]]};
     (m[v]||m[1]).forEach(function(p){ ctx.fillStyle=THEME.onSurface; ctx.beginPath(); ctx.arc(-s/2+p[0]*s,-s/2+p[1]*s,r,0,TAU); ctx.fill(); }); }
-  function down(x,y){ for(var i=0;i<buttons.length;i++) if(hit(buttons[i],x,y)){ pressBtn(buttons[i]); buttons[i].onTap(); return; } }
-  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down };
+  function setGuess(x){ var v=clamp(1+(x-trackGeo.x0)/trackGeo.w*5,1,6); guess=Math.round(v*10)/10;
+    if(!predicted){ predicted=true; postEvent({event:"predict",detail:"guess:"+guess}); } requestRender(); }
+  function down(x,y){
+    if(trackGeo && Math.abs(y-trackGeo.y)<26){ dragG=true; setGuess(x); return; }
+    for(var i=0;i<buttons.length;i++) if(hit(buttons[i],x,y)){ pressBtn(buttons[i]); buttons[i].onTap(); return; } }
+  function move(x){ if(dragG) setGuess(x); }
+  function up(){ dragG=false; }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
 })();
 
 // =================== NUMBER LINE ===========================================
@@ -791,6 +837,756 @@ MODULES.ratio_line = (function(){
   return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
 })();
 
+// =================== SHAPE GRID (2D area) ==================================
+// Area on a unit grid. rect: drag a corner to build L×W, count squares. triangle:
+// tap to mirror the copy and see the triangle is half its b×h rectangle.
+// parallelogram: shear it until it becomes a b×h rectangle (same base+height ⇒
+// same area). The area number is never printed — it is counted in unit squares.
+MODULES.shape_grid = (function(){
+  var mode,L,Wd,b,h,maxD,cu,cv,mirrored,shear,initShear,drag,done,tappedSides,compW,compH,cutW,cutH,cut,tb1,tb2;
+  function init(s){ mode=s.mode; done=false; drag=null; mirrored=false;
+    if(mode==="rect"){ L=s.params.l; Wd=s.params.w; maxD=Math.max(L,Wd)+1; cu=0; cv=0; }
+    else if(mode==="triangle"){ b=s.params.b; h=s.params.h; maxD=Math.max(b,h)+1; }
+    else if(mode==="perimeter"){ L=s.params.l; Wd=s.params.w; maxD=Math.max(L,Wd)+1; tappedSides={}; }
+    else if(mode==="composite"){ compW=s.params.w; compH=s.params.h; cutW=s.params.cw; cutH=s.params.ch; cut=false; maxD=Math.max(compW,compH)+1; }
+    else if(mode==="trapezoid"){ tb1=s.params.b1; tb2=s.params.b2; h=s.params.h; maxD=Math.max(tb2,h)+1; }
+    else { b=s.params.b; h=s.params.h; initShear=clamp(Math.round(b*0.5),2,4); shear=initShear; maxD=Math.max(b+initShear,h)+1; } }
+  var ox,oy,u,rectHandle,parHandle,sideGeo;
+  function layout(){ u=clamp(Math.min((W-50)/maxD, (H*0.56)/maxD),12,42); ox=(W-maxD*u)/2; oy=H*0.18+maxD*u; }
+  function X(v){ return ox+v*u; } function Y(v){ return oy-v*u; }
+  function update(){} function animating(){ return false; }
+  function grid(){ ctx.strokeStyle=rgba(THEME.subtext,0.12); ctx.lineWidth=1;
+    for(var i=0;i<=maxD;i++){ ctx.beginPath(); ctx.moveTo(X(i),Y(0)); ctx.lineTo(X(i),Y(maxD)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(X(0),Y(i)); ctx.lineTo(X(maxD),Y(i)); ctx.stroke(); } }
+  function fillCells(w,hh,col){ for(var a=0;a<w;a++) for(var c=0;c<hh;c++) gradRR(X(a)+1,Y(c+1)+1,u-2,u-2,3,col); }
+  function handle(hx,hy){ glow(hx,hy,14,THEME.primary,0.4); shadowOn(6,rgba(THEME.primary,0.5),2);
+    ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(hx,hy,11,0,TAU); ctx.fill(); shadowOff();
+    ctx.fillStyle=THEME.primary; ctx.beginPath(); ctx.arc(hx,hy,6,0,TAU); ctx.fill(); }
+  function draw(){
+    if(!u) layout(); grid();
+    if(mode==="rect") drawRect(); else if(mode==="triangle") drawTri(); else if(mode==="perimeter") drawPerim(); else if(mode==="composite") drawComposite(); else if(mode==="trapezoid") drawTrap(); else drawPar();
+  }
+  function drawTrap(){
+    text("area of the trapezoid = ? square units", W/2, H*0.10, 13, THEME.onSurface,"center","800");
+    // right trapezoid: (0,0)–(tb2,0)–(tb1,h)–(0,h). Splits at x=tb1 into a rectangle
+    // [0,tb1]×[0,h] plus the right triangle (tb1,0)–(tb2,0)–(tb1,h).
+    fillCells(tb1,h,THEME.primary);
+    tri([[tb1,0],[tb2,0],[tb1,h]],THEME.secondary);
+    ctx.setLineDash([5,4]); ctx.strokeStyle=rgba(THEME.tertiary,0.7); ctx.lineWidth=2;
+    ctx.strokeRect(X(tb1),Y(h),(tb2-tb1)*u,h*u); ctx.setLineDash([]);
+    if(mirrored) tri([[tb2,0],[tb1,h],[tb2,h]],THEME.secondary);
+    ctx.beginPath(); ctx.moveTo(X(0),Y(0)); ctx.lineTo(X(tb2),Y(0)); ctx.lineTo(X(tb1),Y(h)); ctx.lineTo(X(0),Y(h)); ctx.closePath();
+    ctx.strokeStyle=THEME.onSurface; ctx.lineWidth=2; ctx.lineJoin="round"; ctx.stroke();
+    if(mirrored&&!done){ done=true; postEvent({event:"solve",detail:"trapezoid"}); celebrate(X(tb1),Y(h/2)); }
+    text(mirrored? "count the rectangle's squares, then add HALF the triangle's box"
+                 : (guided()? "tap the empty corner to complete the triangle into its box" : "complete the triangle's box"),
+      W/2, H-16, 12, mirrored?THEME.correct:THEME.subtext,"center","700");
+  }
+  function drawComposite(){
+    text("area of the L-shape = ? square units", W/2, H*0.10, 13, THEME.onSurface,"center","800");
+    for(var a=0;a<compW;a++) for(var c=0;c<compH;c++){ var inC=(a>=compW-cutW && c>=compH-cutH);
+      var px=X(a)+1, py=Y(c+1)+1;
+      if(inC){ if(cut){ ctx.fillStyle=rgba(THEME.subtext,0.06); ctx.fillRect(px,py,u-2,u-2);
+          ctx.strokeStyle=rgba(THEME.subtext,0.22); ctx.setLineDash([2,2]); ctx.strokeRect(px,py,u-2,u-2); ctx.setLineDash([]); }
+        else { ctx.fillStyle=rgba(THEME.tertiary,0.22); ctx.fillRect(px,py,u-2,u-2);
+          ctx.strokeStyle=rgba(THEME.tertiary,0.55); ctx.strokeRect(px,py,u-2,u-2); } }
+      else { gradRR(px,py,u-2,u-2,3,THEME.primary); ctx.strokeStyle=rgba(THEME.primary,0.4); ctx.lineWidth=1; ctx.strokeRect(px,py,u-2,u-2); } }
+    if(cut&&!done){ done=true; postEvent({event:"solve",detail:"composite"}); celebrate(X(compW/2),Y(compH/2)); }
+    text(cut? "count the squares that remain (the big rectangle minus the cut corner)"
+            : (guided()? "tap the highlighted corner to cut it away" : "cut the corner"),
+      W/2, H-16, 12, cut?THEME.correct:THEME.subtext,"center","700");
+  }
+  function distSeg(px,py,x1,y1,x2,y2){ var dx=x2-x1,dy=y2-y1,L2=dx*dx+dy*dy; var t=L2?clamp(((px-x1)*dx+(py-y1)*dy)/L2,0,1):0; return Math.hypot(px-(x1+t*dx),py-(y1+t*dy)); }
+  function drawPerim(){
+    text("perimeter = ? units", W/2, H*0.10, 14, THEME.onSurface,"center","800");
+    ctx.fillStyle=rgba(THEME.primary,0.07); ctx.fillRect(X(0),Y(Wd),L*u,Wd*u);
+    var sides=[
+      {id:"top",x0:X(0),y0:Y(Wd),x1:X(L),y1:Y(Wd),len:L,col:THEME.primary,h:1},
+      {id:"bottom",x0:X(0),y0:Y(0),x1:X(L),y1:Y(0),len:L,col:THEME.secondary,h:1},
+      {id:"left",x0:X(0),y0:Y(0),x1:X(0),y1:Y(Wd),len:Wd,col:THEME.tertiary,h:0},
+      {id:"right",x0:X(L),y0:Y(0),x1:X(L),y1:Y(Wd),len:Wd,col:shade(THEME.primary,-0.25),h:0}
+    ];
+    sideGeo=sides;
+    sides.forEach(function(sd){ var lit=tappedSides[sd.id];
+      ctx.strokeStyle=lit?sd.col:rgba(THEME.subtext,0.5); ctx.lineWidth=lit?5:2.5; ctx.lineCap="round";
+      ctx.beginPath(); ctx.moveTo(sd.x0,sd.y0); ctx.lineTo(sd.x1,sd.y1); ctx.stroke();
+      if(lit){ for(var k=1;k<sd.len;k++){ var t=k/sd.len, tx=sd.x0+(sd.x1-sd.x0)*t, ty=sd.y0+(sd.y1-sd.y0)*t;
+          ctx.strokeStyle=rgba(sd.col,0.85); ctx.lineWidth=2; ctx.beginPath();
+          if(sd.h){ ctx.moveTo(tx,ty-4); ctx.lineTo(tx,ty+4); } else { ctx.moveTo(tx-4,ty); ctx.lineTo(tx+4,ty); } ctx.stroke(); }
+        var mx=(sd.x0+sd.x1)/2, my=(sd.y0+sd.y1)/2;
+        text(""+sd.len, mx+(sd.h?0:(sd.id==="left"?-14:14)), my+(sd.h?(sd.id==="top"?-10:14):0), 12, sd.col,"center","800"); } });
+    var allLit=sides.every(function(sd){ return tappedSides[sd.id]; });
+    if(allLit&&!done){ done=true; postEvent({event:"solve",detail:"perimeter"}); celebrate(X(L/2),Y(Wd/2)); }
+    text(allLit? "all four sides measured — add the four lengths"
+               : (guided()? "tap each side to measure it" : "measure all four sides"),
+      W/2, H-16, 12, allLit?THEME.correct:THEME.subtext,"center","700");
+  }
+  function drawRect(){
+    text("area = ? square units", W/2, H*0.10, 14, THEME.onSurface,"center","800");
+    ctx.setLineDash([5,4]); ctx.strokeStyle=rgba(THEME.tertiary,0.8); ctx.lineWidth=2; ctx.strokeRect(X(0),Y(Wd),L*u,Wd*u); ctx.setLineDash([]);
+    if(cu>0&&cv>0) fillCells(cu,cv,THEME.primary);
+    handle(X(cu),Y(cv)); rectHandle={x:X(cu),y:Y(cv)};
+    var ok=(cu===L&&cv===Wd); if(ok&&!done){ done=true; postEvent({event:"solve",detail:"rect"}); celebrate(X(L/2),Y(Wd/2)); }
+    text(ok? "now count the unit squares inside" : (guided()? "drag the corner to length "+L+" × width "+Wd : "build "+L+" × "+Wd),
+      W/2, H-16, 12, ok?THEME.correct:THEME.subtext,"center","700");
+  }
+  function tri(p,col){ ctx.beginPath(); ctx.moveTo(X(p[0][0]),Y(p[0][1])); ctx.lineTo(X(p[1][0]),Y(p[1][1])); ctx.lineTo(X(p[2][0]),Y(p[2][1])); ctx.closePath();
+    ctx.fillStyle=rgba(col,0.5); ctx.fill(); ctx.strokeStyle=col; ctx.lineWidth=2; ctx.stroke(); }
+  function drawTri(){
+    text("area of the triangle = ? square units", W/2, H*0.10, 13.5, THEME.onSurface,"center","800");
+    ctx.setLineDash([5,4]); ctx.strokeStyle=rgba(THEME.tertiary,0.7); ctx.lineWidth=2; ctx.strokeRect(X(0),Y(h),b*u,h*u); ctx.setLineDash([]);
+    tri([[0,0],[b,0],[0,h]],THEME.primary);
+    if(mirrored) tri([[b,0],[b,h],[0,h]],THEME.secondary);
+    text(mirrored? "two equal triangles fill the rectangle — the triangle is half of base × height"
+                 : (guided()? "tap the empty half to mirror the triangle" : "tap the empty half"),
+      W/2, H-16, 12, mirrored?THEME.correct:THEME.subtext,"center","700");
+  }
+  function drawPar(){
+    text("area of the parallelogram = ? square units", W/2, H*0.10, 13, THEME.onSurface,"center","800");
+    ctx.setLineDash([5,4]); ctx.strokeStyle=rgba(THEME.tertiary,0.7); ctx.lineWidth=2; ctx.strokeRect(X(0),Y(h),b*u,h*u); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(X(0),Y(0)); ctx.lineTo(X(b),Y(0)); ctx.lineTo(X(shear+b),Y(h)); ctx.lineTo(X(shear),Y(h)); ctx.closePath();
+    ctx.fillStyle=rgba(THEME.primary,0.45); ctx.fill(); ctx.strokeStyle=THEME.primary; ctx.lineWidth=2.5; ctx.stroke();
+    handle(X(shear),Y(h)); parHandle={x:X(shear),y:Y(h)};
+    var ok=(shear===0); if(ok&&!done){ done=true; postEvent({event:"solve",detail:"parallelogram"}); celebrate(X(b/2),Y(h/2)); }
+    text(ok? "now it's a "+b+" × "+h+" rectangle — same area; count the squares"
+           : (guided()? "slide the top-left corner until it lines up with the rectangle" : "straighten it into the rectangle"),
+      W/2, H-16, 12, ok?THEME.correct:THEME.subtext,"center","700");
+  }
+  function down(x,y){
+    if(mode==="rect"){ if(rectHandle&&Math.hypot(x-rectHandle.x,y-rectHandle.y)<34) drag="rect"; return; }
+    if(mode==="perimeter"){ if(!sideGeo) return; var best=null,bd=18;
+      sideGeo.forEach(function(sd){ var d=distSeg(x,y,sd.x0,sd.y0,sd.x1,sd.y1); if(d<bd){ bd=d; best=sd; } });
+      if(best&&!tappedSides[best.id]){ tappedSides[best.id]=true; postEvent({event:"discover",detail:"side:"+best.id}); requestRender(); } return; }
+    if(mode==="composite"){ if(cut) return; var gx=(x-ox)/u, gy=(oy-y)/u;
+      if(gx>=compW-cutW && gx<=compW && gy>=compH-cutH && gy<=compH){ cut=true; postEvent({event:"discover",detail:"cut"}); requestRender(); } return; }
+    if(mode==="parallelogram"){ if(parHandle&&Math.hypot(x-parHandle.x,y-parHandle.y)<34) drag="par"; return; }
+    if(mode==="triangle"&&!mirrored){ var gxv=(x-ox)/u, gyv=(oy-y)/u;
+      if(gxv>=0&&gyv>=0&&gxv<=b&&gyv<=h && gyv > h-(h/b)*gxv){ mirrored=true; postEvent({event:"discover",detail:"mirror"}); requestRender(); } }
+    if(mode==="trapezoid"&&!mirrored){ var tgx=(x-ox)/u, tgy=(oy-y)/u;
+      // tap the empty upper-right wedge — above the hypotenuse, inside the triangle's box
+      if(tgx>=tb1&&tgx<=tb2&&tgy>=0&&tgy<=h && tgx > tb2-(tb2-tb1)*(tgy/h)){ mirrored=true; postEvent({event:"discover",detail:"trap_mirror"}); requestRender(); } }
+  }
+  function move(x,y){
+    if(drag==="rect"){ var nu=clamp(Math.round((x-ox)/u),0,maxD), nv=clamp(Math.round((oy-y)/u),0,maxD);
+      if(nu!==cu||nv!==cv){ cu=nu; cv=nv; postEvent({event:"manipulate",detail:"corner"}); requestRender(); } }
+    else if(drag==="par"){ var ns=clamp(Math.round((x-ox)/u),0,maxD-b); if(ns!==shear){ shear=ns; postEvent({event:"manipulate",detail:"shear:"+shear}); requestRender(); } }
+  }
+  function up(){ drag=null; }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
+})();
+
+// =================== PROBABILITY (sample space + trials) ===================
+// All equally-likely outcomes as a grid, the favorable ones highlighted. The
+// learner counts favorable/total, then TESTS it: each trial picks a random cell,
+// the experimental rate bar converges toward the theoretical probability. The
+// probability value is never printed — it is counted and confirmed by experiment.
+MODULES.probability = (function(){
+  var total,favorable,label,kind,hits,spins,flash,flashT,mode,succ,tallied,expDone;
+  function init(s){ mode=s.mode||"theoretical"; label=s.params.label||"win"; flash=-1; flashT=0;
+    if(mode==="experimental"){ total=s.params.trials; succ=s.params.succ; kind="flip"; tallied={}; expDone=false; }
+    else { total=s.params.total; favorable=s.params.favorable; kind=s.params.kind||"bag"; hits=0; spins=0; } }
+  var gx,gy,cw,cols,rows,gap;
+  function layout(){ cols=total<=4?total:(total<=12?Math.ceil(total/2):6); rows=Math.ceil(total/cols);
+    var raw=Math.min((W-44)/cols, (H*0.38)/rows, 50); gap=Math.max(3,raw*0.14); cw=raw-gap;
+    var gW=cols*(cw+gap)-gap; gx=(W-gW)/2; gy=H*0.22; }
+  function update(dt){ if(flashT>0) flashT=Math.max(0,flashT-dt*2.5); }
+  function animating(){ return flashT>0; }
+  function cellXY(i){ return {x:gx+(i%cols)*(cw+gap), y:gy+Math.floor(i/cols)*(cw+gap)}; }
+  function draw(){
+    if(!cw) layout();
+    if(mode==="experimental"){ drawExperimental(); return; }
+    var noun=kind==="spinner"?"sections":"marbles";
+    text("count the "+label+" "+noun+" out of "+total, W/2, H*0.12, 13.5, THEME.onSurface,"center","800");
+    var rad=Math.min(9,cw*0.25);
+    for(var i=0;i<total;i++){ var p=cellXY(i), fav=i<favorable, fl=(i===flash&&flashT>0);
+      ctx.save(); if(fl){ var s=1+0.22*flashT, cx=p.x+cw/2, cy=p.y+cw/2; ctx.translate(cx,cy); ctx.scale(s,s); ctx.translate(-cx,-cy); }
+      if(fav){ shadowOn(5,rgba(THEME.primary,0.4),2); gradRR(p.x,p.y,cw,cw,rad,THEME.primary); shadowOff(); }
+      else { fillRR(p.x,p.y,cw,cw,rad, rgba(THEME.subtext,0.14)); }
+      strokeRR(p.x,p.y,cw,cw,rad, rgba(THEME.subtext,0.25),1);
+      if(fl) strokeRR(p.x,p.y,cw,cw,rad, THEME.tertiary,3);
+      ctx.restore(); }
+    var barY=gy+rows*(cw+gap)+16, bx=30, bw=W-60, bh=14;
+    text(spins>0?("tested "+spins+" times — your experimental rate"):"count the favorable, then run trials to test it",
+      bx, barY-9, 11, THEME.subtext,"left","600");
+    fillRR(bx,barY,bw,bh,7, rgba(THEME.subtext,0.12));
+    if(spins>0){ ctx.save(); rr(bx,barY,bw,bh,7); ctx.clip();
+      var fg=ctx.createLinearGradient(bx,0,bx+bw,0); fg.addColorStop(0,shade(THEME.secondary,0.15)); fg.addColorStop(1,shade(THEME.secondary,-0.05));
+      ctx.fillStyle=fg; ctx.fillRect(bx,barY,bw*(hits/spins),bh); ctx.restore(); }
+    strokeRR(bx,barY,bw,bh,7, rgba(THEME.subtext,0.2),1);
+    var by=H-44, bwd=(W-54)/2;
+    button("t1",22,by,bwd,36,"Test ×1",THEME.primary,false,function(){ trial(); });
+    button("t20",32+bwd,by,bwd,36,"Test ×20",THEME.secondary,false,function(){ for(var k=0;k<20;k++) trial(); requestRender(); });
+  }
+  function trial(){ var i=(Math.random()*total)|0; spins++; if(i<favorable) hits++; flash=i; flashT=1;
+    postEvent({event:"simulate",detail:"spins:"+spins}); if(spins===20) postEvent({event:"discover",detail:"converging"}); requestRender(); }
+  // Experimental probability: the trials ALREADY happened. The recorded outcomes
+  // are fixed (succ heads of total flips); the learner taps each heads to tally it
+  // and the rate bar fills to heads ÷ total — what happened, not what's equally likely.
+  function drawExperimental(){
+    text("these "+total+" flips already happened — tap each H to tally it", W/2, H*0.12, 12.5, THEME.onSurface,"center","800");
+    var rad=Math.min(9,cw*0.25), nTall=0;
+    for(var i=0;i<total;i++){ var p=cellXY(i), isHead=i<succ, t=!!tallied[i];
+      if(isHead){ if(t){ shadowOn(5,rgba(THEME.primary,0.4),2); gradRR(p.x,p.y,cw,cw,rad,THEME.primary); shadowOff(); nTall++; }
+        else { fillRR(p.x,p.y,cw,cw,rad, rgba(THEME.primary,0.16)); strokeRR(p.x,p.y,cw,cw,rad, THEME.primary,2); } }
+      else { fillRR(p.x,p.y,cw,cw,rad, rgba(THEME.subtext,0.12)); strokeRR(p.x,p.y,cw,cw,rad, rgba(THEME.subtext,0.22),1); }
+      text(isHead?"H":"T", p.x+cw/2, p.y+cw/2, Math.min(13,cw*0.42), isHead?(t?"#FFFFFF":THEME.primary):THEME.subtext,"center","800"); }
+    var barY=gy+rows*(cw+gap)+18, bx=30, bw=W-60, bh=14;
+    text("heads tallied: "+nTall+" of "+total+" flips", bx, barY-9, 11, THEME.subtext,"left","600");
+    fillRR(bx,barY,bw,bh,7, rgba(THEME.subtext,0.12));
+    if(nTall>0){ ctx.save(); rr(bx,barY,bw,bh,7); ctx.clip();
+      var fg=ctx.createLinearGradient(bx,0,bx+bw,0); fg.addColorStop(0,shade(THEME.primary,0.15)); fg.addColorStop(1,shade(THEME.primary,-0.05));
+      ctx.fillStyle=fg; ctx.fillRect(bx,barY,bw*(nTall/total),bh); ctx.restore(); }
+    strokeRR(bx,barY,bw,bh,7, rgba(THEME.subtext,0.2),1);
+    var solved=(nTall===succ);
+    if(solved&&!expDone){ expDone=true; postEvent({event:"solve",detail:"experimental"}); celebrate(W/2,barY); }
+    text(solved? "all heads tallied — the bar is heads ÷ total flips, the experimental probability"
+               : (guided()? "tap the highlighted H cells to count what actually landed heads" : "tally the heads"),
+      W/2, H-16, 12, solved?THEME.correct:THEME.subtext,"center","700");
+  }
+  function down(x,y){
+    if(mode==="experimental"){ for(var i=0;i<succ;i++){ if(tallied[i]) continue; var p=cellXY(i);
+      if(x>=p.x&&x<=p.x+cw&&y>=p.y&&y<=p.y+cw){ tallied[i]=true; postEvent({event:"manipulate",detail:"tally:"+i}); requestRender(); return; } } return; }
+    for(var b=0;b<buttons.length;b++) if(hit(buttons[b],x,y)){ pressBtn(buttons[b]); buttons[b].onTap(); return; } }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down };
+})();
+
+// =================== CALCULUS (tangent / accumulation) =====================
+// tangent: y = a·xⁿ; tilt a line through the point until it only TOUCHES the curve
+// (any other slope cuts through) — that tangent's rise ÷ run is the derivative.
+// accumulation: ∫₀ᵇ c dx; drag the upper limit to sweep unit strips of area under
+// the line, then count the squares. Neither the slope nor the area is printed.
+MODULES.calculus = (function(){
+  var mode,a,n,pt,b,c,mSlope,upper,drag,done,slopeHandle,upHandle,lp,lq,lr,ls,L,nWin,nHandle;
+  var NMAX=40;
+  function init(s){ mode=s.mode; done=false; drag=null;
+    if(mode==="tangent"){ a=s.params.a; n=s.params.n; pt=s.params.pt||1; mSlope=0; }
+    else if(mode==="accumulation"){ b=s.params.b; c=s.params.c; upper=0; }
+    else { lp=s.params.p; lq=s.params.q; lr=s.params.r||0; ls=s.params.s||0; L=lp/lq; nWin=3; } }
+  function aN(nn){ return (lp*nn+lr)/(lq*nn+ls); }
+  var ox,oy,sx,sy,xHi,yHi;
+  function f(x){ return a*Math.pow(x,n); }
+  function layout(){
+    if(mode==="tangent"){ xHi=pt+1.2; yHi=a+a*n*1.6; ox=34; oy=H*0.82; sx=(W-ox-20)/xHi; sy=(oy-H*0.16)/yHi; }
+    else { xHi=b+1; yHi=c+1; ox=40; oy=H*0.78; sx=(W-ox-24)/xHi; sy=(oy-H*0.22)/yHi; }
+  }
+  function X(v){ return ox+v*sx; } function Y(v){ return oy-v*sy; }
+  function update(){} function animating(){ return false; }
+  function axes(){
+    ctx.strokeStyle=rgba(THEME.subtext,0.4); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(ox,Y(0)); ctx.lineTo(X(xHi),Y(0)); ctx.moveTo(ox,Y(0)); ctx.lineTo(ox,Y(yHi)); ctx.stroke();
+    for(var xi=1;xi<=Math.floor(xHi);xi++){ var px=X(xi); ctx.strokeStyle=rgba(THEME.subtext,0.25); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(px,Y(0)-4); ctx.lineTo(px,Y(0)+4); ctx.stroke(); text(""+xi,px,Y(0)+14,9,rgba(THEME.subtext,0.8),"center","600"); }
+    var yStep=yHi>10?2:1;
+    for(var yi=yStep;yi<=Math.floor(yHi);yi+=yStep){ var py=Y(yi); ctx.strokeStyle=rgba(THEME.subtext,0.18); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(ox-4,py); ctx.lineTo(ox+4,py); ctx.stroke(); text(""+yi,ox-13,py,9,rgba(THEME.subtext,0.8),"center","600"); }
+  }
+  function draw(){ if(mode==="limit"){ drawLimit(); return; } if(!sx) layout(); if(mode==="tangent") drawTangent(); else drawAccum(); }
+  function drawLimit(){
+    var ymax=Math.ceil(Math.max(aN(1),L))+1; if(ymax<L+1) ymax=L+1;
+    var ox2=38, oy2=H*0.78, plotW=W-ox2-26, plotH=oy2-H*0.18;
+    function Xn(nn){ return ox2+(nn/NMAX)*plotW; } function Yv(v){ return oy2-(v/ymax)*plotH; }
+    ctx.strokeStyle=rgba(THEME.subtext,0.4); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(ox2,Yv(0)); ctx.lineTo(ox2+plotW,Yv(0)); ctx.moveTo(ox2,Yv(0)); ctx.lineTo(ox2,Yv(ymax)); ctx.stroke();
+    for(var yi=1;yi<=ymax;yi++){ var py=Yv(yi); ctx.strokeStyle=rgba(THEME.subtext,0.18); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(ox2-4,py); ctx.lineTo(ox2+4,py); ctx.stroke(); text(""+yi,ox2-13,py,9,rgba(THEME.subtext,0.8),"center","600"); }
+    text("n →", ox2+plotW-2, Yv(0)+14, 9, rgba(THEME.subtext,0.8),"right","600");
+    ctx.setLineDash([6,4]); ctx.strokeStyle=rgba(THEME.tertiary,0.8); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(ox2,Yv(L)); ctx.lineTo(ox2+plotW,Yv(L)); ctx.stroke(); ctx.setLineDash([]);
+    for(var nn=1;nn<=nWin;nn++){ var v=aN(nn); ctx.fillStyle=THEME.primary;
+      ctx.beginPath(); ctx.arc(Xn(nn),Yv(clamp(v,0,ymax)),3.5,0,TAU); ctx.fill(); }
+    var Hx=Xn(nWin),Hy=Yv(0);
+    glow(Hx,Hy,12,THEME.tertiary,0.4); shadowOn(6,rgba(THEME.tertiary,0.5),2); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(Hx,Hy,10,0,TAU); ctx.fill(); shadowOff();
+    ctx.fillStyle=THEME.tertiary; ctx.beginPath(); ctx.arc(Hx,Hy,6,0,TAU); ctx.fill(); nHandle={x:Hx,y:Hy};
+    text("the sequence settles toward ? — read it off the axis", W/2, H*0.085, 12.5, THEME.onSurface,"center","800");
+    var settled=Math.abs(aN(nWin)-L)<0.12;
+    if(settled&&!done){ done=true; postEvent({event:"solve",detail:"limit"}); celebrate(Hx,Yv(L)); }
+    text(settled? "the terms have leveled off — read the dashed line's height off the axis"
+               : (guided()? "drag right to add more terms and watch them settle" : "add more terms"),
+      W/2, H-14, 12, settled?THEME.correct:THEME.subtext,"center","700");
+  }
+  function drawTangent(){
+    axes();
+    ctx.strokeStyle=THEME.primary; ctx.lineWidth=3; ctx.beginPath(); var started=false;
+    for(var px=ox;px<=X(xHi);px+=2){ var xv=(px-ox)/sx, py=Y(f(xv));
+      if(py<Y(yHi)-2||py>Y(0)+2){ started=false; continue; } if(!started){ctx.moveTo(px,py);started=true;} else ctx.lineTo(px,py); }
+    shadowOn(8,rgba(THEME.primary,0.4),0); ctx.stroke(); shadowOff();
+    function lineY(x){ return f(pt)+mSlope*(x-pt); }
+    var kiss=(mSlope===a*n);
+    ctx.strokeStyle=THEME.tertiary; ctx.lineWidth=2.5; ctx.setLineDash(kiss?[]:[6,4]);
+    ctx.beginPath(); ctx.moveTo(X(0),Y(lineY(0))); ctx.lineTo(X(xHi),Y(lineY(xHi))); ctx.stroke(); ctx.setLineDash([]);
+    var Px=X(pt),Py=Y(f(pt));
+    if(mSlope>0){ ctx.strokeStyle=rgba(THEME.tertiary,0.8); ctx.setLineDash([3,3]); ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(Px,Py); ctx.lineTo(X(pt+1),Py); ctx.lineTo(X(pt+1),Y(f(pt)+mSlope)); ctx.stroke(); ctx.setLineDash([]);
+      if(guided()){ text("run 1",(Px+X(pt+1))/2,Py+11,9,THEME.tertiary,"center","700"); text("rise",X(pt+1)+3,(Py+Y(f(pt)+mSlope))/2,9,THEME.tertiary,"left","700"); } }
+    glow(Px,Py,12,THEME.primary,0.5); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(Px,Py,7,0,TAU); ctx.fill(); ctx.fillStyle=THEME.primary; ctx.beginPath(); ctx.arc(Px,Py,4,0,TAU); ctx.fill();
+    var hx=pt+0.9,Hx=X(hx),Hy=Y(lineY(hx));
+    glow(Hx,Hy,12,THEME.tertiary,0.4); shadowOn(6,rgba(THEME.tertiary,0.5),2); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(Hx,Hy,10,0,TAU); ctx.fill(); shadowOff();
+    ctx.fillStyle=THEME.tertiary; ctx.beginPath(); ctx.arc(Hx,Hy,6,0,TAU); ctx.fill(); slopeHandle={x:Hx,y:Hy};
+    if(kiss&&!done){ done=true; postEvent({event:"solve",detail:"tangent"}); celebrate(Px,Py); }
+    text("slope of the curve at x = "+pt+" = ?", W/2, H*0.085, 13.5, THEME.onSurface,"center","800");
+    text(kiss? "it just touches — read the tangent's rise ÷ run"
+             : (guided()? "drag the handle: tilt the line until it only touches (doesn't cut through)" : "make it touch, not cut"),
+      W/2, H-14, 12, kiss?THEME.correct:THEME.subtext,"center","700");
+  }
+  function drawAccum(){
+    axes();
+    ctx.strokeStyle=THEME.primary; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(X(0),Y(c)); ctx.lineTo(X(b),Y(c)); ctx.stroke();
+    for(var i=0;i<upper;i++){ var rx=X(i);
+      ctx.fillStyle=rgba(THEME.secondary,0.28); ctx.fillRect(rx,Y(c),sx,sy*c);
+      ctx.strokeStyle=rgba(THEME.secondary,0.6); ctx.lineWidth=1; ctx.strokeRect(rx,Y(c),sx,sy*c);
+      for(var k=1;k<c;k++){ ctx.beginPath(); ctx.moveTo(rx,Y(k)); ctx.lineTo(rx+sx,Y(k)); ctx.strokeStyle=rgba(THEME.secondary,0.3); ctx.stroke(); } }
+    var Ux=X(upper),Uy=Y(0);
+    glow(Ux,Uy,12,THEME.tertiary,0.4); shadowOn(6,rgba(THEME.tertiary,0.5),2); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(Ux,Uy,10,0,TAU); ctx.fill(); shadowOff();
+    ctx.fillStyle=THEME.tertiary; ctx.beginPath(); ctx.arc(Ux,Uy,6,0,TAU); ctx.fill(); upHandle={x:Ux,y:Uy};
+    text("area under the line from 0 to "+b+" = ? square units", W/2, H*0.085, 12.5, THEME.onSurface,"center","800");
+    var full=(upper===b);
+    if(full&&!done){ done=true; postEvent({event:"solve",detail:"accum"}); celebrate(X(b/2),Y(c/2)); }
+    text(full? "full area swept — now count the unit squares"
+             : (guided()? "drag the upper limit to sweep strips toward "+b : "sweep to "+b),
+      W/2, H-14, 12, full?THEME.correct:THEME.subtext,"center","700");
+  }
+  function down(x,y){ if(mode==="tangent"){ if(slopeHandle&&Math.hypot(x-slopeHandle.x,y-slopeHandle.y)<34) drag="slope"; }
+    else if(mode==="accumulation"){ if(upHandle&&Math.hypot(x-upHandle.x,y-upHandle.y)<40) drag="up"; }
+    else { if(nHandle&&Math.hypot(x-nHandle.x,y-nHandle.y)<44) drag="nwin"; } }
+  function move(x,y){
+    if(drag==="slope"){ var v=(oy-y)/sy, ms=clamp(Math.round((v-f(pt))/0.9),0,a*n+3); if(ms!==mSlope){ mSlope=ms; postEvent({event:"manipulate",detail:"slope:"+mSlope}); requestRender(); } }
+    else if(drag==="up"){ var nu=clamp(Math.round((x-ox)/sx),0,b); if(nu!==upper){ upper=nu; postEvent({event:"manipulate",detail:"upper:"+upper}); requestRender(); } }
+    else if(drag==="nwin"){ var ox2=38, plotW=W-ox2-26, nw=clamp(Math.round((x-ox2)/plotW*NMAX),3,NMAX); if(nw!==nWin){ nWin=nw; postEvent({event:"manipulate",detail:"n:"+nWin}); requestRender(); } }
+  }
+  function up(){ drag=null; }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
+})();
+
+// =================== DOT PLOT (mean = balance point) =======================
+// Data on a number line as dots that ride a plank over a fulcrum. The mean IS the
+// balance point: the learner drags the fulcrum (or, for a missing value, the empty
+// dot) until the plank is level, then READS the value off the axis. Range mode:
+// bracket the min and max. The mean / missing value / range is never printed.
+MODULES.dot_plot = (function(){
+  var mode,data,known,n,targetMean,fx,missG,missTrue,minM,maxM,balanced,drag,meanT,lo,hi,dividerV,tappedMode,modeGeo,q1V,q3V,medV,ask,q1Pos,q3Pos;
+  function init(s){ balanced=false; drag=null; mode=s.mode||"mean"; tappedMode=null; modeGeo={};
+    if(mode==="box"){ data=s.params.data.slice(); ask=s.params.ask;
+      var bmn=Math.min.apply(null,data), bmx=Math.max.apply(null,data); lo=Math.max(0,bmn-2); hi=bmx+2;
+      medV=data[3]; q1V=data[0]; q3V=data[6]; return; }
+    if(mode==="mean_missing"){ known=s.params.known.slice(); n=s.params.n; targetMean=s.params.targetMean;
+      missTrue=n*targetMean-known.reduce(function(a,b){return a+b;},0);
+      var all=known.concat([targetMean,missTrue]); lo=Math.max(0,Math.min.apply(null,all)-2); hi=Math.max.apply(null,all)+2;
+      missG=Math.round(lo+(hi-lo)*0.3); meanT=targetMean; }
+    else { data=s.params.data.slice(); var mn=Math.min.apply(null,data),mx=Math.max.apply(null,data);
+      lo=Math.max(0,mn-2); hi=mx+2; meanT=data.reduce(function(a,b){return a+b;},0)/data.length;
+      fx=lo; minM=lo; maxM=hi; dividerV=lo+0.5; } }
+  var ax0,ax1,ay,plankY,scale,ghostPos,fulPos,bMinPos,bMaxPos,divPos;
+  function layout(){ ax0=34; ax1=W-34; ay=H*0.70; plankY=H*0.46; scale=(ax1-ax0)/((hi-lo)||1); }
+  function X(v){ return ax0+(v-lo)*scale; }
+  function update(){} function animating(){ return false; }
+  function axis(){
+    ctx.strokeStyle=rgba(THEME.subtext,0.4); ctx.lineWidth=3; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(ax0,ay); ctx.lineTo(ax1,ay); ctx.stroke();
+    for(var v=Math.ceil(lo);v<=Math.floor(hi);v++){ var px=X(v);
+      ctx.strokeStyle=rgba(THEME.subtext,0.3); ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(px,ay-5); ctx.lineTo(px,ay+5); ctx.stroke();
+      text(""+v,px,ay+17,9,THEME.subtext,"center","600"); }
+  }
+  function dot(px,py,col,hollow){ if(hollow){ ctx.fillStyle=THEME.surface; ctx.beginPath(); ctx.arc(px,py,7,0,TAU); ctx.fill();
+      ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(px,py,7,0,TAU); ctx.stroke(); }
+    else { shadowOn(4,rgba(col,0.4),2); ctx.fillStyle=col; ctx.beginPath(); ctx.arc(px,py,7,0,TAU); ctx.fill(); shadowOff(); } }
+  function balancePlank(vals, pivotV){
+    var imb=0; vals.forEach(function(o){ imb+=(o.v-pivotV); });
+    var ang=clamp(imb*0.025,-0.2,0.2), pX=X(pivotV);
+    function ride(v){ var dx=X(v)-pX; return {x:pX+dx*Math.cos(ang), y:plankY+dx*Math.sin(ang)}; }
+    var L=ride(lo),R=ride(hi);
+    ctx.strokeStyle=rgba(THEME.secondary,0.55); ctx.lineWidth=5; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(L.x,L.y); ctx.lineTo(R.x,R.y); ctx.stroke();
+    var stacks={};
+    vals.forEach(function(o){ stacks[o.v]=(stacks[o.v]||0); var r=ride(o.v); var py=r.y-12-stacks[o.v]*15;
+      dot(r.x,py,o.col,o.hollow); stacks[o.v]++; o._pos={x:r.x,y:py}; });
+    var fxp=X(pivotV);
+    ctx.fillStyle=THEME.tertiary;
+    ctx.beginPath(); ctx.moveTo(fxp,plankY+4); ctx.lineTo(fxp-12,ay-2); ctx.lineTo(fxp+12,ay-2); ctx.closePath(); ctx.fill();
+    return {imb:imb};
+  }
+  function draw(){
+    if(!scale) layout();
+    if(mode==="range"){ drawRange(); return; }
+    if(mode==="median"){ drawMedian(); return; }
+    if(mode==="mode"){ drawMode(); return; }
+    if(mode==="box"){ drawBox(); return; }
+    axis();
+    var vals, pivotV;
+    if(mode==="mean_missing"){ vals=known.map(function(v){return {v:v,col:THEME.primary};});
+      vals.push({v:missG,col:THEME.tertiary,hollow:true}); pivotV=targetMean;
+      text("balance the data at mean = "+targetMean+" — what is the missing value?", W/2, H*0.12, 12.5, THEME.onSurface,"center","800");
+    } else { vals=data.map(function(v){return {v:v,col:THEME.primary};}); pivotV=fx;
+      text("where is the balance point (the mean)?", W/2, H*0.12, 14, THEME.onSurface,"center","800"); }
+    var st=balancePlank(vals,pivotV);
+    ghostPos=(mode==="mean_missing")?vals[vals.length-1]._pos:null;
+    fulPos=(mode==="mean_missing")?null:{x:X(fx),y:(ay+plankY)/2};
+    var bal=(mode==="mean_missing")?Math.abs(missG-missTrue)<=0.25:Math.abs(fx-meanT)<=0.3;
+    if(bal && !balanced){ balanced=true; celebrate(X(pivotV),plankY); postEvent({event:"solve",detail:mode}); }
+    if(bal){ text(mode==="mean_missing"?"balanced — read the empty dot's value":"balanced — read the fulcrum value off the axis",
+      W/2, H-16, 12.5, THEME.correct,"center","700"); }
+    else if(!minimal()){ var side=st.imb>0?"right":"left";
+      text(guided()?("tilting "+side+" — shift "+(mode==="mean_missing"?"the empty dot":"the fulcrum")+" toward the heavy side"):"not balanced",
+        W/2, H-16, 12, THEME.subtext,"center","600"); }
+  }
+  function drawMedian(){
+    axis();
+    var stacks={}; data.forEach(function(v){ stacks[v]=(stacks[v]||0); dot(X(v),ay-14-stacks[v]*15,THEME.primary); stacks[v]++; });
+    text("find the median — split the data into equal halves", W/2, H*0.12, 13, THEME.onSurface,"center","800");
+    var dx=X(dividerV);
+    ctx.setLineDash([5,4]); ctx.strokeStyle=THEME.tertiary; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.moveTo(dx,ay-92); ctx.lineTo(dx,ay+18); ctx.stroke(); ctx.setLineDash([]);
+    glow(dx,plankY,12,THEME.tertiary,0.4); shadowOn(6,rgba(THEME.tertiary,0.5),2); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(dx,plankY,9,0,TAU); ctx.fill(); shadowOff();
+    ctx.fillStyle=THEME.tertiary; ctx.beginPath(); ctx.arc(dx,plankY,5,0,TAU); ctx.fill(); divPos={x:dx,y:plankY};
+    var left=data.filter(function(v){return v<dividerV;}).length, right=data.filter(function(v){return v>dividerV;}).length;
+    text(left+" ←", dx-26, plankY-32, 13, THEME.primary,"right","800");
+    text("→ "+right, dx+26, plankY-32, 13, THEME.secondary,"left","800");
+    var bal=(left===right && left>0);
+    if(bal&&!balanced){ balanced=true; postEvent({event:"solve",detail:"median"}); celebrate(dx,ay); }
+    if(!bal) balanced=false;
+    text(bal? "equal halves — the median sits here; read it off the axis"
+            : (guided()? "drag the divider until the counts on each side match" : "balance the halves"),
+      W/2, H-16, 12, bal?THEME.correct:THEME.subtext,"center","700");
+  }
+  function drawMode(){
+    axis();
+    var counts={}, maxN=0, modeV=null;
+    data.forEach(function(v){ counts[v]=(counts[v]||0)+1; if(counts[v]>maxN){ maxN=counts[v]; modeV=v; } });
+    text("which value appears most often (the mode)?", W/2, H*0.12, 13, THEME.onSurface,"center","800");
+    var stk={}; modeGeo={};
+    data.forEach(function(v){ stk[v]=(stk[v]||0);
+      var picked=(tappedMode!==null && tappedMode===v), col=picked?(v===modeV?THEME.correct:THEME.wrong):THEME.primary;
+      dot(X(v),ay-14-stk[v]*15,col); stk[v]++; modeGeo[v]=X(v); });
+    var solved=(tappedMode!==null && tappedMode===modeV);
+    if(solved&&!balanced){ balanced=true; postEvent({event:"solve",detail:"mode"}); celebrate(X(modeV),ay-30); }
+    text(solved? "tallest stack — that value appears most; read it off the axis"
+       : (tappedMode!==null? (guided()?"that's a single dot — find the TALLEST stack, not the biggest value":"not the tallest stack")
+         : (guided()?"tap the tallest column of dots":"tap the mode")),
+      W/2, H-16, 12, solved?THEME.correct:(tappedMode!==null?THEME.wrong:THEME.subtext),"center","700");
+  }
+  function drawBox(){
+    axis();
+    var stacks={}; data.forEach(function(v){ stacks[v]=(stacks[v]||0); dot(X(v),ay-14-stacks[v]*15,THEME.primary); stacks[v]++; });
+    text(ask==="iqr"? "build the box: place Q1 and Q3 (the middle of each half)" : "place Q1 — the middle of the lower half",
+      W/2, H*0.12, 12.5, THEME.onSurface,"center","800");
+    // median line (given context — the data is already split here)
+    var mx=X(medV);
+    ctx.strokeStyle=rgba(THEME.subtext,0.7); ctx.lineWidth=2; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(mx,ay-86); ctx.lineTo(mx,ay+8); ctx.stroke(); ctx.setLineDash([]);
+    text("median", mx, ay-94, 9, THEME.subtext,"center","700");
+    var lower=data.filter(function(v){return v<medV;}), upper=data.filter(function(v){return v>medV;});
+    function bal(hv,grp){ var l=grp.filter(function(v){return v<hv;}).length, r=grp.filter(function(v){return v>hv;}).length; return l>0&&l===r; }
+    var q1ok=bal(q1V,lower), q3ok=(ask==="iqr")?bal(q3V,upper):true;
+    var solved=q1ok&&q3ok;
+    // box (iqr) spanning Q1..Q3
+    if(ask==="iqr"){ var bx0=Math.min(X(q1V),X(q3V)), bx1=Math.max(X(q1V),X(q3V));
+      ctx.fillStyle=rgba(solved?THEME.correct:THEME.tertiary,0.12); ctx.fillRect(bx0,plankY-4,bx1-bx0,46);
+      strokeRR(bx0,plankY-4,bx1-bx0,46,4, rgba(solved?THEME.correct:THEME.tertiary,0.7),2);
+      text(solved?"width = ?":"", (bx0+bx1)/2, plankY-14, 11, THEME.onSurface,"center","700"); }
+    function knob(hv,okv,lab){ var px=X(hv);
+      ctx.strokeStyle=okv?THEME.correct:THEME.tertiary; ctx.lineWidth=2.5; ctx.setLineDash([5,4]);
+      ctx.beginPath(); ctx.moveTo(px,ay-70); ctx.lineTo(px,ay+12); ctx.stroke(); ctx.setLineDash([]);
+      glow(px,plankY+8,12,okv?THEME.correct:THEME.tertiary,0.4); shadowOn(6,rgba(THEME.tertiary,0.5),2);
+      ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(px,plankY+8,9,0,TAU); ctx.fill(); shadowOff();
+      ctx.fillStyle=okv?THEME.correct:THEME.tertiary; ctx.beginPath(); ctx.arc(px,plankY+8,5,0,TAU); ctx.fill();
+      text(lab, px, ay-78, 10, okv?THEME.correct:THEME.tertiary,"center","800"); return px; }
+    q1Pos={x:knob(q1V,q1ok,"Q1"),y:plankY+8};
+    if(ask==="iqr") q3Pos={x:knob(q3V,q3ok,"Q3"),y:plankY+8}; else q3Pos=null;
+    if(solved&&!balanced){ balanced=true; postEvent({event:"solve",detail:"box:"+ask}); celebrate(X(medV),plankY); }
+    if(!solved) balanced=false;
+    text(solved? (ask==="iqr"? "box built — the median half spans Q1 to Q3; read the box width"
+                             : "Q1 splits the lower half evenly — read its value off the axis")
+       : (guided()? (ask==="iqr"? "drag Q1 and Q3 to the middle of each half (1 dot on each side)"
+                                : "drag Q1 until one lower-half dot sits on each side")
+                  : "split each half evenly"),
+      W/2, H-16, 12, solved?THEME.correct:THEME.subtext,"center","700");
+  }
+  function drawRange(){
+    axis();
+    var stacks={}; data.forEach(function(v){ stacks[v]=(stacks[v]||0); var px=X(v); dot(px,ay-14-stacks[v]*15,THEME.primary); stacks[v]++; });
+    text("bracket the data — how wide is the spread (the range)?", W/2, H*0.12, 13, THEME.onSurface,"center","800");
+    function bracket(v,col){ var px=X(v); ctx.strokeStyle=col; ctx.lineWidth=3; ctx.lineCap="round";
+      ctx.beginPath(); ctx.moveTo(px,plankY); ctx.lineTo(px,ay+6); ctx.stroke();
+      glow(px,plankY,12,col,0.4); ctx.fillStyle=col; ctx.beginPath(); ctx.arc(px,plankY,8,0,TAU); ctx.fill();
+      ctx.strokeStyle="#FFF"; ctx.lineWidth=2; ctx.stroke(); return px; }
+    var lpx=bracket(minM,THEME.tertiary), rpx=bracket(maxM,THEME.secondary);
+    ctx.strokeStyle=rgba(THEME.onSurface,0.5); ctx.setLineDash([4,4]); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(lpx,plankY-6); ctx.lineTo(rpx,plankY-6); ctx.stroke(); ctx.setLineDash([]);
+    text("? wide", (lpx+rpx)/2, plankY-16, 11, THEME.onSurface,"center","700");
+    var dmin=Math.min.apply(null,data), dmax=Math.max.apply(null,data), on=minM===dmin&&maxM===dmax;
+    if(on && !balanced){ balanced=true; postEvent({event:"discover",detail:"range_bracketed"}); celebrate((lpx+rpx)/2,plankY); }
+    if(!on) balanced=false;
+    if(on) text("you've bracketed min and max — the range is the distance between them", W/2, H-16, 12, THEME.correct,"center","700");
+    else if(!minimal()) text(guided()?"drag the brackets onto the smallest and largest dots":"bracket min and max", W/2, H-16, 12, THEME.subtext,"center","600");
+    bMinPos={x:lpx,y:plankY}; bMaxPos={x:rpx,y:plankY};
+  }
+  function valFromX(x,step){ var v=lo+(x-ax0)/scale; return clamp(Math.round(v/step)*step,lo,hi); }
+  function down(x,y){
+    if(mode==="range"){ if(bMinPos&&Math.hypot(x-bMinPos.x,y-bMinPos.y)<32) drag="min"; else if(bMaxPos&&Math.hypot(x-bMaxPos.x,y-bMaxPos.y)<32) drag="max"; return; }
+    if(mode==="median"){ if(divPos&&Math.abs(x-divPos.x)<40) drag="div"; return; }
+    if(mode==="mode"){ if(balanced) return; var best=null,bd=24; for(var mv in modeGeo){ var d=Math.abs(x-modeGeo[mv]); if(d<bd){ bd=d; best=+mv; } }
+      if(best!==null){ tappedMode=best; postEvent({event:"manipulate",detail:"tap_mode:"+best}); requestRender(); } return; }
+    if(mode==="box"){ if(q3Pos&&Math.hypot(x-q3Pos.x,y-q3Pos.y)<34) drag="q3"; else if(q1Pos&&Math.hypot(x-q1Pos.x,y-q1Pos.y)<34) drag="q1"; return; }
+    if(mode==="mean_missing"){ if(ghostPos&&Math.hypot(x-ghostPos.x,y-ghostPos.y)<34) drag="ghost"; return; }
+    if(fulPos&&Math.abs(x-fulPos.x)<44 && y>plankY-10) drag="ful";
+  }
+  function move(x){
+    if(drag==="div"){ var nd=valFromX(x,0.5); if(nd!==dividerV){ dividerV=nd; postEvent({event:"manipulate",detail:"div:"+dividerV}); requestRender(); } }
+    else if(drag==="ful"){ var nf=valFromX(x,0.5); if(nf!==fx){ fx=nf; postEvent({event:"manipulate",detail:"fx:"+fx}); requestRender(); } }
+    else if(drag==="ghost"){ var ng=valFromX(x,1); if(ng!==missG){ missG=ng; postEvent({event:"manipulate",detail:"missing:"+missG}); requestRender(); } }
+    else if(drag==="q1"){ var nq=valFromX(x,1); if(nq!==q1V){ q1V=nq; postEvent({event:"manipulate",detail:"q1:"+q1V}); requestRender(); } }
+    else if(drag==="q3"){ var nr=valFromX(x,1); if(nr!==q3V){ q3V=nr; postEvent({event:"manipulate",detail:"q3:"+q3V}); requestRender(); } }
+    else if(drag==="min"){ var nm=valFromX(x,1); if(nm!==minM){ minM=nm; requestRender(); } }
+    else if(drag==="max"){ var nx=valFromX(x,1); if(nx!==maxM){ maxM=nx; requestRender(); } }
+  }
+  function up(){ drag=null; }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
+})();
+
+// =================== FUNCTION GRAPHER ======================================
+// Lines & linear functions on a coordinate grid. The learner drags a tracer along
+// the line (or two points); a rise/run triangle makes slope visible and the y-axis
+// crossing is marked. Slope, intercept, and coordinates are READ off the axes —
+// never printed. Optional target: read y at x=k, or read x where the line hits y=T.
+MODULES.function_grapher = (function(){
+  var mode,m,b,ask,target,tracer,p1,p2,hitT,drag;
+  function init(s){ mode=s.mode||"line"; m=s.params.m; b=s.params.b||0; ask=s.params.ask||null; target=s.params.target||null;
+    tracer=(target&&target.x!==undefined)?clamp(target.x-2,-7,7):0; hitT=false; drag=null;
+    if(mode==="two_points"){ p1={x:s.params.p1.x,y:s.params.p1.y}; p2={x:s.params.p2.x,y:s.params.p2.y}; } }
+  var gx,gy,sx,sy,plotH;
+  function layout(){ plotH=H-40; sx=W/16; sy=Math.min(plotH/16, sx); gx=W/2; gy=42+plotH/2; }
+  function update(){}
+  function animating(){ return false; }
+  function X(v){ return gx+v*sx; }
+  function Y(v){ return gy-v*sy; }
+  function lineY(x){ return m*x+b; }
+  function grid(){
+    ctx.strokeStyle=rgba(THEME.subtext,0.12); ctx.lineWidth=1;
+    for(var a=gx%sx; a<W; a+=sx){ ctx.beginPath(); ctx.moveTo(a,30); ctx.lineTo(a,30+plotH); ctx.stroke(); }
+    for(var d=gy%sy; d<30+plotH; d+=sy){ if(d<30) continue; ctx.beginPath(); ctx.moveTo(0,d); ctx.lineTo(W,d); ctx.stroke(); }
+    ctx.strokeStyle=rgba(THEME.subtext,0.45); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.moveTo(gx,30); ctx.lineTo(gx,30+plotH); ctx.stroke();
+    for(var tv=-7;tv<=7;tv++){ if(!tv) continue; var txp=X(tv); if(txp>9&&txp<W-9) text(""+tv,txp,gy+11,8.5,rgba(THEME.subtext,0.8),"center","600");
+      var typ=Y(tv); if(typ>38&&typ<26+plotH) text(""+tv,gx-11,typ,8.5,rgba(THEME.subtext,0.8),"center","600"); }
+  }
+  function dot(x,y,col){ glow(x,y,14,col,0.4); shadowOn(6,rgba(col,0.5),2); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(x,y,10,0,TAU); ctx.fill(); shadowOff();
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(x,y,6,0,TAU); ctx.fill(); }
+  function drawLine(x0,x1,slope,ix,iy,col){
+    ctx.strokeStyle=col; ctx.lineWidth=3; ctx.lineJoin="round"; var started=false; ctx.beginPath();
+    for(var x=x0;x<=x1;x+=0.25){ var py=Y(iy+slope*(x-ix)), px=X(x);
+      if(py<22||py>40+plotH){ started=false; continue; } if(!started){ctx.moveTo(px,py);started=true;} else ctx.lineTo(px,py); }
+    shadowOn(8,rgba(col,0.4),0); ctx.stroke(); shadowOff();
+  }
+  var DT,DA,DB;
+  function draw(){
+    if(!sx) layout();
+    grid();
+    if(mode==="two_points"){
+      var mm=(p2.y-p1.y)/((p2.x-p1.x)||1);
+      drawLine(-8,8,mm,p1.x,p1.y,THEME.primary);
+      ctx.strokeStyle=rgba(THEME.tertiary,0.85); ctx.setLineDash([4,3]); ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(X(p1.x),Y(p1.y)); ctx.lineTo(X(p2.x),Y(p1.y)); ctx.lineTo(X(p2.x),Y(p2.y)); ctx.stroke(); ctx.setLineDash([]);
+      if(guided()){ text("run "+(p2.x-p1.x), (X(p1.x)+X(p2.x))/2, Y(p1.y)+13, 10, THEME.tertiary,"center","700");
+        text("rise "+(p2.y-p1.y), X(p2.x)+4, (Y(p1.y)+Y(p2.y))/2, 10, THEME.tertiary,"left","700"); }
+      dot(X(p1.x),Y(p1.y),THEME.primary); dot(X(p2.x),Y(p2.y),THEME.secondary);
+      DA={x:X(p1.x),y:Y(p1.y)}; DB={x:X(p2.x),y:Y(p2.y)};
+      text("slope = rise ÷ run = ?", W/2, 16, 14, THEME.onSurface,"center","800");
+      if(!minimal()) text("drag the points — read the rise and the run", W/2, H-14, 12, THEME.subtext,"center","600");
+      return;
+    }
+    drawLine(-8,8,m,0,b,THEME.primary);
+    if(target&&target.x!==undefined){ ctx.setLineDash([5,4]); ctx.strokeStyle=rgba(THEME.tertiary,0.8); ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(X(target.x),30); ctx.lineTo(X(target.x),30+plotH); ctx.stroke(); ctx.setLineDash([]);
+      text("x = "+target.x, X(target.x), 28, 10.5, THEME.tertiary,"center","800"); }
+    if(target&&target.y!==undefined){ ctx.setLineDash([5,4]); ctx.strokeStyle=rgba(THEME.tertiary,0.8); ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(0,Y(target.y)); ctx.lineTo(W,Y(target.y)); ctx.stroke(); ctx.setLineDash([]);
+      text("y = "+target.y, W-6, Y(target.y)-8, 10.5, THEME.tertiary,"right","800"); }
+    var iy=Y(b); glow(gx,iy,9,THEME.secondary,0.5); ctx.fillStyle=THEME.secondary; ctx.beginPath(); ctx.arc(gx,iy,5,0,TAU); ctx.fill();
+    var tx=tracer, ty=lineY(tx);
+    ctx.strokeStyle=rgba(THEME.tertiary,0.85); ctx.setLineDash([4,3]); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(X(tx),Y(ty)); ctx.lineTo(X(tx+1),Y(ty)); ctx.lineTo(X(tx+1),Y(ty+m)); ctx.stroke(); ctx.setLineDash([]);
+    if(guided()){ text("run 1", (X(tx)+X(tx+1))/2, Y(ty)+12, 10, THEME.tertiary,"center","700");
+      text("rise", X(tx+1)+3, (Y(ty)+Y(ty+m))/2, 10, THEME.tertiary,"left","700"); }
+    var pxp=X(tx), pyp=Y(ty);
+    if(target&&target.x!==undefined && tx===target.x){ ctx.setLineDash([3,3]); ctx.strokeStyle=rgba(THEME.primary,0.6); ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(pxp,pyp); ctx.lineTo(gx,pyp); ctx.stroke(); ctx.setLineDash([]); }
+    if(target&&target.y!==undefined && ty===target.y){ ctx.setLineDash([3,3]); ctx.strokeStyle=rgba(THEME.primary,0.6); ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(pxp,pyp); ctx.lineTo(pxp,gy); ctx.stroke(); ctx.setLineDash([]); }
+    dot(pxp,pyp,THEME.primary); DT={x:pxp,y:pyp};
+    var title = ask==="slope" ? "slope of this line = ?"
+      : ask==="intercept" ? "y-intercept of this line = ?"
+      : (target&&target.x!==undefined) ? "y when x = "+target.x+" ?"
+      : (target&&target.y!==undefined) ? "x when y = "+target.y+" ?"
+      : "explore the line";
+    text(title, W/2, 16, 14, THEME.onSurface,"center","800");
+    if(target&&target.x!==undefined && tx===target.x && !hitT){ hitT=true; postEvent({event:"solve",detail:"y_at:"+tx}); celebrate(pxp,pyp); }
+    if(target&&target.y!==undefined && ty===target.y && !hitT){ hitT=true; postEvent({event:"solve",detail:"x_at:"+tx}); celebrate(pxp,pyp); }
+    if(!minimal()){ var hint=(target&&target.x!==undefined)?"slide to the dashed input — read y on the vertical axis"
+        :(target&&target.y!==undefined)?"slide until the dot meets the dashed height — read x"
+        :(ask==="intercept")?"the dot on the y-axis is the intercept — read it"
+        :"slide one step — rise ÷ run is the slope";
+      text(hint, W/2, H-14, 11.5, THEME.subtext,"center","600"); }
+  }
+  function down(x,y){
+    if(mode==="two_points"){ if(DA&&Math.hypot(x-DA.x,y-DA.y)<30) drag="A"; else if(DB&&Math.hypot(x-DB.x,y-DB.y)<30) drag="B"; return; }
+    if(DT&&Math.hypot(x-DT.x,y-DT.y)<34) drag="T";
+  }
+  function move(x,y){
+    if(drag==="T"){ var nx=clamp(Math.round((x-gx)/sx),-7,7); if(nx!==tracer){ tracer=nx; postEvent({event:"manipulate",detail:"x:"+tracer}); requestRender(); } return; }
+    if(drag==="A"||drag==="B"){ var p=(drag==="A")?p1:p2, other=(drag==="A")?p2:p1;
+      var nx2=clamp(Math.round((x-gx)/sx),-8,8), ny2=clamp(Math.round((gy-y)/sy),-8,8);
+      if(nx2===other.x) return; if(nx2!==p.x||ny2!==p.y){ p.x=nx2; p.y=ny2; postEvent({event:"manipulate",detail:"pt"}); requestRender(); } }
+  }
+  function up(){ drag=null; }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
+})();
+
+// =================== ALGEBRA TILES (combine like terms) ====================
+// a·x + b·x: two groups of x-tiles the learner drags together (merge). Only like
+// tiles join into one row; the learner counts how many — the sum is never printed.
+MODULES.algebra_tiles = (function(){
+  var a,b,vname,bOffset,gap0,merged,dragging,done,bBox;
+  function init(s){ a=s.params.a; b=s.params.b; vname=s.params.variable||"x"; merged=false; dragging=false; done=false; }
+  var tileW,tileH,tileStep,rowX,tilesY;
+  function layout(){ var N=a+b, gap=0; tileW=clamp((W-60)/(N+3),12,30); gap=Math.max(3,tileW*0.18); tileStep=tileW+gap;
+    tileH=Math.min(H*0.40, tileW*2.6); gap0=tileStep*1.5;
+    var totalW=N*tileStep-gap+gap0; rowX=(W-totalW)/2; tilesY=H*0.32; bOffset=merged?0:gap0; }
+  function update(){} function animating(){ return false; }
+  function tile(x,col){ shadowOn(5,rgba(col,0.4),2); gradRR(x,tilesY,tileW,tileH,5,col); shadowOff();
+    strokeRR(x,tilesY,tileW,tileH,5,rgba(col,0.6),1); text(vname,x+tileW/2,tilesY+tileH/2,Math.min(15,tileW*0.6),"#FFFFFF","center","800"); }
+  function draw(){
+    if(!tileW) layout();
+    text(a+vname+" + "+b+vname+" = ?", W/2, H*0.13, 15, THEME.onSurface,"center","800");
+    var aEndX=rowX+a*tileStep, i;
+    for(i=0;i<a;i++) tile(rowX+i*tileStep, THEME.primary);
+    for(i=0;i<b;i++) tile(aEndX+bOffset+i*tileStep, THEME.secondary);
+    if(bOffset>3) text("+", aEndX+bOffset/2-tileW*0.15, tilesY+tileH/2, 22, THEME.subtext,"center","800");
+    else if(!merged) merged=true;
+    bBox={x0:aEndX+bOffset, x1:aEndX+bOffset+b*tileStep};
+    if(merged&&!done){ done=true; postEvent({event:"solve",detail:"combine"}); celebrate(rowX+(a+b)*tileStep/2, tilesY+tileH/2); }
+    text(merged? "now count the "+vname+"-tiles in the row"
+               : (guided()? "drag the second group onto the first — only like tiles combine" : "drag them together"),
+      W/2, tilesY+tileH+26, 12.5, merged?THEME.correct:THEME.subtext,"center","700");
+  }
+  function down(x,y){ if(merged) return; if(bBox && x>=bBox.x0-14 && x<=bBox.x1+6 && y>=tilesY-12 && y<=tilesY+tileH+12) dragging=true; }
+  function move(x){ if(!dragging) return; var aEndX=rowX+a*tileStep, nb=clamp(x-aEndX-tileW/2,0,gap0);
+    if(Math.abs(nb-bOffset)>0.5){ bOffset=(nb<=3?0:nb); postEvent({event:"manipulate",detail:"offset"}); requestRender(); } }
+  function up(){ dragging=false; }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
+})();
+
+// =================== AREA MODEL ============================================
+// Multiplication / distribution as the area of a rectangle the learner splits.
+//  product    — a×b grid; DRAG a divider to partition into two parts, count each
+//               part's cells and add. The product is never printed.
+//  distribute — a(x + c); two regions labeled by their SIDE LENGTHS only (a, x, c)
+//               — the learner computes a·x and a·c themselves and combines. The
+//               expansion (a·x + a·c) is never printed.
+MODULES.area_model = (function(){
+  var mode,a,b,c,vname,split,hasSplit,moved,tapX,tapC,fcl,fr;
+  function init(s){ mode=s.mode||"product"; a=s.params.a; b=s.params.b; c=s.params.c; vname=s.params.variable||"x";
+    split=Math.max(1,Math.round((a||2)/2)); hasSplit=(a>=2); moved=false; tapX=false; tapC=false; fcl={}; fr=null; }
+  var gx,gy,gw,gh,unit,xw,xs;
+  function layout(){
+    var top=H*0.27, availH=H*0.42, pad=28;
+    if(mode==="product"){
+      unit=clamp(Math.min((W-pad*2)/a, availH/b), 9, 38); gw=a*unit; gh=b*unit;
+    } else if(mode==="foil"){
+      // x-segment is a chunky symbolic block; constants are unit-sized. Same xs on
+      // both axes so the x·x corner reads as a square.
+      var mc=Math.max(a,b);
+      unit=clamp(Math.min((W-pad*2)*0.42/mc, availH*0.42/mc), 11, 26);
+      xs=clamp(Math.min((W-pad*2)-mc*unit, availH-mc*unit), 46, 96);
+      gw=xs+a*unit; gh=xs+b*unit;
+    } else {
+      unit=clamp(Math.min((W-pad*2)*0.5/Math.max(c,1), availH/a), 12, 38);
+      gh=a*unit; xw=clamp((W-pad*2)*0.40, 64, (W-pad*2)-c*unit); gw=xw+c*unit;
+    }
+    gx=(W-gw)/2; gy=top;
+  }
+  function update(){}
+  function animating(){ return false; }
+  function cells(x0,y0,cols,rows,col){
+    ctx.fillStyle=rgba(col,0.16); ctx.fillRect(x0,y0,cols*unit,rows*unit);
+    ctx.strokeStyle=rgba(col,0.30); ctx.lineWidth=1;
+    for(var i=0;i<=cols;i++){ ctx.beginPath(); ctx.moveTo(x0+i*unit,y0); ctx.lineTo(x0+i*unit,y0+rows*unit); ctx.stroke(); }
+    for(var j=0;j<=rows;j++){ ctx.beginPath(); ctx.moveTo(x0,y0+j*unit); ctx.lineTo(x0+cols*unit,y0+j*unit); ctx.stroke(); }
+    ctx.strokeStyle=rgba(col,0.55); ctx.strokeRect(x0,y0,cols*unit,rows*unit);
+  }
+  function regionFill(r,col,claimed){
+    ctx.fillStyle=rgba(col, claimed?0.32:0.12); ctx.fillRect(r.x,r.y,r.w,r.h);
+    ctx.strokeStyle=rgba(col,0.55); ctx.lineWidth=1.5; ctx.strokeRect(r.x,r.y,r.w,r.h);
+  }
+  function drawFoil(){
+    text("("+vname+" + "+a+")("+vname+" + "+b+") = ?", W/2, H*0.14, 16, THEME.onSurface,"center","800");
+    var TL={x:gx,y:gy,w:xs,h:xs}, TR={x:gx+xs,y:gy,w:a*unit,h:xs},
+        BL={x:gx,y:gy+xs,w:xs,h:b*unit}, BR={x:gx+xs,y:gy+xs,w:a*unit,h:b*unit};
+    fr={TL:TL,TR:TR,BL:BL,BR:BR};
+    regionFill(TL,THEME.primary,fcl.TL);
+    regionFill(TR,THEME.secondary,fcl.TR);   // a·x  — a middle strip
+    regionFill(BL,THEME.secondary,fcl.BL);   // x·b  — the other middle strip
+    if(fcl.BR){ cells(BR.x,BR.y,a,b,THEME.tertiary); } else regionFill(BR,THEME.tertiary,false);
+    // claimed regions reveal their composition (side lengths) — never the expansion.
+    if(fcl.TL) text(vname+"·"+vname, TL.x+TL.w/2, TL.y+TL.h/2, 15, THEME.primary,"center","800");
+    if(fcl.TR) text((a===1?"":a)+vname, TR.x+TR.w/2, TR.y+TR.h/2, 13, shade(THEME.secondary,-0.1),"center","800");
+    if(fcl.BL) text((b===1?"":b)+vname, BL.x+BL.w/2, BL.y+BL.h/2, 13, shade(THEME.secondary,-0.1),"center","800");
+    // side labels
+    text(vname, gx+xs/2, gy-12, 13, THEME.primary,"center","800");
+    text(""+a, gx+xs+a*unit/2, gy-12, 12, THEME.secondary,"center","800");
+    text(vname, gx-14, gy+xs/2, 13, THEME.primary,"center","800");
+    text(""+b, gx-14, gy+xs+b*unit/2, 12, THEME.secondary,"center","800");
+    var n=(fcl.TL?1:0)+(fcl.TR?1:0)+(fcl.BL?1:0)+(fcl.BR?1:0);
+    if(n===4 && !moved){ moved=true; postEvent({event:"solve",detail:"foil"}); celebrate(W/2, gy+gh/2); }
+    if(n===4) text("the two "+vname+"-strips add into the middle term — now combine all four parts", W/2, gy+gh+26, 12, THEME.correct,"center","700");
+    else if(!minimal()) text(guided()? "tap each of the four rectangles — don't skip the two middle strips" : "claim all four parts", W/2, gy+gh+26, 12, THEME.subtext,"center","600");
+  }
+  function draw(){
+    if(!unit) layout();
+    if(mode==="foil"){ drawFoil(); return; }
+    if(mode==="product"){
+      text(a+" × "+b+" = ?", W/2, H*0.14, 16, THEME.onSurface,"center","800");
+      if(hasSplit){
+        var sx=gx+split*unit;
+        cells(gx,gy,split,b,THEME.primary); cells(sx,gy,a-split,b,THEME.secondary);
+        text(""+split, gx+split*unit/2, gy-12, 12, THEME.primary,"center","800");
+        text(""+(a-split), sx+(a-split)*unit/2, gy-12, 12, THEME.secondary,"center","800");
+        glow(sx,gy-4,12,THEME.tertiary,0.4);
+        shadowOn(8,rgba(THEME.tertiary,0.5),3); ctx.fillStyle=THEME.tertiary; ctx.beginPath(); ctx.arc(sx,gy-4,9,0,TAU); ctx.fill(); shadowOff();
+        ctx.strokeStyle="#FFF"; ctx.lineWidth=2.5; ctx.stroke();
+        handle={x:sx,y:gy-4};
+      } else { cells(gx,gy,a,b,THEME.primary); text(""+a, gx+gw/2, gy-12, 12, THEME.primary,"center","800"); }
+      text(""+b, gx-15, gy+gh/2, 12, THEME.onSurface,"center","800");
+      if(!minimal()) text(guided()? "drag the divider — count each part's cells, then add the two parts"
+                                   : "count each part, then add", W/2, gy+gh+26, 12, THEME.subtext,"center","600");
+    } else {
+      text(a+"("+vname+" + "+c+") = ?", W/2, H*0.14, 16, THEME.onSurface,"center","800");
+      ctx.fillStyle=rgba(THEME.primary, tapX?0.32:0.15); ctx.fillRect(gx,gy,xw,gh);
+      ctx.strokeStyle=rgba(THEME.primary,0.55); ctx.lineWidth=1.5; ctx.strokeRect(gx,gy,xw,gh);
+      text(vname, gx+xw/2, gy+gh/2, 17, THEME.primary,"center","800");
+      cells(gx+xw,gy,c,a,THEME.secondary);
+      if(tapC){ ctx.fillStyle=rgba(THEME.secondary,0.18); ctx.fillRect(gx+xw,gy,c*unit,gh); }
+      text(vname, gx+xw/2, gy-12, 13, THEME.primary,"center","800");
+      text(""+c, gx+xw+c*unit/2, gy-12, 12, THEME.secondary,"center","800");
+      text(""+a, gx-15, gy+gh/2, 12, THEME.onSurface,"center","800");
+      regX={x:gx,y:gy,w:xw,h:gh}; regC={x:gx+xw,y:gy,w:c*unit,h:gh};
+      if(!minimal()) text(guided()? "each part's area = height × width — find both, then add"
+                                   : "find each area, then add", W/2, gy+gh+26, 12, THEME.subtext,"center","600");
+      if(tapX&&tapC) text("you've got both parts — combine them into the answer", W/2, H-20, 12.5, THEME.correct,"center","700");
+    }
+  }
+  var handle,regX,regC,drag=false;
+  function down(x,y){
+    if(mode==="foil"){ if(!fr) return; for(var k in fr){ var r=fr[k];
+      if(x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h){ if(!fcl[k]){ fcl[k]=true; postEvent({event:"discover",detail:"region:"+k}); } requestRender(); return; } } return; }
+    if(mode==="product"){ if(hasSplit&&handle&&Math.hypot(x-handle.x,y-handle.y)<32) drag=true; return; }
+    if(regX&&x>=regX.x&&x<=regX.x+regX.w&&y>=regX.y&&y<=regX.y+regX.h){ if(!tapX){tapX=true; postEvent({event:"discover",detail:"region_x"});} requestRender(); return; }
+    if(regC&&x>=regC.x&&x<=regC.x+regC.w&&y>=regC.y&&y<=regC.y+regC.h){ if(!tapC){tapC=true; postEvent({event:"discover",detail:"region_c"});} requestRender(); return; }
+  }
+  function move(x){ if(!drag) return; var col=clamp(Math.round((x-gx)/unit),1,a-1);
+    if(col!==split){ split=col; if(!moved){moved=true; postEvent({event:"discover",detail:"split"});} requestRender(); } }
+  function up(){ if(drag){ postEvent({event:"manipulate",detail:"split:"+split}); drag=false; } }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
+})();
+
 // ===========================================================================
 //  Pointer handling
 // ===========================================================================
@@ -812,7 +1608,7 @@ function boot(){
   var g=document.getElementById("goal"); if(SPEC.goal){ g.textContent="✦ "+SPEC.goal; g.style.color=THEME.subtext; } else g.classList.add("hidden");
   var mod=MODULES[SPEC.type];
   if(!mod){ p.textContent="—"; return; }
-  function start(){ active=mod; entrance=0; lastTs=0; if(active.init) active.init(SPEC); resize(); requestRender(); postEvent({event:"open"}); }
+  function start(){ active=mod; entrance=REDUCE?1:0; lastTs=0; if(active.init) active.init(SPEC); resize(); requestRender(); postEvent({event:"open"}); }
   if(SPEC.collapsed){ var cover=document.getElementById("cover"); cover.classList.remove("hidden");
     var btn=document.getElementById("coverBtn"); btn.style.background=THEME.primary; btn.style.color="#FFF";
     btn.addEventListener("click",function(){ cover.classList.add("hidden"); start(); }); }

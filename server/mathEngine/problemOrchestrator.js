@@ -455,7 +455,9 @@ async function enrichProblem(db, userId, problem, orchestrationMeta) {
   //    (and only when) this concept becomes easier to understand by touching it.
   let interactiveVisualJson = null;
   try {
-    interactiveVisualJson = buildVisualSpecJson(problem, conceptId, learnerProfile);
+    // Exercise context: the benefit engine offers a minimal, fade-with-mastery
+    // manipulative (lessons would pass context:'lesson'; duels never call this).
+    interactiveVisualJson = buildVisualSpecJson(problem, conceptId, learnerProfile, { context: 'exercise' });
   } catch (_) {
     interactiveVisualJson = null;
   }

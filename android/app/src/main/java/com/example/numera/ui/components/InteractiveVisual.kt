@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.numera.haptic.HapticManager
+import com.example.numera.motion.MotionManager
 import com.example.numera.theme.CorrectGreen
 import com.example.numera.theme.WrongRed
 import org.json.JSONObject
@@ -63,8 +65,18 @@ fun InteractiveVisual(
     // Height adapts to the kind of manipulative so each feels purpose-built.
     val height: Dp = remember(specJson) { heightForSpec(specJson) }
 
+    // Interaction events are NOT dropped: the host turns them into haptic feedback
+    // (premium feel) and forwards them to the caller for telemetry. Haptics respect
+    // HapticManager.isEnabled; the renderer itself reads reduce-motion for visuals.
+    val sink: (String) -> Unit = remember(onEvent) {
+        { json ->
+            playHapticFor(json)
+            onEvent(json)
+        }
+    }
+
     val bridge = remember(specJson, themeJson, height) {
-        VisualBridge(specJson, themeJson, height.value.toInt(), onEvent)
+        VisualBridge(specJson, themeJson, height.value.toInt(), sink)
     }
 
     AndroidView(
@@ -102,9 +114,22 @@ private class VisualBridge(
     // The exact layout height (CSS px == dp under width=device-width, initial-scale=1).
     // The WebView's own viewport height is unreliable on some devices, so we drive layout from this.
     @JavascriptInterface fun getHeightDp(): Int = heightDp
+    // Lets the renderer suppress confetti + entrance animation when the user (or OS)
+    // has asked for reduced motion. Direct-manipulation springs stay (they're feedback).
+    @JavascriptInterface fun getReduceMotion(): Boolean = MotionManager.reduceMotion
     @JavascriptInterface fun onEvent(json: String) {
         Log.d("InteractiveVisual", "event $json")
         eventSink(json)
+    }
+}
+
+/** Map a renderer interaction event to tactile feedback (no-op if haptics are off). */
+private fun playHapticFor(json: String) {
+    val event = try { JSONObject(json).optString("event") } catch (e: Exception) { "" }
+    when (event) {
+        "manipulate", "predict" -> HapticManager.playSoft()
+        "discover" -> HapticManager.playMedium()
+        "solve" -> HapticManager.playSuccess()
     }
 }
 
@@ -114,11 +139,18 @@ private fun heightForSpec(specJson: String): Dp {
         "balance_scale" -> 340.dp
         "fraction_bar" -> 300.dp
         "right_triangle" -> 340.dp
+        "shape_grid" -> 340.dp
         "parabola" -> 340.dp
+        "function_grapher" -> 340.dp
+        "calculus" -> 340.dp
         "dice_sim" -> 320.dp
+        "probability" -> 320.dp
         "number_line" -> 230.dp
+        "dot_plot" -> 300.dp
         "percent_bar" -> 250.dp
         "ratio_line" -> 270.dp
+        "area_model" -> 330.dp
+        "algebra_tiles" -> 280.dp
         else -> 300.dp
     }
 }
