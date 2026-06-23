@@ -27,6 +27,8 @@ are small and mostly pure (deterministic where possible — see `test/symbolic.t
 | `lessons.js` / `conceptLessons.js` | Lesson content (see "Lessons"). |
 | `tips.js` | Per-concept hints with safety checks (don't leak the answer). |
 | `visualEngine.js` | Builds declarative specs for interactive manipulatives (see below). |
+| `visualMetadata.js` | **Concept→visualization registry** (single source of truth): per-model representations, interaction primitives, learning goal, reflection prompt, feedback rules, base benefit weight, and the concept's real misconceptions. Drives the engine + `knowledgeGraph.describeConcept`. |
+| `visualBenefit.js` | **Visualization Benefit Engine** — scores whether a visual *helps* (concept benefit × mastery × novelty × context) and decides attach / scaffold / collapsed. Context = `lesson` (teach), `exercise` (minimal), `competitive` (none). |
 | `explanationEngine.js` | Step-by-step worked explanations. |
 | `socraticEngine.js` / `selfExplainEngine.js` / `workedExampleEngine.js` | **Formative-feedback trio**, each emitting a JSON-string payload attached to the problem (`socraticJson` / `selfExplainJson` / `workedExampleJson`). Socratic = misconception-targeted probe/hint on a WRONG answer; self-explanation = "why is that right?" reason-MCQ on a CORRECT answer; worked example = a faded step-by-step model of the method (on its OWN numbers, so it never leaks the live answer) offered on a WRONG answer. All pure, author-only coverage (`''` ⇒ client shows nothing), each guarded by a tripwire test. |
 | `knowledgeIngestion.js` | Pipeline to ingest/seed curriculum data. |
@@ -44,14 +46,22 @@ order. **To add a lesson:** add a `CONCEPT_LESSONS` entry (and extend `levelToCo
 it's on a new level band) — no client change needed.
 
 ## Interactive discovery (manipulatives)
-`visualEngine.buildVisualSpec(problem, conceptId, learnerProfile)` returns a declarative JSON
-spec (balance scale, fraction bar, triangle, parabola, dice, number line) or `null`.
-`decideComplexity()` gates by mastery (guided → explore → on-demand → none for experts).
-`problemOrchestrator` attaches it as `interactiveVisualJson` (a JSON **string**, because the
-client uses Gson and a heterogeneous nested params object would break the kotlinx
+Pipeline: **`visualMetadata` → `visualBenefit` → `visualEngine.buildVisualSpec` → spec → renderer**
+(see [`VisualizationRedesign-2026-06.md`](VisualizationRedesign-2026-06.md), canonical).
+`visualEngine.buildVisualSpec(problem, conceptId, learnerProfile, { context })` returns a
+declarative JSON spec (balance scale, fraction bar, triangle, parabola, dice, number line,
+percent bar, ratio line, **area model**, **function grapher**, **dot plot**, **probability grid**,
+**shape grid**, **calculus** tangent/accumulation/limit, **algebra tiles**) or `null`. The **Benefit Engine** (not a bare mastery
+gate) decides whether a visual helps and how much to scaffold, by context (`lesson`/`exercise`/
+`competitive`). Each spec is enriched from `visualMetadata`: `learningGoal`, `reflectionPrompt`
+(the post-verify **Explain** step), `primitives`, `feedbackRules`, `loop`, and the concept's real
+`misconceptions`. `problemOrchestrator` attaches it as `interactiveVisualJson` (a JSON **string**,
+because the client uses Gson and a heterogeneous nested params object would break the kotlinx
 `@Serializable` codegen). The client renders it in a WebView canvas
-(`assets/interactive_visuals.html`). **To add a visual type:** add a builder in
-`visualEngine.js` + a module in the HTML renderer.
+(`assets/interactive_visuals.html`); the host turns interaction events into haptics + telemetry
+(`visual_discover` / `visual_reflect`) and honors reduce-motion. **To add a visual type:** add the
+concept list + model metadata to `visualMetadata.js`, a builder in `visualEngine.js`, a module in
+the HTML renderer, and its height in `InteractiveVisual.kt`.
 
 ## Validation & correctness invariants
 - A generated problem is only served if `validation.js` confirms the answer.

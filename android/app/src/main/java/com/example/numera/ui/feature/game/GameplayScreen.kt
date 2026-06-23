@@ -767,7 +767,20 @@ fun GameplayScreen(
                                     modifier = Modifier.padding(start = 14.dp, top = 10.dp)
                                 )
                                 com.example.numera.ui.components.InteractiveVisual(
-                                    specJson = visJson
+                                    specJson = visJson,
+                                    onEvent = { json ->
+                                        // The renderer's discovery/explain signals are learning
+                                        // events: a learner reached an insight by manipulating,
+                                        // or answered the post-verify "why?". Fire-and-forget,
+                                        // PII-free aggregate counts only.
+                                        val ev = try {
+                                            org.json.JSONObject(json).optString("event")
+                                        } catch (e: Exception) { "" }
+                                        when (ev) {
+                                            "discover" -> com.example.numera.analytics.Analytics.log("visual_discover")
+                                            "reflect" -> com.example.numera.analytics.Analytics.log("visual_reflect")
+                                        }
+                                    }
                                 )
                             }
                         }
