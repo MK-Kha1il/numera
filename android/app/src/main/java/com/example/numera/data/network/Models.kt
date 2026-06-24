@@ -256,6 +256,14 @@ data class LessonConnection(
     val note: String = ""
 )
 
+// Curiosity "spark" — the surprising bit at the end of a lesson (server: curiosityEngine.js).
+@Serializable
+data class LessonSpark(
+    val type: String? = null,   // pattern | shortcut | counterintuitive | wonder
+    val title: String = "",
+    val body: String = ""
+)
+
 @Serializable
 data class LessonSections(
     val intuitionHook: String? = null,
@@ -264,7 +272,8 @@ data class LessonSections(
     val whenToUse: String? = null,
     val representations: List<LessonRepresentation>? = null,
     val commonMistakes: List<LessonMistake>? = null,
-    val connections: List<LessonConnection>? = null
+    val connections: List<LessonConnection>? = null,
+    val spark: LessonSpark? = null
 )
 
 @Serializable
@@ -599,6 +608,15 @@ data class WordProblemResponse(
 // Estimation / number-sense (ultra review edu#16): a server-assembled "best estimate" MCQ set.
 @Serializable
 data class EstimationResponse(
+    val count: Int = 0,
+    val level: Int = 1,
+    val problems: List<MathProblem> = emptyList()
+)
+
+// Error detection / "Spot the Mistake": a server-assembled set where each question shows a worked
+// solution with one corrupted line and asks which line is wrong. Same MCQ shape as the others.
+@Serializable
+data class ErrorDetectionResponse(
     val count: Int = 0,
     val level: Int = 1,
     val problems: List<MathProblem> = emptyList()

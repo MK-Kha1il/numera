@@ -338,6 +338,10 @@ fun MainTabsScreen(
                 com.example.numera.analytics.Analytics.log("estimation_start")
                 onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "estimation"))
             },
+            CommandItem("Spot the Mistake", CommandCategory.QuickAction, NumeraIconType.Learn, "Find the flawed line in a worked solution", "spot the mistake error detection find flaw wrong step check verify worked solution debug proof reasoning practice") {
+                com.example.numera.analytics.Analytics.log("error_detection_start")
+                onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "error_detection"))
+            },
             CommandItem("Classes", CommandCategory.QuickAction, NumeraIconType.Profile, "Create or join a class", "class classroom teacher join code school student roster") {
                 showClasses = true
             },

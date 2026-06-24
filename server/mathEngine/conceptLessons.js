@@ -4890,8 +4890,10 @@ function getConceptLesson(conceptId) {
 }
 
 // Build the API-facing `sections` object from a rich lesson (omits the flat
-// fields the response already carries: title/formula/examples).
-function buildSections(lesson) {
+// fields the response already carries: title/formula/examples). When the conceptId is known we
+// also attach the curiosity `spark` (the "surprising bit") for concepts that have one.
+const { getCuriosity } = require('./curiosityEngine');
+function buildSections(lesson, conceptId) {
   if (!lesson) return null;
   return {
     intuitionHook:  lesson.intuitionHook  || null,
@@ -4900,7 +4902,8 @@ function buildSections(lesson) {
     whenToUse:      lesson.whenToUse       || null,
     representations: lesson.representations || [],
     commonMistakes:  lesson.commonMistakes  || [],
-    connections:     lesson.connections     || []
+    connections:     lesson.connections     || [],
+    spark:           getCuriosity(conceptId)
   };
 }
 

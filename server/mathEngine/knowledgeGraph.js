@@ -43,7 +43,8 @@ const concepts = {
     prereqs: ["arithmetic_sub", "arithmetic_div"],
     baseElo: 900,
     misconceptions: [
-      { id: "left_to_right", label: "Evaluated strictly left-to-right", rule: (ans, p) => (p.a + p.b) * p.c }
+      { id: "left_to_right", label: "Evaluated strictly left-to-right", rule: (ans, p) => (p.a + p.b) * p.c },
+      { id: "added_through", label: "Treated every operation as addition (ignored precedence entirely)", rule: (ans, p) => p.a + p.b + p.c }
     ]
   },
   "pythagorean": {
@@ -62,7 +63,8 @@ const concepts = {
     prereqs: ["arithmetic_sub"],
     baseElo: 950,
     misconceptions: [
-      { id: "inverse_sign_slip", label: "Forgot to invert operator sign", rule: (ans, p) => p.b + p.a }
+      { id: "inverse_sign_slip", label: "Forgot to invert operator sign", rule: (ans, p) => p.b + p.a },
+      { id: "reversed_subtraction", label: "Subtracted in the wrong order (constant − result)", rule: (ans, p) => p.a - p.b }
     ]
   },
   "linear_two_step": {
@@ -70,7 +72,8 @@ const concepts = {
     prereqs: ["linear_one_step"],
     baseElo: 1100,
     misconceptions: [
-      { id: "divide_before_subtract", label: "Divided before subtracting constants", rule: (ans, p) => Math.round((p.c + p.b) / p.a) }
+      { id: "divide_before_subtract", label: "Divided before subtracting constants", rule: (ans, p) => Math.round((p.c + p.b) / p.a) },
+      { id: "forgot_constant", label: "Divided the result by the coefficient without subtracting the constant first", rule: (ans, p) => Math.round(p.c / p.a) }
     ]
   },
   "quadratic": {
@@ -87,7 +90,8 @@ const concepts = {
     prereqs: ["arithmetic_add"],
     baseElo: 1200,
     misconceptions: [
-      { id: "det_instead_trace", label: "Calculated determinant (ad-bc) instead of trace", rule: (ans, p) => p.a * p.b - p.c * p.d }
+      { id: "det_instead_trace", label: "Calculated determinant (ad-bc) instead of trace", rule: (ans, p) => p.a * p.b - p.c * p.d },
+      { id: "summed_all_entries", label: "Added all four entries instead of just the main diagonal", rule: (ans, p) => p.a + p.b + p.c + p.d }
     ]
   },
   "matrix_determinant": {
@@ -95,7 +99,8 @@ const concepts = {
     prereqs: ["arithmetic_mult", "arithmetic_sub"],
     baseElo: 1350,
     misconceptions: [
-      { id: "added_diagonals", label: "Added diagonal elements (ad+bc)", rule: (ans, p) => p.a * p.d + p.b * p.c }
+      { id: "added_diagonals", label: "Added diagonal elements (ad+bc)", rule: (ans, p) => p.a * p.d + p.b * p.c },
+      { id: "main_diagonal_only", label: "Used only the main-diagonal product (ad), ignoring the anti-diagonal", rule: (ans, p) => p.a * p.d }
     ]
   },
 
@@ -105,7 +110,8 @@ const concepts = {
     prereqs: ["arithmetic_add"],
     baseElo: 1050,
     misconceptions: [
-      { id: "exact_count", label: "Off by one (n instead of n+1)", rule: (ans) => ans - 1 }
+      { id: "exact_count", label: "Off by one (n instead of n+1)", rule: (ans) => ans - 1 },
+      { id: "over_counted", label: "Added an extra pigeon (n+2 instead of n+1)", rule: (ans) => ans + 1 }
     ]
   },
   "permutations": {
@@ -113,7 +119,8 @@ const concepts = {
     prereqs: ["arithmetic_mult"],
     baseElo: 1200,
     misconceptions: [
-      { id: "linear_factorial", label: "Total factorial without repeats division", rule: (ans, p) => ans * 2 }
+      { id: "linear_factorial", label: "Total factorial without repeats division", rule: (ans, p) => ans * 2 },
+      { id: "comb_instead_perm", label: "Divided out order — computed a combination instead of a permutation", rule: (ans) => Math.round(ans / 2) }
     ]
   },
   "combinations": {
@@ -157,7 +164,8 @@ const concepts = {
     prereqs: ["arithmetic_div"],
     baseElo: 1100,
     misconceptions: [
-      { id: "product_instead_gcd", label: "Calculated product instead of divisor", rule: (ans, p) => p.a * p.b }
+      { id: "product_instead_gcd", label: "Calculated product instead of divisor", rule: (ans, p) => p.a * p.b },
+      { id: "sum_instead_gcd", label: "Added the two numbers instead of finding their common divisor", rule: (ans, p) => p.a + p.b }
     ]
   },
   "modular_arithmetic": {
@@ -165,7 +173,8 @@ const concepts = {
     prereqs: ["arithmetic_div"],
     baseElo: 1250,
     misconceptions: [
-      { id: "off_by_one_mod", label: "Off-by-one remainder under modulus wrapper", rule: (ans, p) => (ans + 1) % p.mod }
+      { id: "off_by_one_mod", label: "Off-by-one remainder under modulus wrapper", rule: (ans, p) => (ans + 1) % p.mod },
+      { id: "added_modulus", label: "Added the modulus to the remainder (over-corrected to a positive representative)", rule: (ans, p) => ans + p.mod }
     ]
   },
   "totient": {

@@ -26,6 +26,7 @@ const LessonSafety = require('../mathEngine/lessonSafety');
 const { applyRemediation } = require('../mathEngine/remediationEngine');
 const { buildWordProblemSet } = require('../mathEngine/wordProblems');
 const { buildEstimationSet } = require('../mathEngine/estimation');
+const { buildErrorDetectionSet } = require('../mathEngine/errorDetection');
 const { feedEngineOutcome } = require('../services/engineFeed');
 const logger = require('../logger');
 
@@ -598,6 +599,21 @@ router.get('/api/math/estimation', authenticateToken, (req, res) => {
     if (uErr) return res.status(500).json({ error: uErr.message });
     const level = user ? user.level || 1 : 1;
     const problems = buildEstimationSet(count, level);
+    res.json({ count: problems.length, level, problems });
+  });
+});
+
+// ── Error detection / "Spot the Mistake" (audit gap #6 — exercise-type variety) ─────────────────
+// A new exercise TYPE, not just new content: the learner is shown a full worked solution with ONE
+// corrupted line and must find the flaw. Detecting errors is a distinct, high-transfer skill. Reuses
+// the catalog-wide worked examples + arithmetic; rendered through the existing MCQ gameplay.
+router.get('/api/math/error-detection', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const count = Math.min(10, Math.max(3, parseInt(req.query.count, 10) || 5));
+  db.get('SELECT level FROM users WHERE id = ?', [userId], (uErr, user) => {
+    if (uErr) return res.status(500).json({ error: uErr.message });
+    const level = user ? user.level || 1 : 1;
+    const problems = buildErrorDetectionSet(count, level);
     res.json({ count: problems.length, level, problems });
   });
 });

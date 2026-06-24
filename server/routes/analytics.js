@@ -18,6 +18,7 @@ const ALLOWED_EVENTS = new Set([
   'screen_learn', 'screen_arena', 'screen_quests', 'screen_shop', 'screen_profile', 'screen_settings',
   'game_start', 'game_finish',
   'duel_start', 'puzzle_rush_start', 'checkpoint_exam_start', 'transfer_challenge_start',
+  'word_problems_start', 'estimation_start', 'error_detection_start',
   'daily_puzzle_open', 'mistakes_practice_open',
   'shop_purchase', 'quest_claim', 'lesson_open', 'discussion_open', 'problem_reported',
   'command_palette_open', 'skill_tree_open', 'weekly_recap_open',
