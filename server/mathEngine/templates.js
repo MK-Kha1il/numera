@@ -1754,7 +1754,8 @@ templates.number_sense = {
       answer,
       distractors: [change, N - change, N + P], // reported just the increase; decreased instead; added P directly
       explanation: `The increase is $${P}\\%$ of $${N} = ${change}$, so the new price is $${N} + ${change} = ${answer}$.`,
-      type: "percent_change"
+      type: "percent_change",
+      N, P // exposed so the misconception classifier can diagnose a persisted wrong answer
     };
   },
   // Metric conversion, alternating directions. Distractors stay powers of 10 apart.
@@ -1937,7 +1938,8 @@ templates.number_sense = {
       answer: P + up,
       distractors: [up, P - up, P + pct], // gave the markup; subtracted it; added the percent as dollars
       explanation: `A markup ADDS to the cost: the increase is $${pct}\\%$ of $\\$${P} = \\$${up}$, so the price becomes $${P} + ${up} = \\$${P + up}$. (Keeping $${100 + pct}\\%$ of the cost in one step: $${P} \\times ${(100 + pct) / 100} = \\$${P + up}$.) A discount would subtract — a markup climbs.`,
-      type: "percent_markup"
+      type: "percent_markup",
+      P, pct // exposed for the misconception classifier
     };
   },
   // Percent error: |measured - true| / TRUE × 100. Always an OVER-measurement so the
@@ -1953,7 +1955,8 @@ templates.number_sense = {
       answer: errPct,
       distractors: [Math.round((diff / measured) * 100), diff, errPct + 5], // divided by measured; raw difference; near miss
       explanation: `Percent error scales the miss against the TRUE value: $\\frac{|${measured} - ${T}|}{${T}} \\times 100 = \\frac{${diff}}{${T}} \\times 100 = ${errPct}\\%$. Dividing by the measured value ($${measured}$) answers a subtly different — and wrong — question: the accepted truth is the yardstick, not your own reading.`,
-      type: "percent_error"
+      type: "percent_error",
+      T, measured // exposed for the misconception classifier
     };
   }
 };

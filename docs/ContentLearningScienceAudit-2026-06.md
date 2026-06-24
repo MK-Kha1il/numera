@@ -156,7 +156,15 @@ socratic probe. Proven by `test/paramsEcho.test.js`: with params, a `linear_one_
 is diagnosed `concept_specific` (incl. the Build-2 `reversed_subtraction`); without params it is
 `unclassified`. The bag is numeric-only and never contains the answer.
 
-**Remaining standing follow-ups:** replace the remaining ~126 identity misconception rules (each now
-*can* be made to fire, since params reach the classifier — it's per-template authoring work); pass
-`params` from the server-side duel/puzzle-rush flows into `feedEngineOutcome` too; extend curiosity
-coverage; add the other new exercise types (matching, sequencing, construction).
+**Percent family revived (2026-06-24):** the four percent concepts (`percent_change`, `percent_discount`,
+`percent_markup`, `percent_error`) had dead `(ans)=>ans` rules. Their generators now expose the
+underlying numbers (`N/P`, `P/pct`, `T/measured`) and the rules compute the real wrong value — which
+is exactly the generator's own distractor, so a learner's actual wrong choice is diagnosed.
+Proven end-to-end on generated problems by `test/percentDiagnosis.test.js`. This is the repeatable
+pattern for the rest: **expose the existing local numbers on the generator's return → point the rule
+at them → verify the prediction equals a distractor.**
+
+**Remaining standing follow-ups:** apply that pattern to the remaining ~118 identity rules
+(highest-traffic strands next: stats, geometry-area, unit conversion); pass `params` from the
+server-side duel/puzzle-rush flows into `feedEngineOutcome`; extend curiosity coverage; add the
+other new exercise types (matching, sequencing, construction).

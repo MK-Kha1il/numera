@@ -376,7 +376,8 @@ const concepts = {
     prereqs: ["percentage_of"],
     baseElo: 850,
     misconceptions: [
-      { id: "reported_change_only", label: "Gave only the change, not the new total", rule: (ans) => ans }
+      { id: "reported_change_only", label: "Gave only the change, not the new total", rule: (ans, p) => Math.round((p.N * p.P) / 100) },
+      { id: "added_percent_as_dollars", label: "Added the percent number directly to the price", rule: (ans, p) => p.N + p.P }
     ]
   },
   "exponent_power": {
@@ -968,8 +969,8 @@ const concepts = {
     prereqs: ["percentage_of"],
     baseElo: 920,
     misconceptions: [
-      { id: "gave_the_discount", label: "Reported the discount amount instead of the final price", rule: (ans) => ans },
-      { id: "subtracted_percent_as_dollars", label: "Subtracted the percent number directly from the price", rule: (ans) => ans }
+      { id: "gave_the_discount", label: "Reported the discount amount instead of the final price", rule: (ans, p) => Math.round((p.P * p.pct) / 100) },
+      { id: "subtracted_percent_as_dollars", label: "Subtracted the percent number directly from the price", rule: (ans, p) => p.P - p.pct }
     ]
   },
   "simple_interest": {
@@ -1075,8 +1076,8 @@ const concepts = {
     prereqs: ["percent_discount"],
     baseElo: 960,
     misconceptions: [
-      { id: "gave_the_markup", label: "Reported the increase instead of the new total", rule: (ans) => ans },
-      { id: "used_decrease", label: "Subtracted the markup instead of adding it", rule: (ans) => ans }
+      { id: "gave_the_markup", label: "Reported the increase instead of the new total", rule: (ans, p) => Math.round((p.P * p.pct) / 100) },
+      { id: "used_decrease", label: "Subtracted the markup instead of adding it", rule: (ans, p) => p.P - Math.round((p.P * p.pct) / 100) }
     ]
   },
   "percent_error": {
@@ -1084,8 +1085,8 @@ const concepts = {
     prereqs: ["percent_markup", "percent_change"],
     baseElo: 1080,
     misconceptions: [
-      { id: "divided_by_measured", label: "Divided by the measured value instead of the true value", rule: (ans) => ans },
-      { id: "forgot_to_scale", label: "Reported the raw difference, never converting to a percent", rule: (ans) => ans }
+      { id: "divided_by_measured", label: "Divided by the measured value instead of the true value", rule: (ans, p) => Math.round(((p.measured - p.T) / p.measured) * 100) },
+      { id: "forgot_to_scale", label: "Reported the raw difference, never converting to a percent", rule: (ans, p) => p.measured - p.T }
     ]
   },
 
