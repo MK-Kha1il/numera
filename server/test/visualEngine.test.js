@@ -130,6 +130,32 @@ test('binomial product builds a 2×2 FOIL area model and leaks no expansion', ()
   assert.equal(buildVisualSpec({ question: 'Expand: $(x - 2)(x - 3)$' }, 'foil_binomials', NOVICE), null);
 });
 
+test('trinomial factoring builds a reverse-FOIL box and leaks no factor pair', () => {
+  const spec = buildVisualSpec({ question: 'Factor: $x^2 + 5x + 6$' }, 'factor_trinomial', NOVICE);
+  assert.ok(spec, 'expected an area_model spec');
+  assert.equal(spec.type, 'area_model');
+  assert.equal(spec.mode, 'factor');
+  assert.deepEqual({ S: spec.params.S, P: spec.params.P }, { S: 5, P: 6 });
+  // the factors are 2 and 3 — neither may appear in the visible text (only the given S=5, P=6)
+  assert.ok(!/\b2\b|\b3\b/.test(`${spec.prompt} ${spec.goal || ''}`), 'must not state the factors (2, 3)');
+  assert.ok(spec.reflectionPrompt && /middle term/.test(spec.reflectionPrompt), 'reflection confronts the wrong-sum slip');
+  // the all-minus form gets no box (negative strips are out of scope)
+  assert.equal(buildVisualSpec({ question: 'Factor: $x^2 - 5x + 6$' }, 'factor_trinomial', NOVICE), null);
+});
+
+test('squaring a binomial reuses the FOIL box with two equal middle strips', () => {
+  const spec = buildVisualSpec({ question: 'Expand: $(x + 4)^2$' }, 'square_binomial', NOVICE);
+  assert.ok(spec, 'expected an area_model spec');
+  assert.equal(spec.type, 'area_model');
+  assert.equal(spec.mode, 'foil');
+  assert.deepEqual({ a: spec.params.a, b: spec.params.b }, { a: 4, b: 4 });
+  // answer is x^2 + 8x + 16 — neither the doubled middle (8) nor the square (16) may appear
+  assert.ok(!/\b8\b|\b16\b/.test(`${spec.prompt} ${spec.goal || ''}`), 'must not state 8x or 16');
+  assert.ok(/TWICE|TWO/.test(`${spec.prompt} ${spec.reflectionPrompt || ''}`), 'frames the doubled middle');
+  // the minus form gets no box
+  assert.equal(buildVisualSpec({ question: 'Expand: $(x - 4)^2$' }, 'square_binomial', NOVICE), null);
+});
+
 test('slope-intercept question builds a line grapher asking for the slope/intercept', () => {
   const s1 = buildVisualSpec({ question: 'What is the slope of $y = 2x - 4$?' }, 'slope_intercept_id', NOVICE);
   assert.ok(s1); assert.equal(s1.type, 'function_grapher'); assert.equal(s1.mode, 'line');
@@ -197,6 +223,12 @@ test('mean / range / missing-value questions build a dot plot, leaking no answer
 
   // a non-7-value set does not build the box plot (the construction assumes 7 sorted values)
   assert.equal(buildVisualSpec({ question: 'Find the first quartile (Q1) of the data set $2, 3, 5$.' }, 'stat_quartile', NOVICE), null);
+
+  const mad = buildVisualSpec({ question: 'Find the mean absolute deviation (MAD) of the data set $16, 18, 22, 24$.' }, 'stat_mad', NOVICE);
+  assert.ok(mad); assert.equal(mad.type, 'dot_plot'); assert.equal(mad.mode, 'mad');
+  assert.deepEqual(mad.params.data, [16, 18, 22, 24]);
+  assert.equal(mad.params.mean, 20);
+  assert.ok(!/\b3\b/.test(`${mad.prompt} ${mad.goal || ''}`), 'must not state the MAD (3)');
 });
 
 test('probability questions build a sample-space grid, leaking no probability', () => {
