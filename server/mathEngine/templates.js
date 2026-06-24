@@ -1992,7 +1992,8 @@ templates.statistics = {
       answer: m,
       distractors: [sum, m + 2, m - 2],
       explanation: `Add the values to get ${sum}, then divide by how many there are (4): ${sum} / 4 = ${m}.`,
-      type: "stat_mean"
+      type: "stat_mean",
+      sum // exposed for the misconception classifier (forgot to divide → reported the total)
     };
   },
   // Median: the middle value of the SORTED list (the unsorted-middle is offered as a trap).
@@ -2006,7 +2007,8 @@ templates.statistics = {
       answer,
       distractors: [vals[2], sorted[0], sorted[4]], // middle of the unsorted list; min; max
       explanation: `Order the values: ${sorted.join(', ')}. The middle (3rd of 5) value is ${answer}.`,
-      type: "stat_median"
+      type: "stat_median",
+      unsortedMid: vals[2] // exposed for the classifier (took the middle WITHOUT sorting)
     };
   },
   // Range: largest minus smallest (the spread varies so the answer isn't constant).
@@ -2021,7 +2023,8 @@ templates.statistics = {
       answer,
       distractors: [max, max + min, base + 2], // gave the max; summed instead; a stray value
       explanation: `Range = largest - smallest = ${max} - ${min} = ${answer}.`,
-      type: "stat_range"
+      type: "stat_range",
+      max, min // exposed for the classifier (gave the max; summed the extremes)
     };
   },
   // Work BACKWARDS from the mean: the total is the mean's hidden promise.
@@ -2036,7 +2039,8 @@ templates.statistics = {
       answer: x,
       distractors: [M, 4 * M, a + b + c], // repeated the mean; gave the total; summed the three
       explanation: `A mean of $${M}$ over four scores promises a TOTAL of $4 \\times ${M} = ${4 * M}$. The three known scores supply $${a} + ${b} + ${c} = ${a + b + c}$, so the fourth must contribute the rest: $${4 * M} - ${a + b + c} = ${x}$. The mean itself is rarely any individual score — it's the total in disguise.`,
-      type: "mean_missing_value"
+      type: "mean_missing_value",
+      M // exposed for the classifier (repeated the mean; gave 4·M the total)
     };
   },
   // Probability as a percent (operands chosen so the percent is a whole number).

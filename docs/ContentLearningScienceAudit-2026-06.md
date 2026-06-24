@@ -160,11 +160,13 @@ is diagnosed `concept_specific` (incl. the Build-2 `reversed_subtraction`); with
 `percent_markup`, `percent_error`) had dead `(ans)=>ans` rules. Their generators now expose the
 underlying numbers (`N/P`, `P/pct`, `T/measured`) and the rules compute the real wrong value — which
 is exactly the generator's own distractor, so a learner's actual wrong choice is diagnosed.
-Proven end-to-end on generated problems by `test/percentDiagnosis.test.js`. This is the repeatable
-pattern for the rest: **expose the existing local numbers on the generator's return → point the rule
-at them → verify the prediction equals a distractor.**
+The **descriptive-statistics family** (`stat_mean`, `stat_median`, `stat_range`,
+`mean_missing_value`) was revived the same way in the same pass. Both families are proven
+end-to-end on generated problems by `test/revivedDiagnosis.test.js` (add a concept there as it's
+revived). This is the repeatable pattern for the rest: **expose the existing local numbers on the
+generator's return → point the rule at them → verify the prediction equals a distractor.**
 
-**Remaining standing follow-ups:** apply that pattern to the remaining ~118 identity rules
-(highest-traffic strands next: stats, geometry-area, unit conversion); pass `params` from the
-server-side duel/puzzle-rush flows into `feedEngineOutcome`; extend curiosity coverage; add the
-other new exercise types (matching, sequencing, construction).
+**Remaining standing follow-ups:** apply that pattern to the remaining ~114 identity rules
+(highest-traffic strands next: geometry-area, unit conversion, integers/compare); pass `params`
+from the server-side duel/puzzle-rush flows into `feedEngineOutcome`; extend curiosity coverage;
+add the other new exercise types (matching, sequencing, construction).

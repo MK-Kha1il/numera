@@ -403,7 +403,7 @@ const concepts = {
     prereqs: ["arithmetic_div"],
     baseElo: 700,
     misconceptions: [
-      { id: "forgot_divide", label: "Reported the total instead of dividing by the count", rule: (ans) => ans }
+      { id: "forgot_divide", label: "Reported the total instead of dividing by the count", rule: (ans, p) => p.sum }
     ]
   },
   "stat_median": {
@@ -411,7 +411,7 @@ const concepts = {
     prereqs: ["arithmetic_add"],
     baseElo: 740,
     misconceptions: [
-      { id: "unsorted_middle", label: "Took the middle of the unsorted list", rule: (ans) => ans }
+      { id: "unsorted_middle", label: "Took the middle of the unsorted list", rule: (ans, p) => p.unsortedMid }
     ]
   },
   "stat_range": {
@@ -419,7 +419,8 @@ const concepts = {
     prereqs: ["arithmetic_sub"],
     baseElo: 660,
     misconceptions: [
-      { id: "gave_max", label: "Reported the maximum instead of max − min", rule: (ans) => ans }
+      { id: "gave_max", label: "Reported the maximum instead of max − min", rule: (ans, p) => p.max },
+      { id: "summed_extremes", label: "Added the largest and smallest instead of subtracting", rule: (ans, p) => p.max + p.min }
     ]
   },
   "stat_probability": {
@@ -924,8 +925,8 @@ const concepts = {
     prereqs: ["stat_mean", "linear_one_step"],
     baseElo: 1080,
     misconceptions: [
-      { id: "repeated_the_mean", label: "Assumed the missing score equals the mean", rule: (ans) => ans },
-      { id: "forgot_total", label: "Never converted the mean back into a total", rule: (ans) => ans }
+      { id: "repeated_the_mean", label: "Assumed the missing score equals the mean", rule: (ans, p) => p.M },
+      { id: "forgot_total", label: "Never converted the mean back into a total", rule: (ans, p) => 4 * p.M }
     ]
   },
 
