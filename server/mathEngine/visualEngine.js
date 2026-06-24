@@ -791,6 +791,59 @@ function buildAlgebraTiles(question) {
   };
 }
 
+// Circle → the two π-relationships, made visible (the answer is "in terms of π",
+// so the learner reads the COEFFICIENT of π off the construction, never a decimal).
+//   area          — geo_circle_area: build the square on the radius (side = r) and
+//                   count its r² unit cells; the circle holds about π of those squares.
+//   circumference — geo_circumference: roll the circle one full turn along a track
+//                   marked in diameters; one revolution covers exactly π diameters.
+function buildCircle(question, conceptId) {
+  const q = normalize(question);
+  if (conceptId === 'geo_circle_area') {
+    const m = q.match(/radius\s*(\d+)/i);
+    if (m) {
+      const r = parseInt(m[1], 10);
+      if (r >= 2 && r <= 8) {
+        return {
+          type: 'circle', mode: 'area', params: { r },
+          prompt: 'Build the square on the radius (side = the radius) and count its unit squares — the circle holds about π of them.',
+          goal: 'See a circle’s area as π copies of the square on its radius (π·r²).',
+          reflectionPrompt: 'The circle isn’t made of neat squares — why is its area still exactly π of the radius-squares?'
+        };
+      }
+    }
+    return null;
+  }
+  if (conceptId === 'geo_circumference') {
+    const dm = q.match(/diameter\s*(\d+)/i);
+    const rm = q.match(/radius\s*(\d+)/i);
+    if (dm) {
+      const d = parseInt(dm[1], 10);
+      if (d >= 2 && d <= 16) {
+        return {
+          type: 'circle', mode: 'circumference', params: { d, given: 'diameter' },
+          prompt: 'Roll the circle one full turn along the track — how many diameters does the rim cover?',
+          goal: 'See the circumference as π times the diameter (the rim unrolls to π diameters).',
+          reflectionPrompt: 'Why does one full roll always cover π diameters, whatever the circle’s size?'
+        };
+      }
+    }
+    if (rm) {
+      const r = parseInt(rm[1], 10);
+      if (r >= 2 && r <= 8) {
+        return {
+          type: 'circle', mode: 'circumference', params: { d: 2 * r, given: 'radius', r },
+          prompt: 'Roll the circle one full turn along the track — the rim covers π diameters, and the diameter is twice the radius.',
+          goal: 'See the circumference as 2π times the radius (π diameters, with the diameter being 2r).',
+          reflectionPrompt: 'Why does one full roll always cover the same number of diameters, whatever the size?'
+        };
+      }
+    }
+    return null;
+  }
+  return null;
+}
+
 // ----------------------------------------------------------------------------
 // Master dispatcher
 // ----------------------------------------------------------------------------
@@ -817,7 +870,8 @@ const BUILDERS = [
   { name: 'dot_plot', concepts: MODEL_CONCEPTS.dot_plot, build: (p, c) => buildDotPlot(p.question, c) },
   { name: 'calculus', concepts: MODEL_CONCEPTS.calculus, build: (p, c) => buildCalculus(p.question, c) },
   { name: 'area_model', concepts: MODEL_CONCEPTS.area_model, build: (p) => buildAreaModel(p.question) },
-  { name: 'algebra_tiles', concepts: MODEL_CONCEPTS.algebra_tiles, build: (p) => buildAlgebraTiles(p.question) }
+  { name: 'algebra_tiles', concepts: MODEL_CONCEPTS.algebra_tiles, build: (p) => buildAlgebraTiles(p.question) },
+  { name: 'circle', concepts: MODEL_CONCEPTS.circle, build: (p, c) => buildCircle(p.question, c) }
 ];
 
 // Build the manipulative spec for a problem (or null). The concept gate runs the

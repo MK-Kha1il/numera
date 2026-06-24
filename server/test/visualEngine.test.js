@@ -313,6 +313,24 @@ test('combine-like-terms builds algebra tiles, leaking no sum', () => {
   assert.deepEqual({ a: one.params.a, b: one.params.b }, { a: 1, b: 4 });
 });
 
+test('circle area builds the square-on-radius model and leaks no coefficient', () => {
+  const spec = buildVisualSpec({ question: 'What is the area of a circle with radius $5$? Give your answer in terms of $\\pi$.' }, 'geo_circle_area', NOVICE);
+  assert.ok(spec); assert.equal(spec.type, 'circle'); assert.equal(spec.mode, 'area');
+  assert.equal(spec.params.r, 5);
+  assert.ok(!/\b25\b/.test(`${spec.prompt} ${spec.goal || ''}`), 'must not state the coefficient (25)');
+  assert.ok(spec.reflectionPrompt && /π|squares/.test(spec.reflectionPrompt));
+});
+
+test('circumference rolls the circle; diameter and radius variants both build', () => {
+  const dia = buildVisualSpec({ question: 'What is the circumference of a circle with diameter $6$? Give your answer in terms of $\\pi$.' }, 'geo_circumference', NOVICE);
+  assert.ok(dia); assert.equal(dia.type, 'circle'); assert.equal(dia.mode, 'circumference');
+  assert.deepEqual({ d: dia.params.d, given: dia.params.given }, { d: 6, given: 'diameter' });
+
+  const rad = buildVisualSpec({ question: 'What is the circumference of a circle with radius $4$? Give your answer in terms of $\\pi$.' }, 'geo_circumference', NOVICE);
+  assert.ok(rad); assert.deepEqual({ d: rad.params.d, given: rad.params.given }, { d: 8, given: 'radius' });
+  assert.ok(!/\b8\b/.test(`${rad.prompt} ${rad.goal || ''}`), 'must not state the coefficient (8)');
+});
+
 test('context: competitive gets no visual; lessons keep it for experts, exercises do not', () => {
   const q = { question: 'Which is larger: $\\frac{2}{3}$ or $\\frac{3}{5}$?' };
   assert.equal(buildVisualSpec(q, 'fraction_compare', NOVICE, { context: 'competitive' }), null);

@@ -51,7 +51,7 @@ Pipeline: **`visualMetadata` → `visualBenefit` → `visualEngine.buildVisualSp
 `visualEngine.buildVisualSpec(problem, conceptId, learnerProfile, { context })` returns a
 declarative JSON spec (balance scale, fraction bar, triangle, parabola, dice, number line,
 percent bar, ratio line, **area model**, **function grapher**, **dot plot**, **probability grid**,
-**shape grid**, **calculus** tangent/accumulation/limit, **algebra tiles**) or `null`. The **Benefit Engine** (not a bare mastery
+**shape grid**, **calculus** tangent/accumulation/limit, **algebra tiles**, **circle** area/circumference) or `null`. The **Benefit Engine** (not a bare mastery
 gate) decides whether a visual helps and how much to scaffold, by context (`lesson`/`exercise`/
 `competitive`). Each spec is enriched from `visualMetadata`: `learningGoal`, `reflectionPrompt`
 (the post-verify **Explain** step), `primitives`, `feedbackRules`, `loop`, and the concept's real
