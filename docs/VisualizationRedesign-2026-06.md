@@ -297,8 +297,39 @@ by screenshot (initial wide orange box → drag Q1→3, Q3→13 → green box ho
 two outliers outside) + event traces (`solve:box:iqr` on both quartiles correct; `solve:box:q1` on Q1
 alone). The dot-plot now covers mean · missing-value · range · median · mode · quartiles/IQR.
 
+## Increment 17 (shipped) — `area_model` factoring (reverse FOIL)
+
+The algebra family's factoring, by working the FOIL box **backwards**. **factor** (`factor_trinomial`,
+`x² + S·x + P`): the corner always holds **P** squares (the learner slides through the divisor pairs
+of P, each of which tiles the corner differently but always to P cells); the two middle strips total
+`(a+b)·x`, and only the pair that also **adds to S** factors the trinomial. A pair with the right
+product but wrong sum (e.g. `1·6` for `x²+5x+6`) visibly leaves the strips totalling the wrong number
+of x's — confronting the catalogued `product_pair_wrong_sum` slip directly. The factor pair is **never
+printed**; the side labels `(x + a)(x + b)` appear only as the learner's own discovered result. Sum
+form only. Verified by event trace (`solve:factor` fires only on the pair summing to S; the same-product
+wrong-sum pair never solves).
+
+## Increment 18 (shipped) — `area_model` perfect square `(x + a)²`
+
+A near-free win reusing the FOIL box with **a = b** (`square_binomial`): the box is a perfect square,
+so the two middle strips are *equal* `a·x` strips — physically showing why the middle term is **2ax**,
+not `ax` (`forgot_double`) and certainly not missing (`dropped_middle_term`, "the freshman's dream").
+Zero renderer changes — the builder maps `(x+a)²` onto the existing `foil` mode. Verified by event
+trace (`solve` after all four regions claimed).
+
+## Increment 19 (shipped) — `dot_plot` MAD (deviation balance)
+
+The statistics family's mean-absolute-deviation, as the *average distance from the mean*. **mad**
+(`stat_mad`): each value's distance from the (given) mean is a horizontal bar; the learner slides a
+vertical line until the **overhangs** (long bars past the line) exactly **fill the gaps** (short bars'
+shortfall to the line) — that balancing level is the average distance, the MAD, read off the axis
+(never printed). Confronts the `forgot_to_divide` (gives the total) and `gave_mean` (gives the center)
+slips: the balance level is neither the biggest distance nor the mean. Verified functionally (starts
+off-balance at the max deviation; `solve:mad` fires when the line reaches the average distance). The
+dot-plot now covers mean · missing · range · median · mode · quartiles/IQR · MAD.
+
 ## Follow-on coverage track (architecture is ready for these)
 
-- `dot_plot` MAD (drag each dot's deviation from a fixed mean, then average them) → `stat_mad`
-- `shape_grid` circle (unroll into the radius-by-half-circumference rectangle) → `geo_circle_area`, `geo_circumference`
-- `area_model` factoring (work the box backwards: given the area, find the side binomials) → `factor_trinomial`
+- `circle` model — area as the wedge-rearranged `πr × r` rectangle, circumference as the rim
+  unrolled to π diameters → `geo_circle_area`, `geo_circumference` (π resists clean unit-square
+  counting, so these read the **coefficient of π** off the construction rather than a square count)

@@ -285,6 +285,45 @@ function buildAreaModel(question) {
       };
     }
   }
+  // factoring a trinomial (reverse FOIL):  x² + S·x + P  →  (x + a)(x + b).
+  // The corner always holds P squares (a·b = P, from divisor pairs); the learner
+  // slides through the pairs until the two middle strips total S·x — confronting
+  // the "right product, wrong sum" slip directly. Only the all-plus form.
+  const fac = q.match(/x\^?2\s*\+\s*(\d+)\s*x\s*\+\s*(\d+)\s*$/);
+  if (fac) {
+    const S = parseInt(fac[1], 10), P = parseInt(fac[2], 10);
+    let fa = 0, fb = 0;
+    for (let t = 1; t * t <= P; t++) {
+      if (P % t === 0 && t + P / t === S) { fa = t; fb = P / t; break; }
+    }
+    if (fa && S >= 3 && S <= 14 && P >= 2 && P <= 36 && fb <= 12) {
+      return {
+        type: 'area_model',
+        mode: 'factor',
+        params: { S, P, variable: 'x' },
+        prompt: 'The corner always holds ' + P + ' squares — slide through the pairs until the two middle strips total ' + S + 'x.',
+        goal: 'Factor by finding the pair that multiplies to the constant and adds to the middle coefficient.',
+        reflectionPrompt: 'Every pair multiplied to ' + P + ' — why did only one of them give the right middle term?'
+      };
+    }
+  }
+  // perfect square (x + a)²  →  the FOIL box with both sides equal: the x-strip
+  // appears TWICE, which is exactly where the doubled middle term comes from
+  // (confronts "dropped the middle" and "forgot to double"). Sum form only.
+  const sq = q.match(/\(\s*([a-zA-Z])\s*\+\s*(\d+)\s*\)\s*\^?\s*2(?!\d)/);
+  if (sq) {
+    const v = sq[1], a = parseInt(sq[2], 10);
+    if (isInt(a) && a >= 1 && a <= 9) {
+      return {
+        type: 'area_model',
+        mode: 'foil',
+        params: { a, b: a, variable: v },
+        prompt: 'The square is (' + v + ' + ' + a + ') on every side. Claim all four parts — notice the ' + v + '-strip appears TWICE.',
+        goal: 'See why squaring a binomial doubles the middle term (and never drops it).',
+        reflectionPrompt: 'There are TWO ' + v + '-strips — why does that make the middle term doubled, not missing?'
+      };
+    }
+  }
   // distribution over a binomial:  a(x + c)  /  a(x - c)
   const dist = q.match(/(-?\d+)\s*\(\s*([a-zA-Z])\s*([+-])\s*(\d+)\s*\)/);
   if (dist) {
@@ -458,6 +497,21 @@ function buildDotPlot(question, conceptId) {
       goal: 'See the mode as the most frequent value: the tallest stack.',
       reflectionPrompt: 'Why is the tallest stack the mode — and how is that different from the largest value?'
     };
+  }
+  // Mean absolute deviation: the AVERAGE distance from the mean. Each value's
+  // distance is a bar; the learner slides a line until the overhangs fill the gaps
+  // — that balancing level is the MAD, read off the axis (never printed).
+  if (conceptId === 'stat_mad') {
+    const mean = data.reduce((s, v) => s + v, 0) / data.length;
+    if (Number.isInteger(mean)) {
+      return {
+        type: 'dot_plot', mode: 'mad', params: { data, mean },
+        prompt: 'Each bar is a value’s distance from the mean. Slide the line until the overhangs fill the gaps — that level is the average distance.',
+        goal: 'See the MAD as the average distance from the mean: the level that balances the long and short bars.',
+        reflectionPrompt: 'Why is the balancing level the AVERAGE distance, not the biggest distance or the mean itself?'
+      };
+    }
+    return null;
   }
   // Quartiles / IQR share a box-plot construction over a 7-value sorted set:
   // median = v[3], Q1 = median of the lower half (v[1]), Q3 = median of the upper

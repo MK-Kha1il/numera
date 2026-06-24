@@ -1163,11 +1163,14 @@ MODULES.calculus = (function(){
 // dot) until the plank is level, then READS the value off the axis. Range mode:
 // bracket the min and max. The mean / missing value / range is never printed.
 MODULES.dot_plot = (function(){
-  var mode,data,known,n,targetMean,fx,missG,missTrue,minM,maxM,balanced,drag,meanT,lo,hi,dividerV,tappedMode,modeGeo,q1V,q3V,medV,ask,q1Pos,q3Pos;
+  var mode,data,known,n,targetMean,fx,missG,missTrue,minM,maxM,balanced,drag,meanT,lo,hi,dividerV,tappedMode,modeGeo,q1V,q3V,medV,ask,q1Pos,q3Pos,madLine,madMean;
   function init(s){ balanced=false; drag=null; mode=s.mode||"mean"; tappedMode=null; modeGeo={};
     if(mode==="box"){ data=s.params.data.slice(); ask=s.params.ask;
       var bmn=Math.min.apply(null,data), bmx=Math.max.apply(null,data); lo=Math.max(0,bmn-2); hi=bmx+2;
       medV=data[3]; q1V=data[0]; q3V=data[6]; return; }
+    if(mode==="mad"){ data=s.params.data.slice(); madMean=s.params.mean;
+      var mdv=data.map(function(v){return Math.abs(v-madMean);});
+      lo=0; hi=Math.max.apply(null,mdv)+1; madLine=Math.max.apply(null,mdv); return; }  // start at max-dev (always off-balance)
     if(mode==="mean_missing"){ known=s.params.known.slice(); n=s.params.n; targetMean=s.params.targetMean;
       missTrue=n*targetMean-known.reduce(function(a,b){return a+b;},0);
       var all=known.concat([targetMean,missTrue]); lo=Math.max(0,Math.min.apply(null,all)-2); hi=Math.max.apply(null,all)+2;
@@ -1210,6 +1213,7 @@ MODULES.dot_plot = (function(){
     if(mode==="median"){ drawMedian(); return; }
     if(mode==="mode"){ drawMode(); return; }
     if(mode==="box"){ drawBox(); return; }
+    if(mode==="mad"){ drawMad(); return; }
     axis();
     var vals, pivotV;
     if(mode==="mean_missing"){ vals=known.map(function(v){return {v:v,col:THEME.primary};});
@@ -1300,6 +1304,29 @@ MODULES.dot_plot = (function(){
                   : "split each half evenly"),
       W/2, H-16, 12, solved?THEME.correct:THEME.subtext,"center","700");
   }
+  function drawMad(){
+    axis();
+    text("slide the line to the AVERAGE distance from the mean (the MAD)", W/2, H*0.12, 12.5, THEME.onSurface,"center","800");
+    var devs=data.map(function(v){return Math.abs(v-madMean);}), nb=devs.length;
+    var barTop=H*0.22, rowH=(ay-12-barTop)/nb, lx=X(madLine), surplus=0, deficit=0;
+    devs.forEach(function(d,i){ var by=barTop+i*rowH+rowH*0.22, bh=rowH*0.5, ex=X(d);
+      fillRR(X(0),by,Math.max(2,ex-X(0)),bh,3, rgba(THEME.primary,0.22));
+      strokeRR(X(0),by,Math.max(2,ex-X(0)),bh,3, rgba(THEME.primary,0.5),1);
+      if(d>madLine+0.01){ surplus+=(d-madLine); fillRR(lx,by,ex-lx,bh,3, rgba(THEME.secondary,0.65)); }
+      else if(d<madLine-0.01){ deficit+=(madLine-d); ctx.fillStyle=rgba(THEME.tertiary,0.45); ctx.fillRect(ex,by,lx-ex,bh);
+        ctx.strokeStyle=rgba(THEME.tertiary,0.7); ctx.setLineDash([2,2]); ctx.strokeRect(ex,by,lx-ex,bh); ctx.setLineDash([]); }
+    });
+    ctx.strokeStyle=THEME.onSurface; ctx.lineWidth=2.5; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(lx,barTop-6); ctx.lineTo(lx,ay+6); ctx.stroke(); ctx.setLineDash([]);
+    glow(lx,ay-6,12,THEME.tertiary,0.4); shadowOn(6,rgba(THEME.tertiary,0.5),2); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(lx,ay-6,9,0,TAU); ctx.fill(); shadowOff();
+    ctx.fillStyle=THEME.tertiary; ctx.beginPath(); ctx.arc(lx,ay-6,5,0,TAU); ctx.fill(); divPos={x:lx,y:ay-6};
+    var trueMAD=devs.reduce(function(a,b){return a+b;},0)/nb, bal=Math.abs(madLine-trueMAD)<0.3;
+    if(bal&&!balanced){ balanced=true; postEvent({event:"solve",detail:"mad"}); celebrate(lx,ay); }
+    if(!bal) balanced=false;
+    text(bal? "balanced — the overhangs exactly fill the gaps; read the level off the axis"
+       : (guided()? (surplus>deficit? "overhang beats the gaps — slide right" : "gaps beat the overhang — slide left") : "balance the overhang and the gaps"),
+      W/2, H-16, 12, bal?THEME.correct:THEME.subtext,"center","700");
+  }
   function drawRange(){
     axis();
     var stacks={}; data.forEach(function(v){ stacks[v]=(stacks[v]||0); var px=X(v); dot(px,ay-14-stacks[v]*15,THEME.primary); stacks[v]++; });
@@ -1326,6 +1353,7 @@ MODULES.dot_plot = (function(){
     if(mode==="mode"){ if(balanced) return; var best=null,bd=24; for(var mv in modeGeo){ var d=Math.abs(x-modeGeo[mv]); if(d<bd){ bd=d; best=+mv; } }
       if(best!==null){ tappedMode=best; postEvent({event:"manipulate",detail:"tap_mode:"+best}); requestRender(); } return; }
     if(mode==="box"){ if(q3Pos&&Math.hypot(x-q3Pos.x,y-q3Pos.y)<34) drag="q3"; else if(q1Pos&&Math.hypot(x-q1Pos.x,y-q1Pos.y)<34) drag="q1"; return; }
+    if(mode==="mad"){ if(divPos&&Math.abs(x-divPos.x)<40) drag="madline"; return; }
     if(mode==="mean_missing"){ if(ghostPos&&Math.hypot(x-ghostPos.x,y-ghostPos.y)<34) drag="ghost"; return; }
     if(fulPos&&Math.abs(x-fulPos.x)<44 && y>plankY-10) drag="ful";
   }
@@ -1335,6 +1363,7 @@ MODULES.dot_plot = (function(){
     else if(drag==="ghost"){ var ng=valFromX(x,1); if(ng!==missG){ missG=ng; postEvent({event:"manipulate",detail:"missing:"+missG}); requestRender(); } }
     else if(drag==="q1"){ var nq=valFromX(x,1); if(nq!==q1V){ q1V=nq; postEvent({event:"manipulate",detail:"q1:"+q1V}); requestRender(); } }
     else if(drag==="q3"){ var nr=valFromX(x,1); if(nr!==q3V){ q3V=nr; postEvent({event:"manipulate",detail:"q3:"+q3V}); requestRender(); } }
+    else if(drag==="madline"){ var nm2=valFromX(x,0.5); if(nm2!==madLine){ madLine=nm2; postEvent({event:"manipulate",detail:"mad:"+madLine}); requestRender(); } }
     else if(drag==="min"){ var nm=valFromX(x,1); if(nm!==minM){ minM=nm; requestRender(); } }
     else if(drag==="max"){ var nx=valFromX(x,1); if(nx!==maxM){ maxM=nx; requestRender(); } }
   }
@@ -1482,10 +1511,14 @@ MODULES.algebra_tiles = (function(){
 //               — the learner computes a·x and a·c themselves and combines. The
 //               expansion (a·x + a·c) is never printed.
 MODULES.area_model = (function(){
-  var mode,a,b,c,vname,split,hasSplit,moved,tapX,tapC,fcl,fr;
+  var mode,a,b,c,vname,split,hasSplit,moved,tapX,tapC,fcl,fr,facS,facP,facA,facB,facPairs,facIdx,facSlider;
   function init(s){ mode=s.mode||"product"; a=s.params.a; b=s.params.b; c=s.params.c; vname=s.params.variable||"x";
-    split=Math.max(1,Math.round((a||2)/2)); hasSplit=(a>=2); moved=false; tapX=false; tapC=false; fcl={}; fr=null; }
-  var gx,gy,gw,gh,unit,xw,xs;
+    split=Math.max(1,Math.round((a||2)/2)); hasSplit=(a>=2); moved=false; tapX=false; tapC=false; fcl={}; fr=null;
+    if(mode==="factor"){ facS=s.params.S; facP=s.params.P; facPairs=[];
+      for(var t=1;t<=facP;t++){ if(facP%t===0){ var ot=facP/t; if(t<=12&&ot<=12) facPairs.push([t,ot]); } }
+      if(!facPairs.length) facPairs=[[1,facP]];
+      facIdx=0; facA=facPairs[0][0]; facB=facPairs[0][1]; } }
+  var gx,gy,gw,gh,unit,xw,xs,facUnit;
   function layout(){
     var top=H*0.27, availH=H*0.42, pad=28;
     if(mode==="product"){
@@ -1497,6 +1530,13 @@ MODULES.area_model = (function(){
       unit=clamp(Math.min((W-pad*2)*0.42/mc, availH*0.42/mc), 11, 26);
       xs=clamp(Math.min((W-pad*2)-mc*unit, availH-mc*unit), 46, 96);
       gw=xs+a*unit; gh=xs+b*unit;
+    } else if(mode==="factor"){
+      // size for the WIDEST pair so the box only reshapes (corner area = P stays
+      // constant) without rescaling as the learner slides through the pairs.
+      var ms=1; for(var fi=0;fi<facPairs.length;fi++){ ms=Math.max(ms,facPairs[fi][0],facPairs[fi][1]); }
+      facUnit=clamp(Math.min((W-pad*2)*0.5/ms, availH*0.5/ms), 9, 22);
+      xs=clamp(Math.min((W-pad*2)-ms*facUnit, availH-ms*facUnit), 38, 76);
+      unit=facUnit; gw=xs+facA*facUnit; gh=xs+facB*facUnit;
     } else {
       unit=clamp(Math.min((W-pad*2)*0.5/Math.max(c,1), availH/a), 12, 38);
       gh=a*unit; xw=clamp((W-pad*2)*0.40, 64, (W-pad*2)-c*unit); gw=xw+c*unit;
@@ -1539,8 +1579,40 @@ MODULES.area_model = (function(){
     if(n===4) text("the two "+vname+"-strips add into the middle term — now combine all four parts", W/2, gy+gh+26, 12, THEME.correct,"center","700");
     else if(!minimal()) text(guided()? "tap each of the four rectangles — don't skip the two middle strips" : "claim all four parts", W/2, gy+gh+26, 12, THEME.subtext,"center","600");
   }
+  function drawFactor(){
+    gw=xs+facA*facUnit; gh=xs+facB*facUnit; gx=(W-gw)/2; gy=H*0.24;
+    text(vname+"² + "+facS+vname+" + "+facP+" = ( ? )( ? )", W/2, H*0.13, 15, THEME.onSurface,"center","800");
+    var TL={x:gx,y:gy,w:xs,h:xs}, TR={x:gx+xs,y:gy,w:facA*facUnit,h:xs},
+        BL={x:gx,y:gy+xs,w:xs,h:facB*facUnit}, BR={x:gx+xs,y:gy+xs,w:facA*facUnit,h:facB*facUnit};
+    regionFill(TL,THEME.primary,true); regionFill(TR,THEME.secondary,true); regionFill(BL,THEME.secondary,true);
+    cells(BR.x,BR.y,facA,facB,THEME.tertiary);   // a·b cells — ALWAYS P, just rearranged
+    text(vname+"·"+vname, TL.x+TL.w/2, TL.y+TL.h/2, 13, THEME.primary,"center","800");
+    text((facA===1?"":facA)+vname, TR.x+TR.w/2, TR.y+TR.h/2, 12, shade(THEME.secondary,-0.1),"center","800");
+    text((facB===1?"":facB)+vname, BL.x+BL.w/2, BL.y+BL.h/2, 12, shade(THEME.secondary,-0.1),"center","800");
+    var sum=facA+facB, solved=(sum===facS);
+    // side labels = the factors, the learner's own discovered result
+    text(solved? vname+" + "+facA : vname, gx+xs/2, gy-12, 12, THEME.primary,"center","800");
+    if(solved){ text("+ "+facA, gx+xs+facA*facUnit/2, gy-12, 11, THEME.secondary,"center","800");
+      text("+ "+facB, gx-16, gy+xs+facB*facUnit/2, 11, THEME.secondary,"center","800"); }
+    text(vname, gx-16, gy+xs/2, 12, THEME.primary,"center","800");
+    // the two middle strips total — the feedback that drives the search
+    text("middle strips: "+(facA===1?"":facA)+vname+" + "+(facB===1?"":facB)+vname+" = "+sum+vname,
+      W/2, gy+gh+18, 12, solved?THEME.correct:shade(THEME.wrong,0.1),"center","700");
+    // pair slider
+    var n=facPairs.length, sx0=40, sx1=W-40, syb=H-30;
+    ctx.strokeStyle=rgba(THEME.subtext,0.3); ctx.lineWidth=4; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(sx0,syb); ctx.lineTo(sx1,syb); ctx.stroke();
+    var hx=n>1? sx0+(facIdx/(n-1))*(sx1-sx0) : (sx0+sx1)/2;
+    glow(hx,syb,12,THEME.tertiary,0.4); shadowOn(6,rgba(THEME.tertiary,0.5),2); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(hx,syb,11,0,TAU); ctx.fill(); shadowOff();
+    ctx.fillStyle=THEME.tertiary; ctx.beginPath(); ctx.arc(hx,syb,6,0,TAU); ctx.fill(); facSlider={x:hx,y:syb};
+    if(solved&&!moved){ moved=true; postEvent({event:"solve",detail:"factor"}); celebrate(W/2,gy+gh/2); }
+    text(solved? "factored — those two numbers multiply to "+facP+" AND add to "+facS
+       : (guided()? "slide to try each pair — the corner stays "+facP+", but only one pair totals "+facS+vname : "slide through the pairs"),
+      W/2, syb-18, 11.5, solved?THEME.correct:THEME.subtext,"center","700");
+  }
   function draw(){
     if(!unit) layout();
+    if(mode==="factor"){ drawFactor(); return; }
     if(mode==="foil"){ drawFoil(); return; }
     if(mode==="product"){
       text(a+" × "+b+" = ?", W/2, H*0.14, 16, THEME.onSurface,"center","800");
@@ -1577,13 +1649,17 @@ MODULES.area_model = (function(){
   function down(x,y){
     if(mode==="foil"){ if(!fr) return; for(var k in fr){ var r=fr[k];
       if(x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h){ if(!fcl[k]){ fcl[k]=true; postEvent({event:"discover",detail:"region:"+k}); } requestRender(); return; } } return; }
+    if(mode==="factor"){ if(facSlider&&Math.hypot(x-facSlider.x,y-facSlider.y)<30) drag="fac"; return; }
     if(mode==="product"){ if(hasSplit&&handle&&Math.hypot(x-handle.x,y-handle.y)<32) drag=true; return; }
     if(regX&&x>=regX.x&&x<=regX.x+regX.w&&y>=regX.y&&y<=regX.y+regX.h){ if(!tapX){tapX=true; postEvent({event:"discover",detail:"region_x"});} requestRender(); return; }
     if(regC&&x>=regC.x&&x<=regC.x+regC.w&&y>=regC.y&&y<=regC.y+regC.h){ if(!tapC){tapC=true; postEvent({event:"discover",detail:"region_c"});} requestRender(); return; }
   }
-  function move(x){ if(!drag) return; var col=clamp(Math.round((x-gx)/unit),1,a-1);
+  function move(x){ if(!drag) return;
+    if(drag==="fac"){ var n=facPairs.length, sx0=40, sx1=W-40, idx=clamp(Math.round((x-sx0)/(sx1-sx0)*(n-1)),0,n-1);
+      if(idx!==facIdx){ facIdx=idx; facA=facPairs[idx][0]; facB=facPairs[idx][1]; postEvent({event:"manipulate",detail:"pair:"+facA+","+facB}); requestRender(); } return; }
+    var col=clamp(Math.round((x-gx)/unit),1,a-1);
     if(col!==split){ split=col; if(!moved){moved=true; postEvent({event:"discover",detail:"split"});} requestRender(); } }
-  function up(){ if(drag){ postEvent({event:"manipulate",detail:"split:"+split}); drag=false; } }
+  function up(){ if(drag===true){ postEvent({event:"manipulate",detail:"split:"+split}); } drag=false; }
   return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
 })();
 

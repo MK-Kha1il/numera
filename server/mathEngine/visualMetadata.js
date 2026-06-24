@@ -224,9 +224,9 @@ const MODEL_CONCEPTS = {
   dice_sim: ['compound_probability', 'prob_without_replacement', 'expected_value'],
   probability: ['stat_probability', 'probability_complement', 'stat_theoretical_prob', 'stat_experimental_prob'],
   number_line: ['arithmetic_add', 'arithmetic_sub', 'modular_arithmetic', 'integer_add', 'integer_sub', 'integer_compare'],
-  dot_plot: ['stat_mean', 'mean_missing_value', 'stat_range', 'stat_median', 'stat_mode'],
+  dot_plot: ['stat_mean', 'mean_missing_value', 'stat_range', 'stat_median', 'stat_mode', 'stat_mad', 'stat_quartile', 'stat_iqr'],
   calculus: ['derivative', 'integral', 'limit'],
-  area_model: ['arithmetic_mult', 'distribute', 'foil_binomials'],
+  area_model: ['arithmetic_mult', 'distribute', 'foil_binomials', 'square_binomial', 'factor_trinomial'],
   algebra_tiles: ['combine_like_terms']
 };
 
