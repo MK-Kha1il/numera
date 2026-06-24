@@ -167,7 +167,19 @@ generated problems by `test/revivedDiagnosis.test.js` (add a concept to its `REV
 revived). This is the repeatable pattern for the rest: **expose the existing local numbers on the
 generator's return → point the rule at them → verify the prediction equals a distractor.**
 
-**Remaining standing follow-ups:** apply that pattern to the remaining ~110 identity rules
-(next: unit conversion, integer compare, coordinate transforms, geometry volume/surface); pass
-`params` from the server-side duel/puzzle-rush flows into `feedEngineOutcome`; extend curiosity
-coverage; add the other new exercise types (matching, sequencing, construction).
+**Tagged-distractor diagnosis (2026-06-24) — the mechanism that reaches NON-NUMERIC answers.** The
+`parseFloat`-based classifier can never diagnose a fraction (`2/10`), coordinate (`(2,-4)`),
+inequality (`x > 2`) or LaTeX answer. New path: a generator tags each distractor with the
+misconception it encodes (`misc: { miscId: exactOptionValue }`); `mathGenerator` surfaces it as
+`misconceptionTags`; `classifyMisconception` matches the wrong answer to a tag **by value** (works
+for any type, no formula to get wrong — the generator already computed the value). It revives the
+**real-time socratic probe server-side with no client change**, and the persisted path echoes the
+tags (no new leak — `socraticJson` already maps options→misconceptions to the client). Tags are
+best-effort: when the tagged value is a shown option it diagnoses; otherwise it is inert (never
+mis-diagnoses). Proven by `test/taggedDiagnosis.test.js` (data-driven — auto-covers new tags). First
+batch tagged: the **fraction family** (`fraction_simplify/add/sub/mult/div`, `mixed_number`).
+
+**Remaining standing follow-ups:** tag the rest of the non-numeric strands (inequalities, coordinate
+transforms, geometry volume/surface, algebra-symbolic) and finish the numeric ones; pass `params`
+from the server-side duel/puzzle-rush flows into `feedEngineOutcome`; extend curiosity coverage; add
+the other new exercise types (matching, sequencing, construction).

@@ -150,7 +150,7 @@ router.get('/api/math/problems', authenticateToken, async (req, res) => {
 
 // Submit cognitive telemetry of player performance
 router.post('/api/math/telemetry', authenticateToken, (req, res) => {
-  const { concept, isCorrect, speed, hesitation, retries, templateType, wrongAnswer, correctAnswer, params } = req.body;
+  const { concept, isCorrect, speed, hesitation, retries, templateType, wrongAnswer, correctAnswer, params, misconceptionTags } = req.body;
   if (!concept) {
     return res.status(400).json({ error: 'Missing concept parameter.' });
   }
@@ -173,6 +173,7 @@ router.post('/api/math/telemetry', authenticateToken, (req, res) => {
     retries: retriesVal,
     templateType,
     params,
+    misconceptionTags,
   });
 
   // 2. Update Template Pedagogical Feedback

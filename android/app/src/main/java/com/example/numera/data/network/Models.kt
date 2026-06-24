@@ -229,7 +229,12 @@ data class MathProblem(
     // so the server's param-aware misconception rules can diagnose a wrong answer precisely (not just
     // the real-time socratic probe). Never contains the answer. Empty/absent when the template
     // exposes no params (those concepts diagnose from the answer alone).
-    val params: Map<String, Double>? = null
+    val params: Map<String, Double>? = null,
+    // Misconception tags: { misconceptionId -> the exact wrong-option value it produces }. Echoed
+    // back in telemetry so the server can diagnose a wrong answer of ANY type (fractions, coordinates,
+    // inequalities, LaTeX) by value-match — the only path that works for non-numeric answers. The
+    // values are the wrong options the learner can already see, so this reveals nothing new.
+    val misconceptionTags: Map<String, String>? = null
 )
 
 @Serializable
@@ -713,7 +718,9 @@ data class TelemetryRequest(
     val wrongAnswer: String? = null,
     // The live problem's generator params, echoed so the server's param-aware misconception rules
     // can diagnose the wrong answer precisely. Null/empty when the template exposed no params.
-    val params: Map<String, Double>? = null
+    val params: Map<String, Double>? = null,
+    // Misconception tags echoed for value-match diagnosis of non-numeric wrong answers.
+    val misconceptionTags: Map<String, String>? = null
 )
 
 @Serializable

@@ -520,6 +520,7 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
       explanation: personalizedExplanation,
       templateType: selectedTemplate.type,
       params: clientSafeParams(params),
+      misconceptionTags: params.misc || null,
       socraticJson,
       selfExplainJson,
       workedExampleJson
@@ -601,6 +602,7 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     explanation: personalizedExplanation,
     templateType: rawProblem.type,
     params: clientSafeParams(rawProblem),
+    misconceptionTags: rawProblem.misc || null,
     socraticJson,
     selfExplainJson,
     workedExampleJson

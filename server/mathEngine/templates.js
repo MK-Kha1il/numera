@@ -2708,7 +2708,8 @@ templates.fractions = {
         [baseN, baseD + 1]     // near miss
       ]),
       explanation: `Divide the top and bottom by their greatest common factor $${gcd(num, den)}$: $\\frac{${num}}{${den}} = ${answer}$.`,
-      type: "fraction_simplify"
+      type: "fraction_simplify",
+      misc: { partial_reduce: reduceFrac(baseN, den) } // only divided the numerator
     };
   },
   // Add fractions with unlike denominators (find a common denominator first).
@@ -2732,7 +2733,8 @@ templates.fractions = {
         [cn - 1, cd]           // near miss
       ]),
       explanation: `Rewrite over the common denominator $${cd}$: $\\frac{${a * d}}{${cd}} + \\frac{${c * b}}{${cd}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
-      type: "fraction_add"
+      type: "fraction_add",
+      misc: { add_across: reduceFrac(a + c, b + d) } // tag the distractor with its misconception
     };
   },
   // Mixed numbers ↔ improper fractions. Odd denominators keep the complement slip distinct.
@@ -2747,7 +2749,8 @@ templates.fractions = {
         answer: `${improper}/${d}`,
         distractors: [`${w + n}/${d}`, `${w * d}/${d}`, `${w}${n}/${d}`], // added w to the numerator; dropped the extra part; glued the digits
         explanation: `The whole number hides $${w} \\times ${d} = ${w * d}$ ${d}ths; add the $${n}$ extra: $\\frac{${improper}}{${d}}$. The whole number must be MULTIPLIED by the denominator first — never just added or glued onto the numerator.`,
-        type: "mixed_number"
+        type: "mixed_number",
+        misc: { added_whole_to_numerator: `${w + n}/${d}`, digit_concatenation: `${w}${n}/${d}` }
       };
     }
     return {
@@ -2780,7 +2783,8 @@ templates.fractions = {
         [cn + 2, cd]           // near miss
       ]),
       explanation: `Rewrite over the common denominator $${cd}$: $\\frac{${a * d}}{${cd}} - \\frac{${c * b}}{${cd}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
-      type: "fraction_sub"
+      type: "fraction_sub",
+      misc: { sub_across: reduceFrac(a - c, (b - d) || 1) } // subtracted straight across
     };
   },
   // Which fraction is largest? A same-gap family n/(n+g): the piece missing from 1 shrinks as n grows.
@@ -2815,7 +2819,8 @@ templates.fractions = {
         [cn - 1, cd]           // near miss
       ]),
       explanation: `Multiply straight across: $\\frac{${a} \\times ${c}}{${b} \\times ${d}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
-      type: "fraction_mult"
+      type: "fraction_mult",
+      misc: { cross_multiply: reduceFrac(a * d, b * c) } // cross-multiplied (the division procedure)
     };
   },
   // Divide fractions — keep, change to multiply, flip the second (multiply by the reciprocal).
@@ -2837,7 +2842,8 @@ templates.fractions = {
         [cn, cd + 1]           // near miss
       ]),
       explanation: `Dividing is multiplying by the reciprocal (keep–change–flip): $\\frac{${a}}{${b}} \\div \\frac{${c}}{${d}} = \\frac{${a}}{${b}} \\times \\frac{${d}}{${c}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
-      type: "fraction_div"
+      type: "fraction_div",
+      misc: { forgot_to_flip: reduceFrac(a * c, b * d) } // multiplied across without flipping
     };
   },
   // Adding/subtracting SIGNED fractions — the rational-number band (7.NS). Common denominator

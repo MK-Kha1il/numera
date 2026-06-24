@@ -624,9 +624,11 @@ fun SoloGameScreen(
                             templateType = currentProblem.templateType,
                             correctAnswer = currentProblem.correctAnswer,
                             wrongAnswer = chosenWrong,
-                            // Echo the generator params so the server can diagnose the misconception
-                            // precisely (revives the param-aware rules for persisted diagnosis).
-                            params = currentProblem.params
+                            // Echo the generator params + misconception tags so the server can
+                            // diagnose the misconception precisely — tags cover non-numeric answers
+                            // (fractions, coordinates, …) that params/rules cannot.
+                            params = currentProblem.params,
+                            misconceptionTags = currentProblem.misconceptionTags
                         )
                     )
                 } catch (e: Exception) {
