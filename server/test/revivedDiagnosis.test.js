@@ -15,6 +15,7 @@ const { classifyMisconception } = require('../mathEngine/misconceptionEngine');
 const REVIVED = [
   'percent_change', 'percent_discount', 'percent_markup', 'percent_error',
   'stat_mean', 'stat_median', 'stat_range', 'mean_missing_value',
+  'geo_area_parallelogram', 'geo_area_trapezoid',
 ];
 
 test('revived rules diagnose concept_specific on real generated problems, predicting a real option', () => {
@@ -48,7 +49,10 @@ test('revived rules diagnose concept_specific on real generated problems, predic
 });
 
 test('no revived rule is a dead identity placeholder', () => {
-  const sample = { N: 40, P: 10, pct: 20, T: 50, measured: 55, sum: 20, unsortedMid: 8, max: 10, min: 4, M: 10 };
+  const sample = {
+    N: 40, P: 10, pct: 20, T: 50, measured: 55, sum: 20, unsortedMid: 8, max: 10, min: 4, M: 10,
+    base: 5, slant: 7, h: 3, b1: 3, b2: 5,
+  };
   for (const id of REVIVED) {
     for (const mis of concepts[id].misconceptions) {
       const probes = [3, 7, 12, 40];

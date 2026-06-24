@@ -161,12 +161,13 @@ is diagnosed `concept_specific` (incl. the Build-2 `reversed_subtraction`); with
 underlying numbers (`N/P`, `P/pct`, `T/measured`) and the rules compute the real wrong value — which
 is exactly the generator's own distractor, so a learner's actual wrong choice is diagnosed.
 The **descriptive-statistics family** (`stat_mean`, `stat_median`, `stat_range`,
-`mean_missing_value`) was revived the same way in the same pass. Both families are proven
-end-to-end on generated problems by `test/revivedDiagnosis.test.js` (add a concept there as it's
+`mean_missing_value`) and the **geometry-area family** (`geo_area_parallelogram`,
+`geo_area_trapezoid`) were revived the same way. All three families are proven end-to-end on
+generated problems by `test/revivedDiagnosis.test.js` (add a concept to its `REVIVED` list as it's
 revived). This is the repeatable pattern for the rest: **expose the existing local numbers on the
 generator's return → point the rule at them → verify the prediction equals a distractor.**
 
-**Remaining standing follow-ups:** apply that pattern to the remaining ~114 identity rules
-(highest-traffic strands next: geometry-area, unit conversion, integers/compare); pass `params`
-from the server-side duel/puzzle-rush flows into `feedEngineOutcome`; extend curiosity coverage;
-add the other new exercise types (matching, sequencing, construction).
+**Remaining standing follow-ups:** apply that pattern to the remaining ~110 identity rules
+(next: unit conversion, integer compare, coordinate transforms, geometry volume/surface); pass
+`params` from the server-side duel/puzzle-rush flows into `feedEngineOutcome`; extend curiosity
+coverage; add the other new exercise types (matching, sequencing, construction).

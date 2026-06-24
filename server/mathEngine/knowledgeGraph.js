@@ -1141,7 +1141,7 @@ const concepts = {
     prereqs: ["geo_area_rect"],
     baseElo: 900,
     misconceptions: [
-      { id: "used_slant", label: "Multiplied by the slanted side instead of the perpendicular height", rule: (ans) => ans },
+      { id: "used_slant", label: "Multiplied by the slanted side instead of the perpendicular height", rule: (ans, p) => p.base * p.slant },
       { id: "added_sides", label: "Added base and height instead of multiplying", rule: (ans, p) => p.base + p.h }
     ]
   },
@@ -1150,8 +1150,8 @@ const concepts = {
     prereqs: ["geo_area_parallelogram"],
     baseElo: 1020,
     misconceptions: [
-      { id: "forgot_to_average", label: "Multiplied the base sum by the height without halving", rule: (ans) => ans },
-      { id: "one_base_only", label: "Used only one of the two parallel sides", rule: (ans) => ans }
+      { id: "forgot_to_average", label: "Multiplied the base sum by the height without halving", rule: (ans, p) => (p.b1 + p.b2) * p.h },
+      { id: "one_base_only", label: "Used only one of the two parallel sides", rule: (ans, p) => p.b1 * p.h }
     ]
   },
 

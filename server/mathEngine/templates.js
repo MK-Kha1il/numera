@@ -1594,7 +1594,8 @@ templates.geometry = {
       answer: base * h,
       distractors: [base * slant, base + h, 2 * (base + h)], // used the slanted side; added; perimeter-ish
       explanation: `A parallelogram is a rectangle with a triangle slid from one end to the other — same base, same HEIGHT, same area: $A = b \\times h = ${base} \\times ${h} = ${base * h}$. The slanted side ($${slant}$) is longer than the height and is never used for area.`,
-      type: "geo_area_parallelogram"
+      type: "geo_area_parallelogram",
+      base, slant, h // exposed for the classifier (slanted-side product; base+height)
     };
   },
   // Area of a trapezoid: average the two parallel sides, times the height.
@@ -1608,7 +1609,8 @@ templates.geometry = {
       answer,
       distractors: [b1 * b2, (b1 + b2) * h, b1 * h], // multiplied the bases; forgot to halve; used one base only
       explanation: `Average the two parallel sides, then multiply by the height: $A = \\frac{${b1} + ${b2}}{2} \\times ${h} = ${(b1 + b2) / 2} \\times ${h} = ${answer}$. The average is what a trapezoid contributes that a rectangle (equal sides) does not — forgetting to halve doubles the area.`,
-      type: "geo_area_trapezoid"
+      type: "geo_area_trapezoid",
+      b1, b2, h // exposed for the classifier (forgot to halve; used one base only)
     };
   },
   // Volume of a cone: V = (1/3) pi r^2 h. h is a multiple of 3 so the pi-coefficient stays integer.
