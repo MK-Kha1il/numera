@@ -1511,7 +1511,8 @@ templates.geometry = {
         answer: `${2 * r}\\pi`,
         distractors: [`${r}\\pi`, `${r * r}\\pi`, `${2 * r * r}\\pi`], // forgot the 2; area instead; mixed both formulas
         explanation: `Circumference is $\\pi$ times the DIAMETER: $C = 2\\pi r = 2 \\pi (${r}) = ${2 * r}\\pi$. Squaring the radius ($${r * r}\\pi$) measures area — the inside, not the rim.`,
-        type: "geo_circumference"
+        type: "geo_circumference",
+        misc: { radius_diameter_mixup: `${r}\\pi`, area_confusion: `${r * r}\\pi` }
       };
     }
     const d = 2 * (3 + (idx % 5)); // even 6..14
@@ -1532,7 +1533,8 @@ templates.geometry = {
       answer: `${r * r * h}\\pi`,
       distractors: [`${r * h}\\pi`, `${2 * r * h}\\pi`, `${4 * r * r * h}\\pi`], // forgot to square; lateral surface; used the diameter
       explanation: `A cylinder is a circle of area $\\pi r^2 = ${r * r}\\pi$ swept up through height $${h}$: $V = \\pi r^2 h = ${r * r}\\pi \\times ${h} = ${r * r * h}\\pi$. Forgetting the square ($${r * h}\\pi$) sweeps a line, not a disk.`,
-      type: "geo_volume_cylinder"
+      type: "geo_volume_cylinder",
+      misc: { forgot_square: `${r * h}\\pi`, used_diameter: `${4 * r * r * h}\\pi` }
     };
   },
   // Composite figure: an L-shape is a rectangle with a corner bitten off.
@@ -1560,7 +1562,8 @@ templates.geometry = {
       answer,
       distractors: [`${2 * r}\\pi`, `${r}\\pi`, `${2 * r * r}\\pi`], // circumference 2πr; rπ; doubled area
       explanation: `The area of a circle is $A = \\pi r^2 = \\pi (${r})^2 = ${r * r}\\pi$.`,
-      type: "geo_circle_area"
+      type: "geo_circle_area",
+      misc: { circumference_instead: `${2 * r}\\pi` }
     };
   },
   // Angle pairs where two lines cross: vertical (equal) vs adjacent (supplementary).
@@ -1622,6 +1625,7 @@ templates.geometry = {
       question: `What is the volume of a cone with radius $${r}$ and height $${h}$? Give your answer in terms of $\\pi$.`,
       answer: `${coef}\\pi`,
       distractors: [`${r * r * h}\\pi`, `${(r * h) / 3}\\pi`, `${(4 * r * r * h) / 3}\\pi`], // cylinder (no 1/3); forgot to square; used the diameter
+      misc: { forgot_third: `${r * r * h}\\pi`, forgot_square: `${(r * h) / 3}\\pi` }, // (placed before explanation; order-independent)
       explanation: `A cone is exactly one-third of the cylinder with the same base and height — pour three cones of water to fill the can. So $V = \\frac{1}{3}\\pi r^2 h = \\frac{1}{3}\\pi (${r})^2(${h}) = ${coef}\\pi$. Dropping the $\\frac{1}{3}$ gives the whole cylinder $${r * r * h}\\pi$.`,
       type: "geo_volume_cone"
     };
@@ -1634,6 +1638,7 @@ templates.geometry = {
       question: `What is the volume of a sphere with radius $${r}$? Give your answer in terms of $\\pi$.`,
       answer: `${coef}\\pi`,
       distractors: [`${r * r * r}\\pi`, `${(4 * r * r) / 3}\\pi`, `${4 * r * r * r}\\pi`], // dropped 4/3; squared not cubed; forgot to divide by 3
+      misc: { forgot_four_thirds: `${r * r * r}\\pi`, squared_not_cubed: `${(4 * r * r) / 3}\\pi` },
       explanation: `The volume of a sphere is $V = \\frac{4}{3}\\pi r^3 = \\frac{4}{3}\\pi (${r})^3 = \\frac{4}{3}\\pi (${r * r * r}) = ${coef}\\pi$. The radius is CUBED (volume is three-dimensional), and the $\\frac{4}{3}$ is essential — without it you under-count to $${r * r * r}\\pi$.`,
       type: "geo_volume_sphere"
     };
@@ -1665,6 +1670,7 @@ templates.geometry = {
       question: `What is the total surface area of a cylinder with radius $${r}$ and height $${h}$? Give your answer in terms of $\\pi$.`,
       answer: `${coef}\\pi`,
       distractors: [`${2 * r * h}\\pi`, `${2 * r * r}\\pi`, `${r * r * h}\\pi`], // lateral side only; two caps only; computed the volume
+      misc: { lateral_only: `${2 * r * h}\\pi`, used_volume: `${r * r * h}\\pi` },
       explanation: `Unroll the cylinder: two circular caps ($2 \\times \\pi r^2 = ${2 * r * r}\\pi$) plus a rectangular label whose width is the circumference $2\\pi r$ and height $${h}$ ($2\\pi r h = ${2 * r * h}\\pi$). Total $= ${2 * r * r}\\pi + ${2 * r * h}\\pi = ${coef}\\pi$. The label alone forgets the lids; the volume $${r * r * h}\\pi$ measures filling, not covering.`,
       type: "geo_surface_cylinder"
     };
@@ -1676,6 +1682,7 @@ templates.geometry = {
       question: `What is the surface area of a sphere with radius $${r}$? Give your answer in terms of $\\pi$.`,
       answer: `${4 * r * r}\\pi`,
       distractors: [`${4 * r}\\pi`, `${r * r}\\pi`, `${2 * r * r}\\pi`], // forgot to square; dropped the 4; used 2 instead of 4
+      misc: { forgot_square: `${4 * r}\\pi`, wrong_coefficient: `${2 * r * r}\\pi` },
       explanation: `A sphere's surface area is $4\\pi r^2 = 4\\pi (${r})^2 = ${4 * r * r}\\pi$ — exactly four times the area of a flat circle of the same radius (a remarkable fact, also the curved area of its bounding cylinder). The radius is squared (area is 2-D), and the leading number is $4$, not $1$ or $2$.`,
       type: "geo_surface_sphere"
     };
@@ -1690,6 +1697,7 @@ templates.geometry = {
       question: `A cone has radius $${r}$ and slant height $${l}$. What is its total surface area? Give your answer in terms of $\\pi$.`,
       answer: `${coef}\\pi`,
       distractors: [`${r * l}\\pi`, `${r * r}\\pi`, `${2 * r * l}\\pi`], // slanted side only; base only; treated the side like a cylinder
+      misc: { lateral_only: `${r * l}\\pi`, base_only: `${r * r}\\pi` },
       explanation: `A cone's surface is its circular base ($\\pi r^2 = ${r * r}\\pi$) plus the curved side, which unrolls into a sector of area $\\pi r l = ${r * l}\\pi$ (slant height $l$ as the sector's radius). Total $= ${r * r}\\pi + ${r * l}\\pi = ${coef}\\pi$. The slanted side alone forgets the base; the base alone forgets the side.`,
       type: "geo_surface_cone"
     };
@@ -3135,6 +3143,7 @@ templates.graphing = {
         question: `Reflect the point $(${x}, ${y})$ over the x-axis. What are its new coordinates?`,
         answer: `(${x}, -${y})`,
         distractors: [`(-${x}, ${y})`, `(-${x}, -${y})`, `(${y}, ${x})`], // flipped x instead; negated both; swapped
+        misc: { wrong_coordinate: `(-${x}, ${y})`, negated_both: `(-${x}, -${y})` },
         explanation: `The x-axis is the floor; reflecting across it flips only the HEIGHT: $y \\to -y$, while $x$ (the left-right position) stays put. $(${x}, ${y}) \\to (${x}, -${y})$. The axis you reflect over is the one whose coordinate holds STILL.`,
         type: "coord_reflect"
       };
@@ -3157,6 +3166,7 @@ templates.graphing = {
       question: `Translate the point $(${x}, ${y})$ right $${dx}$ and up $${dy}$. What are its new coordinates?`,
       answer: `(${x + dx}, ${y + dy})`,
       distractors: [`(${x + dy}, ${y + dx})`, `(${x - dx}, ${y - dy})`, `(${x}, ${y + dx + dy})`], // swapped the shifts; moved the wrong way; piled both onto y
+      misc: { wrong_axis: `(${x}, ${y + dx + dy})`, wrong_sign: `(${x - dx}, ${y - dy})` },
       explanation: `Horizontal and vertical moves are independent: 'right $${dx}$' adds to the x-coordinate ($${x} + ${dx} = ${x + dx}$), 'up $${dy}$' adds to the y-coordinate ($${y} + ${dy} = ${y + dy}$). Each shift travels on its OWN axis — $(${x + dx}, ${y + dy})$.`,
       type: "coord_translate"
     };
@@ -3170,6 +3180,7 @@ templates.graphing = {
       question: `Rotate the point $(${x}, ${y})$ by $180°$ about the origin. What are its new coordinates?`,
       answer: `(-${x}, -${y})`,
       distractors: [`(-${x}, ${y})`, `(${x}, -${y})`, `(${y}, ${x})`], // negated only x; only y; swapped instead
+      misc: { negated_one: `(-${x}, ${y})`, swapped: `(${y}, ${x})` },
       explanation: `A $180°$ turn sends every point straight through the origin to the opposite side, so BOTH coordinates reverse sign: $(${x}, ${y}) \\to (-${x}, -${y})$. Flipping just one coordinate is a reflection across an axis, not a half-turn.`,
       type: "coord_rotate_180"
     };
@@ -3183,6 +3194,7 @@ templates.graphing = {
       question: `Rotate the point $(${x}, ${y})$ by $90°$ counterclockwise about the origin. What are its new coordinates?`,
       answer: `(-${y}, ${x})`,
       distractors: [`(${y}, ${x})`, `(${y}, -${x})`, `(-${x}, -${y})`], // swapped, no sign; rotated clockwise; did 180° instead
+      misc: { swapped_no_sign: `(${y}, ${x})`, wrong_direction: `(${y}, -${x})` },
       explanation: `A quarter-turn counterclockwise swaps the coordinates and negates the new x: $(x, y) \\to (-y, x)$, so $(${x}, ${y}) \\to (-${y}, ${x})$. The point that pointed right-and-up now points up-and-left. Swapping without the sign change, or signing the wrong coordinate, sends it the wrong way ($90°$ clockwise is $(y, -x)$).`,
       type: "coord_rotate_90"
     };
@@ -3196,6 +3208,7 @@ templates.graphing = {
       question: `Dilate the point $(${x}, ${y})$ by a scale factor of $${k}$, centered at the origin. What are its new coordinates?`,
       answer: `(${k * x}, ${k * y})`,
       distractors: [`(${x + k}, ${y + k})`, `(${k * x}, ${y})`, `(${x}, ${k * y})`], // added k; scaled only x; scaled only y
+      misc: { added_factor: `(${x + k}, ${y + k})`, scaled_one: `(${k * x}, ${y})` },
       explanation: `A dilation from the origin multiplies BOTH coordinates by the scale factor: $(${x}, ${y}) \\to (${k} \\cdot ${x}, ${k} \\cdot ${y}) = (${k * x}, ${k * y})$. The point moves $${k}$ times farther from the origin along the same ray — the shape stays similar, only its size changes. Adding $${k}$ shifts the point instead of scaling it.`,
       type: "coord_dilate"
     };
@@ -3219,6 +3232,7 @@ templates.inequalities = {
         question: `Solve: $x + ${a} > ${b}$`,
         answer: `x > ${v}`,
         distractors: [`x < ${v}`, `x > ${b + a}`, `x = ${v}`], // flipped for no reason; added instead of subtracting; equation thinking
+        misc: { flipped_direction: `x < ${v}`, wrong_inverse_op: `x > ${b + a}`, treated_as_equation: `x = ${v}` },
         explanation: `Subtract $${a}$ from both sides: $x > ${b} - ${a}$, so $x > ${v}$. Adding or subtracting NEVER flips an inequality — the order of two numbers doesn't change when both slide the same distance.`,
         type: "inequality_one_step_add"
       };
@@ -3242,6 +3256,7 @@ templates.inequalities = {
       question: `Solve: $${a}x < ${b}$`,
       answer: `x < ${q}`,
       distractors: [`x > ${q}`, `x < ${b - a}`, `x = ${q}`], // flipped though the divisor is positive; subtracted instead of dividing; equation thinking
+      misc: { flipped_direction: `x > ${q}`, subtracted_instead: `x < ${b - a}` },
       explanation: `Divide both sides by $${a}$: $x < \\frac{${b}}{${a}} = ${q}$. Dividing by a POSITIVE number keeps the inequality's direction — the flip rule only fires for negatives.`,
       type: "inequality_one_step_mult"
     };
@@ -3256,6 +3271,7 @@ templates.inequalities = {
         question: `Solve: $-${a}x < ${b}$`,
         answer: `x > -${q}`,
         distractors: [`x < -${q}`, `x > ${q}`, `x < ${q}`], // forgot the flip; dropped the negative; both slips
+        misc: { forgot_flip: `x < -${q}`, dropped_negative: `x > ${q}` },
         explanation: `Divide both sides by $-${a}$ — and dividing by a NEGATIVE flips the inequality: $x > \\frac{${b}}{-${a}} = -${q}$. Check with a number: $x = 0$ satisfies the original ($0 < ${b}$), and indeed $0 > -${q}$.`,
         type: "inequality_flip_negative"
       };
@@ -3278,6 +3294,7 @@ templates.inequalities = {
       question: `Solve: $${a}x + ${b} \\le ${c}$`,
       answer: `x ≤ ${q}`,
       distractors: [`x ≥ ${q}`, `x ≤ ${a * q}`, `x = ${q}`], // flipped without a negative; subtracted b but forgot to divide; equation thinking
+      misc: { flipped_direction: `x ≥ ${q}`, forgot_to_divide: `x ≤ ${a * q}` },
       explanation: `Undo the operations in reverse order: subtract $${b}$ ($${a}x \\le ${a * q}$), then divide by $${a}$ ($x \\le ${q}$). No negative divisor appeared, so the $\\le$ never flips.`,
       type: "inequality_two_step"
     };
@@ -3292,6 +3309,7 @@ templates.inequalities = {
       question: `Solve: $${a} < x + ${b} < ${c}$`,
       answer: `${lo} < x < ${hi}`,
       distractors: [`${a} < x < ${c}`, `${a} < x < ${hi}`, `x < ${hi}`], // never subtracted; subtracted on the right only; dropped the left bound
+      misc: { one_side_only: `${a} < x < ${hi}`, dropped_constraint: `x < ${hi}` },
       explanation: `A compound inequality is a sandwich — whatever you do, do to ALL THREE parts. Subtract $${b}$ everywhere: $${a} - ${b} < x < ${c} - ${b}$, so $${lo} < x < ${hi}$. Dropping a side keeps numbers the sandwich was built to exclude.`,
       type: "inequality_compound"
     };
