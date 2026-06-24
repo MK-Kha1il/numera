@@ -194,6 +194,18 @@ const MODEL_META = {
       { trigger: 'balanced', effect: 'celebrate', message: 'Balanced — read the value off the axis.' }
     ]
   },
+  circle: {
+    representations: ['geometric', 'area', 'symbolic'],
+    primitives: ['drag', 'resize', 'transform', 'compare'],
+    benefit: 0.78,
+    learningGoal: 'A circle’s area is π copies of the square on its radius; its circumference is π times its diameter.',
+    reflectionPrompt: 'How did the picture turn π from a mystery number into something you could see?',
+    loop: ['observe', 'manipulate', 'verify', 'explain'],
+    feedbackRules: [
+      { trigger: 'square_built', effect: 'count', message: 'Count the radius-square — the circle is about π of them.' },
+      { trigger: 'one_revolution', effect: 'measure', message: 'One full roll covers π diameters.' }
+    ]
+  },
   number_line: {
     representations: ['linear'],
     primitives: ['simulate', 'snap'],
@@ -227,7 +239,8 @@ const MODEL_CONCEPTS = {
   dot_plot: ['stat_mean', 'mean_missing_value', 'stat_range', 'stat_median', 'stat_mode', 'stat_mad', 'stat_quartile', 'stat_iqr'],
   calculus: ['derivative', 'integral', 'limit'],
   area_model: ['arithmetic_mult', 'distribute', 'foil_binomials', 'square_binomial', 'factor_trinomial'],
-  algebra_tiles: ['combine_like_terms']
+  algebra_tiles: ['combine_like_terms'],
+  circle: ['geo_circle_area', 'geo_circumference']
 };
 
 // concept -> model name

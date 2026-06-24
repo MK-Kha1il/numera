@@ -1663,6 +1663,95 @@ MODULES.area_model = (function(){
   return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
 })();
 
+// =================== CIRCLE (π made visible) ===============================
+// The circle's area / circumference answers are "in terms of π", so the learner
+// reads the COEFFICIENT of π off the construction, never a decimal.
+//  area          — build the square on the radius (side = r); count its r² cells.
+//                  The circle is drawn over it: it holds about π (≈3.14) squares.
+//  circumference — roll the circle one full turn along a diameter-marked track;
+//                  one revolution covers exactly π diameters.
+MODULES.circle = (function(){
+  var mode,r,d,given,sqSide,rolled,drag,done;
+  function init(s){ mode=s.mode; done=false; drag=null;
+    if(mode==="area"){ r=s.params.r; sqSide=1; }
+    else { d=s.params.d; given=s.params.given||"diameter"; rolled=0; } }
+  var cx,cy,u,sqHandle,dPx,R,baseY,x0,circleC;
+  function layout(){
+    if(mode==="area"){ cx=W*0.5; cy=H*0.54; u=clamp(Math.min((W*0.82)/(2*r),(H*0.56)/(2*r)),8,30); }
+    else { x0=34; dPx=clamp((W-74)/4.3,24,92); R=dPx/2; baseY=H*0.66; }
+  }
+  function update(){} function animating(){ return false; }
+  function gridCells(x0c,y0c,n,col){ // n×n unit grid (cells of size u), drawn up-right from (x0c,y0c)
+    for(var i=0;i<n;i++) for(var j=0;j<n;j++) gradRR(x0c+i*u+1, y0c-(j+1)*u+1, u-2, u-2, 3, col);
+    ctx.strokeStyle=rgba(col,0.5); ctx.lineWidth=1; ctx.strokeRect(x0c,y0c-n*u,n*u,n*u);
+  }
+  function drawArea(){
+    if(!u) layout();
+    text("the circle's area = ? × π   (π ≈ 3.14)", W/2, H*0.12, 14, THEME.onSurface,"center","800");
+    // circle (light) — the learner sees it holds ~π radius-squares
+    ctx.fillStyle=rgba(THEME.secondary,0.10); ctx.beginPath(); ctx.arc(cx,cy,r*u,0,TAU); ctx.fill();
+    ctx.strokeStyle=rgba(THEME.secondary,0.6); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,cy,r*u,0,TAU); ctx.stroke();
+    // radius reference (center → right edge)
+    ctx.strokeStyle=THEME.tertiary; ctx.lineWidth=2.5; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+r*u,cy); ctx.stroke(); ctx.setLineDash([]);
+    text("radius", cx+r*u/2, cy-9, 10, THEME.tertiary,"center","700");
+    // the square on the radius, built up-right from the centre
+    var built=(sqSide===r);
+    gridCells(cx, cy, sqSide, THEME.primary);
+    text(built? "side = the radius" : "drag to the radius", cx+sqSide*u/2, cy+14, 10, built?THEME.correct:THEME.subtext,"center","700");
+    // handle at the square's far corner
+    var hx=cx+sqSide*u, hy=cy-sqSide*u;
+    glow(hx,hy,14,THEME.primary,0.45); shadowOn(6,rgba(THEME.primary,0.5),2); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(hx,hy,11,0,TAU); ctx.fill(); shadowOff();
+    ctx.fillStyle=THEME.primary; ctx.beginPath(); ctx.arc(hx,hy,6,0,TAU); ctx.fill(); sqHandle={x:hx,y:hy};
+    if(built&&!done){ done=true; postEvent({event:"solve",detail:"circle_area"}); celebrate(cx,cy); }
+    text(built? "count the r² squares — the circle is about π of them, so area = (that count) × π"
+              : (guided()? "drag the corner until the square's side matches the radius" : "match the square to the radius"),
+      W/2, H-16, 12, built?THEME.correct:THEME.subtext,"center","700");
+  }
+  function drawCirc(){
+    if(!dPx) layout();
+    text("one full roll covers ? diameters", W/2, H*0.12, 14, THEME.onSurface,"center","800");
+    // track + diameter marks
+    ctx.strokeStyle=rgba(THEME.subtext,0.45); ctx.lineWidth=3; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(x0,baseY); ctx.lineTo(W-20,baseY); ctx.stroke();
+    for(var k=0;k<=4;k++){ var mx=x0+k*dPx; ctx.strokeStyle=rgba(THEME.subtext,0.5); ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(mx,baseY-6); ctx.lineTo(mx,baseY+6); ctx.stroke();
+      if(k>0) text(k+"d", mx, baseY+16, 10, THEME.subtext,"center","700"); }
+    // distance trail covered by the rim
+    ctx.strokeStyle=THEME.secondary; ctx.lineWidth=5; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(x0,baseY); ctx.lineTo(x0+rolled,baseY); ctx.stroke();
+    // the rolling circle
+    var cxr=x0+R+rolled, cyr=baseY-R, theta=rolled/R;
+    ctx.fillStyle=rgba(THEME.primary,0.12); ctx.beginPath(); ctx.arc(cxr,cyr,R,0,TAU); ctx.fill();
+    ctx.strokeStyle=THEME.primary; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(cxr,cyr,R,0,TAU); ctx.stroke();
+    // spoke + rim dot (started at contact; one full turn returns it to the bottom)
+    var dotx=cxr+R*Math.sin(theta), doty=cyr+R*Math.cos(theta);
+    ctx.strokeStyle=rgba(THEME.tertiary,0.8); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cxr,cyr); ctx.lineTo(dotx,doty); ctx.stroke();
+    ctx.fillStyle=THEME.tertiary; ctx.beginPath(); ctx.arc(dotx,doty,5,0,TAU); ctx.fill();
+    // drag handle on the circle
+    glow(cxr,cyr,14,THEME.primary,0.35); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(cxr,cyr,7,0,TAU); ctx.fill();
+    ctx.fillStyle=THEME.primary; ctx.beginPath(); ctx.arc(cxr,cyr,4,0,TAU); ctx.fill(); circleC={x:cxr,y:cyr};
+    var target=Math.PI*dPx, full=(rolled>=target-0.6);
+    if(full&&!done){ done=true; postEvent({event:"solve",detail:"circumference"}); celebrate(cxr,baseY); }
+    // contact marker when one full turn is complete
+    if(full){ ctx.strokeStyle=THEME.correct; ctx.lineWidth=2; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(x0+rolled,baseY-R*2-4); ctx.lineTo(x0+rolled,baseY+10); ctx.stroke(); ctx.setLineDash([]); }
+    text(full? "one full turn landed just past 3 diameters — that's π; so C = π × diameter"
+            : (guided()? "drag the circle right until the orange dot returns to the ground (one full turn)" : "roll one full turn"),
+      W/2, H-16, 12, full?THEME.correct:THEME.subtext,"center","700");
+  }
+  function draw(){ if(mode==="area") drawArea(); else drawCirc(); }
+  function down(x,y){
+    if(mode==="area"){ if(sqHandle&&Math.hypot(x-sqHandle.x,y-sqHandle.y)<34) drag="sq"; return; }
+    if(circleC&&Math.hypot(x-circleC.x,y-circleC.y)<Math.max(34,R+6)) drag="roll"; }
+  function move(x){
+    if(drag==="sq"){ var ns=clamp(Math.round((x-cx)/u),1,r); if(ns!==sqSide){ sqSide=ns; postEvent({event:"manipulate",detail:"side:"+sqSide}); requestRender(); } }
+    else if(drag==="roll"){ var nr=clamp(x-(x0+R),0,Math.PI*dPx); if(Math.abs(nr-rolled)>0.5){ rolled=nr; postEvent({event:"manipulate",detail:"rolled"}); requestRender(); } }
+  }
+  function up(){ drag=null; }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
+})();
+
 // ===========================================================================
 //  Pointer handling
 // ===========================================================================

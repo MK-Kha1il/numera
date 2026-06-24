@@ -151,6 +151,7 @@ private fun heightForSpec(specJson: String): Dp {
         "ratio_line" -> 270.dp
         "area_model" -> 330.dp
         "algebra_tiles" -> 280.dp
+        "circle" -> 340.dp
         else -> 300.dp
     }
 }

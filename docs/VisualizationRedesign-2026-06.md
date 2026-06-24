@@ -328,8 +328,28 @@ slips: the balance level is neither the biggest distance nor the mean. Verified 
 off-balance at the max deviation; `solve:mad` fires when the line reaches the average distance). The
 dot-plot now covers mean · missing · range · median · mode · quartiles/IQR · MAD.
 
-## Follow-on coverage track (architecture is ready for these)
+## Increment 20 (shipped) — `circle` model (π made visible)
 
-- `circle` model — area as the wedge-rearranged `πr × r` rectangle, circumference as the rim
-  unrolled to π diameters → `geo_circle_area`, `geo_circumference` (π resists clean unit-square
-  counting, so these read the **coefficient of π** off the construction rather than a square count)
+A new model for the two circle relationships. Because the answers are **in terms of π**, the
+learner reads the *coefficient* of π off the construction, never a decimal. **area**
+(`geo_circle_area`): build the **square on the radius** (drag its corner until the side matches the
+radius) and count its `r²` unit cells — the circle, drawn over it, plainly holds about π (≈3.14) of
+those squares, so its area is `(that count) × π = π·r²`. **circumference** (`geo_circumference`):
+**roll** the circle one full turn along a diameter-marked track; the rim-dot returns to the ground
+after exactly one revolution, landing just past the **3-diameter** mark — at π — so `C = π·d` (and
+`= 2π·r`, since the diameter is twice the radius). The coefficient is never printed. Verified by
+screenshot (the 5×5 radius-square inside the circle; the circle rolled to π diameters with the
+rim-dot back at the ground) + event traces (`solve:circle_area` when side = r; `solve:circumference`
+on one full revolution). New model → one height entry in `InteractiveVisual.kt`.
+
+## Coverage status
+
+Every visualizable concept in the catalogue now has a thinking-tool manipulative. The model set
+stands at **17**: balance_scale · fraction_bar · right_triangle · parabola · function_grapher ·
+dice_sim · probability · number_line · percent_bar · ratio_line · dot_plot · shape_grid · calculus ·
+area_model · algebra_tiles · **circle** (+ the renderer's shared primitives/haptics/Explain layer).
+Per-model mode coverage: **area_model** = product · distribute · FOIL · perfect-square · factor;
+**dot_plot** = mean · missing · range · median · mode · quartiles/IQR · MAD; **shape_grid** = rect ·
+triangle · parallelogram · trapezoid · perimeter · composite; **probability** = theoretical · experimental;
+**calculus** = tangent · accumulation · limit. New families remain *drop-in* against this architecture
+should the concept catalogue grow.
