@@ -623,7 +623,10 @@ fun SoloGameScreen(
                             isCorrect = isCorrect,
                             templateType = currentProblem.templateType,
                             correctAnswer = currentProblem.correctAnswer,
-                            wrongAnswer = chosenWrong
+                            wrongAnswer = chosenWrong,
+                            // Echo the generator params so the server can diagnose the misconception
+                            // precisely (revives the param-aware rules for persisted diagnosis).
+                            params = currentProblem.params
                         )
                     )
                 } catch (e: Exception) {

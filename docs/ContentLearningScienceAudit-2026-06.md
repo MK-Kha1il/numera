@@ -149,7 +149,14 @@ Android: `assembleDebug` + Robolectric `testDebugUnitTest` green.
 | **3. Curiosity layer** (`curiosityEngine.js`) | 23 authored sparks (pattern / shortcut / counterintuitive / wonder), attached to lessons as the "✨ surprising bit" (`LessonScreen.kt`) + reusable `getRandomCuriosity()` | The previously-empty engagement/memorability lever now exists. |
 | **4. New exercise type: "Spot the Mistake"** (`errorDetection.js`) | Corrupts one line of a worked solution into a checkable false equation; a distinct verify-don't-generate skill, served via the existing MCQ gameplay + a command-palette entry | First non-"just solve it" exercise type; reuses Builds 1+2; 21 concepts. |
 
-**Standing follow-ups** (documented, not yet done): echo `params` on the generated problem so
-param-aware misconception rules also fire for *persisted* diagnosis; replace the remaining ~126
-identity misconception rules (needs per-template param mapping); extend curiosity coverage; add
-the other new exercise types (matching, sequencing, construction).
+**Follow-up shipped (2026-06-24):** the generated problem now echoes a **client-safe `params` bag**
+(`mathGenerator.clientSafeParams` → `MathProblem.params` → `TelemetryRequest.params` → the classifier),
+so **param-aware misconception rules now fire for *persisted* diagnosis**, not just the real-time
+socratic probe. Proven by `test/paramsEcho.test.js`: with params, a `linear_one_step` wrong answer
+is diagnosed `concept_specific` (incl. the Build-2 `reversed_subtraction`); without params it is
+`unclassified`. The bag is numeric-only and never contains the answer.
+
+**Remaining standing follow-ups:** replace the remaining ~126 identity misconception rules (each now
+*can* be made to fire, since params reach the classifier — it's per-template authoring work); pass
+`params` from the server-side duel/puzzle-rush flows into `feedEngineOutcome` too; extend curiosity
+coverage; add the other new exercise types (matching, sequencing, construction).

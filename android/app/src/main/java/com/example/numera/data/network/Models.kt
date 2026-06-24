@@ -224,7 +224,12 @@ data class MathProblem(
     // The generator's template/concept key for this problem. Reported back in per-answer telemetry
     // so the server's learning-intelligence engine (mastery, retention, misconceptions) can attribute
     // the outcome to the right concept. Server-supplied; absent on client-built fixtures.
-    val templateType: String? = null
+    val templateType: String? = null,
+    // The generator's numeric params (e.g. {"a":3,"b":5}) for this problem, echoed back in telemetry
+    // so the server's param-aware misconception rules can diagnose a wrong answer precisely (not just
+    // the real-time socratic probe). Never contains the answer. Empty/absent when the template
+    // exposes no params (those concepts diagnose from the answer alone).
+    val params: Map<String, Double>? = null
 )
 
 @Serializable
@@ -705,7 +710,10 @@ data class TelemetryRequest(
     val speed: Float? = null,
     val templateType: String? = null,
     val correctAnswer: String? = null,
-    val wrongAnswer: String? = null
+    val wrongAnswer: String? = null,
+    // The live problem's generator params, echoed so the server's param-aware misconception rules
+    // can diagnose the wrong answer precisely. Null/empty when the template exposed no params.
+    val params: Map<String, Double>? = null
 )
 
 @Serializable

@@ -24,6 +24,22 @@ const { buildSelfExplainJson } = require('./mathEngine/selfExplainEngine');
 const { buildWorkedExampleJson } = require('./mathEngine/workedExampleEngine');
 const { conceptFromType } = require('./mathEngine/problemOrchestrator');
 
+// Extract a CLIENT-SAFE params bag from a generator's params object: only finite numeric scalars,
+// and never the answer. The client echoes this back in per-answer telemetry so the server's
+// param-aware misconception rules (knowledgeGraph) can diagnose PERSISTED wrong answers — today
+// those rules only fire for the real-time socratic probe, which still has params at generation time
+// (the generated problem never carried them out to the client). See docs/ContentLearningScienceAudit-2026-06.md §2 #4.
+function clientSafeParams(bag) {
+  const out = {};
+  if (!bag || typeof bag !== 'object') return out;
+  for (const k of Object.keys(bag)) {
+    if (k === 'answer' || k === 'correctAnswer') continue;
+    const v = bag[k];
+    if (typeof v === 'number' && Number.isFinite(v)) out[k] = v;
+  }
+  return out;
+}
+
 // Maps knowledge-graph conceptId → the canonical template category + level
 // that generates problems of that concept type.
 const CONCEPT_TO_LEVEL = {
@@ -503,6 +519,7 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
       options,
       explanation: personalizedExplanation,
       templateType: selectedTemplate.type,
+      params: clientSafeParams(params),
       socraticJson,
       selfExplainJson,
       workedExampleJson
@@ -583,6 +600,7 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     options: options,
     explanation: personalizedExplanation,
     templateType: rawProblem.type,
+    params: clientSafeParams(rawProblem),
     socraticJson,
     selfExplainJson,
     workedExampleJson
