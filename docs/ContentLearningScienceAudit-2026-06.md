@@ -179,7 +179,25 @@ best-effort: when the tagged value is a shown option it diagnoses; otherwise it 
 mis-diagnoses). Proven by `test/taggedDiagnosis.test.js` (data-driven — auto-covers new tags). First
 batch tagged: the **fraction family** (`fraction_simplify/add/sub/mult/div`, `mixed_number`).
 
-**Remaining standing follow-ups:** tag the rest of the non-numeric strands (inequalities, coordinate
-transforms, geometry volume/surface, algebra-symbolic) and finish the numeric ones; pass `params`
-from the server-side duel/puzzle-rush flows into `feedEngineOutcome`; extend curiosity coverage; add
-the other new exercise types (matching, sequencing, construction).
+**Misconception diagnosis — final coverage: 141 / 161 concepts (88%)** now diagnose at least one
+wrong answer concept-specifically (up from ~26 working rules at the start of the sprint). Tagged or
+revived strands: fractions, geometry (area/circle/volume/surface), coordinate transforms,
+inequalities, symbolic algebra (combine/distribute/exponent rules/FOIL/factor/translate/function
+table), algebra-solve (quadratic, complete-the-square, the two linear systems), probability
+(compound/theoretical/experimental/without-replacement), percent & stats families, plus numeric
+(conversions, integer/decimal compare, multi-step, scientific notation, midpoint, prime
+factorization, …).
+
+**The last 20 (a bounded, well-defined task):** `arithmetic_sub/mult`, `pemdas`, `pythagorean`,
+`linear_two_step`, `matrix_trace/determinant`, `permutations`, `combinations`, `binomial`,
+`integral`, `gcd_lcm`, `modular_arithmetic`, `totient`, `discriminant_roots`,
+`linear_system_solution_types`, `fraction_compare`, `limit`, `divisor_count`,
+`linear_variable_both_sides`. Root cause is uniform: these generators emit **generic
+`generateDistractors` offsets** (or categorical / symbolic answers), so no misconception value is
+ever a shown option — neither a rule nor a tag can match. Reviving them means giving each generator
+a **misconception-driven `distractors` array** (which is also pedagogically better than random
+offsets), then a `misc` tag — the same recipe, applied at the generator's distractor level.
+
+**Remaining standing follow-ups:** the 20 generators above; pass `params` from the server-side
+duel/puzzle-rush flows into `feedEngineOutcome`; extend curiosity coverage; add the other new
+exercise types (matching, sequencing, construction).

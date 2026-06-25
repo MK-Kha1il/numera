@@ -334,7 +334,8 @@ const concepts = {
     prereqs: ["arithmetic_sub"],
     baseElo: 750,
     misconceptions: [
-      { id: "sum_to_360", label: "Assumed the angles sum to 360° instead of 180°", rule: (ans) => ans + 180 }
+      { id: "added_given", label: "Added the two given angles instead of subtracting them from 180°", rule: (ans) => ans + 180 },
+      { id: "subtracted_one_only", label: "Subtracted only one of the two given angles from 180°", rule: (ans) => ans + 180 }
     ]
   },
   "geo_circle_area": {

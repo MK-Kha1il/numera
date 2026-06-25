@@ -1470,6 +1470,7 @@ templates.geometry = {
       question: `Two interior angles of a triangle measure $${a}^{\\circ}$ and $${c}^{\\circ}$. What is the measure of the third angle, in degrees?`,
       answer,
       distractors: [180 - a, a + c, 180 - c], // subtracted one angle only; added the two; other slip
+      misc: { added_given: String(a + c), subtracted_one_only: String(180 - a) },
       explanation: `The interior angles of a triangle sum to $180^{\\circ}$, so the third angle is $180 - ${a} - ${c} = ${answer}$.`,
       type: "geo_angles_triangle"
     };
@@ -3762,6 +3763,7 @@ templates.factors = {
       question: `Write $${it.n}$ as a product of its prime factors.`,
       answer: it.a,
       distractors: it.d, // composite factors left in, or an incomplete factorization
+      misc: { used_composite: it.d[0], incomplete: it.d[2] }, // d[0]=composite left in; d[2]=incomplete
       explanation: `Break $${it.n}$ down until every factor is prime: ${it.a}. A prime factorization may contain ONLY primes (2, 3, 5, 7, …) — the other options still hide composite numbers that can be split further.`,
       type: "prime_factorization"
     };
