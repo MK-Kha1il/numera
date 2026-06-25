@@ -33,10 +33,12 @@ test('every tagged distractor is a real option, classifies tagged, and matches s
           (concepts[id].misconceptions || []).some((m) => m.id === miscId),
           `${id} tags unknown misconception "${miscId}"`
         );
-        // Tags are best-effort: when the tagged value is one of the shown options it MUST diagnose
-        // correctly; when it isn't shown (e.g. a fraction answer that reduced to a whole number, so
-        // the options became integers) the tag is simply inert — it can never match a real wrong
-        // answer, so it never mis-diagnoses.
+        // Tags are best-effort: when the tagged value is one of the shown WRONG options it MUST
+        // diagnose correctly; when it isn't shown (e.g. a fraction answer that reduced to a whole
+        // number, so the options became integers), or it coincides with the correct answer for some
+        // instances (so it's never a wrong submission), the tag is simply inert — it can never match
+        // a real wrong answer, so it never mis-diagnoses.
+        if (val === String(p.correctAnswer).trim()) continue;
         if (!optionStrs.includes(val)) continue;
         // Persisted path: the classifier diagnoses it via the tag.
         const diag = classifyMisconception(id, p.correctAnswer, val, { misc: tags });

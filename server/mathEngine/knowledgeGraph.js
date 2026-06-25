@@ -895,7 +895,7 @@ const concepts = {
     baseElo: 1000,
     misconceptions: [
       { id: "square_cube_mixup", label: "Found the square root (or square) instead of the cube root", rule: (ans) => ans * ans },
-      { id: "divided_by_three", label: "Divided by three instead of un-cubing", rule: (ans) => ans }
+      { id: "doubled_root", label: "Doubled the root instead of cube-rooting", rule: (ans) => ans * 2 }
     ]
   },
   "exponent_power_rule": {
