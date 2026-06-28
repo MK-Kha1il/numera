@@ -94,6 +94,8 @@ templates.arithmetic = {
       question: choose(formulations),
       answer,
       explanation: `First, perform the addition:\n$$${a} + ${b} = ${a + b}$$\nSubsequently, subtract $${c}$:\n$$${a + b} - ${c} = ${answer}$$`,
+      distractors: [a + b + c, answer + 1, answer - 1], // treated the subtraction as addition; near misses
+      misc: { added_through: String(a + b + c) },
       type: "arithmetic_mixed"
     };
   },
@@ -1107,6 +1109,8 @@ templates.number_theory = {
     return {
       question: v.question,
       answer: mult,
+      distractors: [a + b, mult * 2, mult + 1], // added instead of finding the common divisor; doubled; near miss
+      misc: { sum_instead_gcd: String(a + b) },
       explanation: v.explanation,
       type: "gcd"
     };
@@ -1138,7 +1142,15 @@ templates.number_theory = {
       { question: `Around a ring of $${mod}$ positions ($0..${mod - 1}$), a token at position $${a % mod}$ moves forward $${b}$ steps. Where does it land?`, explanation: `Cyclic movement is addition mod $${mod}$:\n${why}` },
     ];
     const v = variants[idx % variants.length];
-    return { question: v.question, answer, explanation: v.explanation, type: "modulo", mod };
+    return {
+      question: v.question,
+      answer,
+      distractors: [(answer + 1) % mod, answer + mod, (answer - 1 + mod) % mod], // off-by-one remainder; over-corrected with the modulus; near miss
+      misc: { off_by_one_mod: String((answer + 1) % mod), added_modulus: String(answer + mod) },
+      explanation: v.explanation,
+      type: "modulo",
+      mod,
+    };
   },
   44: (diffFactor, idx) => {
     // Modular multiplication

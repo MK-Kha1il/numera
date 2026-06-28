@@ -40,12 +40,15 @@ test('every tagged distractor is a real option, classifies tagged, and matches s
         // a real wrong answer, so it never mis-diagnoses.
         if (val === String(p.correctAnswer).trim()) continue;
         if (!optionStrs.includes(val)) continue;
-        // Persisted path: the classifier diagnoses it via the tag.
+        // Persisted path: the classifier diagnoses it via a tag. When two misconceptions produce the
+        // SAME wrong answer (an ambiguous instance) classify returns the first match — so the correct
+        // invariant is that the DIAGNOSED misconception's own tag value equals the wrong answer.
         const diag = classifyMisconception(id, p.correctAnswer, val, { misc: tags });
         assert.strictEqual(diag.source, 'tagged', `${id}.${miscId} should classify via tag`);
-        assert.strictEqual(diag.id, miscId, `${id} tag "${val}" diagnoses as ${miscId}`);
-        // Real-time path: socratic attributes the same option to the same misconception.
-        assert.strictEqual((sj.byOption[val] || {}).misconception, miscId, `${id} socratic attributes "${val}" to ${miscId}`);
+        assert.strictEqual(String(tags[diag.id]).trim(), val, `${id} diagnosed ${diag.id} whose tag != "${val}"`);
+        // Real-time path: socratic attributes the option to a misconception with the same value.
+        const socMisc = (sj.byOption[val] || {}).misconception;
+        assert.ok(socMisc && String(tags[socMisc]).trim() === val, `${id} socratic mis-attributes "${val}" (${socMisc})`);
         exercised++;
       }
     }
