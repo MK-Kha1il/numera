@@ -179,8 +179,22 @@ best-effort: when the tagged value is a shown option it diagnoses; otherwise it 
 mis-diagnoses). Proven by `test/taggedDiagnosis.test.js` (data-driven — auto-covers new tags). First
 batch tagged: the **fraction family** (`fraction_simplify/add/sub/mult/div`, `mixed_number`).
 
-**Misconception diagnosis — final coverage: 141 / 161 concepts (88%)** now diagnose at least one
-wrong answer concept-specifically (up from ~26 working rules at the start of the sprint). Tagged or
+**Misconception diagnosis — FINAL coverage: 152 / 161 concepts (94%)** now diagnose at least one
+wrong answer **concept-specifically** (tag or param-aware rule), up from ~26 working at the start of
+the sprint. Of the rest: **7** fall back to global heuristics only (`pemdas`, `integral`, `totient`,
+`linear_variable_both_sides`, `fraction_compare`, `limit`, `divisor_count`) — their named
+misconception doesn't apply to what their generator actually produces (e.g. the `pemdas` generator
+emits `a+b−c`, no precedence; the `totient` generator is always prime; `fraction_compare` is
+deliberately built so the misconception → the correct answer), or the generator is symbolic/variant
+(`limit`, `divisor_count`, `linear_variable_both_sides`) and would need a misconception-distractor
+rewrite. **Only 2** are fundamentally not value-diagnosable: `linear_system_solution_types` and
+`discriminant_roots` carry **categorical answers** ("Two real solutions", "Unique solution"), where a
+wrong answer is a wrong *category*, not a computable misconception value.
+
+(Earlier milestone: 141/161 concept-specific via tagging alone; the remaining numeric/ingested/
+foundational concepts were then revived by giving their generators misconception-driven distractor
+arrays — including the DB-ingested path in `mathGenerator` for `gcd_lcm`/`modular_arithmetic`/
+`linear_two_step`/`arithmetic_mult`.) Tagged or
 revived strands: fractions, geometry (area/circle/volume/surface), coordinate transforms,
 inequalities, symbolic algebra (combine/distribute/exponent rules/FOIL/factor/translate/function
 table), algebra-solve (quadratic, complete-the-square, the two linear systems), probability
@@ -188,16 +202,8 @@ table), algebra-solve (quadratic, complete-the-square, the two linear systems), 
 (conversions, integer/decimal compare, multi-step, scientific notation, midpoint, prime
 factorization, …).
 
-**The last 20 (a bounded, well-defined task):** `arithmetic_sub/mult`, `pemdas`, `pythagorean`,
-`linear_two_step`, `matrix_trace/determinant`, `permutations`, `combinations`, `binomial`,
-`integral`, `gcd_lcm`, `modular_arithmetic`, `totient`, `discriminant_roots`,
-`linear_system_solution_types`, `fraction_compare`, `limit`, `divisor_count`,
-`linear_variable_both_sides`. Root cause is uniform: these generators emit **generic
-`generateDistractors` offsets** (or categorical / symbolic answers), so no misconception value is
-ever a shown option — neither a rule nor a tag can match. Reviving them means giving each generator
-a **misconception-driven `distractors` array** (which is also pedagogically better than random
-offsets), then a `misc` tag — the same recipe, applied at the generator's distractor level.
-
-**Remaining standing follow-ups:** the 20 generators above; pass `params` from the server-side
-duel/puzzle-rush flows into `feedEngineOutcome`; extend curiosity coverage; add the other new
-exercise types (matching, sequencing, construction).
+**Remaining standing follow-ups:** the 7 global-only concepts (give their generators
+misconception-driven distractors where the misconception actually applies, or accept the
+global-heuristic diagnosis); a categorical-diagnosis mechanism for the 2 label-answer concepts if
+ever wanted; pass `params` from the server-side duel/puzzle-rush flows into `feedEngineOutcome`;
+extend curiosity coverage; add the other new exercise types (matching, sequencing, construction).
