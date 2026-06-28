@@ -126,6 +126,8 @@ templates.arithmetic = {
     return {
       question: `Evaluate the subtraction under borrowing: $$${a} - ${b}$$`,
       answer,
+      distractors: [answer + 10, a + b, answer + 1], // borrow slip; added instead of subtracting; near miss
+      misc: { wrong_borrow: String(answer + 10), inverse_op: String(a + b) },
       explanation: `Since the units digit of the minuend ($${a % 10}$) is smaller than that of the subtrahend ($${b % 10}$), borrow $10$ from the tens column:\n$$10 + ${a % 10} - ${b % 10} = ${10 + (a % 10) - (b % 10)}$$\nThen subtract the tens column:\n$$${Math.floor(a / 10) - 1 - Math.floor(b / 10)}0$$\nThis yields:\n$$${a} - ${b} = ${answer}$$`,
       type: "arithmetic_sub"
     };
@@ -145,6 +147,8 @@ templates.arithmetic = {
       question: choose(formulations),
       answer,
       explanation: `Multiplication represents repeated addition. Adding $${a}$ to itself $${b}$ times yields:\n$$${a} \\times ${b} = ${answer}$$`,
+      distractors: [a + b, a * (b + 1), answer + 1], // added instead of multiplying; off-by-factor; near miss
+      misc: { add_instead_mult: String(a + b), off_by_factor: String(a * (b + 1)) },
       type: "arithmetic_mult"
     };
   },
@@ -196,6 +200,8 @@ templates.arithmetic = {
         question: `A right-angled triangle has perpendicular sides of length $a = ${sa}$ and $b = ${sb}$. Calculate the length of the hypotenuse $c$:`,
         answer: sc,
         explanation: `By the Pythagorean Theorem:\n$$c^2 = a^2 + b^2 = ${sa}^2 + ${sb}^2 = ${sa * sa} + ${sb * sb} = ${sc * sc}$$\nTaking the square root:\n$$c = \\sqrt{${sc * sc}} = ${sc}$$`,
+        distractors: [sa + sb, sc - sa, sc + 1], // added the side lengths; subtracted instead of √(a²+b²); near miss
+        misc: { linear_sum: String(sa + sb), sub_hypotenuse: String(sc - sa) },
         type: "pythagorean"
       };
     } else {
@@ -203,6 +209,8 @@ templates.arithmetic = {
         question: `A right-angled triangle has a hypotenuse of length $c = ${sc}$ and one side $a = ${sa}$. Determine the length of the remaining side $b$:`,
         answer: sb,
         explanation: `By the Pythagorean Theorem:\n$$a^2 + b^2 = c^2 \\implies ${sa}^2 + b^2 = ${sc}^2$$\n$$${sa * sa} + b^2 = ${sc * sc} \\implies b^2 = ${sc * sc - sa * sa}$$\nTaking the square root:\n$$b = \\sqrt{${sc * sc - sa * sa}} = ${sb}$$`,
+        distractors: [sc - sa, sc + sa, sb + 1], // subtracted the lengths instead of √(c²−a²); added them; near miss
+        misc: { sub_hypotenuse: String(sc - sa), linear_sum: String(sc + sa) },
         type: "pythagorean"
       };
     }
@@ -385,6 +393,8 @@ templates.algebra = {
       question: `Compute the trace of the square matrix $A$: $$A = \\begin{pmatrix} ${matrix.a} & ${matrix.c} \\\\ ${matrix.d} & ${matrix.b} \\end{pmatrix}$$`,
       answer: matrix.trace,
       explanation: `The trace of a square matrix $\\text{tr}(A)$ is the sum of its main diagonal elements:\n$$\\text{tr}(A) = a_{11} + a_{22} = ${matrix.a} + ${matrix.b} = ${matrix.trace}$$`,
+      distractors: [matrix.a * matrix.b - matrix.c * matrix.d, matrix.a + matrix.b + matrix.c + matrix.d, matrix.trace + 1], // determinant; summed all entries; near miss
+      misc: { det_instead_trace: String(matrix.a * matrix.b - matrix.c * matrix.d), summed_all_entries: String(matrix.a + matrix.b + matrix.c + matrix.d) },
       type: "matrix_trace"
     };
   },
@@ -405,7 +415,14 @@ templates.algebra = {
       { question: `Vectors $\\vec{u} = (${a}, ${c})$ and $\\vec{v} = (${b}, ${d})$ form the columns of a matrix. Compute $\\det = ad - bc$.`, explanation: `This is the 2D cross-product of the column vectors.\n${work}` },
     ];
     const v = variants[idx % variants.length];
-    return { question: v.question, answer, explanation: v.explanation, type: "matrix_determinant" };
+    return {
+      question: v.question,
+      answer,
+      distractors: [a * d + b * c, a * d, answer + 1], // added the diagonals (ad+bc); main diagonal only (ad); near miss
+      misc: { added_diagonals: String(a * d + b * c), main_diagonal_only: String(a * d) },
+      explanation: v.explanation,
+      type: "matrix_determinant",
+    };
   },
   19: (diffFactor, idx) => {
     // Determinant with negative entries
@@ -717,6 +734,8 @@ templates.combinatorics = {
       question: choose(formulations),
       answer: factorial(n),
       explanation: `The number of linear arrangements (permutations) of $n$ unique items is given by $n!$:\n$$${n}! = ${factorial(n)}$$`,
+      distractors: [factorial(n) * 2, Math.round(factorial(n) / 2), factorial(n) + n], // doubled; divided out order (combination); near miss
+      misc: { linear_factorial: String(factorial(n) * 2), comb_instead_perm: String(Math.round(factorial(n) / 2)) },
       type: "permutations"
     };
   },
@@ -742,6 +761,8 @@ templates.combinatorics = {
       question: `How many distinct permutations can be formed using the letters of the word $\\text{"${w.word}"}$?`,
       answer: ans,
       explanation: `Using the multiset permutation formula:\n$$P = \\frac{N!}{\\prod n_i!} = \\frac{${len}!}{${dupFactor}!} = ${ans}$$`,
+      distractors: [factorial(len), ans + 1, Math.max(1, ans - 1)], // forgot to divide by the repeats; near misses
+      misc: { linear_factorial: String(factorial(len)) },
       type: "permutations"
     };
   },
@@ -773,6 +794,8 @@ templates.combinatorics = {
     return {
       question: v.question,
       answer: ans,
+      distractors: [ans * 2, ans + 1, ans - 1], // counted ordered (permutation, forgot ÷k!); near misses
+      misc: { perm_instead_comb: String(ans * 2) },
       explanation: v.explanation,
       type: "combinations"
     };
@@ -879,6 +902,8 @@ templates.combinatorics = {
         question: `Find the coefficient of the $${choice.text}$ term in the expansion of $(x+y)^{${choice.n}}$:`,
         answer: choice.coeff,
         explanation: `By the Binomial Theorem, the coefficient of the term $x^{n-k}y^k$ in the expansion of $(x+y)^n$ is $\\binom{n}{k}$:\n$$\\binom{${choice.n}}{${choice.k}} = \\frac{${choice.n}!}{${choice.k}!(${choice.n}-${choice.k})!} = ${choice.coeff}$$`,
+        distractors: [choice.coeff + choice.n, choice.coeff + 1, choice.coeff - 1], // off-by-one degree index; near misses
+        misc: { exponent_slip: String(choice.coeff + choice.n) },
         type: "binomial"
       };
     } else {
