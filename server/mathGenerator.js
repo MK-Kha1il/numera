@@ -459,6 +459,31 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
     const correct = answerVal !== null && answerVal !== undefined ? answerVal.toString() : "0";
     params.answer = correct;
 
+    // Misconception tags + their distractors for the ingested concepts — the DB-ingested path has no
+    // distractors of its own, so we compute the misconception-driven ones here (parallel to the
+    // `misc` tags in templates.js) so these concepts diagnose in production too.
+    const ingestedMisc = {};
+    let miscDistractors = [];
+    const ansN = Number(correct);
+    if (selectedTemplate.type === "gcd_lcm" && params.a !== undefined && params.b !== undefined) {
+      ingestedMisc.sum_instead_gcd = String(params.a + params.b);
+      miscDistractors = [params.a + params.b, ansN * 2, ansN + 1];
+    } else if (selectedTemplate.type === "modular_arithmetic" && params.mod && Number.isFinite(ansN)) {
+      ingestedMisc.off_by_one_mod = String((ansN + 1) % params.mod);
+      ingestedMisc.added_modulus = String(ansN + params.mod);
+      miscDistractors = [(ansN + 1) % params.mod, ansN + params.mod, (ansN - 1 + params.mod) % params.mod];
+    } else if (selectedTemplate.type === "linear_two_step" && params.a && params.c !== undefined) {
+      ingestedMisc.divide_before_subtract = String(Math.round((params.c + params.b) / params.a));
+      ingestedMisc.forgot_constant = String(Math.round(params.c / params.a));
+      miscDistractors = [Math.round((params.c + params.b) / params.a), Math.round(params.c / params.a), ansN + 1];
+    } else if (selectedTemplate.type === "arithmetic_mult" && params.a !== undefined && params.b !== undefined) {
+      ingestedMisc.add_instead_mult = String(params.a + params.b);
+      ingestedMisc.off_by_factor = String(params.a * (params.b + 1));
+      miscDistractors = [params.a + params.b, params.a * (params.b + 1), ansN + 1];
+    }
+    // Expose to the params bag so the real-time socratic probe (built below) also uses the tags.
+    if (Object.keys(ingestedMisc).length) params.misc = ingestedMisc;
+
     // Substitute parameters into question and explanation
     let question = selectedTemplate.question_pattern;
     let explanationPattern = selectedTemplate.explanation_pattern;
@@ -467,10 +492,10 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
       explanationPattern = explanationPattern.replace(new RegExp(`\\{${key}\\}`, 'g'), params[key]);
     }
 
-    // Generate distractors
+    // Generate distractors (seed with the misconception-driven ones so they become options).
     const dList = generateDistractors(answerVal || 0, selectedTemplate.type, {
       ...params,
-      distractors: []
+      distractors: miscDistractors
     });
 
     const uniqueOptions = new Set();
@@ -520,7 +545,7 @@ function generateProblemInstance(category, level, index, elo, userAnalytics = {}
       explanation: personalizedExplanation,
       templateType: selectedTemplate.type,
       params: clientSafeParams(params),
-      misconceptionTags: params.misc || null,
+      misconceptionTags: Object.keys(ingestedMisc).length ? ingestedMisc : (params.misc || null),
       socraticJson,
       selfExplainJson,
       workedExampleJson

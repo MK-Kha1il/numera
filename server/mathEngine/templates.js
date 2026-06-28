@@ -293,6 +293,8 @@ templates.algebra = {
     return {
       question: v.question,
       answer: xVal,
+      distractors: [Math.round((c + b) / a), Math.round(c / a), xVal + 1], // divided before subtracting; forgot the constant; near miss
+      misc: { divide_before_subtract: String(Math.round((c + b) / a)), forgot_constant: String(Math.round(c / a)) },
       explanation: v.explanation,
       type: "linear_two_step"
     };
@@ -1176,6 +1178,8 @@ templates.number_theory = {
       question: `Evaluate the modular exponent: $$${base}^{${power}} \\pmod{${mod}}$$`,
       answer,
       explanation: `Compute the power: $${base}^{${power}} = ${Math.pow(base, power)}$. Dividing by $${mod}$ yields a remainder of $${answer}$:\n$$${Math.pow(base, power)} \\equiv ${answer} \\pmod{${mod}}$$`,
+      distractors: [(answer + 1) % mod, answer + mod, (answer - 1 + mod) % mod], // off-by-one remainder; over-corrected with modulus; near miss
+      misc: { off_by_one_mod: String((answer + 1) % mod), added_modulus: String(answer + mod) },
       type: "modulo",
       mod
     };
@@ -1190,6 +1194,8 @@ templates.number_theory = {
       question: `Evaluate the modular exponent: $$${base}^{${power}} \\pmod{${mod}}$$`,
       answer,
       explanation: `Calculate the power: $${base}^{${power}} = ${Math.pow(base, power)}$. Dividing by $${mod}$ yields the remainder $${answer}$:\n$$${Math.pow(base, power)} \\equiv ${answer} \\pmod{${mod}}$$`,
+      distractors: [(answer + 1) % mod, answer + mod, (answer - 1 + mod) % mod], // off-by-one remainder; over-corrected with modulus; near miss
+      misc: { off_by_one_mod: String((answer + 1) % mod), added_modulus: String(answer + mod) },
       type: "modulo",
       mod
     };
