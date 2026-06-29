@@ -2909,6 +2909,94 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // FUNCTIONS II (non-linear evaluation + composition).
+  // ===========================================================================
+  function_quad_eval: {
+    title: "Evaluating Quadratic Functions",
+    formula: "f(x) = ax^2 + bx + c \\implies f(n) = a \\cdot n^2 + b \\cdot n + c",
+    oneLineSummary: "Feed the input into a quadratic the same way as any function — but SQUARE it first, because $x^2$ means $x \\cdot x$, not $2x$.",
+    intuitionHook: "A ball's height is $f(x) = x^2 + 2x + 1$ after $x$ seconds. Where is it at $x = 4$? The only new move from a linear function is the exponent: $4^2$ is $4 \\cdot 4 = 16$, NOT $4 + 4 = 8$ and NOT $2 \\cdot 4 = 8$. So $f(4) = 16 + 8 + 1 = 25$. The notation $f(4)$ still means 'put 4 wherever $x$ appears' — there's just a square waiting at the first stop.",
+    whatItIs: "Evaluating a quadratic function $f(x) = ax^2 + bx + c$ at a number: substitute the number for every $x$, square it for the $x^2$ term, multiply out each piece, and add. It's ordinary function evaluation with one extra order-of-operations step — handle the exponent before the multiplications.",
+    whyItWorks: "$x^2$ is shorthand for $x \\cdot x$, so substituting $x = n$ makes that term $a \\cdot n \\cdot n$, not $a \\cdot 2 \\cdot n$. The exponent is a count of how many times the base is MULTIPLIED, while a coefficient like the $2$ in $2x$ counts a single multiplication — confusing the two ($x^2 \\to 2x$) is the most common slip and it changes the answer for every input except $0$ and $2$. Order of operations forces the square to happen first (exponents before multiply/add), which is why you compute $n^2$, THEN scale by $a$, THEN add the linear and constant pieces.",
+    whenToUse: "Reading a value off a parabola (projectile height, area, profit models), checking whether a point lies on a quadratic, and building the input-output tables that let you graph $y = ax^2 + bx + c$.",
+    representations: [
+      { kind: "substitute", label: "Replace, then square", body: "$f(x) = 2x^2 + 3x + 1$ at $x = 4$: $2(4^2) + 3(4) + 1 = 2(16) + 12 + 1 = 45$." },
+      { kind: "order", label: "Exponent goes first", body: "$4^2 = 16$ happens BEFORE multiplying by $2$. Squaring then scaling, never scaling then squaring." },
+      { kind: "contrast", label: "$x^2$ is not $2x$", body: "At $x = 5$: $x^2 = 25$ but $2x = 10$. They agree only at $x = 0$ and $x = 2$ — never trust the shortcut." }
+    ],
+    commonMistakes: [
+      { label: "Reading x² as 2x", why: "Computing $2 \\cdot n$ for the squared term instead of $n \\cdot n$ — treating the exponent as a coefficient.", fix: "Say it out loud: 'x squared is x TIMES x'. For $x = 4$ that's $16$, not $8$. Do the exponent before any multiplication." },
+      { label: "Forgetting to square at all", why: "Substituting the input but leaving the term as $a \\cdot n$, dropping the exponent entirely.", fix: "Mark the exponent first: rewrite $x^2$ as $(\\,)^2$, drop the number into the box, and square the box before moving on." },
+      { label: "Dropping the constant", why: "Adding the $x^2$ and $x$ terms but forgetting the lone $+c$ at the end.", fix: "Count the terms in the formula and the terms in your sum — a three-term quadratic needs three pieces added." }
+    ],
+    connections: [
+      { concept: "function_evaluate", note: "Same substitute-and-compute move; the quadratic just adds a square at the first step." },
+      { concept: "quadratic", note: "These are the OUTPUTS of the quadratic you learned to solve — evaluating builds the table that solving reads in reverse." },
+      { concept: "exponent_power", note: "The whole skill rests on $x^2 = x \\cdot x$ — the exponent counts multiplications, not additions." }
+    ],
+    examples: [
+      { question: "Given $f(x) = x^2 + 3x + 2$, find $f(4)$.", answer: "30", explanation: "$4^2 + 3(4) + 2 = 16 + 12 + 2 = 30$. Square first ($16$), not $2 \\cdot 4 = 8$." },
+      { question: "Given $f(x) = 2x^2 + x + 1$, find $f(3)$.", answer: "22", explanation: "$2(3^2) + 3 + 1 = 2(9) + 4 = 18 + 4 = 22$." }
+    ]
+  },
+  function_exp_eval: {
+    title: "Evaluating Exponential Functions",
+    formula: "f(x) = a \\cdot b^x \\implies f(n) = a \\cdot \\underbrace{b \\cdot b \\cdots b}_{n \\text{ times}}",
+    oneLineSummary: "An exponential's input rides in the EXPONENT — it counts how many times you multiply by the base, so the output grows by repeated multiplication, not repeated addition.",
+    intuitionHook: "A rumor doubles every hour: $f(x) = 3 \\cdot 2^x$ people know it after $x$ hours, starting from $3$. After $3$ hours it isn't $3 \\cdot 2 \\cdot 3 = 18$ — the $3$ in the exponent means DOUBLE three times: $2^3 = 8$, so $3 \\cdot 8 = 24$. The input changed the number of doublings, not a thing you multiply by once. That's the whole difference between exponential and linear growth.",
+    whatItIs: "Evaluating $f(x) = a \\cdot b^x$ at a number $n$: raise the base $b$ to the power $n$ (multiply $b$ by itself $n$ times), then multiply by the leading coefficient $a$. The input sits in the exponent, so it controls how many multiplications happen.",
+    whyItWorks: "In $b^x$ the exponent is a tally of repeated multiplication: $b^3 = b \\cdot b \\cdot b$. So increasing $x$ by one doesn't add a fixed amount — it multiplies the whole output by another factor of $b$. That is exactly why exponential growth outruns linear: a linear rule $a \\cdot b \\cdot x$ adds $ab$ each step, while $a \\cdot b^x$ MULTIPLIES by $b$ each step. Computing $a \\cdot b \\cdot x$ for an exponential collapses the repeated multiplication into one — the canonical error. Order of operations also matters: the power is taken BEFORE the coefficient multiply, so $3 \\cdot 2^3$ is $3 \\cdot 8 = 24$, never $(3 \\cdot 2)^3$.",
+    whenToUse: "Compound interest, doubling/halving (populations, rumors, radioactive decay), anything described as growing 'by a percentage' or 'times as much' each period rather than 'plus so much' each period.",
+    representations: [
+      { kind: "expand", label: "Write the multiplications", body: "$3 \\cdot 2^3 = 3 \\cdot (2 \\cdot 2 \\cdot 2) = 3 \\cdot 8 = 24$. The exponent says how many 2's to chain." },
+      { kind: "linear_vs_exp", label: "Times vs plus", body: "Linear $3 \\cdot 2 \\cdot x$ ADDS 6 each step: 6, 12, 18. Exponential $3 \\cdot 2^x$ MULTIPLIES by 2: 6, 12, 24." },
+      { kind: "order", label: "Power before coefficient", body: "$3 \\cdot 2^3$ means $3 \\cdot (2^3) = 24$, not $(3 \\cdot 2)^3 = 216$ — exponents outrank multiplication." }
+    ],
+    commonMistakes: [
+      { label: "Treating it as linear", why: "Computing $a \\cdot b \\cdot x$ — multiplying the three numbers once instead of raising $b$ to the power $x$.", fix: "Find the exponent and expand it: $b^x$ is $b$ written $x$ times with multiplication between, THEN scale by $a$." },
+      { label: "Dropping the coefficient", why: "Computing $b^x$ and forgetting to multiply by the leading $a$.", fix: "The function has two parts: the power $b^x$ and the multiplier $a$ out front. Finish with the multiply." },
+      { label: "Powering the coefficient too", why: "Computing $(a \\cdot b)^x$ — sweeping $a$ into the base before the exponent.", fix: "Only the base $b$ is raised to the power. The coefficient $a$ multiplies the result once, at the end." }
+    ],
+    connections: [
+      { concept: "exponent_power", note: "$b^x$ is just a power — this concept puts a variable in the exponent and a coefficient out front." },
+      { concept: "function_evaluate", note: "Same 'substitute the input' idea, but the input lands in the exponent, so it scales by multiplying." },
+      { concept: "geometric_next_term", note: "A geometric sequence IS an exponential function sampled at whole-number inputs — same ×b engine." }
+    ],
+    examples: [
+      { question: "Given $f(x) = 2 \\cdot 3^x$, find $f(2)$.", answer: "18", explanation: "$3^2 = 9$, then $2 \\cdot 9 = 18$. Not $2 \\cdot 3 \\cdot 2 = 12$ (that treats it as linear)." },
+      { question: "Given $f(x) = 5 \\cdot 2^x$, find $f(3)$.", answer: "40", explanation: "$2^3 = 8$, then $5 \\cdot 8 = 40$." }
+    ]
+  },
+  function_composition: {
+    title: "Function Composition",
+    formula: "(f \\circ g)(n) = f(g(n)) \\;\\text{— evaluate } g(n) \\text{ first, then feed it into } f",
+    oneLineSummary: "$f(g(n))$ is two machines in a row: run the INNER one $g$ on the input, then feed its output into the OUTER one $f$ — order matters, inside-out.",
+    intuitionHook: "Order online: $g$ adds a $\\$2$ handling fee, then $f$ applies a coupon (half off, then minus $\\$1$). For a $\\$6$ item, $f(g(6))$ does the fee FIRST — $g(6) = 8$ — then the coupon — $f(8) = \\tfrac{8}{2} - 1 = 3$. Swap the order and you get a different bill. The notation $f(g(6))$ is read from the inside out: whatever is hugging the input runs first.",
+    whatItIs: "Composing functions means using the output of one as the input of another. To evaluate $f(g(n))$ you compute the inner function $g(n)$ to get a number, then substitute THAT number into the outer function $f$. The result is a single value; doing it for general $x$ would give a new combined formula.",
+    whyItWorks: "Parentheses define the order: in $f(g(n))$, $g(n)$ is the argument of $f$, so $g$ must produce a value before $f$ has anything to act on — you literally cannot apply $f$ until $g$ has run. That's why composition is evaluated inside-out, and why it's generally NOT commutative: $f(g(n))$ and $g(f(n))$ run the machines in opposite orders and usually disagree. Two subtler traps come from the algebra: $f(g(n)) = a(g(n)) + b$ means the outer coefficient $a$ multiplies the ENTIRE inner output — including its constant — so forgetting to distribute $a$ over that constant drops part of the answer; and $f(g(n))$ is a substitution, not $f(n) + g(n)$ or $f(n) \\cdot g(n)$ — the functions are chained, not combined arithmetically.",
+    whenToUse: "Any multi-stage process: unit conversions in sequence, discounts on top of fees, a sensor reading fed into a correction formula — anywhere one rule's output becomes the next rule's input.",
+    representations: [
+      { kind: "inside_out", label: "Inner first", body: "$f(g(2))$ with $g(x)=2x+2$, $f(x)=3x+1$: $g(2)=6$, then $f(6)=3(6)+1=19$." },
+      { kind: "order_matters", label: "f∘g ≠ g∘f", body: "Same functions, reversed: $f(2)=7$, then $g(7)=16$. $19 \\neq 16$ — order changes the result." },
+      { kind: "distribute", label: "Coefficient covers it all", body: "$f(g(n)) = 3(2n+2)+1 = 6n + 6 + 1$ — the $3$ hits the inner constant $2$ too, giving $+6$, not $+2$." }
+    ],
+    commonMistakes: [
+      { label: "Composing in the wrong order", why: "Computing $g(f(n))$ when $f(g(n))$ was asked — applying the outer machine first.", fix: "Read inside-out: the function touching the input runs first. In $f(g(n))$, do $g$, then $f$." },
+      { label: "Not distributing the outer coefficient", why: "Writing $a \\cdot c \\cdot n + d + b$ — multiplying $a$ by the inner $cn$ but forgetting to multiply $a$ by the inner constant $d$.", fix: "The whole inner output is the input: $a(cn + d) + b$. Distribute $a$ across BOTH parts before adding $b$." },
+      { label: "Adding instead of composing", why: "Computing $f(n) + g(n)$ — combining the outputs rather than feeding one into the other.", fix: "$f(g(n))$ is a chain, not a sum: $g$'s output GOES IN to $f$. Substitute, don't add." }
+    ],
+    connections: [
+      { concept: "function_evaluate", note: "Each step is a single evaluation; composition just does two in a row, inner then outer." },
+      { concept: "function_solve", note: "Composition runs forward through two machines; solving runs one backward — opposite directions." },
+      { concept: "function_quad_eval", note: "If the outer function is quadratic, the inner output gets squared — same inside-out rule, bigger second step." }
+    ],
+    examples: [
+      { question: "Given $f(x) = 3x + 1$ and $g(x) = 2x + 2$, find $f(g(2))$.", answer: "19", explanation: "$g(2) = 2(2)+2 = 6$, then $f(6) = 3(6)+1 = 19$." },
+      { question: "Given $f(x) = 2x + 3$ and $g(x) = 3x + 1$, find $f(g(3))$.", answer: "23", explanation: "$g(3) = 3(3)+1 = 10$, then $f(10) = 2(10)+3 = 23$." }
+    ]
+  },
+
+  // ===========================================================================
   // STATISTICS DEPTH III (the complement rule).
   // ===========================================================================
   probability_complement: {
@@ -4529,6 +4617,35 @@ const CONCEPT_LESSONS = {
     ]
   },
 
+  binomial: {
+    title: "The Binomial Theorem",
+    formula: "(x + y)^n = \\sum_{k=0}^{n} \\binom{n}{k}\\, x^{\\,n-k} y^{\\,k}",
+    oneLineSummary: "The coefficients in the expansion of $(x+y)^n$ are exactly the 'choose' numbers $\\binom{n}{k}$ — counting, not multiplying, tells you each term.",
+    intuitionHook: "Why is $(x+y)^3 = x^3 + 3x^2y + 3xy^2 + y^3$, and where do the $3$'s come from? Expanding means multiplying $(x+y)(x+y)(x+y)$ and, from each of the three factors, picking either an $x$ or a $y$. The $x^2y$ term appears once for every way to choose WHICH single factor donates the $y$ — and there are $\\binom{3}{1} = 3$ such ways. The exponents track how many $x$'s and $y$'s you grabbed; the coefficient COUNTS the ways to grab them.",
+    whatItIs: "The Binomial Theorem expands a power of a sum: $(x+y)^n$ is the sum, over $k = 0$ to $n$, of $\\binom{n}{k}\\,x^{n-k}y^{k}$. Each term's coefficient $\\binom{n}{k}$ is a binomial coefficient — the same 'n choose k' from combinations — so the whole expansion is built out of counting.",
+    whyItWorks: "Expanding $(x+y)^n = \\underbrace{(x+y)(x+y)\\cdots(x+y)}_{n}$ means forming every product where each factor contributes one of its two terms. A product with exactly $k$ copies of $y$ (and $n-k$ copies of $x$) equals $x^{n-k}y^{k}$, and the number of such products is the number of ways to choose WHICH $k$ of the $n$ factors give the $y$ — that's $\\binom{n}{k}$. Summing over all $k$ collects like terms into $\\binom{n}{k}x^{n-k}y^{k}$. This is also why Pascal's triangle generates the coefficients: each $\\binom{n}{k} = \\binom{n-1}{k-1} + \\binom{n-1}{k}$ (a chosen factor either does or doesn't include the new one), so every row is the sum of adjacent entries above it.",
+    whenToUse: "Expanding $(x+y)^n$ or $(1+x)^n$ without multiplying it all out, finding a single coefficient or term (the $x^{n-k}y^k$ term) of a large power, probability with repeated trials (the binomial distribution), and recognizing Pascal's-triangle patterns in counting problems.",
+    representations: [
+      { kind: "pascal", label: "Pascal's triangle", body: "Row $n$ lists $\\binom{n}{0},\\dots,\\binom{n}{n}$: row 3 is $1,3,3,1$ — exactly the coefficients of $(x+y)^3$." },
+      { kind: "choose_the_ys", label: "Coefficients count choices", body: "The $x^{n-k}y^k$ term's coefficient is $\\binom{n}{k}$: the number of factors out of $n$ that donate a $y$." },
+      { kind: "symbolic", label: "A single term", body: "The $y^2$ term of $(x+y)^4$ is $\\binom{4}{2}x^2y^2 = 6x^2y^2$ — no full expansion needed." }
+    ],
+    commonMistakes: [
+      { label: "Distributing the exponent", why: "Writing $(x+y)^n = x^n + y^n$ — applying the power to each term separately.", fix: "A power of a SUM is not the sum of the powers. Use the theorem: the middle terms $\\binom{n}{k}x^{n-k}y^k$ are exactly what's missing." },
+      { label: "Wrong coefficient", why: "Guessing the coefficients (e.g. all $1$'s, or $n$ each) instead of the 'choose' numbers.", fix: "The coefficient of the term with $y^k$ is $\\binom{n}{k}$ — read it off Pascal's triangle or compute $\\frac{n!}{k!(n-k)!}$." },
+      { label: "Swapping which exponent goes with k", why: "Pairing $\\binom{n}{k}$ with $x^k$ instead of $x^{n-k}$.", fix: "$k$ counts the $y$'s, so $y$ gets exponent $k$ and $x$ gets the remaining $n-k$; the two exponents always sum to $n$." }
+    ],
+    connections: [
+      { concept: "combinations", note: "The binomial coefficients ARE combinations: $\\binom{n}{k}$ counts which $k$ factors contribute a $y$." },
+      { concept: "square_binomial", note: "$(x+y)^2 = x^2 + 2xy + y^2$ is the $n=2$ row $1,2,1$ — this theorem generalizes it to any power." },
+      { concept: "permutations", note: "Choices made WITH order are permutations; the binomial theorem needs the unordered count, so it uses $\\binom{n}{k}$, not $P(n,k)$." }
+    ],
+    examples: [
+      { question: "What is the coefficient of the $x^2y^2$ term in the expansion of $(x+y)^4$?", answer: "6", explanation: "The coefficient is $\\binom{4}{2} = \\frac{4\\cdot3}{2} = 6$ — the number of ways to choose which $2$ of the $4$ factors give a $y$." },
+      { question: "Expand $(x+y)^3$.", answer: "x^3 + 3x^2y + 3xy^2 + y^3", explanation: "Coefficients are row 3 of Pascal's triangle, $1,3,3,1$: $\\binom{3}{0}x^3 + \\binom{3}{1}x^2y + \\binom{3}{2}xy^2 + \\binom{3}{3}y^3$." }
+    ]
+  },
+
   derivative: {
     title: "Derivatives (The Power Rule)",
     formula: "\\frac{d}{dx}\\,x^n = n\\,x^{n-1}",
@@ -4838,7 +4955,11 @@ function levelToConceptId(category, level) {
     if (lvl <= 9) return 'function_table';
     if (lvl <= 11) return 'rate_of_change';
     if (lvl <= 13) return 'function_initial';
-    return 'function_solve';
+    if (lvl <= 15) return 'function_solve';
+    // Functions II — non-linear evaluation + composition (templates 17/18/19).
+    if (lvl <= 17) return 'function_quad_eval';
+    if (lvl <= 18) return 'function_exp_eval';
+    return 'function_composition';
   }
   if (cat === 'sequences') {
     if (lvl <= 7) return 'arithmetic_next_term';

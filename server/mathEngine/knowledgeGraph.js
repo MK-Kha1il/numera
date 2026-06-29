@@ -1029,6 +1029,39 @@ const concepts = {
     ]
   },
 
+  // ---- Functions II (non-linear evaluation + composition — extends the linear-function strand
+  //      with the quadratic/exponential families and the machine-feeds-machine idea) ----
+  "function_quad_eval": {
+    name: "Evaluating Quadratic Functions",
+    prereqs: ["function_evaluate", "quadratic"],
+    baseElo: 1280,
+    misconceptions: [
+      { id: "squared_as_doubled", label: "Read x² as 2x — doubled the input instead of squaring it", rule: (ans, p) => p.a * (2 * p.n) + p.b * p.n + p.c },
+      { id: "used_input_unsquared", label: "Substituted the input for x² without squaring it", rule: (ans, p) => p.a * p.n + p.b * p.n + p.c },
+      { id: "dropped_constant_term", label: "Computed ax² + bx but dropped the constant term", rule: (ans, p) => p.a * p.n * p.n + p.b * p.n }
+    ]
+  },
+  "function_exp_eval": {
+    name: "Evaluating Exponential Functions",
+    prereqs: ["function_evaluate", "exponent_power"],
+    baseElo: 1320,
+    misconceptions: [
+      { id: "exponential_as_linear", label: "Multiplied a·b·x — treated repeated growth as a single multiplication", rule: (ans, p) => p.a * p.b * p.x },
+      { id: "added_the_coefficient", label: "Added the leading coefficient instead of multiplying by it", rule: (ans, p) => p.a + Math.pow(p.b, p.x) },
+      { id: "dropped_the_coefficient", label: "Evaluated bˣ but forgot the leading coefficient a", rule: (ans, p) => Math.pow(p.b, p.x) }
+    ]
+  },
+  "function_composition": {
+    name: "Function Composition",
+    prereqs: ["function_evaluate", "function_solve"],
+    baseElo: 1360,
+    misconceptions: [
+      { id: "reversed_composition_order", label: "Computed g(f(x)) instead of f(g(x)) — applied the functions in the wrong order", rule: (ans, p) => p.c * (p.a * p.n + p.b) + p.d },
+      { id: "skipped_inner_distribution", label: "Forgot to multiply the inner constant by the outer coefficient", rule: (ans, p) => p.a * p.c * p.n + p.d + p.b },
+      { id: "added_the_functions", label: "Added f(n) + g(n) instead of composing them", rule: (ans, p) => (p.a * p.n + p.b) + (p.c * p.n + p.d) }
+    ]
+  },
+
   // ---- Statistics depth III (the complement rule) ----
   "probability_complement": {
     name: "Complement of an Event",
@@ -1633,6 +1666,9 @@ const STANDARDS = {
   rate_of_change: "8.F.B.4",
   function_initial: "8.F.B.4",
   function_solve: "HSF-IF.A.2",
+  function_quad_eval: "HSF-IF.A.2",
+  function_exp_eval: "HSF-LE.A.2",
+  function_composition: "HSF-BF.A.1c",
   probability_complement: "7.SP.C.5",
   coord_reflect: "8.G.A.3",
   coord_translate: "8.G.A.3",

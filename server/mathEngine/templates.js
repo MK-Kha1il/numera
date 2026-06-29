@@ -3366,6 +3366,64 @@ templates.functions = {
       type: "function_solve",
       a, b, T
     };
+  },
+  // ---- Functions II (keys 17/18/19 — non-linear evaluation + composition) ----
+  // Evaluate a QUADRATIC function f(x) = ax² + bx + c at an integer input. n ≥ 3 keeps x²
+  // distinct from both 2x and x, so each distractor lands on a different value. Distractors are
+  // the three classic evaluation slips (read x² as 2x; used the input unsquared; dropped c).
+  17: (_diffFactor, idx) => {
+    const a = 1 + (idx % 2);          // 1 or 2
+    const b = 2 + (idx % 4);          // 2..5
+    const c = 1 + (idx % 2);          // 1 or 2
+    const n = 3 + (idx % 4);          // 3..6 (n ≥ 3 ⇒ n² ≠ 2n and n² ≠ n)
+    const answer = a * n * n + b * n + c;
+    const aTxt = a === 1 ? '' : `${a}`;
+    return {
+      question: `Given $f(x) = ${aTxt}x^2 + ${b}x + ${c}$, find $f(${n})$.`,
+      answer,
+      distractors: [a * (2 * n) + b * n + c, a * n + b * n + c, a * n * n + b * n],
+      explanation: `Square the input first: $${n}^2 = ${n * n}$. Then $f(${n}) = ${aTxt}(${n * n}) + ${b}(${n}) + ${c} = ${a * n * n} + ${b * n} + ${c} = ${answer}$. The exponent means $x \\cdot x$, not $2x$ — reading $x^2$ as $2 \\cdot ${n}$ is the classic slip.`,
+      type: "function_quad_eval",
+      a, b, c, n
+    };
+  },
+  // Evaluate an EXPONENTIAL function f(x) = a·bˣ at x = 3 — the new function family (repeated
+  // multiplication, not addition). Distractors: a·b·x (linear thinking); a + bˣ (added the
+  // coefficient); bˣ (dropped the coefficient).
+  18: (_diffFactor, idx) => {
+    const a = 2 + (idx % 2);          // 2 or 3
+    const b = [2, 4, 5][idx % 3];     // 2, 4, 5 (skip 3 so a·b·x never equals bˣ)
+    const x = 3;
+    const answer = a * b ** x;
+    return {
+      question: `Given $f(x) = ${a} \\cdot ${b}^x$, find $f(${x})$.`,
+      answer,
+      distractors: [a * b * x, a + b ** x, b ** x],
+      explanation: `Exponential growth is repeated MULTIPLICATION: $${b}^${x} = ${b} \\cdot ${b} \\cdot ${b} = ${b ** x}$, then multiply by the coefficient: $${a} \\cdot ${b ** x} = ${answer}$. Computing $${a} \\cdot ${b} \\cdot ${x}$ would treat the growth as linear — the exponent counts repeated multiplications, it is not a multiplier.`,
+      type: "function_exp_eval",
+      a, b, x
+    };
+  },
+  // COMPOSITION f(g(n)): evaluate the inner machine, then feed its output into the outer one.
+  // Distractors: g(f(n)) (reversed order); a·c·n + d + b (forgot to distribute the outer
+  // coefficient over the inner constant); f(n) + g(n) (added the outputs instead of composing).
+  // Curated [a,b,c,d,n] cases, each verified to yield four distinct options.
+  19: (_diffFactor, idx) => {
+    const cases = [
+      [3, 1, 2, 2, 2], [2, 3, 3, 1, 3], [3, 2, 3, 1, 2], [3, 1, 3, 2, 3], [2, 1, 3, 3, 2],
+      [3, 3, 2, 1, 3], [2, 2, 3, 2, 2], [3, 2, 2, 3, 3], [3, 1, 2, 3, 2], [2, 3, 3, 2, 3],
+    ];
+    const [a, b, c, d, n] = cases[idx % cases.length];
+    const inner = c * n + d;
+    const answer = a * inner + b;
+    return {
+      question: `Given $f(x) = ${a}x + ${b}$ and $g(x) = ${c}x + ${d}$, find $f(g(${n}))$.`,
+      answer,
+      distractors: [c * (a * n + b) + d, a * c * n + d + b, (a * n + b) + (c * n + d)],
+      explanation: `Work inside-out. First the inner function: $g(${n}) = ${c}(${n}) + ${d} = ${inner}$. Then feed that into the outer one: $f(${inner}) = ${a}(${inner}) + ${b} = ${answer}$. Order matters — $g(f(${n}))$ runs the machines backwards and gives a different answer.`,
+      type: "function_composition",
+      a, b, c, d, n
+    };
   }
 };
 

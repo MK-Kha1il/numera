@@ -161,6 +161,10 @@ const CONCEPT_TO_LEVEL = {
   rate_of_change:           { category: 'functions',  level: 11 },
   function_initial:         { category: 'functions',  level: 13 },
   function_solve:           { category: 'functions',  level: 15 },
+  // Functions II — non-linear evaluation + composition (depth on functions, band raised to 19).
+  function_quad_eval:       { category: 'functions',  level: 17 },
+  function_exp_eval:        { category: 'functions',  level: 18 },
+  function_composition:     { category: 'functions',  level: 19 },
   // Equations strand (solving equations with fractions). Keys skip 10 (boss-routed).
   eqn_onestep_div:          { category: 'equations',  level: 7  },
   eqn_fraction_coeff:       { category: 'equations',  level: 9  },

@@ -124,6 +124,11 @@ const TYPE_TO_CONCEPT = {
   rate_of_change:           'rate_of_change',
   function_initial:         'function_initial',
   function_solve:           'function_solve',
+  // Functions II — non-linear evaluation + composition (collision-free type names: 'quadratic'
+  // is an earlier substring key, so these deliberately avoid the full word).
+  function_quad_eval:       'function_quad_eval',
+  function_exp_eval:        'function_exp_eval',
+  function_composition:     'function_composition',
   // Capstone depth (wave 7).
   probability_complement:   'probability_complement',
   coord_reflect:            'coord_reflect',
@@ -376,7 +381,7 @@ function getCategoryConceptIds(category, level) {
     powers:        ['square_root', 'cube_root', 'exponent_power_of_product', 'exponent_product_rule', 'exponent_power_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation'],
     graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula', 'coord_reflect', 'coord_translate', 'coord_rotate_180', 'coord_rotate_90', 'coord_dilate'],
     inequalities:  ['inequality_one_step_add', 'inequality_one_step_mult', 'inequality_flip_negative', 'inequality_two_step', 'inequality_compound'],
-    functions:     ['function_evaluate', 'function_table', 'rate_of_change', 'function_initial', 'function_solve'],
+    functions:     ['function_evaluate', 'function_table', 'rate_of_change', 'function_initial', 'function_solve', 'function_quad_eval', 'function_exp_eval', 'function_composition'],
     sequences:     ['arithmetic_next_term', 'arithmetic_common_difference', 'arithmetic_nth_term', 'geometric_next_term', 'geometric_common_ratio', 'geometric_nth_term', 'arithmetic_series', 'fibonacci_next'],
     equations:     ['eqn_onestep_div', 'eqn_fraction_coeff', 'eqn_clear_denom', 'eqn_proportion', 'eqn_two_step_fraction'],
     rates:         ['ratio_simplify', 'ratio_share', 'unit_price', 'speed_dist_time', 'scale_factor'],
