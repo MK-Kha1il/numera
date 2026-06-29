@@ -3,7 +3,8 @@ package com.example.numera.ui.feature.shop
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
+import com.example.numera.ui.components.PressFeedback
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -454,7 +455,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = Spacing.l)
-                            .clickable {
+                            .pressable(feedback = PressFeedback.Silent) {
                                 com.example.numera.haptic.HapticManager.playSoft()
                                 showFullCatalog = !showFullCatalog
                             },
@@ -498,7 +499,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(20.dp))
                                         .background(if (isSel) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.08f))
-                                        .clickable { catalogTypeFilter = typeVal }
+                                        .pressable { catalogTypeFilter = typeVal }
                                         .padding(horizontal = 14.dp, vertical = Spacing.s)
                                 ) {
                                     Text(

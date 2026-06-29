@@ -1,7 +1,7 @@
 package com.example.numera.ui.feature.arena
 
 import android.util.Log
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -178,7 +178,7 @@ fun ChallengesScreen(onBack: () -> Unit) {
                     Text("None yet — create one or play a friend's code.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                 } else {
                     mine.forEach { c ->
-                        DuoCard(modifier = Modifier.fillMaxWidth().clickable(enabled = !busy) { openDetail(c.code) }) {
+                        DuoCard(modifier = Modifier.fillMaxWidth().pressable(enabled = !busy) { openDetail(c.code) }) {
                             Row(modifier = Modifier.fillMaxWidth().padding(Spacing.l), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(c.title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -208,7 +208,7 @@ fun ChallengesScreen(onBack: () -> Unit) {
 
                 Text("Topic", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 Box {
-                    DuoCard(modifier = Modifier.fillMaxWidth().clickable { conceptMenuOpen = true }) {
+                    DuoCard(modifier = Modifier.fillMaxWidth().pressable { conceptMenuOpen = true }) {
                         Row(modifier = Modifier.fillMaxWidth().padding(Spacing.l), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(selectedConcept?.name ?: "Pick a topic", fontWeight = FontWeight.Medium, fontSize = 14.sp)
                             Text("▾", fontSize = 16.sp, color = MaterialTheme.colorScheme.primary)

@@ -2,7 +2,7 @@ package com.example.numera.ui.feature.archive
 
 import android.util.Log
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -381,7 +381,7 @@ fun LevelMapScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.l, vertical = Spacing.s)
-                    .clickable { onShowCommitment() },
+                    .pressable { onShowCommitment() },
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3CD)),
                 border = BorderStroke(1.dp, Color(0xFFFFEBAA)),
                 shape = RoundedCornerShape(CornerRadius.m)
@@ -1157,7 +1157,7 @@ fun LevelMapScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clip(RoundedCornerShape(CornerRadius.m))
-                                        .clickable {
+                                        .pressable {
                                             selectedCategoryFilter = null
                                             selectedStarsFilter = null
                                         }

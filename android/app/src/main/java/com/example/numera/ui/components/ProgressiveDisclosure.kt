@@ -6,7 +6,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -48,7 +47,7 @@ fun DisclosureSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable {
+                .pressable(feedback = PressFeedback.Silent) {
                     SoundManager.playClick()
                     HapticManager.playSoft()
                     expanded.value = !expanded.value

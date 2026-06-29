@@ -5,7 +5,6 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,6 +25,7 @@ import com.example.numera.SoloGame
 import com.example.numera.sound.SoundManager
 import com.example.numera.theme.*
 import com.example.numera.ui.components.MathAvatar
+import com.example.numera.ui.components.pressable
 import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.ClaimButton
 import com.example.numera.ui.components.GlossyProgressBar
@@ -494,7 +494,7 @@ fun DashboardScreen(
                         DuoCard(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onShowUserProfile(competitor.id) },
+                                .pressable { onShowUserProfile(competitor.id) },
                             borderColor = itemBorderColor,
                             backgroundColor = itemBgColor
                         ) {
@@ -651,7 +651,7 @@ fun DashboardScreen(
                         DuoCard(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onShowUserProfile(globalUser.id) },
+                                .pressable { onShowUserProfile(globalUser.id) },
                             borderColor = itemBorderColor,
                             backgroundColor = itemBgColor
                         ) {

@@ -1,7 +1,6 @@
 package com.example.numera.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -119,7 +118,7 @@ fun SheetActionRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(CornerRadius.m))
-            .clickable {
+            .pressable(feedback = PressFeedback.Silent) {
                 SoundManager.playClick()
                 HapticManager.playSoft()
                 onClick()

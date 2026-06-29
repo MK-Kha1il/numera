@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.numera.motion.MotionManager
 import com.example.numera.sound.SoundManager
 import com.example.numera.theme.*
 import androidx.compose.animation.core.*
@@ -239,17 +240,6 @@ fun GlossyProgressBar(
     val targetColor = if (isCompleted) CorrectGreen else secondaryColor
     val trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
 
-    val infiniteTransition = rememberInfiniteTransition(label = "glossyProgress")
-    val translateAnim by infiniteTransition.animateFloat(
-        initialValue = -300f,
-        targetValue = 600f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "translateAnim"
-    )
-
     val gradientBrush = remember(isCompleted) {
         if (isCompleted) {
             Brush.horizontalGradient(
@@ -276,21 +266,34 @@ fun GlossyProgressBar(
                     .fillMaxWidth(progress)
                     .background(brush = gradientBrush)
             ) {
-                // Diagonal sweeping white shimmer reflection
-                val shimmerBrush = Brush.linearGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0f),
-                        Color.White.copy(alpha = 0.35f),
-                        Color.White.copy(alpha = 0f)
-                    ),
-                    start = androidx.compose.ui.geometry.Offset(translateAnim, 0f),
-                    end = androidx.compose.ui.geometry.Offset(translateAnim + 120f, 60f)
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(shimmerBrush)
-                )
+                // Diagonal sweeping white shimmer reflection — skipped under reduce-motion so
+                // the bar stops driving an always-on infinite recomposition for those users.
+                if (!MotionManager.reduceMotion) {
+                    val infiniteTransition = rememberInfiniteTransition(label = "glossyProgress")
+                    val translateAnim by infiniteTransition.animateFloat(
+                        initialValue = -300f,
+                        targetValue = 600f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(durationMillis = 2000, easing = LinearEasing),
+                            repeatMode = RepeatMode.Restart
+                        ),
+                        label = "translateAnim"
+                    )
+                    val shimmerBrush = Brush.linearGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0f),
+                            Color.White.copy(alpha = 0.35f),
+                            Color.White.copy(alpha = 0f)
+                        ),
+                        start = androidx.compose.ui.geometry.Offset(translateAnim, 0f),
+                        end = androidx.compose.ui.geometry.Offset(translateAnim + 120f, 60f)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(shimmerBrush)
+                    )
+                }
                 
                 // Subtle horizontal glass reflection on upper half
                 Box(
@@ -309,25 +312,34 @@ fun ClaimButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "ClaimPulse")
-    val shimmerX by infiniteTransition.animateFloat(
-        initialValue = -1f,
-        targetValue = 2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1600, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "shimmer"
-    )
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.06f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(700, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "scalePulse"
-    )
+    // The claim CTA pulses + shimmers to draw the eye — but under reduce-motion it sits still
+    // (a static gradient, no scale) rather than looping forever.
+    val shimmerX: Float
+    val scale: Float
+    if (MotionManager.reduceMotion) {
+        shimmerX = 0f
+        scale = 1f
+    } else {
+        val infiniteTransition = rememberInfiniteTransition(label = "ClaimPulse")
+        shimmerX = infiniteTransition.animateFloat(
+            initialValue = -1f,
+            targetValue = 2f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1600, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "shimmer"
+        ).value
+        scale = infiniteTransition.animateFloat(
+            initialValue = 1f,
+            targetValue = 1.06f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(700, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "scalePulse"
+        ).value
+    }
 
     Box(
         modifier = modifier

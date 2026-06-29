@@ -36,6 +36,33 @@ object MotionEasing {
     val exit = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)
 }
 
+/**
+ * Numeric motion constants — the *amounts* that go with [MotionEasing]'s shapes and
+ * [AnimDuration]'s timings. Centralising these stops every press handler from inventing its
+ * own scale (0.95 here, 0.97 there) and every entrance from picking a different slide distance.
+ *
+ * Press-scale is keyed to element SIZE, not importance: a big card barely flinches; a small
+ * icon dips more so the touch reads. Haptic/sound weight (importance) lives separately in
+ * `PressFeedback` — the two are intentionally orthogonal.
+ */
+object MotionTokens {
+    /** Cards, list rows, large tiles — barely perceptible dip. */
+    const val pressScaleLarge  = 0.98f
+    /** Standard buttons, chips, action tiles. */
+    const val pressScaleMedium = 0.96f
+    /** Icon buttons & compact controls — needs a bigger dip to register on a small target. */
+    const val pressScaleSmall  = 0.92f
+
+    /** Disabled-press: no movement (used when `enabled == false`). */
+    const val pressScaleNone   = 1.0f
+
+    /** Entrance slide distance as a fraction of the element's own size (used as `it / N`). */
+    const val slideDivisor = 12
+
+    /** Reward/celebration overshoot peak (e.g. a pop that briefly grows past 1f). */
+    const val rewardOvershoot = 1.08f
+}
+
 object Motion {
     /** Spec for on-screen moves: selection highlights, progress, reflow. */
     fun <T> standard(durationMillis: Int = AnimDuration.normal, delayMillis: Int = 0): TweenSpec<T> =
@@ -52,6 +79,14 @@ object Motion {
     /** Springy overshoot for reward / celebration pops (unlocks, claims, level-ups). */
     fun <T> rewardSpring(): SpringSpec<T> =
         spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow)
+
+    /**
+     * Press-feedback spring — the single source of truth for tap-scale settle. Responsive
+     * (snaps back fast) with just enough life to feel physical, not bouncy. Every tappable
+     * surface in the app routes its press-scale through here via `Modifier.pressable`.
+     */
+    fun <T> pressSpring(): SpringSpec<T> =
+        spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)
 
     // ── Canned AnimatedVisibility transitions ────────────────────────────────
 

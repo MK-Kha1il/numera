@@ -29,6 +29,7 @@ import com.example.numera.theme.AnimDuration
 import com.example.numera.theme.CornerRadius
 import com.example.numera.theme.Motion
 import com.example.numera.theme.Spacing
+import com.example.numera.theme.MotionTokens
 
 /**
  * Slide-over reference panel: surfaces educational references — formula sheets, lesson reminders,
@@ -111,7 +112,7 @@ fun NumeraSlideOver(
                                 .size(34.dp)
                                 .clip(RoundedCornerShape(CornerRadius.full))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable { onDismiss() },
+                                .pressable(pressScale = MotionTokens.pressScaleSmall) { onDismiss() },
                             contentAlignment = Alignment.Center
                         ) {
                             NumeraIcon(type = NumeraIconType.Close, animate = false, modifier = Modifier.size(18.dp))

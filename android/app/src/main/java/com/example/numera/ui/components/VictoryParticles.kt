@@ -42,12 +42,15 @@ fun VictoryParticles(
     // Spawn particles on launch
     LaunchedEffect(trigger) {
         particles.clear()
+        // Studio-brand celebratory palette — warm gold→indigo, replacing the old cyber-neon
+        // (0xFF00F5FF / 0xFFFF007F) that clashed with the warm light theme (audit I6).
         val colors = listOf(
-            Color(0xFF00F5FF), // Teal
-            Color(0xFFFF007F), // Pink
-            Color(0xFFFFB703), // Gold
-            Color(0xFF50FA7B), // Green
-            Color(0xFFBD93F9)  // Purple
+            Color(0xFFFFB703), // Amber gold
+            Color(0xFFFB8C5A), // Warm coral
+            Color(0xFF6366F1), // Indigo (brand primary)
+            Color(0xFF34D399), // Emerald
+            Color(0xFFFBBF24), // Sun gold
+            Color(0xFFA78BFA)  // Soft violet
         )
         
         // Spawn 40 particles shooting upwards from the bottom-center

@@ -1,7 +1,7 @@
 package com.example.numera.ui.feature.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -110,7 +110,7 @@ fun GrowthInsightsCard(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(CornerRadius.m))
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
-                            .clickable { onPracticeMistakes() }
+                            .pressable { onPracticeMistakes() }
                             .padding(vertical = Spacing.m),
                     ) {
                         Text(
@@ -146,7 +146,7 @@ private fun WatchAreaRow(w: GrowthWatchArea) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(CornerRadius.m))
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.06f))
-            .then(if (hasTip) Modifier.clickable { expanded = !expanded } else Modifier)
+            .then(if (hasTip) Modifier.pressable { expanded = !expanded } else Modifier)
             .padding(horizontal = Spacing.m, vertical = Spacing.s),
         horizontalArrangement = Arrangement.spacedBy(Spacing.s),
         verticalAlignment = Alignment.Top,

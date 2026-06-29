@@ -1,7 +1,7 @@
 package com.example.numera.ui.feature.social
 
 import android.util.Log
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -180,7 +180,7 @@ fun ClubWarsScreen(onBack: () -> Unit) {
                     }
                     w.problems[qIndex].options.forEach { opt ->
                         Card(
-                            modifier = Modifier.fillMaxWidth().clickable(enabled = !busy) {
+                            modifier = Modifier.fillMaxWidth().pressable(enabled = !busy) {
                                 val updated = answers + opt
                                 if (updated.size >= w.problems.size) { answers = updated; submit(updated) }
                                 else { answers = updated; qIndex = updated.size }
@@ -202,7 +202,7 @@ fun ClubWarsScreen(onBack: () -> Unit) {
 
 @Composable
 private fun WarCard(w: ClubWar, onClick: () -> Unit) {
-    DuoCard(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
+    DuoCard(modifier = Modifier.fillMaxWidth().pressable { onClick() }) {
         Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("${w.challenger.name}  vs  ${w.opponent.name}", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.weight(1f))

@@ -2,7 +2,7 @@ package com.example.numera.ui.feature.settings
 
 import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
@@ -194,7 +194,7 @@ fun SettingsScreen(
                                     Box(
                                         modifier = Modifier
                                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), RoundedCornerShape(Spacing.xs))
-                                            .clickable {
+                                            .pressable {
                                                 prefs.edit().putBoolean("tooltip_haptics_dismissed", true).apply()
                                                 showHapticsTooltip = false
                                             }
@@ -405,7 +405,7 @@ fun SettingsScreen(
                                     Box(
                                         modifier = Modifier
                                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), RoundedCornerShape(Spacing.xs))
-                                            .clickable {
+                                            .pressable {
                                                 prefs.edit().putBoolean("tooltip_motion_dismissed", true).apply()
                                                 showMotionTooltip = false
                                             }
@@ -482,7 +482,7 @@ fun SettingsScreen(
             },
             SearchableSettingItem("Change Username", "Change your game display name", "profile account edit name tags details") {
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { showUsernameDialog = true }.padding(vertical = Spacing.xs),
+                    modifier = Modifier.fillMaxWidth().pressable { showUsernameDialog = true }.padding(vertical = Spacing.xs),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -495,7 +495,7 @@ fun SettingsScreen(
             },
             SearchableSettingItem("Email Management", "Configure registered recovery email address", "account recovery security email details") {
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { showEmailDialog = true }.padding(vertical = Spacing.xs),
+                    modifier = Modifier.fillMaxWidth().pressable { showEmailDialog = true }.padding(vertical = Spacing.xs),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -508,7 +508,7 @@ fun SettingsScreen(
             },
             SearchableSettingItem("Active Sessions", "Audit devices connected to your credentials", "security logs logins active sessions device list") {
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { showSessionsDialog = true }.padding(vertical = Spacing.xs),
+                    modifier = Modifier.fillMaxWidth().pressable { showSessionsDialog = true }.padding(vertical = Spacing.xs),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -521,7 +521,7 @@ fun SettingsScreen(
             },
             SearchableSettingItem("Security Activity Log", "Review login logs and credential events", "audit telemetry logins history security list") {
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { showLogsDialog = true }.padding(vertical = Spacing.xs),
+                    modifier = Modifier.fillMaxWidth().pressable { showLogsDialog = true }.padding(vertical = Spacing.xs),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -910,7 +910,7 @@ fun SettingsScreen(
                     // Password Changing block
                     var showPasswordSection by remember { mutableStateOf(false) }
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showPasswordSection = !showPasswordSection }.padding(vertical = Spacing.xs),
+                        modifier = Modifier.fillMaxWidth().pressable { showPasswordSection = !showPasswordSection }.padding(vertical = Spacing.xs),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1135,7 +1135,7 @@ fun SettingsScreen(
                                         .weight(1f)
                                         .clip(RoundedCornerShape(CornerRadius.s))
                                         .background(if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-                                        .clickable {
+                                        .pressable {
                                             scope.launch(Dispatchers.IO) {
                                                 try {
                                                     val token = RetrofitClient.authToken ?: ""
@@ -1387,7 +1387,7 @@ fun SettingsScreen(
 
                     // FAQ row
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showFaqDialog = true }.padding(vertical = Spacing.xs),
+                        modifier = Modifier.fillMaxWidth().pressable { showFaqDialog = true }.padding(vertical = Spacing.xs),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1401,7 +1401,7 @@ fun SettingsScreen(
 
                     // Contact row
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showContactDialog = true }.padding(vertical = Spacing.xs),
+                        modifier = Modifier.fillMaxWidth().pressable { showContactDialog = true }.padding(vertical = Spacing.xs),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1415,7 +1415,7 @@ fun SettingsScreen(
 
                     // Report bug row
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showBugDialog = true }.padding(vertical = Spacing.xs),
+                        modifier = Modifier.fillMaxWidth().pressable { showBugDialog = true }.padding(vertical = Spacing.xs),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1429,7 +1429,7 @@ fun SettingsScreen(
 
                     // Feature Request row
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showFeatureDialog = true }.padding(vertical = Spacing.xs),
+                        modifier = Modifier.fillMaxWidth().pressable { showFeatureDialog = true }.padding(vertical = Spacing.xs),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1443,7 +1443,7 @@ fun SettingsScreen(
 
                     // Community Guidelines row
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showGuidelinesDialog = true }.padding(vertical = Spacing.xs),
+                        modifier = Modifier.fillMaxWidth().pressable { showGuidelinesDialog = true }.padding(vertical = Spacing.xs),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1482,7 +1482,7 @@ fun SettingsScreen(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
 
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showPolicyDialog = true },
+                        modifier = Modifier.fillMaxWidth().pressable { showPolicyDialog = true },
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Privacy Policy", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
@@ -1491,7 +1491,7 @@ fun SettingsScreen(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
 
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showTermsDialog = true },
+                        modifier = Modifier.fillMaxWidth().pressable { showTermsDialog = true },
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Terms of Service", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
@@ -1500,7 +1500,7 @@ fun SettingsScreen(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
 
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showCreditsDialog = true },
+                        modifier = Modifier.fillMaxWidth().pressable { showCreditsDialog = true },
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Credits & Contributors", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)

@@ -3,7 +3,6 @@ package com.example.numera.ui.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -114,7 +113,7 @@ fun ScratchPad(
                             if (isActive) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
                         )
-                        .clickable {
+                        .pressable(feedback = PressFeedback.Silent) {
                             currentPage = idx
                             currentPoints.clear()
                             HapticManager.playSoft()
@@ -206,7 +205,7 @@ fun ScratchPad(
                                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                     shape = CircleShape
                                 )
-                                .clickable { selectedColor = color; HapticManager.playSoft() }
+                                .pressable(feedback = PressFeedback.Silent, pressScale = MotionTokens.pressScaleSmall) { selectedColor = color; HapticManager.playSoft() }
                         )
                     }
                 }

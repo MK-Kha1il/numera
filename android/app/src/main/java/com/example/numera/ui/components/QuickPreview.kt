@@ -31,6 +31,7 @@ import com.example.numera.theme.AnimDuration
 import com.example.numera.theme.CornerRadius
 import com.example.numera.theme.Motion
 import com.example.numera.theme.Spacing
+import com.example.numera.theme.MotionTokens
 
 /**
  * Quick preview: peek at an exercise, level, achievement or collection without committing to a full
@@ -112,7 +113,7 @@ fun NumeraQuickPreview(
                                 .size(32.dp)
                                 .clip(RoundedCornerShape(CornerRadius.full))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable { onDismiss() },
+                                .pressable(pressScale = MotionTokens.pressScaleSmall) { onDismiss() },
                             contentAlignment = Alignment.Center
                         ) {
                             NumeraIcon(type = NumeraIconType.Close, animate = false, modifier = Modifier.size(18.dp))

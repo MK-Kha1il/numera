@@ -3,7 +3,7 @@ package com.example.numera.ui.feature.shop
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.*
@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import com.example.numera.data.network.*
+import com.example.numera.motion.MotionManager
 import com.example.numera.sound.SoundManager
 import com.example.numera.theme.*
 import com.example.numera.ui.components.ProfileBanner
@@ -42,35 +43,30 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun ShopBackground(modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "ambientGlow")
-    
-    val xOffset1 by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 100f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(8000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "x1"
-    )
-    val yOffset1 by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 120f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(10000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "y1"
-    )
-    val xOffset2 by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = -80f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(7000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "x2"
-    )
+    // Reduce-motion: hold the ambient blobs still (no forever-running offset transitions).
+    val xOffset1: Float
+    val yOffset1: Float
+    val xOffset2: Float
+    if (MotionManager.reduceMotion) {
+        xOffset1 = 50f; yOffset1 = 60f; xOffset2 = -40f
+    } else {
+        val infiniteTransition = rememberInfiniteTransition(label = "ambientGlow")
+        xOffset1 = infiniteTransition.animateFloat(
+            initialValue = 0f, targetValue = 100f,
+            animationSpec = infiniteRepeatable(tween(8000, easing = LinearEasing), RepeatMode.Reverse),
+            label = "x1"
+        ).value
+        yOffset1 = infiniteTransition.animateFloat(
+            initialValue = 0f, targetValue = 120f,
+            animationSpec = infiniteRepeatable(tween(10000, easing = LinearEasing), RepeatMode.Reverse),
+            label = "y1"
+        ).value
+        xOffset2 = infiniteTransition.animateFloat(
+            initialValue = 0f, targetValue = -80f,
+            animationSpec = infiniteRepeatable(tween(7000, easing = LinearEasing), RepeatMode.Reverse),
+            label = "x2"
+        ).value
+    }
     
     Box(
         modifier = modifier
@@ -128,17 +124,6 @@ fun RarityCardFrame(
     val tier = Rarity.from(rarity)
     val rarityColor = tier.color
 
-    val infiniteTransition = rememberInfiniteTransition(label = "cardShimmer")
-    val translateAnim by infiniteTransition.animateFloat(
-        initialValue = -500f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 4000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "translate"
-    )
-
     val borderBrush = tier.borderBrush
 
     // Stable per-card glow — hoisted so the infinite shimmer animation above doesn't
@@ -182,7 +167,19 @@ fun RarityCardFrame(
                 content()
             }
             
-            if (tier.isPrestige) {
+            // Prestige sheen — only runs for prestige tiers AND only when motion is allowed
+            // (previously this shimmer transition ran for every card on screen).
+            if (tier.isPrestige && !MotionManager.reduceMotion) {
+                val infiniteTransition = rememberInfiniteTransition(label = "cardShimmer")
+                val translateAnim by infiniteTransition.animateFloat(
+                    initialValue = -500f,
+                    targetValue = 1000f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(durationMillis = 4000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart
+                    ),
+                    label = "translate"
+                )
                 val shimmerBrush = Brush.linearGradient(
                     colors = listOf(
                         Color.White.copy(alpha = 0f),
@@ -227,25 +224,25 @@ fun HeroShowcasePanel(
     val isLocked = item.required_rank?.let { getRankValue(user?.rank ?: "") < getRankValue(it) } ?: false
     val utilityQty = ownedUtilities.find { it.item_id == item.id }?.quantity ?: 0
     
-    val infiniteTransition = rememberInfiniteTransition(label = "showcaseAmbient")
-    val pulseScale1 by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.12f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2500, easing = EaseInOutSine),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse1"
-    )
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(15000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "rot"
-    )
+    // Reduce-motion: hold the showcase glow/rotation still.
+    val pulseScale1: Float
+    val rotation: Float
+    if (MotionManager.reduceMotion) {
+        pulseScale1 = 1f
+        rotation = 0f
+    } else {
+        val infiniteTransition = rememberInfiniteTransition(label = "showcaseAmbient")
+        pulseScale1 = infiniteTransition.animateFloat(
+            initialValue = 1f, targetValue = 1.12f,
+            animationSpec = infiniteRepeatable(tween(2500, easing = EaseInOutSine), RepeatMode.Reverse),
+            label = "pulse1"
+        ).value
+        rotation = infiniteTransition.animateFloat(
+            initialValue = 0f, targetValue = 360f,
+            animationSpec = infiniteRepeatable(tween(15000, easing = LinearEasing), RepeatMode.Restart),
+            label = "rot"
+        ).value
+    }
     
     Card(
         modifier = Modifier
@@ -528,25 +525,26 @@ fun FeaturedShopItemCard(
     val rarityColor = getRarityColor(item.rarity ?: "Common")
     val isLocked = item.required_rank?.let { getRankValue(user?.rank ?: "") < getRankValue(it) } ?: false
 
-    val infiniteTransition = rememberInfiniteTransition(label = "featuredGlow")
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.98f,
-        targetValue = 1.02f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse"
-    )
-
-    val scaleValue = if (Rarity.from(item.rarity) >= Rarity.Legendary) pulseScale else 1f
+    // Legendary+ featured cards breathe — gated so reduce-motion (and lower tiers) sit still.
+    val scaleValue = if (Rarity.from(item.rarity) >= Rarity.Legendary && !MotionManager.reduceMotion) {
+        val infiniteTransition = rememberInfiniteTransition(label = "featuredGlow")
+        infiniteTransition.animateFloat(
+            initialValue = 0.98f,
+            targetValue = 1.02f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1500, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "pulse"
+        ).value
+    } else 1f
 
     RarityCardFrame(
         rarity = item.rarity ?: "Common",
         modifier = Modifier
             .fillMaxWidth()
             .scale(scaleValue)
-            .clickable { onClick() }
+            .pressable { onClick() }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -672,25 +670,26 @@ fun ShopHeroCard(
     val rarityColor = getRarityColor(item.rarity ?: "Common")
     val isLocked = item.required_rank?.let { getRankValue(user?.rank ?: "") < getRankValue(it) } ?: false
 
-    val infiniteTransition = rememberInfiniteTransition(label = "heroGlow")
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.99f,
-        targetValue = 1.01f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse"
-    )
-
-    val scaleValue = if (Rarity.from(item.rarity) >= Rarity.Legendary) pulseScale else 1f
+    // Legendary+ hero cards breathe — gated so reduce-motion (and lower tiers) sit still.
+    val scaleValue = if (Rarity.from(item.rarity) >= Rarity.Legendary && !MotionManager.reduceMotion) {
+        val infiniteTransition = rememberInfiniteTransition(label = "heroGlow")
+        infiniteTransition.animateFloat(
+            initialValue = 0.99f,
+            targetValue = 1.01f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(2000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "pulse"
+        ).value
+    } else 1f
 
     RarityCardFrame(
         rarity = item.rarity ?: "Common",
         modifier = Modifier
             .fillMaxWidth()
             .scale(scaleValue)
-            .clickable { onClick() }
+            .pressable { onClick() }
     ) {
         Column(
             modifier = Modifier
@@ -837,7 +836,7 @@ fun DailyShopItemCard(
         rarity = item.rarity ?: "Common",
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .pressable { onClick() }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -943,7 +942,7 @@ fun UtilityShopItemCard(
         rarity = item.rarity ?: "Common",
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .pressable { onClick() }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

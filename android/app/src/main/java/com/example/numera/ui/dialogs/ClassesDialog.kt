@@ -2,7 +2,7 @@ package com.example.numera.ui.dialogs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -135,7 +135,7 @@ fun ClassesDialog(onDismiss: () -> Unit) {
                             Row(
                                 modifier = Modifier.fillMaxWidth()
                                     .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
-                                    .clickable {
+                                    .pressable {
                                         scope.launch {
                                             roster = runCatching { withContext(Dispatchers.IO) { RetrofitClient.apiService.getClassRoster(token, c.id) } }.getOrNull()
                                         }

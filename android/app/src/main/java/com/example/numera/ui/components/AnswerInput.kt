@@ -2,7 +2,7 @@ package com.example.numera.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.theme.MotionTokens
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -81,7 +81,7 @@ fun AnswerInput(
                             MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                             RoundedCornerShape(CornerRadius.m)
                         )
-                        .clickable(enabled = enabled) { onValueChange(value + key) },
+                        .pressable(enabled = enabled, feedback = PressFeedback.Silent, pressScale = MotionTokens.pressScaleSmall) { onValueChange(value + key) },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
