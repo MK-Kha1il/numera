@@ -187,6 +187,12 @@ const TYPE_TO_CONCEPT = {
   gcf_three:                'gcf_three',
   lcm_three:                'lcm_three',
   gcf_lcm_product:          'gcf_lcm_product',
+  // Expressions II + Powers II.
+  factor_gcf:               'factor_gcf',
+  difference_of_squares:    'difference_of_squares',
+  fractional_exponent:      'fractional_exponent',
+  simplify_radical:         'simplify_radical',
+  scientific_notation_compute: 'scientific_notation_compute',
   // Sequences strand — template types equal conceptIds.
   arithmetic_next_term:         'arithmetic_next_term',
   arithmetic_common_difference: 'arithmetic_common_difference',
@@ -393,8 +399,8 @@ function getCategoryConceptIds(category, level) {
     number_sense:  ['percentage_of', 'fraction_of', 'ratio_solve', 'percent_change', 'unit_convert_metric', 'unit_convert_time', 'unit_rate', 'exponent_power', 'proportion_solve',
                     'percent_discount', 'simple_interest', 'multi_step_word', 'percent_markup', 'percent_error'],
     statistics:    ['stat_mode', 'stat_mean', 'stat_median', 'stat_range', 'mean_missing_value', 'stat_probability', 'compound_probability', 'probability_complement', 'prob_without_replacement', 'stat_quartile', 'stat_iqr', 'stat_mad', 'stat_theoretical_prob', 'stat_experimental_prob', 'stat_sample_space'],
-    expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'translate_expression', 'distribute', 'foil_binomials', 'square_binomial', 'factor_trinomial'],
-    powers:        ['square_root', 'cube_root', 'exponent_power_of_product', 'exponent_product_rule', 'exponent_power_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'scientific_notation'],
+    expressions:   ['eval_expression', 'eval_two_var', 'combine_like_terms', 'translate_expression', 'distribute', 'foil_binomials', 'square_binomial', 'factor_trinomial', 'factor_gcf', 'difference_of_squares'],
+    powers:        ['square_root', 'cube_root', 'exponent_power_of_product', 'exponent_product_rule', 'exponent_power_rule', 'exponent_quotient_rule', 'exponent_zero_negative', 'fractional_exponent', 'scientific_notation', 'simplify_radical', 'scientific_notation_compute'],
     graphing:      ['point_on_line', 'slope_from_points', 'slope_intercept_id', 'midpoint', 'distance_formula', 'coord_reflect', 'coord_translate', 'coord_rotate_180', 'coord_rotate_90', 'coord_dilate'],
     inequalities:  ['inequality_one_step_add', 'inequality_one_step_mult', 'inequality_flip_negative', 'inequality_two_step', 'inequality_compound', 'inequality_var_both_sides', 'inequality_distribute', 'inequality_word'],
     functions:     ['function_evaluate', 'function_table', 'rate_of_change', 'function_initial', 'function_solve', 'function_quad_eval', 'function_exp_eval', 'function_composition'],

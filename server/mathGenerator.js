@@ -126,6 +126,9 @@ const CONCEPT_TO_LEVEL = {
   foil_binomials:       { category: 'expressions',   level: 16 },
   square_binomial:      { category: 'expressions',   level: 17 },
   factor_trinomial:     { category: 'expressions',   level: 18 },
+  // Expressions II — factor out the GCF, difference of squares (band → 21, skip 20 boss).
+  factor_gcf:           { category: 'expressions',   level: 19 },
+  difference_of_squares: { category: 'expressions',  level: 21 },
   // Powers strand (exponents & roots — the 8.EE band).
   square_root:            { category: 'powers',      level: 4  },
   cube_root:              { category: 'powers',      level: 5  },
@@ -134,7 +137,11 @@ const CONCEPT_TO_LEVEL = {
   exponent_power_rule:    { category: 'powers',      level: 8  },
   exponent_quotient_rule: { category: 'powers',      level: 9  },
   exponent_zero_negative: { category: 'powers',      level: 11 },
+  fractional_exponent:    { category: 'powers',      level: 12 },
   scientific_notation:    { category: 'powers',      level: 13 },
+  // Powers II — simplifying radicals, multiplying in scientific notation (band → 15).
+  simplify_radical:       { category: 'powers',      level: 14 },
+  scientific_notation_compute: { category: 'powers', level: 15 },
   // Graphing strand (linear graphing & the coordinate plane — 8.EE/8.F/8.G).
   // Keys deliberately skip 10: milestone keys are force-routed to boss categories.
   point_on_line:          { category: 'graphing',    level: 8  },

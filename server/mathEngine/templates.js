@@ -2358,6 +2358,35 @@ templates.expressions = {
       explanation: `The product $+${P}$ is positive but the sum $-${S}$ is negative — BOTH factors must be negative: $(x - ${a})(x - ${b})$. Mixed signs would make the product negative; check by expanding.`,
       type: "factor_trinomial"
     };
+  },
+  // ---- Expressions II (keys 19/21 — factor out the GCF, factor a difference of squares) ----
+  // Factor the GCF g out of g·p·x + g·q → g(p x + q). p,q are COPRIME so g is genuinely the GREATEST
+  // common factor (the answer is completely factored). Answer is a factored STRING.
+  19: (_diffFactor, idx) => {
+    const g = 2 + (idx % 4);          // GCF 2..5
+    const [p, q] = [[2, 3], [3, 4], [2, 5], [3, 5], [4, 5], [3, 2], [5, 2], [4, 3], [5, 3], [5, 4]][idx % 10]; // gcd(p,q)=1
+    const ax = g * p, c = g * q;
+    return {
+      question: `Factor completely: $${ax}x + ${c}$`,
+      answer: `${g}(${p}x + ${q})`,
+      // Distractors must NOT be value-equivalent to the answer (the unfactored form would grade as a
+      // second correct option under the equivalence-aware grader): didn't divide the constant; didn't
+      // divide the coefficient; divided every term but dropped the factor outside.
+      distractors: [`${g}(${p}x + ${c})`, `${g}(${ax}x + ${q})`, `${p}x + ${q}`],
+      explanation: `The greatest common factor of $${ax}$ and $${c}$ is $${g}$. Divide BOTH terms by it: $${ax} \\div ${g} = ${p}$ and $${c} \\div ${g} = ${q}$, and keep the $${g}$ OUTSIDE: $${g}(${p}x + ${q})$. Check by distributing: $${g} \\cdot ${p}x + ${g} \\cdot ${q} = ${ax}x + ${c}$. Dropping the $${g}$ (writing $${p}x + ${q}$) shrinks the whole expression.`,
+      type: "factor_gcf"
+    };
+  },
+  // Factor a difference of two squares: x² − c² → (x − c)(x + c). Answer is a factored STRING.
+  21: (_diffFactor, idx) => {
+    const c = 2 + (idx % 8);          // 2..9
+    return {
+      question: `Factor: $x^2 - ${c * c}$`,
+      answer: `(x - ${c})(x + ${c})`,
+      distractors: [`(x - ${c})^2`, `(x + ${c})(x + ${c})`, `(x - ${c * c})(x + ${c * c})`], // perfect-square trap; same signs; didn't square-root the constant
+      explanation: `A difference of squares $a^2 - b^2$ factors as $(a - b)(a + b)$. Here $x^2 - ${c * c} = x^2 - ${c}^2$, so it factors as $(x - ${c})(x + ${c})$ — opposite signs, so the middle terms cancel when you expand. It is NOT a perfect square $(x - ${c})^2$, which would have a middle term.`,
+      type: "difference_of_squares"
+    };
   }
 };
 
@@ -2998,6 +3027,57 @@ templates.powers = {
       ],
       explanation: `Move the decimal point until exactly one nonzero digit is left of it: $${value} \\rightarrow ${mantissa}$, a shift of $${e}$ places, so $${value} = ${mantissa} \\times 10^{${e}}$. The leading number must be at least $1$ and less than $10$.`,
       type: "scientific_notation"
+    };
+  },
+  // ---- Powers II (keys 12/14/15 — fractional exponents, simplifying radicals, scientific-notation products) ----
+  // Fractional exponent: b^(m/n) = (the n-th root of b) raised to the m. Curated perfect powers.
+  12: (_diffFactor, idx) => {
+    const cases = [
+      [8, 2, 3, 2], [4, 3, 2, 2], [27, 2, 3, 3], [9, 3, 2, 3],
+      [16, 3, 4, 2], [25, 3, 2, 5], [8, 4, 3, 2], [32, 2, 5, 2],
+    ]; // [base, m, n, root] with root = base^(1/n); all m ≥ 2 and m ≠ n
+    const [b, m, n, root] = cases[idx % cases.length];
+    const answer = root ** m;
+    return {
+      question: `Evaluate $${b}^{${m}/${n}}$.`,
+      answer,
+      distractors: [root, b ** m, b], // took the root, forgot ^m; ignored the root; raised the root to n, not m
+      explanation: `A fractional exponent is a root then a power: $${b}^{${m}/${n}} = \\left(\\sqrt[${n}]{${b}}\\right)^{${m}}$. The $${n}$-th root of $${b}$ is $${root}$, then raise to the $${m}$: $${root}^{${m}} = ${answer}$. The denominator is the root, the numerator is the power.`,
+      type: "fractional_exponent",
+      b, m, n, root
+    };
+  },
+  // Simplify a square root: √k = a√b, pulling the largest perfect square out (k = a²·b).
+  14: (_diffFactor, idx) => {
+    const cases = [
+      [2, 3], [3, 2], [2, 2], [5, 2], [4, 3],
+      [5, 3], [3, 5], [4, 2], [3, 3], [2, 5],
+    ]; // [a, b] → k = a²·b, b squarefree
+    const [a, b] = cases[idx % cases.length];
+    const k = a * a * b;
+    return {
+      question: `Simplify $\\sqrt{${k}}$.`,
+      answer: `${a}\\sqrt{${b}}`,
+      distractors: [`\\sqrt{${k}}`, `${a * a}\\sqrt{${b}}`, `${a}\\sqrt{${k}}`], // didn't simplify; squared the coefficient; pulled out a but kept the radicand
+      explanation: `Find the largest perfect square dividing $${k}$: $${k} = ${a * a} \\times ${b}$, and $\\sqrt{${a * a}} = ${a}$. So $\\sqrt{${k}} = ${a}\\sqrt{${b}}$. The factor pulled OUT is the square root of the perfect square ($${a}$), and the radicand left behind ($${b}$) has no more perfect-square factors.`,
+      type: "simplify_radical"
+    };
+  },
+  // Multiply in scientific notation: (a × 10^m)(b × 10^n) = (a·b) × 10^(m+n), with a·b < 10.
+  15: (_diffFactor, idx) => {
+    const [a, b] = [[2, 3], [2, 4], [3, 2], [4, 2], [2, 3], [3, 3]][idx % 6]; // a·b ∈ {6,8,9} < 10
+    const m = 2 + (idx % 3);             // 2..4
+    const n = 3 + (idx % 2);             // 3..4 (m, n never both 2)
+    return {
+      question: `Multiply: $(${a} × 10^${m})(${b} × 10^${n})$. Give the answer in scientific notation.`,
+      answer: `${a * b} × 10^${m + n}`,
+      distractors: [
+        `${a + b} × 10^${m + n}`,        // added the leading numbers
+        `${a * b} × 10^${m * n}`,        // multiplied the exponents
+        `${a + b} × 10^${m * n}`,        // both errors
+      ],
+      explanation: `Multiply the leading numbers and ADD the exponents: $${a} × ${b} = ${a * b}$ and $10^${m} × 10^${n} = 10^{${m}+${n}} = 10^${m + n}$, giving $${a * b} × 10^${m + n}$. The powers of ten add (product rule), they are not multiplied; the mantissas multiply, they are not added.`,
+      type: "scientific_notation_compute"
     };
   }
 };

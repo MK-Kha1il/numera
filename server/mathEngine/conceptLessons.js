@@ -1349,6 +1349,94 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // POWERS II (fractional exponents, simplifying radicals, scientific-notation products).
+  // ===========================================================================
+  fractional_exponent: {
+    title: "Fractional Exponents",
+    formula: "b^{m/n} = \\left(\\sqrt[n]{b}\\right)^{m} = \\sqrt[n]{b^{m}}",
+    oneLineSummary: "A fractional exponent is a root and a power: the DENOMINATOR is the root to take, the NUMERATOR is the power to raise it to.",
+    intuitionHook: "What could $8^{1/3}$ mean? Whatever it is, cubing it must give $8^{1} = 8$ (powers multiply: $(8^{1/3})^3 = 8^{3/3}$). The number that cubes to $8$ is $2$ — so $8^{1/3} = \\sqrt[3]{8} = 2$. Then $8^{2/3}$ is that root squared: $2^2 = 4$. The bottom of the fraction roots; the top powers.",
+    whatItIs: "Raising a number to a fractional power $m/n$: take the $n$-th root of the base (the denominator), then raise the result to the $m$-th power (the numerator). It extends exponents from whole numbers to fractions while keeping all the exponent rules.",
+    whyItWorks: "Fractional exponents are DEFINED so the power rule $(b^{p})^{q} = b^{pq}$ keeps working. If $b^{1/n}$ is to satisfy $(b^{1/n})^{n} = b^{n/n} = b$, then $b^{1/n}$ must be the number whose $n$-th power is $b$ — that is exactly the $n$-th root. Building up, $b^{m/n} = (b^{1/n})^{m}$ roots first, then powers (and you can swap the order: $\\sqrt[n]{b^{m}}$ gives the same value). Rooting first usually keeps the numbers small and exact. The errors come from doing only half the job — taking the root but forgetting the power, or powering but skipping the root.",
+    whenToUse: "Rewriting radicals as powers to apply exponent rules, evaluating expressions in algebra and on calculators, growth/decay and geometric-mean formulas, and the lead-in to logarithms.",
+    representations: [
+      { kind: "root_then_power", label: "Bottom roots, top powers", body: "$8^{2/3}$: $\\sqrt[3]{8} = 2$, then $2^{2} = 4$." },
+      { kind: "why_root", label: "Forced by the power rule", body: "$(b^{1/n})^{n} = b$, so $b^{1/n}$ is the $n$-th root — the only value that works." },
+      { kind: "either_order", label: "Root or power first", body: "$\\left(\\sqrt[3]{8}\\right)^{2} = 4$ and $\\sqrt[3]{8^{2}} = \\sqrt[3]{64} = 4$ — same answer; root-first stays smaller." }
+    ],
+    commonMistakes: [
+      { label: "Forgetting the power", why: "Reporting $\\sqrt[n]{b}$ alone — taking the root but skipping the numerator.", fix: "The numerator is a power: after the root, raise to the $m$. $8^{2/3} = 2^{2} = 4$, not $2$." },
+      { label: "Forgetting the root", why: "Computing $b^{m}$ and ignoring the denominator entirely.", fix: "The denominator is a root: take the $n$-th root, don't leave $8^{2} = 64$." },
+      { label: "Swapping numerator and denominator", why: "Using the numerator as the root and the denominator as the power.", fix: "Bottom roots, top powers: in $b^{m/n}$ the $n$ (below) is the root, the $m$ (above) is the power." }
+    ],
+    connections: [
+      { concept: "square_root", note: "$b^{1/2}$ IS the square root; fractional exponents generalize roots to any index." },
+      { concept: "exponent_power_rule", note: "Fractional exponents are defined precisely to keep $(b^{p})^{q} = b^{pq}$ true." },
+      { concept: "simplify_radical", note: "The same root-and-power idea, written with radical signs instead of fractional exponents." }
+    ],
+    examples: [
+      { question: "Evaluate $8^{2/3}$.", answer: "4", explanation: "$\\sqrt[3]{8} = 2$, then $2^{2} = 4$." },
+      { question: "Evaluate $27^{2/3}$.", answer: "9", explanation: "$\\sqrt[3]{27} = 3$, then $3^{2} = 9$." }
+    ]
+  },
+  simplify_radical: {
+    title: "Simplifying Radicals",
+    formula: "\\sqrt{a^2 \\cdot b} = a\\sqrt{b}",
+    oneLineSummary: "Pull the largest perfect-square factor out of a square root: its root comes outside, the leftover stays under the radical.",
+    intuitionHook: "$\\sqrt{12}$ isn't a whole number, but it isn't fully wild either. Split $12$ into a perfect square times the rest: $12 = 4 \\times 3$. The $\\sqrt{4} = 2$ steps outside, the $3$ has no perfect-square factors so it stays in: $\\sqrt{12} = 2\\sqrt{3}$. You've extracted everything that could come out.",
+    whatItIs: "Simplifying a square root means rewriting $\\sqrt{k}$ as $a\\sqrt{b}$, where $a^2$ is the largest perfect square dividing $k$ and $b$ is what remains. The radicand $b$ ends up with no perfect-square factors left.",
+    whyItWorks: "Square roots split over multiplication: $\\sqrt{a^2 \\cdot b} = \\sqrt{a^2} \\cdot \\sqrt{b} = a\\sqrt{b}$. So finding a perfect-square factor of the radicand lets that factor's root escape the radical while the rest stays inside. Using the LARGEST perfect-square factor extracts everything in one step — pulling out a smaller square (e.g. taking $\\sqrt{4}$ from $48$ but missing the bigger $16$) leaves the radical still simplifiable. The coefficient you write outside is the square ROOT of the perfect square (so $\\sqrt{4}$ contributes $2$, not $4$), and the number under the radical shrinks, never staying the same.",
+    whenToUse: "Writing exact answers (the Pythagorean theorem, the quadratic formula, distance), combining like radicals, rationalizing, and any time a decimal approximation would lose precision.",
+    representations: [
+      { kind: "split", label: "Perfect square × rest", body: "$\\sqrt{12} = \\sqrt{4 \\cdot 3} = \\sqrt{4}\\,\\sqrt{3} = 2\\sqrt{3}$." },
+      { kind: "largest", label: "Take the biggest square", body: "$\\sqrt{48}$: use $16$, not $4$ — $\\sqrt{16 \\cdot 3} = 4\\sqrt{3}$, fully simplified." },
+      { kind: "root_outside", label: "Root comes out", body: "From $\\sqrt{a^2 b}$ the part that leaves is $a = \\sqrt{a^2}$, not $a^2$ itself." }
+    ],
+    commonMistakes: [
+      { label: "Not simplifying", why: "Leaving $\\sqrt{12}$ as is when a perfect-square factor ($4$) could come out.", fix: "Check for perfect-square factors ($4, 9, 16, 25, \\dots$); $12 = 4 \\cdot 3$, so $\\sqrt{12} = 2\\sqrt{3}$." },
+      { label: "Squaring the coefficient", why: "Writing $4\\sqrt{3}$ for $\\sqrt{12}$ — using the perfect square itself, not its root.", fix: "Only the ROOT comes out: $\\sqrt{4} = 2$, so $\\sqrt{12} = 2\\sqrt{3}$." },
+      { label: "Keeping the full radicand", why: "Writing $2\\sqrt{12}$ — pulling a factor out but not reducing what's left.", fix: "Once $a$ is outside, the inside drops to $b$: $\\sqrt{12} = 2\\sqrt{3}$, not $2\\sqrt{12}$." }
+    ],
+    connections: [
+      { concept: "square_root", note: "Simplifying extends exact square roots to non-perfect-square radicands." },
+      { concept: "prime_factorization", note: "Factoring the radicand into primes exposes the pairs that form perfect squares." },
+      { concept: "fractional_exponent", note: "$\\sqrt{b} = b^{1/2}$ — the same idea written as a fractional power." }
+    ],
+    examples: [
+      { question: "Simplify $\\sqrt{12}$.", answer: "2\\sqrt{3}", explanation: "$12 = 4 \\cdot 3$, $\\sqrt{4} = 2$, so $\\sqrt{12} = 2\\sqrt{3}$." },
+      { question: "Simplify $\\sqrt{50}$.", answer: "5\\sqrt{2}", explanation: "$50 = 25 \\cdot 2$, $\\sqrt{25} = 5$, so $\\sqrt{50} = 5\\sqrt{2}$." }
+    ]
+  },
+  scientific_notation_compute: {
+    title: "Multiplying in Scientific Notation",
+    formula: "(a \\times 10^{m})(b \\times 10^{n}) = (a \\cdot b) \\times 10^{m+n}",
+    oneLineSummary: "Multiply the leading numbers and ADD the powers of ten — two separate rules, one for the mantissas, one for the exponents.",
+    intuitionHook: "Multiply $(2 \\times 10^{3})(3 \\times 10^{2})$. Group the like parts: $2 \\times 3 = 6$ for the front, and $10^{3} \\times 10^{2} = 10^{5}$ for the powers of ten (exponents ADD). Together: $6 \\times 10^{5}$. The mantissas multiply; the tens stack their exponents.",
+    whatItIs: "Multiplying two numbers written in scientific notation: multiply the mantissas (the leading numbers) and add the exponents of the powers of ten, then write the result as a single mantissa times a power of ten.",
+    whyItWorks: "Multiplication can be reordered and regrouped, so $(a \\times 10^{m})(b \\times 10^{n}) = (a \\cdot b)(10^{m} \\times 10^{n})$. The mantissas $a$ and $b$ just multiply. The powers of ten combine by the PRODUCT RULE for exponents — same base, so the exponents add: $10^{m} \\times 10^{n} = 10^{m+n}$. The two common errors swap those operations: adding the mantissas instead of multiplying, or multiplying the exponents instead of adding. (If the mantissa product reaches $10$ or more, you'd shift one more power of ten to restore $1 \\le m < 10$ — kept under $10$ here.)",
+    whenToUse: "Scaling measurements in science (densities, distances, atomic counts), calculator-style arithmetic with very large or small numbers, and any product of magnitudes.",
+    representations: [
+      { kind: "group", label: "Group like parts", body: "$(2 \\times 10^{3})(3 \\times 10^{2}) = (2 \\cdot 3) \\times (10^{3} \\cdot 10^{2}) = 6 \\times 10^{5}$." },
+      { kind: "two_rules", label: "Multiply, then add", body: "Mantissas MULTIPLY ($2 \\cdot 3 = 6$); exponents ADD ($3 + 2 = 5$)." },
+      { kind: "product_rule", label: "Same base adds", body: "$10^{3} \\times 10^{2} = 10^{3+2} = 10^{5}$ — the product rule for exponents." }
+    ],
+    commonMistakes: [
+      { label: "Adding the mantissas", why: "Writing $5 \\times 10^{5}$ — the leading numbers were added, not multiplied.", fix: "Mantissas MULTIPLY: $2 \\times 3 = 6$, giving $6 \\times 10^{5}$." },
+      { label: "Multiplying the exponents", why: "Writing $6 \\times 10^{6}$ — the powers were multiplied ($3 \\times 2$) instead of added.", fix: "Same base means ADD the exponents: $10^{3} \\cdot 10^{2} = 10^{5}$, not $10^{6}$." },
+      { label: "Forgetting to re-normalize", why: "When the mantissa product reaches $10$ or more, leaving it outside $1 \\le m < 10$.", fix: "If $a \\cdot b \\ge 10$, shift one place and add $1$ to the exponent so the mantissa is under $10$." }
+    ],
+    connections: [
+      { concept: "scientific_notation", note: "Writes single numbers in $m \\times 10^{e}$ form; this multiplies two of them." },
+      { concept: "exponent_product_rule", note: "The powers of ten combine by exactly this rule: same base, add exponents." },
+      { concept: "decimal_mult", note: "The mantissas are multiplied like ordinary decimals." }
+    ],
+    examples: [
+      { question: "Multiply: $(2 × 10^3)(3 × 10^2)$.", answer: "6 × 10^5", explanation: "Mantissas: $2 \\times 3 = 6$. Exponents add: $3 + 2 = 5$. So $6 \\times 10^{5}$." },
+      { question: "Multiply: $(2 × 10^4)(4 × 10^3)$.", answer: "8 × 10^7", explanation: "$2 \\times 4 = 8$ and $4 + 3 = 7$: $8 \\times 10^{7}$." }
+    ]
+  },
+
+  // ===========================================================================
   // GRAPHING STRAND (linear graphing & the coordinate plane — 8.EE/8.F/8.G).
   // ===========================================================================
   point_on_line: {
@@ -2195,6 +2283,66 @@ const CONCEPT_LESSONS = {
     examples: [
       { question: "Factor $x^2 + 9x + 20$.", answer: "(x + 4)(x + 5)", explanation: "$4 \\times 5 = 20$ and $4 + 5 = 9$ — both conditions met." },
       { question: "Factor $x^2 - 8x + 15$.", answer: "(x - 3)(x - 5)", explanation: "Positive product, negative sum → both negative: $(-3)(-5) = 15$, $-3 - 5 = -8$." }
+    ]
+  },
+
+  // ===========================================================================
+  // EXPRESSIONS II (factor out the GCF, the difference of two squares).
+  // ===========================================================================
+  factor_gcf: {
+    title: "Factoring Out the GCF",
+    formula: "g \\cdot p\\,x + g \\cdot q = g(p\\,x + q)",
+    oneLineSummary: "Pull the greatest common factor of every term out front — distribution run in reverse — leaving the reduced terms inside the parentheses.",
+    intuitionHook: "Look at $6x + 9$: both terms are built from $3$ — $6x = 3 \\cdot 2x$ and $9 = 3 \\cdot 3$. Lift that shared $3$ out front and write what's left inside: $3(2x + 3)$. It's distribution played backwards — instead of multiplying a factor in, you're pulling the common one out.",
+    whatItIs: "Factoring out the greatest common factor rewrites a sum like $6x + 9$ as a product, $3(2x + 3)$, by dividing every term by the largest factor they all share and placing it outside the parentheses.",
+    whyItWorks: "The distributive law says $g(px + q) = gpx + gq$, so if every term of an expression shares a factor $g$, the expression must have come from distributing $g$ — and undoing that distribution recovers the factored form. To pull $g$ out you divide EACH term by it: the $x$-term's coefficient and the constant both lose a copy of $g$. Using the GREATEST common factor pulls out everything shared in one step; using a smaller common factor leaves the inside still factorable. The classic error is dividing only one term (so the other keeps an extra factor of $g$) — distributing your answer back out is the built-in check that catches it.",
+    whenToUse: "First step in factoring almost any polynomial, simplifying expressions and fractions, solving equations by factoring, and reversing a distribution.",
+    representations: [
+      { kind: "reverse_distribute", label: "Distribution backwards", body: "$6x + 9$: shared factor $3$, so $3(2x + 3)$. Check: $3 \\cdot 2x + 3 \\cdot 3 = 6x + 9$." },
+      { kind: "divide_each", label: "Divide every term", body: "$\\frac{6x}{3} = 2x$ and $\\frac{9}{3} = 3$ — both terms lose a factor of $3$." },
+      { kind: "greatest", label: "Take the GREATEST", body: "$6x + 9$ shares $3$ (not just $1$); pulling $3$ leaves $2x + 3$, which shares nothing more." }
+    ],
+    commonMistakes: [
+      { label: "Dividing only one term", why: "Writing $3(2x + 9)$ — the $x$-term was divided but the constant kept its full value.", fix: "Every term inside loses the factor: $9 \\div 3 = 3$, so it's $3(2x + 3)$. Distribute back to check." },
+      { label: "Leaving the coefficient", why: "Writing $3(6x + 3)$ — the constant was divided but the coefficient wasn't.", fix: "Divide BOTH: $6x \\div 3 = 2x$. The inside should share no factor with the one you pulled out." },
+      { label: "Not factoring at all", why: "Leaving $6x + 9$ as a sum when a factored form was asked.", fix: "Find the common factor and write a PRODUCT: $3(2x + 3)$." }
+    ],
+    connections: [
+      { concept: "distribute", note: "The exact inverse — distribution multiplies a factor in; this pulls the common one out." },
+      { concept: "find_gcf", note: "The factor you pull out is the GCF of the terms' coefficients." },
+      { concept: "difference_of_squares", note: "Often the first move before another factoring pattern applies." }
+    ],
+    examples: [
+      { question: "Factor completely: $6x + 9$.", answer: "3(2x + 3)", explanation: "GCF is $3$: $6x \\div 3 = 2x$, $9 \\div 3 = 3$, so $3(2x + 3)$." },
+      { question: "Factor completely: $8x + 12$.", answer: "4(2x + 3)", explanation: "GCF is $4$: $4(2x + 3)$. Check: $8x + 12$." }
+    ]
+  },
+  difference_of_squares: {
+    title: "Difference of Two Squares",
+    formula: "x^2 - c^2 = (x - c)(x + c)",
+    oneLineSummary: "A squared term minus a squared constant factors into two binomials with OPPOSITE signs — the middle terms cancel, leaving no x-term.",
+    intuitionHook: "Why does $x^2 - 9$ factor so cleanly? Try $(x - 3)(x + 3)$ and FOIL: the outer and inner terms, $+3x$ and $-3x$, cancel exactly, leaving $x^2 - 9$. The opposite signs are the whole trick — they erase the middle term, which is why a difference of squares has no $x$-term to begin with.",
+    whatItIs: "A binomial that is one perfect square minus another, like $x^2 - 9$, factors as a sum times a difference of the square roots: $(x - 3)(x + 3)$. It's a recognizable pattern, not a sum-and-product search.",
+    whyItWorks: "Expanding $(x - c)(x + c)$ gives $x^2 + cx - cx - c^2$, and the two middle terms $+cx$ and $-cx$ are exact opposites that sum to zero — so the result collapses to $x^2 - c^2$ with NO middle term. Reading that backwards: any expression of the form (square) − (square) must factor into (root − root)(root + root). The signs must be opposite; making them the same gives a perfect-square trinomial $(x \\pm c)^2 = x^2 \\pm 2cx + c^2$, which has a middle term the original lacks. And you must take the square ROOT of the constant — for $x^2 - 9$ the factors use $3$, not $9$, because $3^2 = 9$.",
+    whenToUse: "Quickly factoring binomials with a subtraction of two perfect squares, solving such quadratics, simplifying rational expressions, and spotting the pattern inside larger factoring problems.",
+    representations: [
+      { kind: "foil_back", label: "Why the middle vanishes", body: "$(x - 3)(x + 3) = x^2 + 3x - 3x - 9 = x^2 - 9$ — the $\\pm 3x$ cancel." },
+      { kind: "roots", label: "Square-root the pieces", body: "$x^2 - 9 = x^2 - 3^2$, so the factors use $3$: $(x - 3)(x + 3)$." },
+      { kind: "contrast", label: "Not a perfect square", body: "$(x - 3)^2 = x^2 - 6x + 9$ has a middle term; the difference of squares has none." }
+    ],
+    commonMistakes: [
+      { label: "Treating it as a perfect square", why: "Writing $(x - 3)^2$ for $x^2 - 9$ — but that expands to $x^2 - 6x + 9$, not $x^2 - 9$.", fix: "A difference of squares uses OPPOSITE signs: $(x - 3)(x + 3)$, so the middle terms cancel." },
+      { label: "Same sign in both factors", why: "Writing $(x + 3)(x + 3)$ or $(x - 3)(x - 3)$ — same signs leave a middle term and the wrong constant sign.", fix: "One minus, one plus: $(x - c)(x + c)$. Expand to confirm the $x$-term disappears." },
+      { label: "Not taking the square root", why: "Writing $(x - 9)(x + 9)$ — using the constant itself instead of its root.", fix: "Factor with $\\sqrt{9} = 3$: the constant in each binomial is the square root, since $3^2 = 9$." }
+    ],
+    connections: [
+      { concept: "square_binomial", note: "The reverse of one — and its sign-cousin: same signs square, opposite signs make a difference of squares." },
+      { concept: "factor_trinomial", note: "Both factor a quadratic into two binomials; this is the special no-middle-term case." },
+      { concept: "factor_gcf", note: "Pull out any common factor first, then check for the difference-of-squares pattern." }
+    ],
+    examples: [
+      { question: "Factor: $x^2 - 9$.", answer: "(x - 3)(x + 3)", explanation: "$9 = 3^2$, so $x^2 - 9 = (x - 3)(x + 3)$. Opposite signs cancel the middle term." },
+      { question: "Factor: $x^2 - 25$.", answer: "(x - 5)(x + 5)", explanation: "$25 = 5^2$: $(x - 5)(x + 5)$." }
     ]
   },
 
@@ -5281,7 +5429,11 @@ function levelToConceptId(category, level) {
     if (lvl <= 8) return 'exponent_power_rule';
     if (lvl <= 9) return 'exponent_quotient_rule';
     if (lvl <= 11) return 'exponent_zero_negative';
-    return 'scientific_notation';
+    if (lvl <= 12) return 'fractional_exponent';
+    if (lvl <= 13) return 'scientific_notation';
+    // Powers II (templates 14/15).
+    if (lvl <= 14) return 'simplify_radical';
+    return 'scientific_notation_compute';
   }
   if (cat === 'graphing') {
     if (lvl <= 8) return 'point_on_line';
@@ -5368,7 +5520,10 @@ function levelToConceptId(category, level) {
     if (lvl <= 15) return 'distribute';
     if (lvl <= 16) return 'foil_binomials';
     if (lvl <= 17) return 'square_binomial';
-    return 'factor_trinomial';
+    if (lvl <= 18) return 'factor_trinomial';
+    // Expressions II (templates 19/21; 20 is boss-routed).
+    if (lvl <= 19) return 'factor_gcf';
+    return 'difference_of_squares';
   }
   return null;
 }

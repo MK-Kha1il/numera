@@ -501,6 +501,38 @@ const concepts = {
     ]
   },
 
+  // ---- Powers II (fractional exponents, simplifying radicals, multiplying in scientific notation) ----
+  "fractional_exponent": {
+    name: "Fractional Exponents",
+    prereqs: ["exponent_power_rule", "square_root"],
+    baseElo: 1300,
+    misconceptions: [
+      { id: "forgot_the_power", label: "Took the root but forgot to raise it to the numerator", rule: (ans, p) => p.root },
+      { id: "forgot_the_root", label: "Raised the base to the numerator but ignored the root", rule: (ans, p) => Math.pow(p.b, p.m) },
+      { id: "wrong_exponent", label: "Raised the root to the denominator instead of the numerator", rule: (ans, p) => p.b }
+    ]
+  },
+  "simplify_radical": {
+    name: "Simplifying Radicals",
+    prereqs: ["square_root", "prime_factorization"],
+    baseElo: 1240,
+    misconceptions: [
+      { id: "left_unsimplified", label: "Left the radical unsimplified", rule: (ans) => ans },
+      { id: "squared_coefficient", label: "Squared the coefficient pulled out of the radical", rule: (ans) => ans },
+      { id: "kept_full_radicand", label: "Pulled out a factor but never reduced the radicand", rule: (ans) => ans }
+    ]
+  },
+  "scientific_notation_compute": {
+    name: "Multiplying in Scientific Notation",
+    prereqs: ["scientific_notation", "exponent_product_rule"],
+    baseElo: 1280,
+    misconceptions: [
+      { id: "added_mantissas", label: "Added the leading numbers instead of multiplying them", rule: (ans) => ans },
+      { id: "multiplied_exponents", label: "Multiplied the powers of ten instead of adding them", rule: (ans) => ans },
+      { id: "both_errors", label: "Added the mantissas and multiplied the exponents", rule: (ans) => ans }
+    ]
+  },
+
   // ---- Graphing strand (linear graphing & the coordinate plane — the 8.EE/8.F/8.G bridge) ----
   "point_on_line": {
     name: "Points on a Line",
@@ -786,6 +818,28 @@ const concepts = {
     misconceptions: [
       { id: "product_pair_wrong_sum", label: "Picked a factor pair with the right product but the wrong sum", rule: (ans) => ans },
       { id: "sign_mix", label: "Mixed the signs of the factors", rule: (ans) => ans }
+    ]
+  },
+
+  // ---- Expressions II (factoring out a GCF, the difference of two squares) ----
+  "factor_gcf": {
+    name: "Factoring Out the GCF",
+    prereqs: ["distribute", "find_gcf"],
+    baseElo: 1180,
+    misconceptions: [
+      { id: "constant_not_divided", label: "Factored the variable term but left the constant undivided", rule: (ans) => ans },
+      { id: "coefficient_not_divided", label: "Factored the constant but left the variable coefficient undivided", rule: (ans) => ans },
+      { id: "dropped_factor", label: "Divided every term but dropped the common factor outside", rule: (ans) => ans }
+    ]
+  },
+  "difference_of_squares": {
+    name: "Difference of Two Squares",
+    prereqs: ["square_binomial", "factor_trinomial"],
+    baseElo: 1300,
+    misconceptions: [
+      { id: "perfect_square", label: "Factored it as a perfect-square trinomial", rule: (ans) => ans },
+      { id: "both_same_sign", label: "Used the same sign in both factors", rule: (ans) => ans },
+      { id: "didnt_take_root", label: "Used the constant itself instead of its square root", rule: (ans) => ans }
     ]
   },
 
@@ -1800,6 +1854,12 @@ const STANDARDS = {
   function_quad_eval: "HSF-IF.A.2",
   function_exp_eval: "HSF-LE.A.2",
   function_composition: "HSF-BF.A.1c",
+  // Powers II / Expressions II.
+  fractional_exponent: "HSN-RN.A.2",
+  simplify_radical: "HSN-RN.A.2",
+  scientific_notation_compute: "8.EE.A.4",
+  factor_gcf: "6.EE.A.3",
+  difference_of_squares: "HSA-SSE.A.2",
   // Equations II / Rates II / Factors II.
   eqn_distribute: "8.EE.C.7b",
   eqn_var_denominator: "7.RP.A.2c",

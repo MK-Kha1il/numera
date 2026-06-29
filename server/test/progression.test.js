@@ -39,7 +39,7 @@ test('strand categories band into their own template key ranges', () => {
   assert.strictEqual(P.normalizeLevelForGenerator('fractions', 13), 5);  // climbs with UI level
   assert.strictEqual(P.normalizeLevelForGenerator('fractions', 59), 11); // capped at band max (now [3,11])
   assert.strictEqual(P.normalizeLevelForGenerator('expressions', 1), 11); // starts at 11, not 1
-  assert.strictEqual(P.normalizeLevelForGenerator('expressions', 59), 18); // cap follows the polynomial keys
+  assert.strictEqual(P.normalizeLevelForGenerator('expressions', 59), 21); // cap follows Expressions II (factor_gcf 19, difference_of_squares 21; 20 boss-skipped)
   assert.strictEqual(P.normalizeLevelForGenerator('geometry', 7), 3);
   assert.strictEqual(P.normalizeLevelForGenerator('number_sense', 1), 6);
   assert.strictEqual(P.normalizeLevelForGenerator('number sense', 1), 6); // space form too
