@@ -1488,6 +1488,38 @@ const concepts = {
     ]
   },
 
+  // ---- Equations II (distribution, variable in a denominator, variables on both sides) ----
+  "eqn_distribute": {
+    name: "Solving Equations with Distribution",
+    prereqs: ["eqn_clear_denom", "linear_two_step"],
+    baseElo: 1170,
+    misconceptions: [
+      { id: "forgot_to_subtract", label: "Divided by the coefficient but never subtracted the inner constant", rule: (ans, p) => p.q + p.b },
+      { id: "used_rhs", label: "Reported the right-hand side instead of solving", rule: (ans, p) => p.c },
+      { id: "subtracted_without_dividing", label: "Subtracted the inner constant without dividing by the coefficient", rule: (ans, p) => p.c - p.b }
+    ]
+  },
+  "eqn_var_denominator": {
+    name: "Equations with the Variable in a Denominator",
+    prereqs: ["eqn_onestep_div", "eqn_proportion"],
+    baseElo: 1200,
+    misconceptions: [
+      { id: "multiplied_instead", label: "Multiplied the two numbers instead of dividing", rule: (ans, p) => p.a * p.b },
+      { id: "gave_divisor", label: "Reported the divisor instead of solving for x", rule: (ans, p) => p.b },
+      { id: "gave_numerator", label: "Reported the numerator instead of solving for x", rule: (ans, p) => p.a }
+    ]
+  },
+  "eqn_var_both_sides": {
+    name: "Equations with Variables on Both Sides",
+    prereqs: ["eqn_clear_denom", "linear_variable_both_sides"],
+    baseElo: 1230,
+    misconceptions: [
+      { id: "forgot_to_divide", label: "Collected the variable terms but never divided by their coefficient", rule: (ans, p) => p.d - p.b },
+      { id: "used_rhs", label: "Reported a right-hand-side value instead of solving", rule: (ans, p) => p.d },
+      { id: "added_constants", label: "Added the two constants instead of subtracting", rule: (ans, p) => p.b + p.d }
+    ]
+  },
+
   // ---- Ratios & rates strand: applied proportional reasoning (6.RP / 7.RP / 7.G) ----
   "ratio_simplify": {
     name: "Simplifying Ratios",
@@ -1535,6 +1567,38 @@ const concepts = {
     ]
   },
 
+  // ---- Rates II (total cost from a rate, time from speed, comparing unit prices) ----
+  "total_cost_rate": {
+    name: "Total Cost from a Rate",
+    prereqs: ["unit_price"],
+    baseElo: 1020,
+    misconceptions: [
+      { id: "added_instead", label: "Added the rate and the quantity instead of multiplying", rule: (ans, p) => p.a + p.t },
+      { id: "gave_rate", label: "Reported the per-unit rate instead of the total", rule: (ans, p) => p.a },
+      { id: "gave_quantity", label: "Reported the quantity instead of the total", rule: (ans, p) => p.t }
+    ]
+  },
+  "time_from_speed": {
+    name: "Time from Speed and Distance",
+    prereqs: ["speed_dist_time"],
+    baseElo: 1080,
+    misconceptions: [
+      { id: "gave_distance", label: "Reported the distance instead of the time", rule: (ans, p) => p.dist },
+      { id: "subtracted_instead", label: "Subtracted the speed from the distance instead of dividing", rule: (ans, p) => p.dist - p.speed },
+      { id: "gave_speed", label: "Reported the speed instead of the time", rule: (ans, p) => p.speed }
+    ]
+  },
+  "better_buy": {
+    name: "Comparing Unit Prices (Better Buy)",
+    prereqs: ["unit_price"],
+    baseElo: 1120,
+    misconceptions: [
+      { id: "chose_higher", label: "Picked the higher unit price as the better buy", rule: (ans, p) => p.p2 },
+      { id: "compared_totals", label: "Compared total prices instead of price per item", rule: (ans, p) => p.c1 },
+      { id: "other_total", label: "Reported the other option's total price", rule: (ans, p) => p.c2 }
+    ]
+  },
+
   // ---- Factors & multiples strand: middle-school number theory (4.OA / 6.NS) ----
   "prime_factorization": {
     name: "Prime Factorization",
@@ -1579,6 +1643,38 @@ const concepts = {
     misconceptions: [
       { id: "forgot_to_reduce", label: "Multiplied the two intervals instead of taking the least common multiple", rule: (ans, p) => p.prod },
       { id: "added", label: "Added the two intervals", rule: (ans, p) => p.sum }
+    ]
+  },
+
+  // ---- Factors II (GCF/LCM of three numbers, and the GCF·LCM product identity) ----
+  "gcf_three": {
+    name: "GCF of Three Numbers",
+    prereqs: ["find_gcf"],
+    baseElo: 1080,
+    misconceptions: [
+      { id: "gave_a_number", label: "Reported one of the original numbers instead of their GCF", rule: (ans, p) => p.n0 },
+      { id: "gave_largest", label: "Reported the largest number instead of the GCF", rule: (ans, p) => p.n2 },
+      { id: "gave_middle", label: "Reported another of the numbers instead of the GCF", rule: (ans, p) => p.n1 }
+    ]
+  },
+  "lcm_three": {
+    name: "LCM of Three Numbers",
+    prereqs: ["find_lcm"],
+    baseElo: 1120,
+    misconceptions: [
+      { id: "multiplied_all", label: "Multiplied all three numbers instead of taking the least common multiple", rule: (ans, p) => p.prod },
+      { id: "gave_largest", label: "Reported the largest number instead of the LCM", rule: (ans, p) => p.mx },
+      { id: "added", label: "Added the three numbers", rule: (ans, p) => p.sm }
+    ]
+  },
+  "gcf_lcm_product": {
+    name: "The GCF · LCM Identity",
+    prereqs: ["find_gcf", "find_lcm"],
+    baseElo: 1160,
+    misconceptions: [
+      { id: "gave_product", label: "Reported the product of the two numbers, not the LCM", rule: (ans, p) => p.a * p.b },
+      { id: "gave_gcf", label: "Reported the GCF instead of the LCM", rule: (ans, p) => p.g },
+      { id: "added", label: "Added the two numbers", rule: (ans, p) => p.a + p.b }
     ]
   }
 };
@@ -1704,6 +1800,16 @@ const STANDARDS = {
   function_quad_eval: "HSF-IF.A.2",
   function_exp_eval: "HSF-LE.A.2",
   function_composition: "HSF-BF.A.1c",
+  // Equations II / Rates II / Factors II.
+  eqn_distribute: "8.EE.C.7b",
+  eqn_var_denominator: "7.RP.A.2c",
+  eqn_var_both_sides: "8.EE.C.7b",
+  total_cost_rate: "7.RP.A.1",
+  time_from_speed: "7.RP.A.1",
+  better_buy: "7.RP.A.2b",
+  gcf_three: "6.NS.B.4",
+  lcm_three: "6.NS.B.4",
+  gcf_lcm_product: "6.NS.B.4",
   probability_complement: "7.SP.C.5",
   coord_reflect: "8.G.A.3",
   coord_translate: "8.G.A.3",

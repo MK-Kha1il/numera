@@ -3687,6 +3687,53 @@ templates.equations = {
       type: "eqn_two_step_fraction",
       a, c, d
     };
+  },
+  // ---- Equations II (keys 17/18/19 — distribution, variable in a denominator, both sides) ----
+  // Distribute then solve: a(x + b) = c, built so x = q is whole (c = a(q + b)).
+  17: (_diffFactor, idx) => {
+    const a = 2 + (idx % 3);          // 2..4
+    const b = 1 + (idx % 3);          // 1..3
+    const q = 2 + (idx % 4);          // 2..5
+    const c = a * (q + b);
+    return {
+      question: `Solve for $x$: $${a}(x + ${b}) = ${c}$`,
+      answer: q,
+      distractors: [q + b, c, c - b], // divided but forgot to subtract b; used the RHS; subtracted without dividing
+      explanation: `Divide both sides by $${a}$ first: $x + ${b} = ${q + b}$, then subtract $${b}$: $x = ${q}$. (Distributing gives the same: $${a}x + ${a * b} = ${c}$.) The $${a}$ multiplies everything inside the parentheses, and the $+ ${b}$ still has to be undone.`,
+      type: "eqn_distribute",
+      a, b, c, q
+    };
+  },
+  // Variable in a denominator: a/x = b  ->  x = a/b. Built with a = b·q and q ≠ b so x is whole.
+  18: (_diffFactor, idx) => {
+    const b = 2 + (idx % 2);          // 2 or 3 (divisor)
+    const q = 4 + (idx % 3);          // 4..6 (q ≠ b)
+    const a = b * q;
+    return {
+      question: `Solve for $x$: $\\frac{${a}}{x} = ${b}$`,
+      answer: q,
+      distractors: [a * b, b, a], // multiplied instead of dividing; gave the divisor; gave the numerator
+      explanation: `When $x$ is the denominator, multiply both sides by $x$, then divide: $${a} = ${b}x$, so $x = \\frac{${a}}{${b}} = ${q}$. The $x$ underneath means you DIVIDE $${a}$ by $${b}$ — multiplying them ($${a * b}$) goes the wrong way.`,
+      type: "eqn_var_denominator",
+      a, b
+    };
+  },
+  // Variables on both sides: ax + b = cx + d with a − c ≥ 2 (clean divide), x = q.
+  19: (_diffFactor, idx) => {
+    const a = 4 + (idx % 2);          // 4 or 5
+    const c = 1 + (idx % 2);          // 1 or 2 (a − c ≥ 2)
+    const q = 2 + (idx % 4);          // 2..5
+    const b = 1 + (idx % 3);          // 1..3
+    const diff = a - c;
+    const d = b + diff * q;
+    return {
+      question: `Solve for $x$: $${a}x + ${b} = ${c}x + ${d}$`,
+      answer: q,
+      distractors: [diff * q, d, b + d], // collected but forgot to divide; used a RHS value; added the constants
+      explanation: `Gather the variables on one side and the numbers on the other: subtract $${c}x$ and $${b}$ from both sides → $${diff}x = ${diff * q}$. Divide by $${diff}$: $x = ${q}$. Stopping at $${diff * q}$ skips that final divide.`,
+      type: "eqn_var_both_sides",
+      a, b, c, d
+    };
   }
 };
 
@@ -3767,6 +3814,53 @@ templates.rates = {
       explanation: `Each centimetre stands for $${k}$ km, so $${m}$ cm stand for $${m} \\times ${k} = ${actual}$ km. The scale is a MULTIPLIER, not something to add — $${m} + ${k}$ mixes centimetres with kilometres.`,
       type: "scale_factor",
       m, k
+    };
+  },
+  // ---- Rates II (keys 17/18/19 — total cost from a rate, time from speed, comparing unit prices) ----
+  // Total cost = rate × quantity. Rate range is disjoint from the quantity so the two single-value
+  // distractors never collide.
+  17: (_diffFactor, idx) => {
+    const a = 6 + (idx % 4);          // $6..9 per hour
+    const t = 2 + (idx % 4);          // 2..5 hours
+    const total = a * t;
+    return {
+      question: `A plumber charges $\\$${a}$ per hour. How much does a $${t}$-hour job cost?`,
+      answer: total,
+      distractors: [a + t, a, t], // added instead of multiplying; gave the rate; gave the hours
+      explanation: `A per-hour rate is multiplied by the number of hours: $\\$${a} \\times ${t} = \\$${total}$. Adding ($${a} + ${t}$) mixes dollars-per-hour with hours — the rate scales WITH the quantity, it isn't added to it.`,
+      type: "total_cost_rate",
+      a, t
+    };
+  },
+  // Time = distance ÷ speed (the rearrangement of speed = distance/time). t ≥ 3 keeps distance − speed
+  // distinct from the speed itself.
+  18: (_diffFactor, idx) => {
+    const speed = 10 + 10 * (idx % 4); // 10..40 mph
+    const t = 3 + (idx % 3);           // 3..5 hours
+    const dist = speed * t;
+    return {
+      question: `A train travels $${dist}$ miles at a steady $${speed}$ miles per hour. How many hours does the trip take?`,
+      answer: t,
+      distractors: [dist, dist - speed, speed], // gave the distance; subtracted instead of dividing; gave the speed
+      explanation: `Time is distance shared out at the speed: $${dist} \\div ${speed} = ${t}$ hours. Speed is miles PER hour, so dividing the miles by the speed counts how many hours it takes — subtracting ($${dist} - ${speed}$) mixes miles with miles-per-hour.`,
+      type: "time_from_speed",
+      dist, speed
+    };
+  },
+  // Better buy: two whole unit prices; option A is the cheaper per-item. Answer is A's unit price.
+  19: (_diffFactor, idx) => {
+    const n1 = 3 + (idx % 3);          // pack A count 3..5
+    const p1 = 4 + (idx % 3);          // pack A unit price 4..6 (the better buy)
+    const n2 = 2 + (idx % 4);          // pack B count 2..5
+    const p2 = p1 + 1 + (idx % 2);     // pack B unit price strictly higher
+    const c1 = n1 * p1, c2 = n2 * p2;
+    return {
+      question: `Store A sells $${n1}$ pens for $\\$${c1}$; Store B sells $${n2}$ pens for $\\$${c2}$. What is the price per pen at the cheaper store?`,
+      answer: p1,
+      distractors: [p2, c1, c2], // the dearer unit price; A's total; B's total
+      explanation: `Compare price PER pen: Store A is $\\$${c1} \\div ${n1} = \\$${p1}$ each, Store B is $\\$${c2} \\div ${n2} = \\$${p2}$ each. Store A is cheaper at $\\$${p1}$ per pen. Comparing the totals ($\\$${c1}$ vs $\\$${c2}$) ignores that the packs hold different numbers of pens.`,
+      type: "better_buy",
+      p1, p2, c1, c2
     };
   }
 };
@@ -3867,6 +3961,56 @@ templates.factors = {
       explanation: `They coincide at common multiples of $${it.x}$ and $${it.y}$; the FIRST one is the least common multiple, $${it.l}$. Multiplying ($${prod}$) gives a common multiple but not the smallest, and the longer interval ($${Math.max(it.x, it.y)}$) is not a multiple of the shorter.`,
       type: "lcm_word",
       prod, sum
+    };
+  },
+  // ---- Factors II (keys 17/18/19 — GCF of three, LCM of three, the GCF·LCM identity) ----
+  // GCF of three numbers built on a shared factor g with setwise-coprime cofactors (so the GCF is
+  // exactly g). The three distractors are the three numbers themselves — the classic "a number IS
+  // the GCF" slip.
+  17: (_diffFactor, idx) => {
+    const g = 2 + (idx % 5);          // 2..6
+    const co = [[2, 3, 5], [3, 4, 5], [2, 5, 7], [3, 5, 7], [4, 5, 9]][idx % 5]; // gcd(cofactors) = 1
+    const nums = co.map((x) => x * g);
+    return {
+      question: `What is the greatest common factor (GCF) of $${nums[0]}$, $${nums[1]}$ and $${nums[2]}$?`,
+      answer: g,
+      distractors: [nums[0], nums[1], nums[2]], // each is a number, not the shared factor
+      explanation: `The GCF is the largest number dividing ALL three. Each of $${nums[0]}, ${nums[1]}, ${nums[2]}$ is $${g}$ times a part with no factor shared across all three, so the common factor is $${g}$. The GCF is usually SMALLER than the numbers — it can't be one of them here.`,
+      type: "gcf_three",
+      n0: nums[0], n1: nums[1], n2: nums[2]
+    };
+  },
+  // LCM of three small numbers. Sets chosen so neither the product nor the sum equals the LCM.
+  18: (_diffFactor, idx) => {
+    const sets = [[4, 6, 8], [3, 4, 6], [2, 6, 9], [4, 6, 9], [6, 8, 12], [3, 8, 12]];
+    const [a, b, c] = sets[idx % sets.length];
+    const g2 = (x, y) => (y === 0 ? x : g2(y, x % y));
+    const l2 = (x, y) => (x * y) / g2(x, y);
+    const answer = l2(l2(a, b), c);
+    const prod = a * b * c, mx = Math.max(a, b, c), sm = a + b + c;
+    return {
+      question: `What is the least common multiple (LCM) of $${a}$, $${b}$ and $${c}$?`,
+      answer,
+      distractors: [prod, mx, sm], // multiplied all three; gave the largest; added them
+      explanation: `The LCM is the smallest number all three divide. Working up: $\\text{lcm}(${a}, ${b}) = ${l2(a, b)}$, then $\\text{lcm}(${l2(a, b)}, ${c}) = ${answer}$. Multiplying all three ($${prod}$) gives a common multiple but not the least, and the largest number ($${mx}$) usually isn't a multiple of the others.`,
+      type: "lcm_three",
+      prod, mx, sm
+    };
+  },
+  // GCF · LCM = a · b. Given two numbers and their GCF, recover the LCM as (a·b)/GCF.
+  19: (_diffFactor, idx) => {
+    const pairs = [[12, 18], [8, 12], [6, 15], [10, 15], [9, 12], [14, 21], [8, 20], [12, 20]];
+    const [a, b] = pairs[idx % pairs.length];
+    const g2 = (x, y) => (y === 0 ? x : g2(y, x % y));
+    const g = g2(a, b);
+    const answer = (a * b) / g;       // the LCM
+    return {
+      question: `The GCF of $${a}$ and $${b}$ is $${g}$. Using GCF $\\times$ LCM $= ${a} \\times ${b}$, what is their LCM?`,
+      answer,
+      distractors: [a * b, g, a + b], // gave the product; gave the GCF; added the numbers
+      explanation: `Since GCF $\\times$ LCM $= ${a} \\times ${b} = ${a * b}$, divide by the GCF: LCM $= \\frac{${a * b}}{${g}} = ${answer}$. The product $${a * b}$ is GCF·LCM together, not the LCM alone; $${g}$ is the common FACTOR, not the multiple.`,
+      type: "gcf_lcm_product",
+      a, b, g
     };
   }
 };

@@ -175,6 +175,18 @@ const TYPE_TO_CONCEPT = {
   eqn_clear_denom:          'eqn_clear_denom',
   eqn_proportion:           'eqn_proportion',
   eqn_two_step_fraction:    'eqn_two_step_fraction',
+  // Equations II.
+  eqn_distribute:           'eqn_distribute',
+  eqn_var_denominator:      'eqn_var_denominator',
+  eqn_var_both_sides:       'eqn_var_both_sides',
+  // Rates II.
+  total_cost_rate:          'total_cost_rate',
+  time_from_speed:          'time_from_speed',
+  better_buy:               'better_buy',
+  // Factors II.
+  gcf_three:                'gcf_three',
+  lcm_three:                'lcm_three',
+  gcf_lcm_product:          'gcf_lcm_product',
   // Sequences strand — template types equal conceptIds.
   arithmetic_next_term:         'arithmetic_next_term',
   arithmetic_common_difference: 'arithmetic_common_difference',
@@ -387,9 +399,9 @@ function getCategoryConceptIds(category, level) {
     inequalities:  ['inequality_one_step_add', 'inequality_one_step_mult', 'inequality_flip_negative', 'inequality_two_step', 'inequality_compound', 'inequality_var_both_sides', 'inequality_distribute', 'inequality_word'],
     functions:     ['function_evaluate', 'function_table', 'rate_of_change', 'function_initial', 'function_solve', 'function_quad_eval', 'function_exp_eval', 'function_composition'],
     sequences:     ['arithmetic_next_term', 'arithmetic_common_difference', 'arithmetic_nth_term', 'geometric_next_term', 'geometric_common_ratio', 'geometric_nth_term', 'arithmetic_series', 'fibonacci_next'],
-    equations:     ['eqn_onestep_div', 'eqn_fraction_coeff', 'eqn_clear_denom', 'eqn_proportion', 'eqn_two_step_fraction'],
-    rates:         ['ratio_simplify', 'ratio_share', 'unit_price', 'speed_dist_time', 'scale_factor'],
-    factors:       ['prime_factorization', 'find_gcf', 'find_lcm', 'gcf_word', 'lcm_word']
+    equations:     ['eqn_onestep_div', 'eqn_fraction_coeff', 'eqn_clear_denom', 'eqn_proportion', 'eqn_two_step_fraction', 'eqn_distribute', 'eqn_var_denominator', 'eqn_var_both_sides'],
+    rates:         ['ratio_simplify', 'ratio_share', 'unit_price', 'speed_dist_time', 'scale_factor', 'total_cost_rate', 'time_from_speed', 'better_buy'],
+    factors:       ['prime_factorization', 'find_gcf', 'find_lcm', 'gcf_word', 'lcm_word', 'gcf_three', 'lcm_three', 'gcf_lcm_product']
   };
   const key = (category || 'arithmetic').toLowerCase();
   return map[key] || map.arithmetic;

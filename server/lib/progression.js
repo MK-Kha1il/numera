@@ -92,9 +92,9 @@ const STRAND_BANDS = {
   inequalities: [7, 19],
   functions: [7, 19],
   sequences: [7, 19],
-  equations: [7, 15],
-  rates: [7, 15],
-  factors: [7, 15],
+  equations: [7, 19],
+  rates: [7, 19],
+  factors: [7, 19],
 };
 
 // Map a UI level + category to the generator's internal level band (milestones pass through).

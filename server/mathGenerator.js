@@ -175,18 +175,30 @@ const CONCEPT_TO_LEVEL = {
   eqn_clear_denom:          { category: 'equations',  level: 11 },
   eqn_proportion:           { category: 'equations',  level: 13 },
   eqn_two_step_fraction:    { category: 'equations',  level: 15 },
+  // Equations II — distribution, variable in a denominator, variables on both sides (band → 19).
+  eqn_distribute:           { category: 'equations',  level: 17 },
+  eqn_var_denominator:      { category: 'equations',  level: 18 },
+  eqn_var_both_sides:       { category: 'equations',  level: 19 },
   // Factors & multiples strand (middle-school number theory). Keys skip 10 (boss-routed).
   prime_factorization:      { category: 'factors',    level: 7  },
   find_gcf:                 { category: 'factors',    level: 9  },
   find_lcm:                 { category: 'factors',    level: 11 },
   gcf_word:                 { category: 'factors',    level: 13 },
   lcm_word:                 { category: 'factors',    level: 15 },
+  // Factors II — GCF/LCM of three numbers and the GCF·LCM identity (band → 19).
+  gcf_three:                { category: 'factors',    level: 17 },
+  lcm_three:                { category: 'factors',    level: 18 },
+  gcf_lcm_product:          { category: 'factors',    level: 19 },
   // Ratios & rates strand (applied proportional reasoning). Keys skip 10 (boss-routed).
   ratio_simplify:           { category: 'rates',      level: 7  },
   ratio_share:              { category: 'rates',      level: 9  },
   unit_price:               { category: 'rates',      level: 11 },
   speed_dist_time:          { category: 'rates',      level: 13 },
   scale_factor:             { category: 'rates',      level: 15 },
+  // Rates II — total cost from a rate, time from speed, comparing unit prices (band → 19).
+  total_cost_rate:          { category: 'rates',      level: 17 },
+  time_from_speed:          { category: 'rates',      level: 18 },
+  better_buy:               { category: 'rates',      level: 19 },
   // Sequences strand (arithmetic & geometric patterns). Keys skip 10 (boss-routed).
   arithmetic_next_term:         { category: 'sequences', level: 7  },
   arithmetic_common_difference: { category: 'sequences', level: 9  },

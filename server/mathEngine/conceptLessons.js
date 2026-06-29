@@ -3816,6 +3816,94 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // EQUATIONS II (distribution, variable in a denominator, variables on both sides).
+  // ===========================================================================
+  eqn_distribute: {
+    title: "Solving Equations with Distribution",
+    formula: "a(x + b) = c \\implies x + b = \\tfrac{c}{a} \\implies x = \\tfrac{c}{a} - b",
+    oneLineSummary: "Clear the parentheses first — divide both sides by the coefficient (or distribute it) — then undo the inner constant to free x.",
+    intuitionHook: "Three identical gift bags, each holding $x$ candies plus $2$ chocolates, total $24$ pieces: $3(x + 2) = 24$. Divide by $3$ — one bag holds $x + 2 = 8$ — then subtract the $2$ chocolates: $x = 6$ candies per bag. The parentheses just bundle a quick first step: undo the multiply, then undo the add.",
+    whatItIs: "A linear equation where a coefficient multiplies a parenthesized expression, like $3(x + 2) = 24$. You remove the parentheses — by dividing both sides by the coefficient, or by distributing it across the inside — and then solve the resulting two-step equation.",
+    whyItWorks: "$a(x + b)$ means $a$ copies of the whole quantity $(x + b)$, which the distributive law expands to $ax + ab$ — the coefficient multiplies EVERY term inside, not just the $x$. Equivalently, since the two sides are equal, dividing both by $a$ undoes the multiplication in one move and leaves $x + b = c/a$. Either route, the inner constant $b$ still has to be subtracted to isolate $x$; forgetting it leaves the answer off by $b$. The two equivalent first steps — distribute, or divide — are the heart of the skill.",
+    whenToUse: "Bundled quantities (identical bags, boxes, or groups each with a fixed extra), perimeter and area set-ups with a common factor, and any equation with a number sitting outside parentheses.",
+    representations: [
+      { kind: "divide_first", label: "Undo the multiply", body: "$3(x + 2) = 24 \\to x + 2 = 8 \\to x = 6$. Divide by $3$, then subtract $2$." },
+      { kind: "distribute", label: "Or expand it", body: "$3(x + 2) = 3x + 6 = 24 \\to 3x = 18 \\to x = 6$ — the $3$ hits both $x$ and $2$." },
+      { kind: "bags", label: "Bundled groups", body: "$3$ bags of $(x + 2)$: split the $24$ into $3$ equal bags ($8$ each), then remove the $2$ extra." }
+    ],
+    commonMistakes: [
+      { label: "Distributing to only the first term", why: "Writing $3(x + 2) = 3x + 2$ — the coefficient skipped the inner constant.", fix: "The factor multiplies EVERYTHING inside: $3 \\cdot x + 3 \\cdot 2 = 3x + 6$." },
+      { label: "Forgetting to subtract the constant", why: "Reaching $x + 2 = 8$ and answering $x = 8$ — leaving the $+2$ attached.", fix: "After clearing the coefficient, undo the inner add: subtract $2$ to get $x = 6$." },
+      { label: "Using the right-hand side as the answer", why: "Reporting $24$ without solving.", fix: "Solve for $x$: divide, then subtract. The $24$ is the total, not the value of $x$." }
+    ],
+    connections: [
+      { concept: "eqn_clear_denom", note: "Same clear-the-wrapper-then-solve plan, with a coefficient outside instead of a denominator." },
+      { concept: "square_binomial", note: "Both apply the distributive law — here one factor across a sum." },
+      { concept: "inequality_distribute", note: "Identical first step; an inequality just keeps a direction and a range answer." }
+    ],
+    examples: [
+      { question: "Solve: $3(x + 2) = 24$.", answer: "6", explanation: "Divide by $3$: $x + 2 = 8$, then subtract $2$: $x = 6$." },
+      { question: "Solve: $4(x + 1) = 20$.", answer: "4", explanation: "$x + 1 = 5$, so $x = 4$." }
+    ]
+  },
+  eqn_var_denominator: {
+    title: "Equations with the Variable in a Denominator",
+    formula: "\\frac{a}{x} = b \\implies a = b x \\implies x = \\frac{a}{b}",
+    oneLineSummary: "When the unknown sits underneath, multiply both sides by it to lift it up — then divide; the variable ends up DIVIDING the constant, not multiplying it.",
+    intuitionHook: "Share $12$ candies equally and each child gets $3$: how many children? That's $\\frac{12}{x} = 3$. The unknown is the number of groups, hiding in the denominator. Multiply both sides by $x$ to free it — $12 = 3x$ — then divide by $3$: $x = 4$ children. The answer divides the $12$; it never multiplies it.",
+    whatItIs: "An equation where the variable appears in a denominator, like $\\frac{12}{x} = 3$. You clear the fraction by multiplying both sides by $x$, turning it into an ordinary linear equation, and then solve.",
+    whyItWorks: "You can't isolate $x$ while it's trapped under a division bar, so the first move multiplies both sides by $x$ — that cancels the denominator on the left and lifts $x$ up into $a = bx$. From there a single division by $b$ finishes it, giving $x = a/b$. The key insight is the direction: $\\frac{a}{x} = b$ rearranges to $x = a/b$ (the constant DIVIDED by $b$), so multiplying $a \\cdot b$ instead points the operation the wrong way. It helps to read $\\frac{12}{x} = 3$ as 'what number divides $12$ to give $3$?' — the answer must be smaller than $12$.",
+    whenToUse: "'How many equal groups' problems, rates written as total-over-unknown, and a first look at the rational equations of later algebra.",
+    representations: [
+      { kind: "clear", label: "Lift it up", body: "$\\frac{12}{x} = 3 \\to 12 = 3x \\to x = 4$. Multiply by $x$, then divide by $3$." },
+      { kind: "groups", label: "How many groups?", body: "$12$ split into groups of... no — into $x$ groups of $3$. So $x = 12 \\div 3 = 4$." },
+      { kind: "check", label: "Substitute back", body: "$x = 4$: $\\frac{12}{4} = 3$ ✓ — the answer divides the top, it doesn't multiply it." }
+    ],
+    commonMistakes: [
+      { label: "Multiplying instead of dividing", why: "Computing $a \\cdot b$ (e.g. $12 \\times 3 = 36$) because both numbers are in view.", fix: "Solve the rearranged $a = bx$: $x = a \\div b$. A variable in the denominator means DIVIDE the constant." },
+      { label: "Reporting the divisor", why: "Answering $b$ (the right-hand number) instead of solving for $x$.", fix: "$b$ is the quotient the equation already gives you; $x$ is what makes it true — keep solving." },
+      { label: "Leaving the fraction", why: "Trying to subtract or add before clearing the denominator.", fix: "First multiply both sides by $x$ to remove the fraction; only then isolate $x$." }
+    ],
+    connections: [
+      { concept: "eqn_proportion", note: "A proportion is two such fractions; clearing a single denominator is the same cross-multiply move." },
+      { concept: "eqn_onestep_div", note: "Once the denominator is cleared, the finish is a one-step divide." },
+      { concept: "unit_price", note: "Total ÷ unknown count = rate is exactly this equation in disguise." }
+    ],
+    examples: [
+      { question: "Solve: $\\frac{12}{x} = 3$.", answer: "4", explanation: "Multiply by $x$: $12 = 3x$, then divide by $3$: $x = 4$." },
+      { question: "Solve: $\\frac{20}{x} = 5$.", answer: "4", explanation: "$20 = 5x$, so $x = 4$." }
+    ]
+  },
+  eqn_var_both_sides: {
+    title: "Equations with Variables on Both Sides",
+    formula: "ax + b = cx + d \\implies (a - c)\\,x = d - b \\implies x = \\tfrac{d - b}{a - c}",
+    oneLineSummary: "Gather every variable term on one side and every number on the other, combine, then divide by the leftover coefficient.",
+    intuitionHook: "Two gyms: A is $\\$5$ a visit plus $\\$3$, B is $\\$1$ a visit plus $\\$15$ — when do they cost the same? Set $5x + 3 = 1x + 15$. Sweep the $x$'s left (subtract $x$) and the numbers right (subtract $3$): $4x = 12$, so $x = 3$ visits. At three visits the bills tie; the algebra finds the crossover the two expressions hide.",
+    whatItIs: "A linear equation with the unknown on BOTH sides, like $5x + 3 = x + 15$. You move the variable terms to one side and the constants to the other, combine like terms, and divide to isolate $x$.",
+    whyItWorks: "An equation stays balanced when you subtract the same quantity from both sides, so subtracting $cx$ from each side collects all the $x$'s on the left as $(a - c)x$ without changing the truth of the equation; subtracting $b$ gathers the constants on the right as $d - b$. That reduces the two-sided equation to the familiar $(a-c)x = d-b$, which one division finishes. The classic stumble is stopping at $d - b$ — that's the combined constant, not $x$ yet; the coefficient $a - c$ still has to be divided out. Choosing to move the smaller $x$-term keeps that coefficient positive and the arithmetic clean.",
+    whenToUse: "Break-even and crossover problems (which plan, which gym, which job pays more), comparing two linear expressions, and any equation where $x$ shows up on the left and the right.",
+    representations: [
+      { kind: "collect", label: "Sweep the sides", body: "$5x + 3 = x + 15 \\to 4x = 12 \\to x = 3$. Variables left, numbers right, then divide." },
+      { kind: "crossover", label: "When do they tie?", body: "Two costs $5x+3$ and $x+15$ are equal at $x = 3$ — the break-even point." },
+      { kind: "check", label: "Both sides agree", body: "$x = 3$: left $5(3)+3 = 18$, right $3 + 15 = 18$ ✓ — a real solution balances both." }
+    ],
+    commonMistakes: [
+      { label: "Stopping before dividing", why: "Reaching $4x = 12$ and answering $12$ — skipping the divide by $4$.", fix: "Finish isolating $x$: divide both sides by the leftover coefficient, $x = 12 \\div 4 = 3$." },
+      { label: "Moving terms without changing signs", why: "Carrying a term across the equals sign but keeping its sign, so the wrong amount gets subtracted.", fix: "Moving a term means subtracting it from BOTH sides — its sign flips as it crosses. Track each step." },
+      { label: "Adding the constants", why: "Combining $b$ and $d$ into $b + d$ instead of subtracting to bring them to one side.", fix: "Subtract $b$ from both sides; the constant on the right becomes $d - b$, not $d + b$." }
+    ],
+    connections: [
+      { concept: "linear_variable_both_sides", note: "The same collect-and-divide algebra; here it's framed as solving the equation step by step." },
+      { concept: "eqn_clear_denom", note: "Both reduce a messier equation to a clean two-step solve before finishing." },
+      { concept: "inequality_var_both_sides", note: "Same gathering of terms; an inequality keeps a direction and watches for a negative-divisor flip." }
+    ],
+    examples: [
+      { question: "Solve: $5x + 3 = x + 15$.", answer: "3", explanation: "Subtract $x$ and $3$: $4x = 12$, so $x = 3$. Check: $18 = 18$ ✓." },
+      { question: "Solve: $6x + 1 = 2x + 13$.", answer: "3", explanation: "Subtract $2x$ and $1$: $4x = 12$, so $x = 3$." }
+    ]
+  },
+
+  // ===========================================================================
   // RATIOS & RATES STRAND — applied proportional reasoning (6.RP / 7.RP / 7.G).
   // ===========================================================================
   ratio_simplify: {
@@ -3959,6 +4047,94 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // RATES II (total cost from a rate, time from speed, comparing unit prices).
+  // ===========================================================================
+  total_cost_rate: {
+    title: "Total Cost from a Rate",
+    formula: "\\text{total} = \\text{rate} \\times \\text{quantity}",
+    oneLineSummary: "A per-unit rate multiplies the number of units — the rate scales WITH the quantity, it isn't added to it.",
+    intuitionHook: "A plumber charges $\\$8$ an hour. A $3$-hour job isn't $\\$8 + 3 = \\$11$ and isn't $\\$8$ — it's $\\$8$ for each of the $3$ hours: $8 \\times 3 = \\$24$. 'Per hour' is a stamp pressed once for every hour, so more hours means more stamps, multiplied not added.",
+    whatItIs: "Finding a total when you know a rate (a price or amount per unit) and how many units there are: multiply the rate by the quantity. It is the reverse of finding a unit price.",
+    whyItWorks: "A rate like $\\$8$ per hour means every single hour contributes the same $\\$8$. Total cost is that fixed amount repeated once per unit — and repeated addition of the same number IS multiplication, so the total is rate × quantity. Adding the rate and the quantity instead ($8 + 3$) mixes two different things — dollars-per-hour and hours — which don't even share units; the rate has to be applied to each unit, which multiplication does. This is exactly why unit price (total ÷ quantity) and total cost (rate × quantity) are inverse operations.",
+    whenToUse: "Wages and hourly fees, buying several items at a fixed price each, fuel or data used at a steady rate — any 'so much per unit, how much for this many' question.",
+    representations: [
+      { kind: "repeat", label: "Same amount each unit", body: "$\\$8$ for hour 1, hour 2, hour 3: $8 + 8 + 8 = 8 \\times 3 = \\$24$." },
+      { kind: "inverse", label: "Undoes unit price", body: "Unit price divides ($24 \\div 3 = 8$); total cost multiplies ($8 \\times 3 = 24$)." },
+      { kind: "units", label: "Watch the units", body: "$\\tfrac{\\$8}{\\text{hr}} \\times 3\\,\\text{hr} = \\$24$ — the 'hr' cancels, leaving dollars; $8 + 3$ never could." }
+    ],
+    commonMistakes: [
+      { label: "Adding instead of multiplying", why: "Computing rate + quantity ($8 + 3$) because both numbers are given.", fix: "A rate applies to EACH unit: multiply. $8$ per hour over $3$ hours is $8 \\times 3 = 24$." },
+      { label: "Reporting just the rate", why: "Answering $8$ — the cost of a single unit, not the whole job.", fix: "Scale the rate by the quantity; one hour is $\\$8$, but the job is $3$ hours." },
+      { label: "Reporting just the quantity", why: "Answering $3$ — the number of units, with no dollars attached.", fix: "The question asks for cost; multiply the count by the price per unit." }
+    ],
+    connections: [
+      { concept: "unit_price", note: "The exact inverse: unit price divides a total into one unit; total cost multiplies one unit's rate back up." },
+      { concept: "speed_dist_time", note: "Distance = speed × time is the same rate × quantity pattern with miles and hours." },
+      { concept: "scale_factor", note: "A scale is a rate too — actual = map × (km per cm) is rate × quantity." }
+    ],
+    examples: [
+      { question: "A plumber charges $\\$8$ per hour. What does a $3$-hour job cost?", answer: "24", explanation: "$\\$8 \\times 3 = \\$24$." },
+      { question: "Stickers cost $\\$2$ each. How much for $7$ stickers?", answer: "14", explanation: "$\\$2 \\times 7 = \\$14$." }
+    ]
+  },
+  time_from_speed: {
+    title: "Time from Speed and Distance",
+    formula: "\\text{time} = \\frac{\\text{distance}}{\\text{speed}}",
+    oneLineSummary: "Rearrange speed = distance ÷ time into time = distance ÷ speed — divide the miles by the miles-per-hour to count the hours.",
+    intuitionHook: "A train covers $120$ miles at $40$ miles per hour. Each hour eats $40$ miles, so how many hours to finish $120$? $120 \\div 40 = 3$ hours. You're asking 'how many $40$-mile chunks fit in $120$ miles' — division, not the subtraction $120 - 40$ that mixes miles with miles-per-hour.",
+    whatItIs: "Finding how long a trip takes from its distance and a steady speed: divide the distance by the speed. It is the speed formula $\\text{speed} = \\text{distance} \\div \\text{time}$ solved for time.",
+    whyItWorks: "Speed is distance per hour — the miles covered in each single hour. To find how many hours a journey needs, you ask how many of those equal per-hour bites make up the whole distance, which is distance ÷ speed. Algebraically, $\\text{speed} = \\frac{\\text{distance}}{\\text{time}}$ rearranges (multiply by time, divide by speed) to $\\text{time} = \\frac{\\text{distance}}{\\text{speed}}$. Subtracting the speed from the distance is meaningless — they carry different units (miles vs miles-per-hour) — which is the clearest sign division, the unit-canceller, is the right move.",
+    whenToUse: "Trip-planning ('how long to get there?'), filling or draining at a steady rate ('how long to fill the tank?'), and any rate problem where the time is the unknown.",
+    representations: [
+      { kind: "chunks", label: "How many hours fit", body: "$40$ miles per hour into $120$ miles: $120 \\div 40 = 3$ hours." },
+      { kind: "rearrange", label: "Solve the speed formula", body: "$\\text{speed} = \\frac{d}{t} \\Rightarrow t = \\frac{d}{\\text{speed}}$ — distance over speed." },
+      { kind: "units", label: "Units cancel", body: "$\\frac{120\\,\\text{mi}}{40\\,\\text{mi/hr}} = 3\\,\\text{hr}$ — miles cancel, hours remain; $120 - 40$ couldn't." }
+    ],
+    commonMistakes: [
+      { label: "Subtracting instead of dividing", why: "Computing distance − speed ($120 - 40$) because both numbers are present.", fix: "Time counts how many per-hour distances fit: DIVIDE, $120 \\div 40 = 3$. The units (mi vs mi/hr) prove subtraction is wrong." },
+      { label: "Reporting the distance", why: "Answering $120$ — how far, not how long.", fix: "Divide the distance by the speed to convert miles into hours." },
+      { label: "Reporting the speed", why: "Answering $40$ — the rate, not the time.", fix: "The speed is given; solve for the unknown time by dividing." }
+    ],
+    connections: [
+      { concept: "speed_dist_time", note: "The same triangle of relationships, here solved for time instead of speed." },
+      { concept: "unit_price", note: "Dividing a total (distance) by a per-unit rate (speed) is the same move as total ÷ count." },
+      { concept: "eqn_var_denominator", note: "Solving $\\text{speed} = d/t$ for $t$ is an equation with the unknown in a denominator." }
+    ],
+    examples: [
+      { question: "A train travels $120$ miles at $40$ mph. How many hours does it take?", answer: "3", explanation: "$120 \\div 40 = 3$ hours." },
+      { question: "A cyclist rides $60$ km at $20$ km/h. How long does it take?", answer: "3", explanation: "$60 \\div 20 = 3$ hours." }
+    ]
+  },
+  better_buy: {
+    title: "Comparing Unit Prices (Better Buy)",
+    formula: "\\text{unit price} = \\frac{\\text{total cost}}{\\text{number of items}}",
+    oneLineSummary: "To compare deals fairly, reduce each to its price per single item — the cheaper per-item price is the better buy, whatever the totals say.",
+    intuitionHook: "Store A: $4$ pens for $\\$16$. Store B: $3$ pens for $\\$15$. The bigger total ($\\$16$) isn't the worse deal — bring both down to one pen: A is $\\$4$ each, B is $\\$5$ each. A wins. Different pack sizes make the totals lie; price PER pen tells the truth.",
+    whatItIs: "Deciding which of two options is cheaper by computing each one's unit price (cost ÷ quantity) and comparing per-item costs, rather than comparing the totals.",
+    whyItWorks: "Two packages with different counts and different prices can't be compared by total cost — a higher total might just mean more items. Dividing each total by its own count rescales both to the SAME basis, one item, so the prices become directly comparable; the smaller per-item price genuinely buys each unit for less. Comparing the raw totals ignores how many items each total covers, which is exactly the trap. (When the counts happen to be equal, the totals are comparable — but only because the division by the same count wouldn't change the ranking.)",
+    whenToUse: "Grocery shopping (which size is cheaper per ounce?), bulk-vs-small comparisons, phone or data plans priced per unit — any 'which is the better deal' decision.",
+    representations: [
+      { kind: "reduce", label: "Down to one item", body: "$\\$16$ for $4$ → $\\$4$ each; $\\$15$ for $3$ → $\\$5$ each. Compare $\\$4$ vs $\\$5$." },
+      { kind: "totals_lie", label: "Totals can mislead", body: "B's smaller total ($\\$15$) is the WORSE per-item deal because it buys fewer pens." },
+      { kind: "same_basis", label: "Apples to apples", body: "Unit price puts both on a per-pen footing — the only fair comparison." }
+    ],
+    commonMistakes: [
+      { label: "Comparing the totals", why: "Picking the smaller (or larger) total price without accounting for different pack sizes.", fix: "Divide each total by its count first; compare price PER item, not the totals." },
+      { label: "Choosing the higher unit price", why: "Doing the division but then picking the larger per-item number as 'the buy'.", fix: "Cheaper per item = better buy. The SMALLER unit price wins." },
+      { label: "Reporting a total as the answer", why: "Giving $\\$16$ or $\\$15$ when asked for the price per item.", fix: "The question wants the per-item price; finish the division before answering." }
+    ],
+    connections: [
+      { concept: "unit_price", note: "Better buy is two unit-price calculations set side by side and compared." },
+      { concept: "ratio_simplify", note: "Both put quantities on a common basis to compare them fairly." },
+      { concept: "total_cost_rate", note: "Unit price and total cost are inverses; this compares the per-unit rates of two deals." }
+    ],
+    examples: [
+      { question: "Store A: $4$ pens for $\\$16$. Store B: $3$ pens for $\\$15$. What is the price per pen at the cheaper store?", answer: "4", explanation: "A: $16 \\div 4 = \\$4$ each; B: $15 \\div 3 = \\$5$ each. A is cheaper at $\\$4$." },
+      { question: "Pack A: $5$ bars for $\\$10$. Pack B: $2$ bars for $\\$6$. Cheaper price per bar?", answer: "2", explanation: "A: $10 \\div 5 = \\$2$; B: $6 \\div 2 = \\$3$. A wins at $\\$2$ per bar." }
+    ]
+  },
+
+  // ===========================================================================
   // FACTORS & MULTIPLES STRAND — middle-school number theory (4.OA / 6.NS).
   // ===========================================================================
   prime_factorization: {
@@ -4098,6 +4274,94 @@ const CONCEPT_LESSONS = {
     examples: [
       { question: "Lights flash every $6$ s and $8$ s, together now. Next together in how many seconds?", answer: "24", explanation: "$\\text{lcm}(6,8) = 24$ seconds." },
       { question: "Two timers ring every $5$ and $10$ minutes, starting together. Next shared ring?", answer: "10", explanation: "$\\text{lcm}(5,10) = 10$ minutes." }
+    ]
+  },
+
+  // ===========================================================================
+  // FACTORS II (GCF/LCM of three numbers, and the GCF · LCM product identity).
+  // ===========================================================================
+  gcf_three: {
+    title: "GCF of Three Numbers",
+    formula: "\\gcd(a, b, c) = \\gcd(\\gcd(a, b),\\, c)",
+    oneLineSummary: "Find the greatest common factor of three numbers the same way as two — the largest number that divides ALL three, often by pairing up.",
+    intuitionHook: "Make identical snack bags from $12$ apples, $18$ pears, and $30$ grapes with no fruit left over. The most bags possible is the biggest number dividing all three counts: $\\gcd(12, 18, 30) = 6$. Find it in steps — $\\gcd(12,18) = 6$, then $\\gcd(6, 30) = 6$ — and the answer is smaller than every number, never one of them.",
+    whatItIs: "The greatest common factor of three numbers: the largest whole number that divides each of them exactly. You can find it by listing common factors, or by taking the GCF of two numbers and then the GCF of that result with the third.",
+    whyItWorks: "A common factor of three numbers must divide every one of them, so it can't be larger than the smallest number — and it's usually smaller still. Finding it pairwise works because of how 'divides all' chains: any number dividing all three also divides $\\gcd(a,b)$ and $c$, and conversely $\\gcd(\\gcd(a,b), c)$ divides all three — so the two-at-a-time approach lands on the same answer. Using prime factorizations, the GCF takes each shared prime to its LOWEST power across all three. The classic error is naming one of the original numbers; the GCF is a FACTOR they share, which sits at or below the smallest of them.",
+    whenToUse: "Splitting three quantities into the largest equal groups, simplifying three-term ratios, and tiling or packaging problems with three constraints.",
+    representations: [
+      { kind: "pairwise", label: "Two at a time", body: "$\\gcd(12, 18, 30)$: $\\gcd(12,18) = 6$, then $\\gcd(6, 30) = 6$." },
+      { kind: "primes", label: "Lowest shared powers", body: "$12 = 2^2\\cdot3$, $18 = 2\\cdot3^2$, $30 = 2\\cdot3\\cdot5$: shared $2^1$ and $3^1$ give $6$." },
+      { kind: "bags", label: "Most equal groups", body: "$6$ identical bags use all $12$, $18$, and $30$ — $2$ apples, $3$ pears, $5$ grapes each." }
+    ],
+    commonMistakes: [
+      { label: "Naming one of the numbers", why: "Reporting $12$ or $30$ as the GCF because it's right there in the problem.", fix: "The GCF is a shared FACTOR; it's at most the smallest number and usually less. Check it divides all three." },
+      { label: "Stopping at a common factor", why: "Reporting $2$ or $3$ — a common factor, but not the GREATEST one.", fix: "Keep going: $6$ also divides all three and is larger. Take the product of all shared prime powers." },
+      { label: "Forgetting the third number", why: "Taking $\\gcd(a,b)$ and ignoring $c$.", fix: "The factor must divide all THREE: finish with $\\gcd(\\gcd(a,b), c)$." }
+    ],
+    connections: [
+      { concept: "find_gcf", note: "Same idea for two numbers, extended to three by pairing." },
+      { concept: "prime_factorization", note: "Breaking each number into primes makes the shared factors (lowest powers) easy to read off." },
+      { concept: "gcf_lcm_product", note: "GCF and LCM are partners; both are built from the same prime factorizations." }
+    ],
+    examples: [
+      { question: "Find the GCF of $12$, $18$, and $30$.", answer: "6", explanation: "$\\gcd(12,18) = 6$, then $\\gcd(6, 30) = 6$." },
+      { question: "Find the GCF of $9$, $15$, and $21$.", answer: "3", explanation: "All three are multiples of $3$ and share no larger factor: GCF $= 3$." }
+    ]
+  },
+  lcm_three: {
+    title: "LCM of Three Numbers",
+    formula: "\\text{lcm}(a, b, c) = \\text{lcm}(\\text{lcm}(a, b),\\, c)",
+    oneLineSummary: "The least common multiple of three numbers is the smallest number all three divide — build it up two at a time.",
+    intuitionHook: "Three blinking lights flash every $4$, $6$, and $8$ seconds, together now. When do all three next align? At the smallest time that's a multiple of $4$, $6$, AND $8$: $\\text{lcm}(4,6,8) = 24$ seconds. Multiplying $4 \\times 6 \\times 8 = 192$ is A common time, but far from the FIRST.",
+    whatItIs: "The least common multiple of three numbers: the smallest positive number that every one of them divides evenly. Find it by taking the LCM of two, then the LCM of that with the third.",
+    whyItWorks: "A common multiple must contain enough of each number's prime factors to be divisible by all three — but the LEAST one contains no more than necessary, so it takes each prime to the HIGHEST power that appears among the three (not the product of everything, which double-counts shared factors). Building pairwise works because $\\text{lcm}(\\text{lcm}(a,b), c)$ already covers $a$, $b$, and then $c$, with no excess. Multiplying all three overshoots whenever the numbers share factors; the largest number alone usually isn't a multiple of the others.",
+    whenToUse: "Three repeating cycles lining up (lights, schedules, gears), adding three fractions (common denominator), and any 'when do all of them coincide' question.",
+    representations: [
+      { kind: "pairwise", label: "Two at a time", body: "$\\text{lcm}(4, 6, 8)$: $\\text{lcm}(4,6) = 12$, then $\\text{lcm}(12, 8) = 24$." },
+      { kind: "primes", label: "Highest powers", body: "$4 = 2^2$, $6 = 2\\cdot3$, $8 = 2^3$: take $2^3$ and $3^1$ → $24$." },
+      { kind: "align", label: "When they coincide", body: "Multiples of $4,6,8$ first share $24$ — the least common multiple, not the product $192$." }
+    ],
+    commonMistakes: [
+      { label: "Multiplying all three", why: "Computing $a \\times b \\times c$, which double-counts factors the numbers share.", fix: "Take each prime to its highest power once, or build pairwise: $\\text{lcm}(\\text{lcm}(a,b), c)$." },
+      { label: "Giving the largest number", why: "Assuming the biggest of the three is the LCM.", fix: "The largest is the LCM only if the others divide it. Check — $8$ isn't a multiple of $6$, so the answer is bigger." },
+      { label: "Forgetting the third number", why: "Taking $\\text{lcm}(a,b)$ and ignoring $c$.", fix: "The multiple must work for all THREE: finish with $\\text{lcm}(\\text{lcm}(a,b), c)$." }
+    ],
+    connections: [
+      { concept: "find_lcm", note: "Same idea for two numbers, extended to three by pairing." },
+      { concept: "prime_factorization", note: "Highest power of each prime across the numbers gives the LCM directly." },
+      { concept: "gcf_lcm_product", note: "The LCM's partner is the GCF; together they multiply to the product of the numbers." }
+    ],
+    examples: [
+      { question: "Find the LCM of $4$, $6$, and $8$.", answer: "24", explanation: "$\\text{lcm}(4,6) = 12$, then $\\text{lcm}(12, 8) = 24$." },
+      { question: "Find the LCM of $3$, $4$, and $6$.", answer: "12", explanation: "$\\text{lcm}(3,4) = 12$, and $6$ divides $12$, so LCM $= 12$." }
+    ]
+  },
+  gcf_lcm_product: {
+    title: "The GCF · LCM Identity",
+    formula: "\\gcd(a, b) \\times \\text{lcm}(a, b) = a \\times b",
+    oneLineSummary: "For any two numbers, their GCF times their LCM equals their product — so knowing one of the trio gives you the other.",
+    intuitionHook: "Take $12$ and $18$: their product is $216$. Their GCF is $6$. So their LCM must be $216 \\div 6 = 36$ — no listing of multiples needed. The shared part (GCF) and the combined part (LCM) split the product exactly between them.",
+    whatItIs: "The identity that the greatest common factor of two numbers, multiplied by their least common multiple, equals the product of the numbers. It lets you compute the LCM quickly as $\\frac{a \\times b}{\\gcd(a,b)}$ once you know the GCF.",
+    whyItWorks: "In prime terms, for each prime the GCF takes the LOWEST power in $a$ and $b$, while the LCM takes the HIGHEST. For any pair of numbers, the lowest and the highest power together account for exactly the two powers in $a$ and $b$ — so multiplying GCF and LCM rebuilds $a \\times b$ prime by prime. That's why $\\gcd \\times \\text{lcm} = a \\times b$ always holds, and why dividing the product by the shared GCF leaves precisely the LCM. The product $a \\times b$ alone over-counts the shared factor once; removing one copy (dividing by the GCF) gives the least common multiple.",
+    whenToUse: "Finding an LCM fast when the GCF is easy, recovering a missing GCF or LCM from the other two quantities, and checking GCF/LCM answers for consistency.",
+    representations: [
+      { kind: "split", label: "Product splits in two", body: "$12 \\times 18 = 216 = \\gcd(6) \\times \\text{lcm}(36)$." },
+      { kind: "solve", label: "Recover the LCM", body: "$\\text{lcm} = \\frac{a \\times b}{\\gcd} = \\frac{216}{6} = 36$." },
+      { kind: "primes", label: "Lowest × highest", body: "Per prime, low power (GCF) × high power (LCM) = both powers = $a \\times b$." }
+    ],
+    commonMistakes: [
+      { label: "Giving the product as the LCM", why: "Reporting $a \\times b$ ($216$) instead of dividing it by the GCF.", fix: "The product is GCF × LCM together; divide by the GCF to isolate the LCM: $216 \\div 6 = 36$." },
+      { label: "Reporting the GCF", why: "Answering the GCF ($6$) when the LCM was asked.", fix: "The GCF is the shared factor; the LCM is the smallest common multiple — use the identity to get it." },
+      { label: "Adding instead of using the product", why: "Computing $a + b$ somewhere in the work.", fix: "The identity is multiplicative: GCF × LCM = $a \\times b$. No addition is involved." }
+    ],
+    connections: [
+      { concept: "find_gcf", note: "Supplies the GCF that the identity divides the product by." },
+      { concept: "find_lcm", note: "This identity is the fast route to the LCM once the GCF is known." },
+      { concept: "prime_factorization", note: "The lowest-power/highest-power split of each prime is why the identity holds." }
+    ],
+    examples: [
+      { question: "The GCF of $12$ and $18$ is $6$. Use GCF × LCM = $12 \\times 18$ to find their LCM.", answer: "36", explanation: "$\\frac{12 \\times 18}{6} = \\frac{216}{6} = 36$." },
+      { question: "The GCF of $8$ and $12$ is $4$. Find their LCM.", answer: "24", explanation: "$\\frac{8 \\times 12}{4} = \\frac{96}{4} = 24$." }
     ]
   },
 
@@ -5068,21 +5332,33 @@ function levelToConceptId(category, level) {
     if (lvl <= 9) return 'eqn_fraction_coeff';
     if (lvl <= 11) return 'eqn_clear_denom';
     if (lvl <= 13) return 'eqn_proportion';
-    return 'eqn_two_step_fraction';
+    if (lvl <= 15) return 'eqn_two_step_fraction';
+    // Equations II (templates 17/18/19).
+    if (lvl <= 17) return 'eqn_distribute';
+    if (lvl <= 18) return 'eqn_var_denominator';
+    return 'eqn_var_both_sides';
   }
   if (cat === 'rates') {
     if (lvl <= 7) return 'ratio_simplify';
     if (lvl <= 9) return 'ratio_share';
     if (lvl <= 11) return 'unit_price';
     if (lvl <= 13) return 'speed_dist_time';
-    return 'scale_factor';
+    if (lvl <= 15) return 'scale_factor';
+    // Rates II (templates 17/18/19).
+    if (lvl <= 17) return 'total_cost_rate';
+    if (lvl <= 18) return 'time_from_speed';
+    return 'better_buy';
   }
   if (cat === 'factors') {
     if (lvl <= 7) return 'prime_factorization';
     if (lvl <= 9) return 'find_gcf';
     if (lvl <= 11) return 'find_lcm';
     if (lvl <= 13) return 'gcf_word';
-    return 'lcm_word';
+    if (lvl <= 15) return 'lcm_word';
+    // Factors II (templates 17/18/19).
+    if (lvl <= 17) return 'gcf_three';
+    if (lvl <= 18) return 'lcm_three';
+    return 'gcf_lcm_product';
   }
   if (cat === 'expressions') {
     if (lvl <= 11) return 'eval_expression';
