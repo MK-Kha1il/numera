@@ -49,12 +49,18 @@ fun ArenaScreen(
     var showPuzzleRush by remember { mutableStateOf(false) }
     var showAsyncDuel by remember { mutableStateOf(false) }
     var showBotDuel by remember { mutableStateOf(false) }
+    var showReasoning by remember { mutableStateOf(false) }
+    var showLiveRoom by remember { mutableStateOf(false) }
     var showChallenges by remember { mutableStateOf(false) }
     var showTournament by remember { mutableStateOf(false) }
     var showSeason by remember { mutableStateOf(false) }
     // Ranked requires fair-play (telemetry) consent so the server's anti-cheat scorer may run.
     var showRankedConsent by remember { mutableStateOf(false) }
     var consentGrantedThisSession by remember { mutableStateOf(false) }
+    // One-time placement rank-reveal ceremony (audit #20): fires once when a player finishes placement.
+    var showRankReveal by remember(user?.competitive_matches, user?.rank_revealed) {
+        mutableStateOf((user?.competitive_matches ?: 0) >= 5 && (user?.rank_revealed ?: 0) == 0)
+    }
     val scope = rememberCoroutineScope()
 
     val hasFairplayConsent = consentGrantedThisSession || (user?.telemetry_enabled ?: 0) == 1
@@ -160,6 +166,14 @@ fun ArenaScreen(
         BotDuelScreen(onExit = { showBotDuel = false })
         return
     }
+    if (showReasoning) {
+        ReasoningArenaScreen(onExit = { showReasoning = false })
+        return
+    }
+    if (showLiveRoom) {
+        LiveRoomScreen(onExit = { showLiveRoom = false })
+        return
+    }
     if (showChallenges) {
         ChallengesScreen(onBack = { showChallenges = false })
         return
@@ -213,7 +227,8 @@ fun ArenaScreen(
                         )
 
                         Text(
-                            text = "Search window: ±${100 + queueSecondsElapsed * 15} Elo",
+                            text = if (queueSecondsElapsed < 6) "Finding the fairest opponent for your skill…"
+                                   else "Widening the search to match you sooner…",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             textAlign = TextAlign.Center
@@ -399,34 +414,52 @@ fun ArenaScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.l)
                         ) {
+                            val cMatches = user?.competitive_matches ?: 0
+                            val placed = cMatches >= 5
+                            val cRank = user?.competitive_rank ?: "Unranked (Placement: 0/5)"
+
                             RankBadge(
-                                rankName = user?.rank,
+                                rankName = cRank,
                                 modifier = Modifier.size(72.dp)
                             )
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = user?.rank ?: "Unranked",
+                                    text = if (placed) cRank else "Unranked",
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
 
-                                Text(
-                                    text = "${user?.elo ?: 1000} Rating (Elo)",
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                if (placed) {
+                                    Text(
+                                        text = "${user?.elo ?: 1000} Competitive Rating",
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                } else {
+                                    // Placement narrative (audit #20): make the path to a rank explicit.
+                                    Text(
+                                        text = "Placement: $cMatches/5",
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        text = "Play ${5 - cMatches} more ranked game${if (5 - cMatches == 1) "" else "s"} to earn your rank",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
 
                                 Spacer(modifier = Modifier.height(Spacing.xs))
 
-                                val matches = user?.competitive_matches ?: 0
                                 val wins = user?.arena_wins ?: 0
-                                val winRate = if (matches > 0) (wins * 100) / matches else 0
+                                val winRate = if (cMatches > 0) (wins * 100) / cMatches else 0
 
                                 Text(
-                                    text = "Record: $wins W - ${matches - wins} L ($winRate% win rate)",
+                                    text = "Record: $wins W - ${cMatches - wins} L ($winRate% win rate)",
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                 )
@@ -591,6 +624,26 @@ fun ArenaScreen(
                 }
 
                 item {
+                    ArenaModeTile(
+                        emoji = "🧠", title = "Reasoning Arena",
+                        subtitle = "Answer, then prove you understand WHY. A point banks only if both are right — ranked rating that rewards understanding, not speed.",
+                        accent = MaterialTheme.colorScheme.secondary,
+                        cta = "THINK",
+                        modifier = Modifier.fillMaxWidth()
+                    ) { showReasoning = true }
+                }
+
+                item {
+                    ArenaModeTile(
+                        emoji = "🎉", title = "Live Room",
+                        subtitle = "Host a live room or join with a code — everyone races the same questions and a live podium crowns the winner. Great for a class or a group of friends.",
+                        accent = MaterialTheme.colorScheme.tertiary,
+                        cta = "HOST / JOIN",
+                        modifier = Modifier.fillMaxWidth()
+                    ) { showLiveRoom = true }
+                }
+
+                item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.m)
@@ -738,6 +791,32 @@ fun ArenaScreen(
                 TextButton(onClick = { showRankedConsent = false }) {
                     Text("Not now")
                 }
+            }
+        )
+    }
+
+    // Placement rank-reveal ceremony (audit #20): a designed moment, fired exactly once.
+    if (showRankReveal) {
+        val cRank = user?.competitive_rank ?: "Unranked"
+        val dismiss: () -> Unit = {
+            showRankReveal = false
+            scope.launch(Dispatchers.IO) {
+                try { RetrofitClient.apiService.markRankRevealSeen(RetrofitClient.authToken ?: "") }
+                catch (e: Exception) { Log.e("Arena", "reveal-seen failed: ${e.message}") }
+            }
+        }
+        AlertDialog(
+            onDismissRequest = dismiss,
+            icon = { RankBadge(rankName = cRank, modifier = Modifier.size(64.dp)) },
+            title = { Text(text = "Placement complete!", fontWeight = FontWeight.ExtraBold) },
+            text = {
+                Text(
+                    text = "You've played your placement games. Your competitive rank is " +
+                        "$cRank. From here, every ranked result moves your rating — climb the ladder!"
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = dismiss) { Text("Let's climb", fontWeight = FontWeight.Bold) }
             }
         )
     }

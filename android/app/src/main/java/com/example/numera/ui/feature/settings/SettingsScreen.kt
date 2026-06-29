@@ -62,7 +62,7 @@ fun SettingsScreen(
     var showLogsDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Placeholders modal states
+    // Help & Support modal states
     var showFaqDialog by remember { mutableStateOf(false) }
     var showContactDialog by remember { mutableStateOf(false) }
     var showBugDialog by remember { mutableStateOf(false) }
@@ -540,7 +540,7 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Private Profile", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Hide ELO ratings and Relics from others", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Hide your rating, rank, and Relics from others", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
                     Switch(
                         checked = profilePrivate,
@@ -624,11 +624,11 @@ fun SettingsScreen(
                     Switch(checked = notifAchievements, onCheckedChange = { notifAchievements = it; saveToggle("notif_achievements", it); com.example.numera.haptic.HapticManager.playSoft() })
                 }
             },
-            SearchableSettingItem("Ranked Rating Changes", "Alerts when ELO placement status shifts", "alerts ranked rating arena matches notifications") {
+            SearchableSettingItem("Ranked Rating Changes", "Alerts when your rank or rating shifts", "alerts ranked rating arena matches notifications") {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Ranked Activity", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Rating ELO adjustments and league promotions", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Rating changes and league promotions", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
                     Switch(checked = notifRanked, onCheckedChange = { notifRanked = it; saveToggle("notif_ranked", it); com.example.numera.haptic.HapticManager.playSoft() })
                 }
@@ -1112,6 +1112,7 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     
                     val themesList = listOf(
+                        "studio" to "Studio",
                         "duolingo" to "Duo",
                         "neon_eclipse" to "Eclipse",
                         "emerald_abyss" to "Emerald",
@@ -1129,7 +1130,7 @@ fun SettingsScreen(
                             modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
                         ) {
                             rowItems.forEach { (themeKey, themeLabel) ->
-                                val isActive = user?.theme == themeKey || (user?.theme == null && themeKey == "duolingo")
+                                val isActive = user?.theme == themeKey || (user?.theme == null && themeKey == "studio")
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
@@ -1367,7 +1368,7 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(Spacing.m))
 
-            // 7. HELP & SUPPORT CARD (Visual Placeholders)
+            // 7. HELP & SUPPORT CARD
             Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
                 shape = RoundedCornerShape(CornerRadius.l),
@@ -1936,7 +1937,7 @@ fun SettingsScreen(
             title = { Text("Permanently Delete Account?", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.error) },
             text = {
                 Text(
-                    text = "This action is irreversible. All your level progression, rating ELO, relics, coin balance, and custom banners will be permanently wiped.",
+                    text = "This action is irreversible. All your level progression, rating, relics, coin balance, and custom banners will be permanently wiped.",
                     fontSize = 13.sp
                 )
             },
@@ -1979,7 +1980,7 @@ fun SettingsScreen(
         )
     }
 
-    // 6. FAQ dialog (Placeholders)
+    // 6. FAQ dialog
     if (showFaqDialog) {
         AlertDialog(
             onDismissRequest = { showFaqDialog = false },
@@ -1990,8 +1991,8 @@ fun SettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Column {
-                        Text("How do I gain rank ELO?", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        Text("Gain ELO rating by winning ranked duels against other players or bots in the Arena tab.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("How do I raise my rating and rank?", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text("Your rating climbs as you solve problems above your level — in solo practice and in ranked Arena duels alike. Both feed the same rating, and your rank tier follows it.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
                     HorizontalDivider()
                     Column {
@@ -2011,13 +2012,15 @@ fun SettingsScreen(
         )
     }
 
-    // 7. Contact Support dialog (Placeholders)
+    // 7. Contact Support dialog — submits a real ticket to /api/feedback (kind = "support").
     if (showContactDialog) {
         var subject by remember { mutableStateOf("") }
         var bodyMsg by remember { mutableStateOf("") }
         var submitted by remember { mutableStateOf(false) }
+        var submitting by remember { mutableStateOf(false) }
+        var error by remember { mutableStateOf<String?>(null) }
         AlertDialog(
-            onDismissRequest = { showContactDialog = false },
+            onDismissRequest = { if (!submitting) showContactDialog = false },
             title = { Text("Contact Support", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
@@ -2036,38 +2039,65 @@ fun SettingsScreen(
                             label = { Text("Message details") },
                             modifier = Modifier.fillMaxWidth().height(100.dp)
                         )
+                        if (error != null) {
+                            Text(error!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                        }
                     } else {
                         Text("Thank you! Your support ticket has been logged. We will review your query.", fontSize = 13.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
                     }
                 }
             },
             confirmButton = {
-                Button(onClick = {
-                    if (submitted) {
-                        showContactDialog = false
-                    } else {
-                        submitted = true
-                        com.example.numera.haptic.HapticManager.playSuccess()
+                Button(
+                    enabled = !submitting,
+                    onClick = {
+                        if (submitted) {
+                            showContactDialog = false
+                        } else if (bodyMsg.isBlank()) {
+                            error = "Please describe your issue first."
+                        } else {
+                            submitting = true
+                            error = null
+                            scope.launch(Dispatchers.IO) {
+                                val ok = runCatching {
+                                    RetrofitClient.apiService.submitFeedback(
+                                        RetrofitClient.authToken ?: "",
+                                        FeedbackRequest(kind = "support", subject = subject.trim().ifBlank { null }, body = bodyMsg.trim())
+                                    )
+                                }.getOrNull()?.success == true
+                                withContext(Dispatchers.Main) {
+                                    submitting = false
+                                    if (ok) {
+                                        submitted = true
+                                        com.example.numera.haptic.HapticManager.playSuccess()
+                                    } else {
+                                        error = "Couldn't send. Check your connection and try again."
+                                    }
+                                }
+                            }
+                        }
                     }
-                }) {
-                    Text(if (submitted) "Close" else "Submit ticket")
+                ) {
+                    Text(if (submitted) "Close" else if (submitting) "Sending…" else "Submit ticket")
                 }
             },
             dismissButton = {
-                if (!submitted) {
+                if (!submitted && !submitting) {
                     TextButton(onClick = { showContactDialog = false }) { Text("Cancel") }
                 }
             }
         )
     }
 
-    // 8. Report Bug dialog (Placeholders)
+    // 8. Report Bug dialog — submits a real ticket to /api/feedback (kind = "bug").
     if (showBugDialog) {
         var bugTitle by remember { mutableStateOf("") }
         var bugDesc by remember { mutableStateOf("") }
         var submitted by remember { mutableStateOf(false) }
+        var submitting by remember { mutableStateOf(false) }
+        var error by remember { mutableStateOf<String?>(null) }
         AlertDialog(
-            onDismissRequest = { showBugDialog = false },
+            onDismissRequest = { if (!submitting) showBugDialog = false },
             title = { Text("Report a Bug", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
@@ -2086,60 +2116,126 @@ fun SettingsScreen(
                             label = { Text("Steps to Reproduce") },
                             modifier = Modifier.fillMaxWidth().height(100.dp)
                         )
+                        if (error != null) {
+                            Text(error!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                        }
                     } else {
                         Text("Bug report submitted! Thank you for helping us improve Numera.", fontSize = 13.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
                     }
                 }
             },
             confirmButton = {
-                Button(onClick = {
-                    if (submitted) {
-                        showBugDialog = false
-                    } else {
-                        submitted = true
-                        com.example.numera.haptic.HapticManager.playSuccess()
+                Button(
+                    enabled = !submitting,
+                    onClick = {
+                        if (submitted) {
+                            showBugDialog = false
+                        } else if (bugDesc.isBlank()) {
+                            error = "Please describe the bug first."
+                        } else {
+                            submitting = true
+                            error = null
+                            scope.launch(Dispatchers.IO) {
+                                val ok = runCatching {
+                                    RetrofitClient.apiService.submitFeedback(
+                                        RetrofitClient.authToken ?: "",
+                                        FeedbackRequest(kind = "bug", subject = bugTitle.trim().ifBlank { null }, body = bugDesc.trim())
+                                    )
+                                }.getOrNull()?.success == true
+                                withContext(Dispatchers.Main) {
+                                    submitting = false
+                                    if (ok) {
+                                        submitted = true
+                                        com.example.numera.haptic.HapticManager.playSuccess()
+                                    } else {
+                                        error = "Couldn't send. Check your connection and try again."
+                                    }
+                                }
+                            }
+                        }
                     }
-                }) {
-                    Text(if (submitted) "Close" else "Submit report")
+                ) {
+                    Text(if (submitted) "Close" else if (submitting) "Sending…" else "Submit report")
                 }
             },
             dismissButton = {
-                if (!submitted) {
+                if (!submitted && !submitting) {
                     TextButton(onClick = { showBugDialog = false }) { Text("Cancel") }
                 }
             }
         )
     }
 
-    // 9. Feature Request (Placeholders)
+    // 9. Request a Feature — submits a real suggestion to /api/feedback (kind = "feature").
     if (showFeatureDialog) {
+        var idea by remember { mutableStateOf("") }
+        var submitted by remember { mutableStateOf(false) }
+        var submitting by remember { mutableStateOf(false) }
+        var error by remember { mutableStateOf<String?>(null) }
         AlertDialog(
-            onDismissRequest = { showFeatureDialog = false },
-            title = { Text("Request Feature", fontWeight = FontWeight.Bold) },
+            onDismissRequest = { if (!submitting) showFeatureDialog = false },
+            title = { Text("Request a Feature", fontWeight = FontWeight.Bold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Vote for features or suggest new ones. Comming soon!", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("📐 LaTeX Math Canvas Renderer", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            Text("▲ 85 Votes", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                    if (!submitted) {
+                        Text("Tell us what would make Numera better — a topic, a mode, an avatar, anything.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        OutlinedTextField(
+                            value = idea,
+                            onValueChange = { idea = it },
+                            label = { Text("Your idea") },
+                            modifier = Modifier.fillMaxWidth().height(110.dp)
+                        )
+                        if (error != null) {
+                            Text(error!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                         }
-                    }
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("🛡️ SRS Decay Alert Notification", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            Text("▲ 42 Votes", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
-                        }
+                    } else {
+                        Text("Thanks for the suggestion! We read every request.", fontSize = 13.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showFeatureDialog = false }) { Text("Close") }
+                Button(
+                    enabled = !submitting,
+                    onClick = {
+                        if (submitted) {
+                            showFeatureDialog = false
+                        } else if (idea.isBlank()) {
+                            error = "Type your idea first."
+                        } else {
+                            submitting = true
+                            error = null
+                            scope.launch(Dispatchers.IO) {
+                                val ok = runCatching {
+                                    RetrofitClient.apiService.submitFeedback(
+                                        RetrofitClient.authToken ?: "",
+                                        FeedbackRequest(kind = "feature", body = idea.trim())
+                                    )
+                                }.getOrNull()?.success == true
+                                withContext(Dispatchers.Main) {
+                                    submitting = false
+                                    if (ok) {
+                                        submitted = true
+                                        com.example.numera.haptic.HapticManager.playSuccess()
+                                    } else {
+                                        error = "Couldn't send. Check your connection and try again."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ) {
+                    Text(if (submitted) "Close" else if (submitting) "Sending…" else "Send suggestion")
+                }
+            },
+            dismissButton = {
+                if (!submitted && !submitting) {
+                    TextButton(onClick = { showFeatureDialog = false }) { Text("Close") }
+                }
             }
         )
     }
 
-    // 10. Guidelines (Placeholders)
+    // 10. Guidelines
     if (showGuidelinesDialog) {
         AlertDialog(
             onDismissRequest = { showGuidelinesDialog = false },

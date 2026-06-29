@@ -30,6 +30,7 @@ import com.example.numera.theme.*
 import com.example.numera.ui.components.ProfileBanner
 import com.example.numera.ui.components.pressable
 import com.example.numera.ui.components.MathAvatar
+import com.example.numera.ui.components.CosmeticAvatar
 import com.example.numera.ui.components.RankBadge
 import com.example.numera.ui.components.AchievementBadge
 import com.example.numera.ui.components.NumeraIcon
@@ -102,6 +103,138 @@ fun ProfileScreen(
         }
     }
     
+    // Unified competitive rating — per-domain ranks (Spec-RatingUnification.md / audit Top-25 #6).
+    var ratingProfile by remember { mutableStateOf<Map<String, com.example.numera.data.network.DomainRating>?>(null) }
+    var seasonHistory by remember { mutableStateOf<List<com.example.numera.data.network.SeasonAward>?>(null) }
+    var rewardTrack by remember { mutableStateOf<com.example.numera.data.network.RewardTrackResponse?>(null) }
+    var ratingHistory by remember { mutableStateOf<List<com.example.numera.data.network.RatingHistoryEntry>?>(null) }
+    var matchHistory by remember { mutableStateOf<List<com.example.numera.data.network.MatchHistoryEntry>?>(null) }
+    var rivals by remember { mutableStateOf<List<com.example.numera.data.network.RivalEntry>?>(null) }
+    var titles by remember { mutableStateOf<com.example.numera.data.network.TitlesResponse?>(null) }
+    var apex by remember { mutableStateOf<com.example.numera.data.network.ApexResponse?>(null) }
+    var honor by remember { mutableStateOf<com.example.numera.data.network.HonorResponse?>(null) }
+    LaunchedEffect(Unit) {
+        try {
+            ratingProfile = RetrofitClient.apiService.getRatingProfile(RetrofitClient.authToken ?: "").profile
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch rating profile: ${e.message}")
+        }
+        try {
+            apex = RetrofitClient.apiService.getApex(RetrofitClient.authToken ?: "", 10)
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch apex: ${e.message}")
+        }
+        try {
+            honor = RetrofitClient.apiService.getHonor(RetrofitClient.authToken ?: "")
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch honor: ${e.message}")
+        }
+        try {
+            ratingHistory = RetrofitClient.apiService.getRatingHistory(RetrofitClient.authToken ?: "", "global", 12)
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch rating history: ${e.message}")
+        }
+        try {
+            matchHistory = RetrofitClient.apiService.getMatchHistory(RetrofitClient.authToken ?: "", 15)
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch match history: ${e.message}")
+        }
+        try {
+            rivals = RetrofitClient.apiService.getRivals(RetrofitClient.authToken ?: "", 10)
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch rivals: ${e.message}")
+        }
+        try {
+            titles = RetrofitClient.apiService.getTitles(RetrofitClient.authToken ?: "")
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch titles: ${e.message}")
+        }
+        try {
+            seasonHistory = RetrofitClient.apiService.getSeasonHistory(RetrofitClient.authToken ?: "").awards
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch season history: ${e.message}")
+        }
+        try {
+            rewardTrack = RetrofitClient.apiService.getRewardTrack(RetrofitClient.authToken ?: "")
+        } catch (e: Exception) {
+            Log.e("Profile", "Failed to fetch reward track: ${e.message}")
+        }
+    }
+
+    // Reasoning-round replay: fetch a finished round's review and show it in a dialog.
+    var replayReview by remember { mutableStateOf<com.example.numera.data.network.ReasoningReviewResponse?>(null) }
+    val openReplay: (Int) -> Unit = { roundId ->
+        scope.launch(Dispatchers.IO) {
+            try {
+                replayReview = RetrofitClient.apiService.getReasoningReview(RetrofitClient.authToken ?: "", roundId)
+            } catch (e: Exception) {
+                Log.e("Profile", "Failed to load round review: ${e.message}")
+            }
+        }
+    }
+
+    // Share your competitive rank (audit #22): fetch the server-composed boast, fire a share sheet.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val shareRank: () -> Unit = {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val card = RetrofitClient.apiService.getShareCard(RetrofitClient.authToken ?: "")
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_TEXT, card.text)
+                    }
+                    context.startActivity(android.content.Intent.createChooser(send, "Share your rank"))
+                }
+            } catch (e: Exception) {
+                Log.e("Profile", "Failed to build share card: ${e.message}")
+            }
+        }
+    }
+
+    // Honor (audit #24): commend a past opponent, then refresh the match list + honor tally.
+    val commend: (Int) -> Unit = { matchId ->
+        scope.launch(Dispatchers.IO) {
+            try {
+                RetrofitClient.apiService.commendOpponent(
+                    RetrofitClient.authToken ?: "",
+                    com.example.numera.data.network.CommendRequest(matchId = matchId)
+                )
+                matchHistory = RetrofitClient.apiService.getMatchHistory(RetrofitClient.authToken ?: "", 15)
+                honor = RetrofitClient.apiService.getHonor(RetrofitClient.authToken ?: "")
+            } catch (e: Exception) {
+                Log.e("Profile", "Failed to commend: ${e.message}")
+            }
+        }
+    }
+
+    // Equip (or clear, with "") a competitive title, then refresh the list.
+    val selectTitle: (String) -> Unit = { id ->
+        scope.launch(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken ?: ""
+                RetrofitClient.apiService.selectTitle(token, com.example.numera.data.network.SelectTitleRequest(id))
+                titles = RetrofitClient.apiService.getTitles(token)
+            } catch (e: Exception) {
+                Log.e("Profile", "Failed to set title: ${e.message}")
+            }
+        }
+    }
+
+    // Claim a seasonal Rank Reward tier, then refresh the track + the coin/token balance.
+    val claimRewardTier: (Int) -> Unit = { tier ->
+        scope.launch(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken ?: ""
+                RetrofitClient.apiService.claimRewardTier(token, com.example.numera.data.network.ClaimTierRequest(tier))
+                rewardTrack = RetrofitClient.apiService.getRewardTrack(token)
+                RetrofitClient.triggerProfileRefresh()
+            } catch (e: Exception) {
+                Log.e("Profile", "Failed to claim reward tier $tier: ${e.message}")
+            }
+        }
+    }
+
     // Sub-tab selection state inside ProfileScreen
     var selectedSubTab by remember { mutableStateOf(0) } // 0: Stats & Customize, 1: Achievements, 2: Friends, 3: Saved
     var selectedCategoryTab by remember { mutableStateOf("Persistence") }
@@ -192,22 +325,18 @@ fun ProfileScreen(
                 bannerKey = user?.active_banner,
                 modifier = Modifier.fillMaxWidth().height(140.dp)
             )
-            Box(
+            // Avatar wearing its equipped cosmetics — earned mastery frame ring + profile-effect aura
+            // (docs/ShopOverhaul.md §8). Falls back to the plain bordered circle when nothing's equipped.
+            CosmeticAvatar(
+                avatarKey = user?.avatar,
+                frameKey = user?.active_frame,
+                effectKey = user?.active_effect,
+                fontSize = 46.sp,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(start = Spacing.xl)
-                    .size(88.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                MathAvatar(
-                    avatarKey = user?.avatar,
-                    modifier = Modifier.fillMaxSize(),
-                    fontSize = 46.sp
-                )
-            }
+                    .size(88.dp),
+            )
         }
 
         // User info details
@@ -320,6 +449,9 @@ fun ProfileScreen(
             Tab(selected = selectedSubTab == 3, onClick = { selectedSubTab = 3 }) {
                 Text("Saved", modifier = Modifier.padding(vertical = Spacing.m), fontWeight = FontWeight.Bold)
             }
+            Tab(selected = selectedSubTab == 4, onClick = { selectedSubTab = 4 }) {
+                Text("Competitive", modifier = Modifier.padding(vertical = Spacing.m), fontWeight = FontWeight.Bold)
+            }
         }
 
         Spacer(modifier = Modifier.height(Spacing.s))
@@ -355,7 +487,7 @@ fun ProfileScreen(
                     ) {
                         RankBadge(
                             rankName = user?.rank ?: "Bronze III",
-                            modifier = Modifier.size(IconSize.m)
+                            modifier = Modifier.size(56.dp)
                         )
                         Text(
                             text = user?.rank ?: "Bronze III",
@@ -773,6 +905,43 @@ fun ProfileScreen(
             }
         }
         } // End of selectedSubTab == 0
+
+        if (selectedSubTab == 4) {
+            // ── COMPETITIVE: unified rank + specialties, titles, season rewards, history, rivals ──
+            CompetitiveRankCard(
+                profile = ratingProfile,
+                seasonHistory = seasonHistory,
+                activeTitle = titles?.titles?.firstOrNull { it.active }?.name,
+                apexStanding = apex?.you,
+                honor = honor,
+                onShare = shareRank,
+                modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+            )
+            TitlesCard(
+                titles = titles,
+                onSelect = selectTitle,
+                modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+            )
+            SeasonRewardTrackCard(
+                track = rewardTrack,
+                onClaim = claimRewardTier,
+                modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+            )
+            MatchHistoryCard(
+                matches = matchHistory,
+                onReplay = openReplay,
+                onCommend = commend,
+                modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+            )
+            RivalsCard(
+                rivals = rivals,
+                modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+            )
+            RatingHistoryCard(
+                history = ratingHistory,
+                modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)
+            )
+        } // End of selectedSubTab == 4
 
         if (selectedSubTab == 2) {
         // Friends List integration Card
@@ -1492,6 +1661,8 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(Spacing.l))
 
         // Dialogs
+        replayReview?.let { ReasoningReplayDialog(review = it, onDismiss = { replayReview = null }) }
+
         if (showCreateCollectionDialog) {
             AlertDialog(
                 onDismissRequest = { showCreateCollectionDialog = false },

@@ -1,6 +1,8 @@
 package com.example.numera.ui.feature.social
 
 import android.util.Log
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,6 +31,8 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
     var mine by remember { mutableStateOf<MyClubResponse?>(null) }
     var clubs by remember { mutableStateOf<List<ClubSummary>>(emptyList()) }
     var topClubs by remember { mutableStateOf<List<ClubLeaderboardEntry>>(emptyList()) }
+    var skillClubs by remember { mutableStateOf<List<ClubSkillEntry>>(emptyList()) }
+    var clubLadderMode by remember { mutableStateOf("activity") } // activity (XP) | skill (rating)
     var loading by remember { mutableStateOf(true) }
     var busy by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
@@ -43,6 +48,7 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
                 mine = m
                 clubs = if (m.club == null) withContext(Dispatchers.IO) { RetrofitClient.apiService.browseClubs(token) } else emptyList()
                 topClubs = withContext(Dispatchers.IO) { RetrofitClient.apiService.clubsLeaderboard(token) }
+                skillClubs = withContext(Dispatchers.IO) { RetrofitClient.apiService.clubsSkillLeaderboard(token) }
             } catch (e: Exception) {
                 Log.e("Clubs", "load err: ${e.message}")
             } finally {
@@ -163,32 +169,77 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
                 }
             }
 
-            // Top Clubs — the team league: every club ranked by its members' combined level.
-            Text("🏆 TOP CLUBS", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(top = Spacing.s))
-            if (topClubs.isEmpty()) {
-                Text("No clubs ranked yet.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-            } else {
-                topClubs.forEach { tc ->
-                    val isMine = mine?.club?.id == tc.id
-                    DuoCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        borderColor = if (isMine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                    ) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(Spacing.m), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
-                            Text(
-                                "#${tc.position}",
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 15.sp,
-                                color = when (tc.position) { 1 -> MilestoneGold; 2 -> MedalSilver; 3 -> MedalBronze; else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) },
-                                modifier = Modifier.width(36.dp)
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(if (isMine) "${tc.name} (your club)" else tc.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isMine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                                Text("${tc.memberCount} ${if (tc.memberCount == 1) "member" else "members"} · ${tc.totalLevel} total levels", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                            }
-                        }
+            // Top Clubs — two ladders: Activity (combined level/XP) and Skill (avg competitive rating,
+            // audit #17 — so a tight crew of strong mathematicians can out-rank a horde of grinders).
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth().padding(top = Spacing.s)) {
+                Text("🏆 TOP CLUBS", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                    LadderChip("Activity", clubLadderMode == "activity") { clubLadderMode = "activity" }
+                    LadderChip("Skill", clubLadderMode == "skill") { clubLadderMode = "skill" }
+                }
+            }
+            if (clubLadderMode == "activity") {
+                if (topClubs.isEmpty()) {
+                    Text("No clubs ranked yet.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                } else {
+                    topClubs.forEach { tc ->
+                        val isMine = mine?.club?.id == tc.id
+                        ClubLadderRow(
+                            position = tc.position, name = tc.name, isMine = isMine,
+                            subtitle = "${tc.memberCount} ${if (tc.memberCount == 1) "member" else "members"} · ${tc.totalLevel} total levels",
+                        )
                     }
                 }
+            } else {
+                if (skillClubs.isEmpty()) {
+                    Text("No clubs ranked yet.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                } else {
+                    skillClubs.forEach { sc ->
+                        val isMine = mine?.club?.id == sc.id
+                        ClubLadderRow(
+                            position = sc.position, name = sc.name, isMine = isMine,
+                            subtitle = if (sc.ratedMembers > 0) "${sc.clubRank} · ${sc.avgRating} avg · ${sc.ratedMembers}/${sc.memberCount} rated"
+                                       else "Unrated · no placed members yet",
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LadderChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val bg = if (selected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    val fg = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurface
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(CornerRadius.full))
+            .background(bg)
+            .clickable { onClick() }
+            .padding(horizontal = Spacing.m, vertical = Spacing.xs),
+    ) {
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Black, color = fg)
+    }
+}
+
+@Composable
+private fun ClubLadderRow(position: Int, name: String, isMine: Boolean, subtitle: String) {
+    DuoCard(
+        modifier = Modifier.fillMaxWidth(),
+        borderColor = if (isMine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth().padding(Spacing.m), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
+            Text(
+                "#$position",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 15.sp,
+                color = when (position) { 1 -> MilestoneGold; 2 -> MedalSilver; 3 -> MedalBronze; else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) },
+                modifier = Modifier.width(36.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(if (isMine) "$name (your club)" else name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isMine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             }
         }
     }

@@ -5,9 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,36 +12,96 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.numera.data.network.*
 import com.example.numera.theme.*
 
+/**
+ * A theme swatch rendered as a tiny app mockup — an app-bar, two text lines, and a CTA pill — in the
+ * theme's *own* colors, so a player can imagine the app wearing it (docs/ShopOverhaul.md §8/§13).
+ * Replaces the old three-dot swatch. It deliberately uses explicit theme tokens (StudioPrimary, …)
+ * rather than MaterialTheme.colorScheme.*, because it renders inside the Vault's dark scheme and must
+ * show the previewed theme, not the surrounding surface.
+ */
 @Composable
 fun ThemePreview(themeKey: String, modifier: Modifier = Modifier) {
-    val colors = when (themeKey) {
-        "duolingo", "theme_duolingo" -> Triple(DuoPrimary, DuoSecondary, DuoTertiary)
-        "cyberpunk", "theme_cyberpunk" -> Triple(CyberPrimary, CyberSecondary, CyberTertiary)
-        "eclipse", "theme_eclipse", "neon_eclipse", "theme_neon_eclipse" -> Triple(EclipsePrimary, EclipseSecondary, EclipseTertiary)
-        "emerald", "theme_emerald", "emerald_abyss", "theme_emerald_abyss" -> Triple(EmeraldPrimary, EmeraldSecondary, EmeraldTertiary)
-        "crimson", "theme_crimson", "crimson_nebula", "theme_crimson_nebula" -> Triple(CrimsonPrimary, CrimsonSecondary, CrimsonTertiary)
-        "aurora", "theme_aurora" -> Triple(AuroraPrimary, AuroraSecondary, AuroraTertiary)
-        "ocean", "theme_ocean" -> Triple(OceanPrimary, OceanSecondary, OceanTertiary)
-        "sunset", "theme_sunset" -> Triple(SunsetPrimary, SunsetSecondary, SunsetTertiary)
-        "midnight", "theme_midnight" -> Triple(MidnightPrimary, MidnightSecondary, MidnightTertiary)
-        else -> Triple(DuoPrimary, DuoSecondary, DuoTertiary)
-    }
-
-    Box(
+    val s = themeSwatch(themeKey)
+    Column(
         modifier = modifier
             .clip(RoundedCornerShape(CornerRadius.s))
-            .background(Color.White)
-            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f).copy(alpha = 0.5f), RoundedCornerShape(CornerRadius.s))
-            .padding(Spacing.xs),
-        contentAlignment = Alignment.Center
+            .background(s.paper)
+            .border(1.dp, s.ink.copy(alpha = 0.15f), RoundedCornerShape(CornerRadius.s))
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Box(modifier = Modifier.size(Spacing.m).clip(CircleShape).background(colors.first))
-            Box(modifier = Modifier.size(Spacing.m).clip(CircleShape).background(colors.second))
-            Box(modifier = Modifier.size(Spacing.m).clip(CircleShape).background(colors.third))
+        // App bar: a secondary "avatar" dot + a title bar, on the theme's primary.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.34f)
+                .background(s.primary)
+                .padding(horizontal = Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+        ) {
+            Box(Modifier.size(Spacing.s).clip(CircleShape).background(s.secondary))
+            Box(
+                Modifier
+                    .fillMaxWidth(0.5f)
+                    .height(Spacing.xs)
+                    .clip(RoundedCornerShape(CornerRadius.full))
+                    .background(Color.White.copy(alpha = 0.85f))
+            )
+        }
+        // Body: two "text" lines in ink + a tertiary CTA pill (the "earned"/action accent).
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.66f)
+                .padding(Spacing.xs),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth(0.82f)
+                    .height(Spacing.xs)
+                    .clip(RoundedCornerShape(CornerRadius.full))
+                    .background(s.ink.copy(alpha = 0.55f))
+            )
+            Box(
+                Modifier
+                    .fillMaxWidth(0.55f)
+                    .height(Spacing.xs)
+                    .clip(RoundedCornerShape(CornerRadius.full))
+                    .background(s.ink.copy(alpha = 0.30f))
+            )
+            Spacer(Modifier.weight(1f))
+            Box(
+                Modifier
+                    .fillMaxWidth(0.5f)
+                    .height(Spacing.s)
+                    .clip(RoundedCornerShape(CornerRadius.full))
+                    .background(s.tertiary)
+            )
         }
     }
+}
+
+/** The five colors a theme mockup needs: the brand triple + paper + ink, all from the theme's tokens. */
+private data class ThemeSwatch(
+    val primary: Color,
+    val secondary: Color,
+    val tertiary: Color,
+    val paper: Color,
+    val ink: Color,
+)
+
+private fun themeSwatch(themeKey: String): ThemeSwatch = when (themeKey) {
+    "studio", "theme_studio" -> ThemeSwatch(StudioPrimary, StudioSecondary, StudioTertiary, StudioSurfaceCard, StudioOnSurface)
+    "duolingo", "theme_duolingo" -> ThemeSwatch(DuoPrimary, DuoSecondary, DuoTertiary, DuoSurfaceCard, DuoOnSurface)
+    "cyberpunk", "theme_cyberpunk" -> ThemeSwatch(CyberPrimary, CyberSecondary, CyberTertiary, CyberSurfaceCard, CyberOnSurface)
+    "eclipse", "theme_eclipse", "neon_eclipse", "theme_neon_eclipse" -> ThemeSwatch(EclipsePrimary, EclipseSecondary, EclipseTertiary, EclipseSurfaceCard, EclipseOnSurface)
+    "emerald", "theme_emerald", "emerald_abyss", "theme_emerald_abyss" -> ThemeSwatch(EmeraldPrimary, EmeraldSecondary, EmeraldTertiary, EmeraldSurfaceCard, EmeraldOnSurface)
+    "crimson", "theme_crimson", "crimson_nebula", "theme_crimson_nebula" -> ThemeSwatch(CrimsonPrimary, CrimsonSecondary, CrimsonTertiary, CrimsonSurfaceCard, CrimsonOnSurface)
+    "aurora", "theme_aurora" -> ThemeSwatch(AuroraPrimary, AuroraSecondary, AuroraTertiary, AuroraSurfaceCard, AuroraOnSurface)
+    "ocean", "theme_ocean" -> ThemeSwatch(OceanPrimary, OceanSecondary, OceanTertiary, OceanSurfaceCard, OceanOnSurface)
+    "sunset", "theme_sunset" -> ThemeSwatch(SunsetPrimary, SunsetSecondary, SunsetTertiary, SunsetSurfaceCard, SunsetOnSurface)
+    "midnight", "theme_midnight" -> ThemeSwatch(MidnightPrimary, MidnightSecondary, MidnightTertiary, MidnightSurfaceCard, MidnightOnSurface)
+    else -> ThemeSwatch(StudioPrimary, StudioSecondary, StudioTertiary, StudioSurfaceCard, StudioOnSurface)
 }

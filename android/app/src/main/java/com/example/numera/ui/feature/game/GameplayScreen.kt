@@ -39,6 +39,7 @@ import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.MathKeyboard
 import com.example.numera.ui.components.VictoryParticles
+import com.example.numera.ui.components.TapEffectLayer
 import com.example.numera.ui.components.MathText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -235,8 +236,9 @@ fun GameplayScreen(
         }
     }
 
-    // Main Gameplay Screen
-    Box(modifier = Modifier.fillMaxSize()) {
+    // Main Gameplay Screen — wrapped so an equipped tap effect (docs/ShopOverhaul.md §8) flourishes
+    // where each answer tap lands. The pointer handler observes only (never consumes), so taps work.
+    TapEffectLayer(tapKey = RetrofitClient.equippedTapKey, modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()

@@ -48,18 +48,30 @@ const KNOWN_DOMAINS = [
  * Maps a category string from the game to a canonical domain name.
  * Returns 'arithmetic' as the safe fallback.
  */
+// Maps a generator/session category to one of the 8 competitive domains. The generator uses ~20
+// fine-grained category names (graphing, expressions, equations, factors, …); without this table they
+// all fell back to 'arithmetic', silently collapsing the per-domain rating ladders into one (every
+// algebra/geometry concept credited arithmetic). The grouping keeps the buckets pedagogically honest:
+// symbolic manipulation / equations / functions / coordinate work → algebra; factor/divisor work →
+// number_theory; pure number/fraction/decimal work → arithmetic.
+const CATEGORY_DOMAIN = {
+  // arithmetic & number sense
+  arithmetic: 'arithmetic', mental: 'arithmetic', mental_math: 'arithmetic',
+  number_sense: 'arithmetic', fractions: 'arithmetic', decimals: 'arithmetic',
+  integers: 'arithmetic', rates: 'arithmetic',
+  // algebra (symbolic manipulation, equations, functions, coordinate work)
+  algebra: 'algebra', expressions: 'algebra', equations: 'algebra', inequalities: 'algebra',
+  functions: 'algebra', graphing: 'algebra', sequences: 'algebra', powers: 'algebra',
+  // the rest map by name
+  geometry: 'geometry', calculus: 'calculus', combinatorics: 'combinatorics',
+  number_theory: 'number_theory', factors: 'number_theory',
+  statistics: 'statistics', probability: 'probability',
+};
+
 function categoryToDomain(category) {
   if (!category) return 'arithmetic';
   const c = category.toLowerCase().replace(/\s+/g, '_');
-  if (c === 'arithmetic' || c === 'mental' || c === 'mental_math') return 'arithmetic';
-  if (c === 'algebra')       return 'algebra';
-  if (c === 'geometry')      return 'geometry';
-  if (c === 'calculus')      return 'calculus';
-  if (c === 'combinatorics') return 'combinatorics';
-  if (c === 'number_theory' || c === 'number theory') return 'number_theory';
-  if (c === 'statistics')    return 'statistics';
-  if (c === 'probability')   return 'probability';
-  return 'arithmetic'; // safe fallback
+  return CATEGORY_DOMAIN[c] || 'arithmetic'; // safe fallback for any unknown category
 }
 
 // ─── Difficulty Scaling ───────────────────────────────────────────────────────
@@ -95,9 +107,11 @@ function levelToExpectedBaseline(level) {
 /**
  * Converts a session's raw metrics into a single performance score [0, 1].
  *
- * Weights:
- *   Accuracy    55%  — primary; correctness is the main signal
- *   Speed       20%  — meaningful but bounded; never outweighs accuracy
+ * Weights (rebalanced to reward UNDERSTANDING over speed — competitive audit #28: a fast guesser must
+ * not outrate a careful solver; the ceiling is unchanged at 0.85, weight just shifted from speed to
+ * accuracy):
+ *   Accuracy    65%  — primary; correctness is the dominant signal
+ *   Speed       10%  — a minor fluency factor; never near accuracy's weight
  *   Combo       10%  — rewarded for clean perfect runs
  *   Errors      −5%  per error, up to −15%
  *   Calculator  −10% (ranked sessions only; tool assistance reduces signal strength)
@@ -119,10 +133,10 @@ function computePerformanceScore({
   const correct = Math.max(0, Math.min(solvedCount || 0, total));
   const errors  = Math.max(0, errorsCount || 0);
 
-  const accuracyScore = (correct / total) * 0.55;
+  const accuracyScore = (correct / total) * 0.65;
 
   const normalizedSpeed  = Math.min((speedBonus || 0) / 20.0, 1.0);
-  const speedScore       = normalizedSpeed * 0.20;
+  const speedScore       = normalizedSpeed * 0.10;
 
   const comboScore = (comboBonus > 0) ? 0.10 : 0;
 
@@ -247,7 +261,86 @@ function applySessionToRating(ratingRow, sessionData) {
   };
 }
 
+// ─── Head-to-Head Duel Update ─────────────────────────────────────────────────
+
+/**
+ * Applies one head-to-head duel result to a (mu, sigma) rating pair.
+ *
+ * This is the unification keystone (docs/specs/Spec-RatingUnification.md): a ranked
+ * duel is evidence about the SAME latent skill as a solo session, so it updates the
+ * SAME (mu, sigma) belief — just scored by OUTCOME-vs-EXPECTED instead of
+ * performance-vs-baseline. Solo and duels therefore move ONE number per domain.
+ *
+ *   outcome   ∈ {1 win, 0.5 draw, 0 loss}
+ *   expected  = P(player beats opponent)        [the Gaussian win-prob model below]
+ *   K         = clamp(2.5σ, K_MIN, K_MAX)        [same uncertainty-scaled K as sessions]
+ *   delta     = K * (outcome − expected)
+ *
+ * Returns the SAME shape as applySessionToRating so the shared persistence path
+ * (rating_history, season peak, users.* mirror sync) treats both kinds of evidence
+ * identically. Pure: no DB/IO — callers fetch the two rating rows and persist the result.
+ */
+function applyDuelOutcomeToRating(ratingRow, { outcome, opponentMu, opponentSigma } = {}) {
+  const { mu, sessions_count, last_updated } = ratingRow;
+  let { sigma } = ratingRow;
+
+  // Re-widen uncertainty for a returning player before incorporating the result.
+  sigma = applyInactivityBoost(sigma, last_updated, sessions_count);
+
+  const oppMu = Number.isFinite(opponentMu) ? opponentMu : MU_INIT;
+  const oppSigma = Number.isFinite(opponentSigma) ? opponentSigma : SIGMA_INIT;
+  const expected = winProbability(mu, sigma, oppMu, oppSigma);
+
+  const clampedOutcome = Math.max(0, Math.min(Number(outcome), 1));
+  const K = Math.max(K_MIN, Math.min(2.5 * sigma, K_MAX));
+  const delta = K * (clampedOutcome - expected);
+
+  const newMu = mu + delta;
+  const newSigma = updateSigma(sigma);
+  const displayRating = Math.max(0, Math.floor(newMu - 2 * newSigma));
+
+  return {
+    mu: newMu,
+    sigma: newSigma,
+    displayRating,
+    delta,
+    // For the rating_history row: the realised outcome and the win probability we expected.
+    performanceScore: clampedOutcome,
+    expectedPerformance: expected,
+    components: {
+      outcome: clampedOutcome,
+      winProbability: +expected.toFixed(3),
+      opponentMu: +oppMu.toFixed(1),
+    },
+    sessionsCount: (sessions_count || 0) + 1,
+  };
+}
+
 // ─── Rank Name from Display Rating ───────────────────────────────────────────
+
+// Single source of truth for the display-rating → division ladder. Each entry is the EXCLUSIVE upper
+// bound and the label for ratings below it (and ≥ the previous entry's bound). The last entry
+// (Grandmaster) is unbounded. displayRatingToRank AND rankProgress both read this, so the ladder and
+// the "pips" progress bar can never drift apart.
+const RANK_LADDER = [
+  { below: 450, name: 'Bronze III' },
+  { below: 550, name: 'Bronze II' },
+  { below: 650, name: 'Bronze I' },
+  { below: 750, name: 'Silver III' },
+  { below: 850, name: 'Silver II' },
+  { below: 950, name: 'Silver I' },
+  { below: 1050, name: 'Gold III' },
+  { below: 1150, name: 'Gold II' },
+  { below: 1250, name: 'Gold I' },
+  { below: 1350, name: 'Platinum III' },
+  { below: 1450, name: 'Platinum II' },
+  { below: 1550, name: 'Platinum I' },
+  { below: 1650, name: 'Diamond III' },
+  { below: 1750, name: 'Diamond II' },
+  { below: 1850, name: 'Diamond I' },
+  { below: 2000, name: 'Master' },
+  { below: Infinity, name: 'Grandmaster' },
+];
 
 /**
  * Maps a display rating to a human-readable competitive rank.
@@ -257,24 +350,68 @@ function displayRatingToRank(displayRating, sessionsCount) {
   if (sessionsCount < 5) {
     return `Unranked (Placement: ${sessionsCount}/5)`;
   }
-  const r = displayRating;
-  if (r < 450)  return 'Bronze III';
-  if (r < 550)  return 'Bronze II';
-  if (r < 650)  return 'Bronze I';
-  if (r < 750)  return 'Silver III';
-  if (r < 850)  return 'Silver II';
-  if (r < 950)  return 'Silver I';
-  if (r < 1050) return 'Gold III';
-  if (r < 1150) return 'Gold II';
-  if (r < 1250) return 'Gold I';
-  if (r < 1350) return 'Platinum III';
-  if (r < 1450) return 'Platinum II';
-  if (r < 1550) return 'Platinum I';
-  if (r < 1650) return 'Diamond III';
-  if (r < 1750) return 'Diamond II';
-  if (r < 1850) return 'Diamond I';
-  if (r < 2000) return 'Master';
+  for (const band of RANK_LADDER) {
+    if (displayRating < band.below) return band.name;
+  }
   return 'Grandmaster';
+}
+
+/**
+ * Progression detail for the divisions/pips UI (competitive audit Top-25 #7): where the player sits
+ * WITHIN their current division and how far to the next one. Pure; derived from RANK_LADDER so it
+ * always matches displayRatingToRank.
+ *
+ * Returns { rank, placement, progress (0..1 through the current division), pointsToNext, nextRank }.
+ * For an unranked player, `progress` tracks placement (sessions/5). For Grandmaster (no ceiling),
+ * progress is 1 and there is no next rank.
+ */
+function rankProgress(displayRating, sessionsCount) {
+  const sessions = sessionsCount || 0;
+  if (sessions < 5) {
+    return {
+      rank: `Unranked (Placement: ${sessions}/5)`,
+      placement: true,
+      progress: Math.max(0, Math.min(sessions / 5, 1)),
+      pointsToNext: null,
+      nextRank: null,
+      sessionsToPlacement: 5 - sessions,
+    };
+  }
+  const r = displayRating;
+  let floor = 0;
+  for (let i = 0; i < RANK_LADDER.length; i++) {
+    const band = RANK_LADDER[i];
+    if (r < band.below) {
+      const isTop = band.below === Infinity;
+      const ceil = band.below;
+      const width = isTop ? 0 : ceil - floor;
+      const next = RANK_LADDER[i + 1];
+      return {
+        rank: band.name,
+        placement: false,
+        progress: isTop ? 1 : Math.max(0, Math.min((r - floor) / width, 1)),
+        pointsToNext: isTop ? null : Math.max(0, Math.ceil(ceil - r)),
+        nextRank: isTop ? null : (next ? next.name : null),
+      };
+    }
+    floor = band.below;
+  }
+  return { rank: 'Grandmaster', placement: false, progress: 1, pointsToNext: null, nextRank: null };
+}
+
+// ─── Rank Tiers (metal only) ──────────────────────────────────────────────────
+
+// The 7 metal tiers, coarser than the 21 divisions. Used by the seasonal Rank Reward track.
+const RANK_TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster'];
+
+/**
+ * Maps a rank label (e.g. "Gold II", "Master", "Unranked (…)") to its metal-tier index 0..6, or −1
+ * if unranked. Derived from the rank label's first word so the tier ladder can NEVER drift from
+ * displayRatingToRank — there is one source of truth for the ladder.
+ */
+function rankToTierIndex(rankLabel) {
+  const metal = String(rankLabel || '').split(' ')[0];
+  return RANK_TIERS.indexOf(metal);
 }
 
 // ─── Rating Explanation ───────────────────────────────────────────────────────
@@ -289,13 +426,13 @@ function buildRatingExplanation(domain, sessionData, result) {
   const direction = delta >= 0 ? 'increased' : 'decreased';
   const magnitude = Math.abs(Math.round(delta));
 
-  const accuracyPct = Math.round((components.accuracy / 0.55) * 100);
+  const accuracyPct = Math.round((components.accuracy / 0.65) * 100);
   const reasons = [];
 
   if (accuracyPct >= 85) reasons.push(`high accuracy (${accuracyPct}%)`);
   else if (accuracyPct <= 50) reasons.push(`low accuracy (${accuracyPct}%)`);
 
-  if (components.speed >= 0.12) reasons.push('fast response times');
+  if (components.speed >= 0.08) reasons.push('fast response times');
   if (components.combo > 0) reasons.push('perfect combo');
   if (components.calcPenalty > 0) reasons.push('calculator used (ranked penalty)');
   if (components.errorPenalty > 0) reasons.push(`${Math.round(components.errorPenalty / 0.05)} error(s)`);
@@ -392,17 +529,46 @@ function updateTiltState(currentTilt, performanceScore, sessionData) {
  * Match quality is highest when win probability is close to 50%.
  */
 function computeMatchQuality(ratingA, ratingB) {
-  const BETA = 150;
-  const { mu: muA, sigma: sigmaA } = ratingA;
-  const { mu: muB, sigma: sigmaB } = ratingB;
-
-  const denom = Math.sqrt(sigmaA * sigmaA + sigmaB * sigmaB + BETA * BETA);
-  const z = (muA - muB) / denom;
-  const winProbA = normalCDF(z);
-
+  const winProbA = winProbability(ratingA.mu, ratingA.sigma, ratingB.mu, ratingB.sigma);
   // Quality is maximized when win probability is 50% (perfectly balanced)
   const quality = 1.0 - 4.0 * (winProbA - 0.5) * (winProbA - 0.5);
   return Math.max(0, quality);
+}
+
+// σ below which a rating is "established" — above it the player is still in calibration and the
+// display rating (μ−2σ) is wide of the true skill. Surfaced as a provisional `?` marker (audit opp #9)
+// and used to loosen matchmaking for not-yet-calibrated players. SIGMA_INIT 350 → established ~150.
+const SIGMA_ESTABLISHED = 150;
+
+/** A rating is provisional (show `?`, match loosely) while its uncertainty is still high. */
+function isProvisional(sigma) {
+  return (sigma == null ? SIGMA_INIT : sigma) > SIGMA_ESTABLISHED;
+}
+
+/**
+ * Hidden-MMR pairing gate (audit Top-25 #11 / opp #7,#8): accept a ranked pairing when the
+ * win-probability-based match quality clears a floor that *relaxes with wait time*, so a fair match
+ * forms quickly and a looser one still forms eventually (the 10s bot fallback is the final backstop).
+ * Pairs on (μ, σ) — the real belief — not a raw rating-point window, so high-σ provisional players,
+ * whose win-prob denom is naturally wider, are matched more permissively. Pure + testable.
+ */
+function matchAcceptable(ratingA, ratingB, waitSeconds) {
+  const quality = computeMatchQuality(ratingA, ratingB);
+  // Floor starts strict (0.65 ≈ 40/60 win-prob) and relaxes toward 0.2 as the wait grows.
+  const floor = Math.max(0.2, 0.65 - 0.04 * Math.max(0, waitSeconds || 0));
+  return quality >= floor;
+}
+
+/**
+ * Probability that player A beats player B under the NRS belief model.
+ *   p(A beats B) ≈ Φ((muA − muB) / sqrt(sigmaA² + sigmaB² + β²))
+ * β = 150 is the natural per-session performance variance. Shared by match-quality
+ * scoring and the head-to-head duel update so both speak the same win-probability language.
+ */
+function winProbability(muA, sigmaA, muB, sigmaB) {
+  const BETA = 150;
+  const denom = Math.sqrt(sigmaA * sigmaA + sigmaB * sigmaB + BETA * BETA);
+  return normalCDF((muA - muB) / denom);
 }
 
 /**
@@ -468,12 +634,20 @@ module.exports = {
   computePerformanceScore,
   computeExpectedPerformance,
   applySessionToRating,
+  applyDuelOutcomeToRating,
+  winProbability,
   displayRatingToRank,
+  rankProgress,
+  RANK_TIERS,
+  rankToTierIndex,
   buildRatingExplanation,
   evaluateSmurfSignals,
   updateLearningVelocity,
   updateTiltState,
   computeMatchQuality,
+  matchAcceptable,
+  isProvisional,
+  SIGMA_ESTABLISHED,
   applySeasonReset,
   domainInfluenceWeight,
 };

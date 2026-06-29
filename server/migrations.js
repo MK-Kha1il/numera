@@ -1058,6 +1058,373 @@ const migrations = [
       }
     },
   },
+  {
+    version: 47,
+    name: 'rating_unification_mirror',
+    // Rating unification (docs/specs/Spec-RatingUnification.md): the competitive rating now lives in
+    // ONE place — user_ratings (per-domain mu/sigma). The denormalised users.elo / competitive_matches
+    // columns were independently written by BOTH the solo path and the duel path in incompatible
+    // scales (the competitive-audit "smoking gun"), so this (a) adds competitive_rank as the mirror of
+    // the NRS rank and (b) RECONCILES the mirror to the authoritative global rating for every user who
+    // already has one. Users without a user_ratings row keep their defaults. No data loss —
+    // user_ratings was always the source of truth; we are only fixing the cache. From here, the mirror
+    // is written ONLY by ratingService.syncCompetitiveMirror.
+    up: async (run) => {
+      try {
+        await run("ALTER TABLE users ADD COLUMN competitive_rank TEXT DEFAULT 'Unranked (Placement: 0/5)'");
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+      // Reconcile elo + competitive_matches + competitive_rank from the global user_ratings row.
+      // The CASE mirrors mathEngine/ratingEngine.displayRatingToRank exactly (keep in sync if that
+      // ladder ever changes). Only touches users who actually have a global rating row.
+      await run(`
+        UPDATE users SET
+          elo = (SELECT CAST(ROUND(ur.mu) AS INTEGER) FROM user_ratings ur WHERE ur.user_id = users.id AND ur.domain = 'global'),
+          competitive_matches = (SELECT ur.sessions_count FROM user_ratings ur WHERE ur.user_id = users.id AND ur.domain = 'global'),
+          competitive_rank = (
+            SELECT CASE
+              WHEN ur.sessions_count < 5 THEN 'Unranked (Placement: ' || ur.sessions_count || '/5)'
+              WHEN ur.display_rating < 450  THEN 'Bronze III'
+              WHEN ur.display_rating < 550  THEN 'Bronze II'
+              WHEN ur.display_rating < 650  THEN 'Bronze I'
+              WHEN ur.display_rating < 750  THEN 'Silver III'
+              WHEN ur.display_rating < 850  THEN 'Silver II'
+              WHEN ur.display_rating < 950  THEN 'Silver I'
+              WHEN ur.display_rating < 1050 THEN 'Gold III'
+              WHEN ur.display_rating < 1150 THEN 'Gold II'
+              WHEN ur.display_rating < 1250 THEN 'Gold I'
+              WHEN ur.display_rating < 1350 THEN 'Platinum III'
+              WHEN ur.display_rating < 1450 THEN 'Platinum II'
+              WHEN ur.display_rating < 1550 THEN 'Platinum I'
+              WHEN ur.display_rating < 1650 THEN 'Diamond III'
+              WHEN ur.display_rating < 1750 THEN 'Diamond II'
+              WHEN ur.display_rating < 1850 THEN 'Diamond I'
+              WHEN ur.display_rating < 2000 THEN 'Master'
+              ELSE 'Grandmaster'
+            END
+            FROM user_ratings ur WHERE ur.user_id = users.id AND ur.domain = 'global'
+          )
+        WHERE EXISTS (SELECT 1 FROM user_ratings ur WHERE ur.user_id = users.id AND ur.domain = 'global')
+      `);
+    },
+  },
+  {
+    version: 48,
+    name: 'season_awards',
+    // Act-Rank-style seasonal peak badge (competitive audit Top-25 #5): a PERMANENT record of the
+    // highest competitive rank a player reached in each ended season, minted at rollover from the
+    // season's best peak_display. The lowest-effort identity win in the audit — the season peak was
+    // already stored (season_ratings.peak_display); this just immortalises it. One row per
+    // (user, season); empty until a player's first season ends.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS season_awards (
+          user_id      INTEGER NOT NULL,
+          season_id    INTEGER NOT NULL,
+          season_name  TEXT,
+          peak_display INTEGER DEFAULT 0,
+          peak_rank    TEXT,
+          awarded_at   INTEGER DEFAULT 0,
+          PRIMARY KEY (user_id, season_id),
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_season_awards_user ON season_awards(user_id)');
+    },
+  },
+  {
+    version: 49,
+    name: 'season_reward_claims',
+    // Seasonal Rank Reward track (competitive audit Top-25 #4 / Rocket League pattern): reaching a
+    // metal tier during a season unlocks that tier's seasonal reward (season_tokens + coins),
+    // claimable once per (user, season, tier). This ledger records claims so a reward can't be taken
+    // twice. "Reached" is judged off the season PEAK, so a later derank never revokes a claim.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS season_reward_claims (
+          user_id    INTEGER NOT NULL,
+          season_id  INTEGER NOT NULL,
+          tier_index INTEGER NOT NULL,
+          claimed_at INTEGER DEFAULT 0,
+          PRIMARY KEY (user_id, season_id, tier_index),
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_season_reward_claims_user ON season_reward_claims(user_id, season_id)');
+    },
+  },
+  {
+    version: 50,
+    name: 'reasoning_rounds',
+    // Reasoning Arena (competitive audit Phase 3): a ranked round where a correct answer only banks a
+    // point if the player ALSO picks the correct REASON. The round (problems + answer key +
+    // correct-reason indices) is stored server-side so grading is authoritative; status guards
+    // double-submit.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS reasoning_rounds (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id       INTEGER NOT NULL,
+          level         INTEGER DEFAULT 1,
+          problems_json TEXT NOT NULL,
+          problem_count INTEGER DEFAULT 0,
+          status        TEXT DEFAULT 'pending',
+          score         INTEGER DEFAULT 0,
+          created_at    INTEGER DEFAULT 0,
+          finished_at   INTEGER DEFAULT 0,
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_reasoning_rounds_user ON reasoning_rounds(user_id)');
+    },
+  },
+  {
+    version: 51,
+    name: 'match_log',
+    // Competitive match history (Phase 2 identity, audit #69/#71): one row per competitive result
+    // (duel or reasoning round) from the player's POV — opponent, scoreline, result, rating delta. The
+    // foundation for "recent matches" and head-to-head/rivalry records. opponent_id is null for a bot
+    // or the reasoning benchmark.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS match_log (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id       INTEGER NOT NULL,
+          mode          TEXT NOT NULL,
+          opponent_id   INTEGER,
+          opponent_name TEXT,
+          my_score      INTEGER DEFAULT 0,
+          opp_score     INTEGER DEFAULT 0,
+          result        TEXT,
+          rating_delta  REAL DEFAULT 0,
+          created_at    INTEGER DEFAULT 0,
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_match_log_user ON match_log(user_id, created_at)');
+      await run('CREATE INDEX IF NOT EXISTS idx_match_log_h2h ON match_log(user_id, opponent_id)');
+    },
+  },
+  {
+    version: 52,
+    name: 'reasoning_rated_flag',
+    // Anti-farm for the Reasoning Arena: rating only moves for the first N rated rounds per UTC day;
+    // `rated` marks which finished rounds actually counted, so the daily cap can be enforced without
+    // blocking further (practice) play.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE reasoning_rounds ADD COLUMN rated INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
+  {
+    version: 53,
+    name: 'reasoning_round_domain',
+    // Record a reasoning round's dominant math domain so it credits the contested per-domain rating
+    // (not only global) on submit — turning the 9 domains into real competitive ladders (audit #16/#45).
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE reasoning_rounds ADD COLUMN domain TEXT');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
+  {
+    version: 54,
+    name: 'active_title',
+    // Earned competitive titles (Phase 2 identity, Chess.com's prestige layer): the player picks one
+    // earned title to display. The earned SET is computed on the fly from existing data (rank, reasoning
+    // rounds, duels, head-to-head) — only the chosen title is stored.
+    up: async (run) => {
+      try {
+        await run("ALTER TABLE users ADD COLUMN active_title TEXT DEFAULT ''");
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
+  {
+    version: 55,
+    name: 'reasoning_replay',
+    // Reasoning-round replays (competitive audit #70 — learn from competition): persist the player's
+    // submission so a finished round can be reviewed problem-by-problem later, and link the match_log
+    // row to its round so "tap a match → replay" works.
+    up: async (run) => {
+      const addCol = async (table, col, type) => {
+        try {
+          await run(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}`);
+        } catch (e) {
+          if (!/duplicate column name/i.test(e.message)) throw e;
+        }
+      };
+      await addCol('reasoning_rounds', 'submission_json', 'TEXT');
+      await addCol('match_log', 'ref_id', 'INTEGER');
+    },
+  },
+  {
+    version: 56,
+    name: 'commendations',
+    // Honor / commendation system (competitive audit #24): peer sportsmanship recognition that fits
+    // the "no silent bans — reward the good" ethic. One commendation per (giver, match) so it can't be
+    // farmed; the receiver's honor is the COUNT of commendations they've been given.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS commendations (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          from_user   INTEGER NOT NULL,
+          to_user     INTEGER NOT NULL,
+          match_id    INTEGER NOT NULL,       -- the match_log row the giver played
+          type        TEXT NOT NULL,          -- good_game | tough_opponent | good_sport
+          created_at  INTEGER NOT NULL,
+          UNIQUE (from_user, match_id),       -- one commendation per match, no farming
+          FOREIGN KEY (from_user) REFERENCES users(id),
+          FOREIGN KEY (to_user) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_commendations_to ON commendations(to_user)');
+    },
+  },
+  {
+    version: 57,
+    name: 'rank_revealed',
+    // Competitive onboarding (audit #20): a one-time "rank reveal" ceremony when a player finishes
+    // placement (crosses 5 rated games). This flag persists that the reveal has been shown so it fires
+    // exactly once. Defaults 0; backfilled to 1 for already-placed players so they don't get a
+    // retroactive reveal on first launch after this ships.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE users ADD COLUMN rank_revealed INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+      // Anyone already placed has effectively "seen" their rank — don't surprise them with a reveal.
+      await run("UPDATE users SET rank_revealed = 1 WHERE competitive_matches >= 5");
+    },
+  },
+  {
+    version: 58,
+    name: 'live_rooms',
+    // Live group/class competitive rooms (competitive audit #19 — Kahoot-style live play, reusing the
+    // class-code join pattern). A host opens a room, players join by code, everyone answers the SAME
+    // server-generated set; grading is server-authoritative (answer key never leaves the server) and
+    // scores feed a live podium. REST-driven (pollable) so the core is testable; socket push is a
+    // later liveness layer.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS live_rooms (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          code          TEXT UNIQUE NOT NULL,
+          host_id       INTEGER NOT NULL,
+          category      TEXT,
+          level         INTEGER NOT NULL DEFAULT 1,
+          problems_json TEXT NOT NULL,          -- includes the answer key; never sent to clients
+          problem_count INTEGER NOT NULL,
+          status        TEXT NOT NULL DEFAULT 'lobby',  -- lobby | active | done
+          created_at    INTEGER NOT NULL,
+          FOREIGN KEY (host_id) REFERENCES users(id)
+        )
+      `);
+      await run(`
+        CREATE TABLE IF NOT EXISTS live_room_members (
+          room_id        INTEGER NOT NULL,
+          user_id        INTEGER NOT NULL,
+          score          INTEGER NOT NULL DEFAULT 0,
+          answered_count INTEGER NOT NULL DEFAULT 0,
+          joined_at      INTEGER NOT NULL,
+          PRIMARY KEY (room_id, user_id),
+          FOREIGN KEY (room_id) REFERENCES live_rooms(id),
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+      // One row per (member, problem) — enforces "answer each problem once" and records correctness.
+      await run(`
+        CREATE TABLE IF NOT EXISTS live_room_answers (
+          room_id       INTEGER NOT NULL,
+          user_id       INTEGER NOT NULL,
+          problem_index INTEGER NOT NULL,
+          correct       INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (room_id, user_id, problem_index)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_live_members_room ON live_room_members(room_id, score)');
+    },
+  },
+  {
+    version: 59,
+    name: 'user_feedback',
+    // In-app Help & Support channel (completion pass). The Settings "Contact Support", "Report a
+    // Bug", and "Request a Feature" dialogs previously faked a success toast and persisted nothing.
+    // This table is the real backing store: a learner-initiated ticket reviewed via the admin queue,
+    // mirroring the content_reports / crash_reports pattern. kind = support | bug | feature.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS user_feedback (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id     INTEGER,
+          kind        TEXT NOT NULL,            -- support | bug | feature
+          subject     TEXT,
+          body        TEXT NOT NULL,
+          app_version TEXT,
+          status      TEXT NOT NULL DEFAULT 'open',  -- open | reviewed | resolved
+          created_at  INTEGER NOT NULL,
+          reviewed_at INTEGER,
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_feedback_status ON user_feedback(status, created_at)');
+    },
+  },
+  {
+    version: 60,
+    name: 'studio_default_theme',
+    // docs/BrandIdentity.md: retire the borrowed Duolingo skin as the *default*. The flagship default
+    // theme is now "Studio" (warm light, indigo→amber — the competitive home of math). Flip everyone
+    // still on the old default over to it. Themes are free to equip (routes/shop.js treats every theme
+    // as a default item — no ownership check), so no inventory grant is needed, and the Duolingo theme
+    // stays fully selectable in Settings. Pre-launch, so nobody deliberately "chose" duolingo.
+    up: async (run) => {
+      await run("UPDATE users SET theme = 'studio' WHERE theme = 'duolingo' OR theme IS NULL");
+    },
+  },
+  {
+    version: 61,
+    name: 'league_stone_tiers',
+    // docs/BrandIdentity.md §8: the weekly league reused the metal rank names (Bronze..Diamond),
+    // colliding with the permanent competitive rank ladder so the two systems read as the same thing.
+    // Give the weekly league its own "stone" ladder (Quartz..Obsidian). The 1:1 remap preserves every
+    // player's relative tier; userService's promotion order now uses the stone names.
+    up: async (run) => {
+      await run("UPDATE users SET league = 'Quartz'   WHERE league = 'Bronze' OR league IS NULL");
+      await run("UPDATE users SET league = 'Onyx'     WHERE league = 'Silver'");
+      await run("UPDATE users SET league = 'Jade'     WHERE league = 'Gold'");
+      await run("UPDATE users SET league = 'Topaz'    WHERE league = 'Platinum'");
+      await run("UPDATE users SET league = 'Obsidian' WHERE league = 'Diamond'");
+    },
+  },
+  {
+    version: 62,
+    name: 'cosmetic_equip_slots',
+    // docs/ShopOverhaul.md §8 (Stage D): the Vault gains new cosmetic *types* — profile effects,
+    // duel victory effects, tap effects, and earned mastery frames. Each needs its own equip slot
+    // on the user (titles reuse the existing active_title). Empty string = nothing equipped.
+    up: async (run) => {
+      const addColumn = async (sql) => {
+        try {
+          await run(sql);
+        } catch (e) {
+          if (!/duplicate column name/i.test(e.message)) throw e;
+        }
+      };
+      await addColumn("ALTER TABLE users ADD COLUMN active_effect TEXT DEFAULT ''");
+      await addColumn("ALTER TABLE users ADD COLUMN active_victory TEXT DEFAULT ''");
+      await addColumn("ALTER TABLE users ADD COLUMN active_tap TEXT DEFAULT ''");
+      await addColumn("ALTER TABLE users ADD COLUMN active_frame TEXT DEFAULT ''");
+    },
+  },
 ];
 
 /**

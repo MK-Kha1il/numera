@@ -176,6 +176,13 @@ interface ApiService {
         @Body request: ProblemReportRequest
     ): ProblemReportResponse
 
+    // In-app Help & Support ticket (Settings dialogs): support / bug / feature.
+    @POST("api/feedback")
+    suspend fun submitFeedback(
+        @Header("Authorization") token: String,
+        @Body request: FeedbackRequest
+    ): FeedbackResponse
+
     @GET("api/math/srs/due")
     suspend fun getSrsDue(
         @Header("Authorization") token: String
@@ -303,6 +310,12 @@ interface ApiService {
     suspend fun clubsLeaderboard(
         @Header("Authorization") token: String
     ): List<ClubLeaderboardEntry>
+
+    // Club SKILL ladder — ranked by avg competitive rating, not XP (audit #17).
+    @GET("api/clubs/leaderboard/skill")
+    suspend fun clubsSkillLeaderboard(
+        @Header("Authorization") token: String
+    ): List<ClubSkillEntry>
 
     @POST("api/clubs")
     suspend fun createClub(
@@ -747,6 +760,117 @@ interface ApiService {
     // ---- Ranked seasons ----
     @GET("api/rating/season/leaderboard")
     suspend fun getSeasonLeaderboard(@Header("Authorization") token: String): SeasonLeaderboardResponse
+
+    // ---- Unified competitive rating (per-domain NRS ranks) ----
+    @GET("api/rating/profile")
+    suspend fun getRatingProfile(@Header("Authorization") token: String): RatingProfileResponse
+
+    // ---- Shareable rank card (viral loop, audit #22) ----
+    @GET("api/rating/share-card")
+    suspend fun getShareCard(@Header("Authorization") token: String): ShareCardResponse
+
+    // ---- Live group/class competitive rooms (audit #19) ----
+    @POST("api/live-rooms")
+    suspend fun createLiveRoom(@Header("Authorization") token: String, @Body req: CreateLiveRoomRequest = CreateLiveRoomRequest()): LiveRoomResponse
+
+    @POST("api/live-rooms/{code}/join")
+    suspend fun joinLiveRoom(@Header("Authorization") token: String, @Path("code") code: String): LiveRoomResponse
+
+    @POST("api/live-rooms/{id}/start")
+    suspend fun startLiveRoom(@Header("Authorization") token: String, @Path("id") id: Int): LiveStartResponse
+
+    @GET("api/live-rooms/{id}")
+    suspend fun getLiveRoom(@Header("Authorization") token: String, @Path("id") id: Int): LiveRoomState
+
+    @POST("api/live-rooms/{id}/answer")
+    suspend fun answerLiveRoom(@Header("Authorization") token: String, @Path("id") id: Int, @Body req: LiveAnswerRequest): LiveAnswerResponse
+
+    @POST("api/live-rooms/{id}/finish")
+    suspend fun finishLiveRoom(@Header("Authorization") token: String, @Path("id") id: Int): LiveFinishResponse
+
+    // ---- Apex tier (leaderboard-only standing above the rank thresholds) ----
+    @GET("api/rating/apex")
+    suspend fun getApex(
+        @Header("Authorization") token: String,
+        @Query("limit") limit: Int = 10
+    ): ApexResponse
+
+    // ---- Rating timeline (recent rated results) ----
+    @GET("api/rating/history")
+    suspend fun getRatingHistory(
+        @Header("Authorization") token: String,
+        @Query("domain") domain: String,
+        @Query("limit") limit: Int
+    ): List<RatingHistoryEntry>
+
+    // ---- Competitive match history (opponents, scorelines, W/L) ----
+    @GET("api/rating/matches")
+    suspend fun getMatchHistory(
+        @Header("Authorization") token: String,
+        @Query("limit") limit: Int
+    ): List<MatchHistoryEntry>
+
+    // ---- Honor / commendation system (audit #24) ----
+    @POST("api/rating/commend")
+    suspend fun commendOpponent(
+        @Header("Authorization") token: String,
+        @Body req: CommendRequest
+    ): CommendResponse
+
+    @GET("api/rating/honor")
+    suspend fun getHonor(@Header("Authorization") token: String): HonorResponse
+
+    // ---- Competitive onboarding: mark the one-time placement rank-reveal as seen (audit #20) ----
+    @POST("api/rating/reveal-seen")
+    suspend fun markRankRevealSeen(@Header("Authorization") token: String): SimpleResponse
+
+    // ---- Head-to-head rivals ----
+    @GET("api/rating/rivals")
+    suspend fun getRivals(
+        @Header("Authorization") token: String,
+        @Query("limit") limit: Int
+    ): List<RivalEntry>
+
+    // ---- Competitive titles ----
+    @GET("api/rating/titles")
+    suspend fun getTitles(@Header("Authorization") token: String): TitlesResponse
+
+    @POST("api/rating/titles/select")
+    suspend fun selectTitle(@Header("Authorization") token: String, @Body req: SelectTitleRequest): SelectTitleResponse
+
+    // ---- Season peak badges (Act Rank) ----
+    @GET("api/rating/season-history")
+    suspend fun getSeasonHistory(@Header("Authorization") token: String): SeasonHistoryResponse
+
+    // ---- Reasoning Arena (understanding-gated ranked mode) ----
+    @GET("api/reasoning-duel/domains")
+    suspend fun getReasoningDomains(@Header("Authorization") token: String): ReasoningDomainsResponse
+
+    @POST("api/reasoning-duel/start")
+    suspend fun startReasoningDuel(
+        @Header("Authorization") token: String,
+        @Body req: ReasoningStartRequest = ReasoningStartRequest()
+    ): ReasoningStartResponse
+
+    @POST("api/reasoning-duel/{id}/submit")
+    suspend fun submitReasoningDuel(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body req: ReasoningSubmitRequest
+    ): ReasoningSubmitResponse
+
+    @GET("api/reasoning-duel/{id}/review")
+    suspend fun getReasoningReview(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): ReasoningReviewResponse
+
+    // ---- Seasonal Rank Reward track ----
+    @GET("api/rating/reward-track")
+    suspend fun getRewardTrack(@Header("Authorization") token: String): RewardTrackResponse
+
+    @POST("api/rating/reward-track/claim")
+    suspend fun claimRewardTier(@Header("Authorization") token: String, @Body req: ClaimTierRequest): RewardClaimResponse
 
     // ---- Weekly tournaments (async global event) ----
     @GET("api/tournaments/current")

@@ -71,3 +71,23 @@ test('a normal priced item still purchases correctly', async () => {
     assert.match(body.error || '', /Insufficient coins/);
   }
 });
+
+test('owned earn-only cosmetics appear in ownedItems with full metadata (equippable anytime)', async () => {
+  const { token, user } = await registerUser(ctx.base);
+  // Grant an earn-only cosmetic (a season Champion banner) directly, as the reward track would.
+  await new Promise((resolve, reject) =>
+    ctx.mod.db.run('INSERT OR IGNORE INTO user_inventory (user_id, item_id) VALUES (?, ?)', [user.id, 'banner_champion_aureate'], (e) => (e ? reject(e) : resolve()))
+  );
+
+  const { status, body } = await api(ctx.base, 'GET', '/api/shop', { token });
+  assert.strictEqual(status, 200);
+
+  const buyable = [...(body.catalogItems || []), ...(body.seasonItems || []), ...(body.tokenItems || [])];
+  assert.ok(!buyable.some((i) => i.id === 'banner_champion_aureate'), 'earn-only item stays out of buyable lists');
+
+  const owned = (body.ownedItems || []).find((i) => i.id === 'banner_champion_aureate');
+  assert.ok(owned, 'the granted Champion banner is in ownedItems');
+  assert.strictEqual(owned.type, 'banner');
+  assert.strictEqual(owned.value, 'banner_champion_aureate');
+  assert.ok(owned.name && owned.name.length > 0, 'has a display name to render');
+});

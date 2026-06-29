@@ -40,17 +40,18 @@ function initDb() {
           streak INTEGER DEFAULT 0,
           last_active INTEGER DEFAULT 0,
           active_badge TEXT DEFAULT 'Novice',
-          theme TEXT DEFAULT 'duolingo',
+          theme TEXT DEFAULT 'studio',
           avatar TEXT DEFAULT 'avatar_pythagoras',
           solved_count INTEGER DEFAULT 0,
           arena_wins INTEGER DEFAULT 0,
           active_banner TEXT DEFAULT 'banner_default',
           assessment_taken INTEGER DEFAULT 0,
-          league TEXT DEFAULT 'Bronze',
+          league TEXT DEFAULT 'Quartz',
           league_points INTEGER DEFAULT 0,
           last_league_reset INTEGER DEFAULT 0,
           elo INTEGER DEFAULT 1000,
           competitive_matches INTEGER DEFAULT 0,
+          competitive_rank TEXT DEFAULT 'Unranked (Placement: 0/5)',
           total_coins_earned INTEGER DEFAULT 100,
           total_coins_spent INTEGER DEFAULT 0,
           xp_booster_uses_left INTEGER DEFAULT 0,
@@ -71,11 +72,12 @@ function initDb() {
       safeAlter("ALTER TABLE users ADD COLUMN arena_wins INTEGER DEFAULT 0");
       safeAlter("ALTER TABLE users ADD COLUMN active_banner TEXT DEFAULT 'banner_default'");
       safeAlter("ALTER TABLE users ADD COLUMN assessment_taken INTEGER DEFAULT 0");
-      safeAlter("ALTER TABLE users ADD COLUMN league TEXT DEFAULT 'Bronze'");
+      safeAlter("ALTER TABLE users ADD COLUMN league TEXT DEFAULT 'Quartz'");
       safeAlter("ALTER TABLE users ADD COLUMN league_points INTEGER DEFAULT 0");
       safeAlter("ALTER TABLE users ADD COLUMN last_league_reset INTEGER DEFAULT 0");
       safeAlter("ALTER TABLE users ADD COLUMN elo INTEGER DEFAULT 1000");
       safeAlter("ALTER TABLE users ADD COLUMN competitive_matches INTEGER DEFAULT 0");
+      safeAlter("ALTER TABLE users ADD COLUMN competitive_rank TEXT DEFAULT 'Unranked (Placement: 0/5)'");
       safeAlter("ALTER TABLE users ADD COLUMN total_coins_earned INTEGER DEFAULT 100");
       safeAlter("ALTER TABLE users ADD COLUMN total_coins_spent INTEGER DEFAULT 0");
       safeAlter("ALTER TABLE users ADD COLUMN xp_booster_uses_left INTEGER DEFAULT 0");
@@ -785,10 +787,53 @@ function initDb() {
         { id: 'avatar_frost', name: 'Frostfall Avatar', cost: 800, type: 'avatar', value: 'avatar_frost', rarity: 'Epic', description: 'Crystalline and exacting. The cold clarity of a season spent sharpening.', required_rank: null, is_animated: 1, particle_effect: 'star_drift', is_utility: 0, season_slot: 2 },
         { id: 'banner_meteor', name: 'Meteor Shower Banner', cost: 700, type: 'banner', value: 'banner_meteor', rarity: 'Epic', description: 'A sky full of falling light for the length of one season.', required_rank: null, is_animated: 1, particle_effect: 'fire_sparkle', is_utility: 0, season_slot: 2 },
 
+        // Season-reward banners (competitive audit #14): EARNED, never bought (cost 0 → the purchase
+        // guard blocks them). Granted only by reaching Diamond on this season's Rank Reward track, and
+        // tied to the season's slot — so each is a scarce, season-exclusive trophy of a ranked climb.
+        { id: 'banner_champion_aureate', name: 'Aureate Champion Banner', cost: 0, type: 'banner', value: 'banner_champion_aureate', rarity: 'Legendary', description: 'Earned, not bought — reach Diamond on the season track. Gold laurels for a season conquered.', required_rank: null, is_animated: 1, particle_effect: 'gold_halos', is_utility: 0, season_slot: 0 },
+        { id: 'banner_champion_verdant', name: 'Verdant Champion Banner', cost: 0, type: 'banner', value: 'banner_champion_verdant', rarity: 'Legendary', description: 'Earned, not bought — reach Diamond on the season track. A living green crown for the relentless.', required_rank: null, is_animated: 1, particle_effect: 'star_drift', is_utility: 0, season_slot: 1 },
+        { id: 'banner_champion_crimson', name: 'Crimson Champion Banner', cost: 0, type: 'banner', value: 'banner_champion_crimson', rarity: 'Legendary', description: 'Earned, not bought — reach Diamond on the season track. Forged-red proof of a hard climb.', required_rank: null, is_animated: 1, particle_effect: 'fire_sparkle', is_utility: 0, season_slot: 2 },
+
         // Token-only prestige cosmetics (cost 0 coins, paid in Season Tokens). Tokens come from
         // converting surplus coins — the deep end-game sink for the wealthiest collectors.
         { id: 'avatar_celestial', name: 'Celestial Avatar', cost: 0, token_cost: 3, type: 'avatar', value: 'avatar_celestial', rarity: 'Mythic', description: 'Forged from seasons of surplus. The rarest face in Numera — it cannot be bought with coins at all.', required_rank: null, is_animated: 1, particle_effect: 'cosmic_sparkle', is_utility: 0 },
-        { id: 'banner_eternal', name: 'Eternal Banner', cost: 0, token_cost: 2, type: 'banner', value: 'banner_eternal', rarity: 'Mythic', description: 'A horizon that outlasts every season. Worn only by those who converted a fortune to claim it.', required_rank: null, is_animated: 1, particle_effect: 'infinity_glow', is_utility: 0 }
+        { id: 'banner_eternal', name: 'Eternal Banner', cost: 0, token_cost: 2, type: 'banner', value: 'banner_eternal', rarity: 'Mythic', description: 'A horizon that outlasts every season. Worn only by those who converted a fortune to claim it.', required_rank: null, is_animated: 1, particle_effect: 'infinity_glow', is_utility: 0 },
+
+        // ── New cosmetic types (docs/ShopOverhaul.md §8, Stage D) ─────────────────────────────────
+        // Purchasable Titles — equip via active_title; value is the lib/titles.js catalog id so the
+        // bought title resolves to a display name on the profile/public card exactly like an earned one.
+        { id: 'title_pattern_seeker', name: 'Title — Pattern Seeker', cost: 150, type: 'title', value: 'pattern_seeker', rarity: 'Common', description: 'Worn under your name: "Pattern Seeker."', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 0 },
+        { id: 'title_equation_apprentice', name: 'Title — Equation Apprentice', cost: 150, type: 'title', value: 'equation_apprentice', rarity: 'Common', description: 'Worn under your name: "Equation Apprentice."', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 0 },
+        { id: 'title_the_geometer', name: 'Title — The Geometer', cost: 300, type: 'title', value: 'the_geometer', rarity: 'Rare', description: 'Worn under your name: "The Geometer."', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 0 },
+        { id: 'title_proof_explorer', name: 'Title — Proof Explorer', cost: 350, type: 'title', value: 'proof_explorer', rarity: 'Rare', description: 'Worn under your name: "Proof Explorer."', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 0 },
+        { id: 'title_the_strategist', name: 'Title — The Strategist', cost: 600, type: 'title', value: 'the_strategist', rarity: 'Epic', description: 'Worn under your name: "The Strategist."', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 0 },
+        { id: 'title_legend_of_numbers', name: 'Title — Legend of Numbers', cost: 1200, type: 'title', value: 'legend_of_numbers', rarity: 'Legendary', description: 'Worn under your name: "Legend of Numbers."', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 0 },
+
+        // Profile Effects — a subtle aura behind your avatar (equip via active_effect).
+        { id: 'effect_constellation', name: 'Constellation Glow', cost: 300, type: 'effect', value: 'constellation', rarity: 'Rare', description: 'A quiet scatter of stars drifting behind your avatar.', required_rank: null, is_animated: 1, particle_effect: 'constellation', is_utility: 0 },
+        { id: 'effect_geometric_pulse', name: 'Geometric Pulse', cost: 350, type: 'effect', value: 'geometric_pulse', rarity: 'Rare', description: 'Concentric polygons breathing slowly outward.', required_rank: null, is_animated: 1, particle_effect: 'geometric_pulse', is_utility: 0 },
+        { id: 'effect_floating_symbols', name: 'Floating Symbols', cost: 600, type: 'effect', value: 'floating_symbols', rarity: 'Epic', description: 'Soft mathematical glyphs rising like embers.', required_rank: null, is_animated: 1, particle_effect: 'floating_symbols', is_utility: 0 },
+        { id: 'effect_golden_dust', name: 'Golden Dust', cost: 700, type: 'effect', value: 'golden_dust', rarity: 'Epic', description: 'A fine, slow shimmer of gold — understated prestige.', required_rank: null, is_animated: 1, particle_effect: 'golden_dust', is_utility: 0 },
+
+        // Victory Effects — played when you win a duel (equip via active_victory). No explosions.
+        { id: 'victory_equation_formation', name: 'Victory — Equation Formation', cost: 700, type: 'victory', value: 'equation_formation', rarity: 'Epic', description: 'Your win resolves into a clean, forming equation.', required_rank: null, is_animated: 1, particle_effect: 'equation_formation', is_utility: 0 },
+        { id: 'victory_pattern_reveal', name: 'Victory — Pattern Reveal', cost: 800, type: 'victory', value: 'pattern_reveal', rarity: 'Epic', description: 'A geometric pattern blooms across the result screen.', required_rank: null, is_animated: 1, particle_effect: 'pattern_reveal', is_utility: 0 },
+        { id: 'victory_constellation_burst', name: 'Victory — Constellation Burst', cost: 1300, type: 'victory', value: 'constellation_burst', rarity: 'Legendary', description: 'Stars connect into a constellation as you claim the win.', required_rank: null, is_animated: 1, particle_effect: 'constellation_burst', is_utility: 0 },
+
+        // Tap Effects — a small flourish on each answer tap (equip via active_tap).
+        { id: 'tap_geometric_ripple', name: 'Tap — Geometric Ripple', cost: 250, type: 'tap', value: 'geometric_ripple', rarity: 'Rare', description: 'A tiny polygon ripples out from each tap.', required_rank: null, is_animated: 1, particle_effect: 'geometric_ripple', is_utility: 0 },
+        { id: 'tap_grid_pulse', name: 'Tap — Grid Pulse', cost: 300, type: 'tap', value: 'grid_pulse', rarity: 'Rare', description: 'A faint grid pulses where you touch.', required_rank: null, is_animated: 1, particle_effect: 'grid_pulse', is_utility: 0 },
+        { id: 'tap_math_spark', name: 'Tap — Math Spark', cost: 500, type: 'tap', value: 'math_spark', rarity: 'Epic', description: 'A small spark of a math symbol on every tap.', required_rank: null, is_animated: 1, particle_effect: 'math_spark', is_utility: 0 },
+
+        // Mastery Frames — EARNED, never bought (cost 0 → blocked by the purchase guard). Granted when
+        // you reach the top mastery milestone (100 lifetime-correct) in a strand (see routes/math.js).
+        // An avatar ring that says you *mastered* the subject, not that you paid for it.
+        { id: 'frame_arithmetic_master', name: 'Arithmetic Master Frame', cost: 0, type: 'frame', value: 'arithmetic_master', rarity: 'Epic', description: 'Earned by mastering Arithmetic (100 solved). A ring only mastery unlocks.', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 0 },
+        { id: 'frame_algebra_master', name: 'Algebra Master Frame', cost: 0, type: 'frame', value: 'algebra_master', rarity: 'Epic', description: 'Earned by mastering Algebra (100 solved). A ring only mastery unlocks.', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 0 },
+        { id: 'frame_geometry_master', name: 'Geometry Master Frame', cost: 0, type: 'frame', value: 'geometry_master', rarity: 'Epic', description: 'Earned by mastering Geometry (100 solved). A ring only mastery unlocks.', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 0 },
+        { id: 'frame_fractions_master', name: 'Fractions Master Frame', cost: 0, type: 'frame', value: 'fractions_master', rarity: 'Rare', description: 'Earned by mastering Fractions (100 solved). A ring only mastery unlocks.', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 0 },
+        { id: 'frame_calculus_master', name: 'Calculus Master Frame', cost: 0, type: 'frame', value: 'calculus_master', rarity: 'Legendary', description: 'Earned by mastering Calculus (100 solved). A ring only mastery unlocks.', required_rank: null, is_animated: 1, particle_effect: 'gold_halos', is_utility: 0 },
+        { id: 'frame_number_theory_master', name: 'Number Theory Master Frame', cost: 0, type: 'frame', value: 'number_theory_master', rarity: 'Legendary', description: 'Earned by mastering Number Theory (100 solved). A ring only mastery unlocks.', required_rank: null, is_animated: 1, particle_effect: 'cosmic_sparkle', is_utility: 0 }
       ];
 
       // Insert/ignore badges that are unlocked dynamically by achievements, ranks, etc.

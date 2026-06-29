@@ -42,6 +42,20 @@ const MASTERY_MILESTONES = [
   { count: 250, label: 'Virtuoso' },
 ];
 
+// Earn-only Mastery Frames (docs/ShopOverhaul.md §8/§9): granted — never bought — when a strand's
+// lifetime-correct count crosses the "Mastered" milestone (100). Keys are the normalized category;
+// only strands with a seeded `frame_*` item appear here (the FK to shop_items requires it).
+const MASTERY_FRAME_THRESHOLD = 100;
+const MASTERY_FRAME_BY_CAT = {
+  arithmetic: 'frame_arithmetic_master',
+  algebra: 'frame_algebra_master',
+  geometry: 'frame_geometry_master',
+  fractions: 'frame_fractions_master',
+  calculus: 'frame_calculus_master',
+  'number theory': 'frame_number_theory_master',
+  number_theory: 'frame_number_theory_master',
+};
+
 // Procedural problems for specific category & level — engine-integrated
 router.get('/api/math/problems', authenticateToken, async (req, res) => {
   try {
@@ -500,6 +514,11 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
                     masteryMilestone = { category: normCat, label: m.label, count: m.count };
                     break;
                   }
+                }
+                // Crossing "Mastered" (100) earns the strand's Mastery Frame — granted, never sold.
+                const frameId = MASTERY_FRAME_BY_CAT[normCat];
+                if (frameId && oldCount < MASTERY_FRAME_THRESHOLD && newCount >= MASTERY_FRAME_THRESHOLD) {
+                  db.run('INSERT OR IGNORE INTO user_inventory (user_id, item_id) VALUES (?, ?)', [req.user.id, frameId]);
                 }
                 db.run(`UPDATE user_mastery SET ${masteryCol} = ${masteryCol} + ? WHERE user_id = ?`, [solvedCount, req.user.id], () => {
                   finalizeResponse();

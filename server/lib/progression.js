@@ -17,6 +17,10 @@ function calculateRank(level) {
   return `${currentTier} ${divisionStr}`;
 }
 
+// DEPRECATED / UNWIRED (docs/specs/Spec-RatingUnification.md, Increment 4): the competitive rank
+// ladder is now the NRS display-rating ladder (mathEngine/ratingEngine.displayRatingToRank), and the
+// duel path no longer computes a separate Elo rank. This 1100–2700 ladder has no live callers — kept
+// only so its unit test documents the retired scale. Do NOT rewire it; use displayRatingToRank.
 // Map competitive Elo (+ games played) to a rank label. <5 games = placement.
 function calculateRankFromElo(elo, matchesCount) {
   if (matchesCount === undefined || matchesCount === null || matchesCount < 5) {

@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import com.example.numera.theme.*
 import com.example.numera.ui.components.ProfileBanner
 import com.example.numera.ui.components.MathAvatar
+import com.example.numera.ui.components.CosmeticAvatar
 import com.example.numera.ui.components.RankBadge
 import com.example.numera.ui.components.NumeraIcon
 import com.example.numera.ui.components.NumeraIconType
@@ -80,23 +81,17 @@ fun UserProfileDialog(
                                 modifier = Modifier.size(IconSize.s)
                             )
                         }
-                        // Avatar overlapping banner
-                        Box(
+                        // Avatar overlapping banner — wearing this player's equipped frame ring + effect.
+                        CosmeticAvatar(
+                            avatarKey = profile.avatar,
+                            frameKey = profile.active_frame,
+                            effectKey = profile.active_effect,
+                            fontSize = 32.sp,
                             modifier = Modifier
                                 .align(Alignment.BottomStart)
                                 .padding(start = Spacing.l)
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surface)
-                                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            MathAvatar(
-                                avatarKey = profile.avatar,
-                                modifier = Modifier.fillMaxSize(),
-                                fontSize = 32.sp
-                            )
-                        }
+                                .size(64.dp),
+                        )
                     }
 
                     Column(
@@ -116,6 +111,14 @@ fun UserProfileDialog(
                             color = MaterialTheme.colorScheme.secondary,
                             fontWeight = FontWeight.SemiBold
                         )
+                        if (!profile.active_title.isNullOrEmpty()) {
+                            Text(
+                                text = "🎖️ ${profile.active_title}",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(Spacing.l))
 
@@ -150,6 +153,22 @@ fun UserProfileDialog(
                                         fontSize = 13.sp,
                                         color = MaterialTheme.colorScheme.primary
                                     )
+                                }
+
+                                // Competitive rank (shown once placed) — distinct from the level rank above.
+                                if (!profile.competitive_rank.isNullOrEmpty() && !profile.competitive_rank.startsWith("Unranked")) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        RankBadge(rankName = profile.competitive_rank, modifier = Modifier.size(IconSize.s))
+                                        Text(
+                                            text = "Competitive · ${profile.competitive_rank}",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                        )
+                                    }
                                 }
 
                                 Row(

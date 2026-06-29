@@ -155,6 +155,22 @@ router.get('/api/shop', authenticateToken, (req, res) => {
             .filter((item) => item.token_cost > 0 && !inventory.includes(item.id))
             .map((item) => ({ ...item, originalCost: item.cost, discountActive: false }));
 
+          // EVERY owned cosmetic with full metadata — so the client can equip ANY of them anytime,
+          // including earn-only items (badges, rank rewards, season Champion banners) that never appear
+          // in a buyable list. Fixes "owned earn-only cosmetics only re-equip at grant time".
+          const ownedItems = allItems.filter((item) => inventory.includes(item.id) && item.is_utility !== 1);
+
+          // Earn-only prestige NOT yet owned — the "Earnable" showcase (docs/ShopOverhaul.md §9): badges,
+          // mastery frames, relics, rank rewards. Cost 0 + no token price + not season-gated + unowned.
+          // Their description carries the requirement, so the tab reads as "things to chase."
+          const earnableItems = allItems.filter((item) =>
+            item.is_utility !== 1 &&
+            (!item.cost || item.cost <= 0) &&
+            (!item.token_cost || item.token_cost <= 0) &&
+            item.season_slot == null &&
+            !inventory.includes(item.id)
+          );
+
           res.json({
             items,
             featuredItems,
@@ -163,6 +179,8 @@ router.get('/api/shop', authenticateToken, (req, res) => {
             catalogItems,
             seasonItems,
             tokenItems,
+            ownedItems,
+            earnableItems,
             seasonInfo: season
               ? { seasonId: season.id, seasonName: season.name, slot, endsAt: season.end_at }
               : null,
@@ -319,24 +337,37 @@ router.post('/api/shop/equip', authenticateToken, (req, res) => {
   const { type, value } = req.body;
   if (!type || !value) return res.status(400).json({ error: 'Type and value required' });
 
-  let column = '';
-  if (type === 'theme') column = 'theme';
-  else if (type === 'avatar') column = 'avatar';
-  else if (type === 'badge') column = 'active_badge';
-  else if (type === 'banner') column = 'active_banner';
-  else return res.status(400).json({ error: 'Invalid configuration type' });
+  // type → user column. Stage D adds title/effect/victory/tap/frame slots (docs/ShopOverhaul.md §8).
+  const COLUMN_BY_TYPE = {
+    theme: 'theme',
+    avatar: 'avatar',
+    badge: 'active_badge',
+    banner: 'active_banner',
+    title: 'active_title',
+    effect: 'active_effect',
+    victory: 'active_victory',
+    tap: 'active_tap',
+    frame: 'active_frame',
+  };
+  const column = COLUMN_BY_TYPE[type];
+  if (!column) return res.status(400).json({ error: 'Invalid configuration type' });
 
-  // Security: Allow equipping default starter items without ownership checks
+  // "none" unequips the slot (effects/title/etc. are optional). Stored as empty string.
+  const clearing = value === 'none';
+  const finalValue = clearing ? '' : value;
+
+  // Allow equipping default starter items (and clearing) without ownership checks.
   const isDefault =
+    clearing ||
     type === 'theme' ||
     (type === 'avatar' && value === 'avatar_pythagoras') ||
     (type === 'badge' && value === 'Math Novice') ||
     (type === 'banner' && value === 'banner_default');
 
   if (isDefault) {
-    db.run(`UPDATE users SET ${column} = ? WHERE id = ?`, [value, req.user.id], (err) => {
+    db.run(`UPDATE users SET ${column} = ? WHERE id = ?`, [finalValue, req.user.id], (err) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true, equipped: column, value });
+      res.json({ success: true, equipped: column, value: finalValue });
     });
   } else {
     // Verify user owns the item in user_inventory

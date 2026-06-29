@@ -3,7 +3,7 @@ package com.example.numera.ui.feature.shop
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import com.example.numera.ui.components.pressable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.*
@@ -24,10 +24,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import com.example.numera.data.network.*
-import com.example.numera.motion.MotionManager
 import com.example.numera.sound.SoundManager
 import com.example.numera.theme.*
 import com.example.numera.ui.components.ProfileBanner
@@ -43,39 +41,52 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun ShopBackground(modifier: Modifier = Modifier) {
-    // Reduce-motion: hold the ambient blobs still (no forever-running offset transitions).
-    val xOffset1: Float
-    val yOffset1: Float
-    val xOffset2: Float
-    if (MotionManager.reduceMotion) {
-        xOffset1 = 50f; yOffset1 = 60f; xOffset2 = -40f
-    } else {
-        val infiniteTransition = rememberInfiniteTransition(label = "ambientGlow")
-        xOffset1 = infiniteTransition.animateFloat(
-            initialValue = 0f, targetValue = 100f,
-            animationSpec = infiniteRepeatable(tween(8000, easing = LinearEasing), RepeatMode.Reverse),
-            label = "x1"
-        ).value
-        yOffset1 = infiniteTransition.animateFloat(
-            initialValue = 0f, targetValue = 120f,
-            animationSpec = infiniteRepeatable(tween(10000, easing = LinearEasing), RepeatMode.Reverse),
-            label = "y1"
-        ).value
-        xOffset2 = infiniteTransition.animateFloat(
-            initialValue = 0f, targetValue = -80f,
-            animationSpec = infiniteRepeatable(tween(7000, easing = LinearEasing), RepeatMode.Reverse),
-            label = "x2"
-        ).value
-    }
+    val infiniteTransition = rememberInfiniteTransition(label = "ambientGlow")
     
+    val xOffset1 by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 100f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(8000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "x1"
+    )
+    val yOffset1 by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 120f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(10000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "y1"
+    )
+    val xOffset2 by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -80f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(7000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "x2"
+    )
+
+    // The Vault tints to the equipped theme (VaultTheme wraps the shop in the theme's dark scheme):
+    // a deep museum-case ground lit by two slow brand-colored glows — the "active" primary and the
+    // "earned" tertiary (Studio indigo + amber by default) — over a faint ink lattice.
+    val ground = MaterialTheme.colorScheme.background
+    val glowActive = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+    val glowEarned = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.10f)
+    val latticeColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.04f)
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F0F13))
+            .background(ground)
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawCircle(
-                color = Color(0x1F8A2BE2),
+                color = glowActive,
                 radius = 400.dp.toPx(),
                 center = androidx.compose.ui.geometry.Offset(
                     x = size.width * 0.2f + xOffset1.dp.toPx(),
@@ -83,21 +94,21 @@ fun ShopBackground(modifier: Modifier = Modifier) {
                 )
             )
             drawCircle(
-                color = Color(0x1800CED1),
+                color = glowEarned,
                 radius = 350.dp.toPx(),
                 center = androidx.compose.ui.geometry.Offset(
                     x = size.width * 0.8f + xOffset2.dp.toPx(),
                     y = size.height * 0.7f - yOffset1.dp.toPx()
                 )
             )
-            
+
             val columns = 15
             val rows = 30
             val cellWidth = size.width / columns
             val cellHeight = size.height / rows
             for (i in 0..columns) {
                 drawLine(
-                    color = Color.White.copy(alpha = 0.03f),
+                    color = latticeColor,
                     start = androidx.compose.ui.geometry.Offset(i * cellWidth, 0f),
                     end = androidx.compose.ui.geometry.Offset(i * cellWidth, size.height),
                     strokeWidth = 1.dp.toPx()
@@ -105,7 +116,7 @@ fun ShopBackground(modifier: Modifier = Modifier) {
             }
             for (j in 0..rows) {
                 drawLine(
-                    color = Color.White.copy(alpha = 0.03f),
+                    color = latticeColor,
                     start = androidx.compose.ui.geometry.Offset(0f, j * cellHeight),
                     end = androidx.compose.ui.geometry.Offset(size.width, j * cellHeight),
                     strokeWidth = 1.dp.toPx()
@@ -124,7 +135,20 @@ fun RarityCardFrame(
     val tier = Rarity.from(rarity)
     val rarityColor = tier.color
 
-    val borderBrush = tier.borderBrush
+    val infiniteTransition = rememberInfiniteTransition(label = "cardShimmer")
+    val translateAnim by infiniteTransition.animateFloat(
+        initialValue = -500f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 4000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "translate"
+    )
+
+    // Mythic gets the animated prismatic sweep so it can never be mistaken for Legendary amber
+    // (docs/ShopOverhaul.md §7); every other tier keeps its static gradient.
+    val borderBrush = if (tier == Rarity.Mythic) mythicIridescentBrush(translateAnim) else tier.borderBrush
 
     // Stable per-card glow — hoisted so the infinite shimmer animation above doesn't
     // reallocate it every frame (the shimmer brush itself genuinely varies per frame).
@@ -152,7 +176,9 @@ fun RarityCardFrame(
             ),
         shape = RoundedCornerShape(CornerRadius.l),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF161622).copy(alpha = 0.85f)
+            // The collectible "case": the theme's elevated dark surface (VaultTheme), so cards tint
+            // to the equipped theme instead of a fixed near-black.
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation)
     ) {
@@ -167,19 +193,7 @@ fun RarityCardFrame(
                 content()
             }
             
-            // Prestige sheen — only runs for prestige tiers AND only when motion is allowed
-            // (previously this shimmer transition ran for every card on screen).
-            if (tier.isPrestige && !MotionManager.reduceMotion) {
-                val infiniteTransition = rememberInfiniteTransition(label = "cardShimmer")
-                val translateAnim by infiniteTransition.animateFloat(
-                    initialValue = -500f,
-                    targetValue = 1000f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(durationMillis = 4000, easing = LinearEasing),
-                        repeatMode = RepeatMode.Restart
-                    ),
-                    label = "translate"
-                )
+            if (tier.isPrestige) {
                 val shimmerBrush = Brush.linearGradient(
                     colors = listOf(
                         Color.White.copy(alpha = 0f),
@@ -194,620 +208,6 @@ fun RarityCardFrame(
                         .matchParentSize()
                         .background(shimmerBrush)
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun HeroShowcasePanel(
-    item: ShopItem?,
-    user: User?,
-    inventoryIds: List<String>,
-    ownedUtilities: List<UtilityBalance>,
-    scope: kotlinx.coroutines.CoroutineScope,
-    onPurchaseComplete: () -> Unit,
-    onDismissShowcase: () -> Unit
-) {
-    if (item == null) return
-    
-    val hasPurchased = inventoryIds.contains(item.id)
-    val isEquipped = when (item.type) {
-        "theme" -> user?.theme == item.value
-        "avatar" -> user?.avatar == item.value
-        "badge" -> user?.active_badge == item.value
-        "banner" -> user?.active_banner == item.value
-        else -> false
-    }
-    
-    val rarityColor = getRarityColor(item.rarity ?: "Common")
-    val isLocked = item.required_rank?.let { getRankValue(user?.rank ?: "") < getRankValue(it) } ?: false
-    val utilityQty = ownedUtilities.find { it.item_id == item.id }?.quantity ?: 0
-    
-    // Reduce-motion: hold the showcase glow/rotation still.
-    val pulseScale1: Float
-    val rotation: Float
-    if (MotionManager.reduceMotion) {
-        pulseScale1 = 1f
-        rotation = 0f
-    } else {
-        val infiniteTransition = rememberInfiniteTransition(label = "showcaseAmbient")
-        pulseScale1 = infiniteTransition.animateFloat(
-            initialValue = 1f, targetValue = 1.12f,
-            animationSpec = infiniteRepeatable(tween(2500, easing = EaseInOutSine), RepeatMode.Reverse),
-            label = "pulse1"
-        ).value
-        rotation = infiniteTransition.animateFloat(
-            initialValue = 0f, targetValue = 360f,
-            animationSpec = infiniteRepeatable(tween(15000, easing = LinearEasing), RepeatMode.Restart),
-            label = "rot"
-        ).value
-    }
-    
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = Spacing.xs)
-            .border(2.dp, rarityColor.copy(alpha = 0.7f), RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2E).copy(alpha = 0.95f))
-    ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Canvas(modifier = Modifier.matchParentSize()) {
-                drawCircle(
-                    color = rarityColor.copy(alpha = 0.08f),
-                    radius = size.minDimension * 0.5f * pulseScale1
-                )
-            }
-            
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(Spacing.l),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.m)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "✦ SHOWCASE PREVIEW ✦",
-                        fontWeight = FontWeight.Black,
-                        fontSize = 11.sp,
-                        color = rarityColor,
-                        letterSpacing = 1.5.sp
-                    )
-                    IconButton(
-                        onClick = {
-                            com.example.numera.haptic.HapticManager.playSoft()
-                            onDismissShowcase()
-                        },
-                        modifier = Modifier.size(IconSize.m)
-                    ) {
-                        com.example.numera.ui.components.NumeraIcon(
-                            type = com.example.numera.ui.components.NumeraIconType.Close,
-                            tint = Color.White.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-                
-                Box(
-                    modifier = Modifier
-                        .size(140.dp)
-                        .graphicsLayer {
-                            translationY = Spacing.xs.toPx() * kotlin.math.sin(rotation * Math.PI / 180).toFloat()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (Rarity.from(item.rarity) >= Rarity.Legendary) {
-                        Canvas(modifier = Modifier.size(130.dp)) {
-                            drawCircle(
-                                color = rarityColor.copy(alpha = 0.25f),
-                                style = Stroke(
-                                    width = 2.dp.toPx(),
-                                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(15f, 15f), 0f)
-                                )
-                            )
-                        }
-                    }
-                    
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(RoundedCornerShape(CornerRadius.l))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .border(2.dp, rarityColor, RoundedCornerShape(CornerRadius.l)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        when (item.type) {
-                            "theme" -> ThemePreview(themeKey = item.value, modifier = Modifier.fillMaxSize())
-                            "avatar" -> MathAvatar(avatarKey = item.value, modifier = Modifier.fillMaxSize(), fontSize = 48.sp)
-                            "banner" -> ProfileBanner(bannerKey = item.value, modifier = Modifier.fillMaxSize())
-                            "badge" -> AchievementBadge(achievementId = item.value, modifier = Modifier.fillMaxSize())
-                            "utility" -> {
-                                val emoji = when (item.id) {
-                                    "item_streak_shield" -> "🛡️"
-                                    "item_retry_token" -> "🔄"
-                                    "item_xp_booster" -> "⚡"
-                                    "item_challenge_ticket" -> "🎫"
-                                    else -> "📦"
-                                }
-                                Text(emoji, fontSize = 48.sp)
-                            }
-                        }
-                        if (isLocked) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("🔒", fontSize = 24.sp)
-                            }
-                        }
-                    }
-                }
-                
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = item.name,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 20.sp,
-                        color = Color.White
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.s)
-                    ) {
-                        Text(
-                            text = (item.rarity ?: "Common").uppercase(),
-                            fontWeight = FontWeight.Black,
-                            fontSize = 11.sp,
-                            color = rarityColor
-                        )
-                        Text(
-                            text = "·",
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 11.sp
-                        )
-                        Text(
-                            text = item.type.uppercase(),
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 11.sp,
-                            color = Color.White.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-                
-                Text(
-                    text = item.description ?: "",
-                    fontSize = 13.sp,
-                    textAlign = TextAlign.Center,
-                    color = Color.White.copy(alpha = 0.75f),
-                    modifier = Modifier.padding(horizontal = Spacing.s)
-                )
-                
-                if (item.required_rank != null) {
-                    Surface(
-                        shape = RoundedCornerShape(CornerRadius.s),
-                        color = (if (isLocked) WrongRed else CorrectGreen).copy(alpha = 0.1f),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, if (isLocked) WrongRed else CorrectGreen)
-                    ) {
-                        Text(
-                            text = if (isLocked) "Locked: Requires Rank ${item.required_rank}" else "Unlocked: ${item.required_rank} reached",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isLocked) WrongRed else CorrectGreen,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
-                        )
-                    }
-                }
-                
-                if (item.is_utility == 1) {
-                    Text(
-                        text = "Current Stock: $utilityQty owned",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
-                }
-                
-                if (isEquipped) {
-                    DuoButton(
-                        text = "Active & Equipped",
-                        onClick = {},
-                        enabled = false,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                } else if (hasPurchased && item.is_utility == 0) {
-                    DuoButton(
-                        text = "Equip Now",
-                        onClick = {
-                            scope.launch(Dispatchers.IO) {
-                                try {
-                                    val token = RetrofitClient.authToken ?: ""
-                                    RetrofitClient.apiService.equipItem(
-                                        token, EquipRequest(item.type, item.value)
-                                    )
-                                    withContext(Dispatchers.Main) {
-                                        onPurchaseComplete()
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("Shop", "Equip err: ${e.message}")
-                                }
-                            }
-                        },
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                } else {
-                    val canBuy = (user?.coins ?: 0) >= item.cost && !isLocked
-                    
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        if (item.discountActive == true && item.originalCost != null) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.s),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "🪙 ${item.originalCost}",
-                                    style = TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough),
-                                    color = Color.White.copy(alpha = 0.7f),
-                                    fontSize = 13.sp
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .background(WrongRed, RoundedCornerShape(Spacing.xs))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = "DISCOUNTED",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Black,
-                                        fontSize = 8.sp
-                                    )
-                                }
-                            }
-                        }
-                        
-                        DuoButton(
-                            text = if (isLocked) "Rank Locked" else "Purchase (🪙 ${item.cost})",
-                            onClick = {
-                                if (!canBuy) return@DuoButton
-                                scope.launch(Dispatchers.IO) {
-                                    try {
-                                        val token = RetrofitClient.authToken ?: ""
-                                        RetrofitClient.apiService.purchaseItem(
-                                            token, PurchaseRequest(item.id)
-                                        )
-                                        withContext(Dispatchers.Main) {
-                                            SoundManager.playPurchase()
-                                            onPurchaseComplete()
-                                        }
-                                    } catch (e: Exception) {
-                                        Log.e("Shop", "Buy err: ${e.message}")
-                                    }
-                                }
-                            },
-                            enabled = canBuy,
-                            color = if (canBuy) MaterialTheme.colorScheme.tertiary else Color.White.copy(alpha = 0.25f),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun FeaturedShopItemCard(
-    item: ShopItem,
-    inventoryIds: List<String>,
-    user: User?,
-    onClick: () -> Unit
-) {
-    val hasPurchased = inventoryIds.contains(item.id)
-    val isEquipped = when (item.type) {
-        "theme" -> user?.theme == item.value
-        "avatar" -> user?.avatar == item.value
-        "badge" -> user?.active_badge == item.value
-        "banner" -> user?.active_banner == item.value
-        else -> false
-    }
-
-    val rarityColor = getRarityColor(item.rarity ?: "Common")
-    val isLocked = item.required_rank?.let { getRankValue(user?.rank ?: "") < getRankValue(it) } ?: false
-
-    // Legendary+ featured cards breathe — gated so reduce-motion (and lower tiers) sit still.
-    val scaleValue = if (Rarity.from(item.rarity) >= Rarity.Legendary && !MotionManager.reduceMotion) {
-        val infiniteTransition = rememberInfiniteTransition(label = "featuredGlow")
-        infiniteTransition.animateFloat(
-            initialValue = 0.98f,
-            targetValue = 1.02f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1500, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "pulse"
-        ).value
-    } else 1f
-
-    RarityCardFrame(
-        rarity = item.rarity ?: "Common",
-        modifier = Modifier
-            .fillMaxWidth()
-            .scale(scaleValue)
-            .pressable { onClick() }
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.l)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(CornerRadius.m))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .border(1.dp, rarityColor.copy(alpha = 0.5f), RoundedCornerShape(CornerRadius.m)),
-                contentAlignment = Alignment.Center
-            ) {
-                when (item.type) {
-                    "theme" -> ThemePreview(themeKey = item.value, modifier = Modifier.fillMaxSize())
-                    "avatar" -> MathAvatar(avatarKey = item.value, modifier = Modifier.fillMaxSize(), fontSize = 42.sp)
-                    "banner" -> ProfileBanner(bannerKey = item.value, modifier = Modifier.fillMaxSize())
-                    "badge" -> AchievementBadge(achievementId = item.value, modifier = Modifier.fillMaxSize())
-                    else -> Text("📦", fontSize = 36.sp)
-                }
-                if (isLocked) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("🔒", fontSize = 24.sp)
-                    }
-                }
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.name,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 18.sp,
-                    color = Color.White
-                )
-                Text(
-                    text = (item.rarity ?: "Common").uppercase(),
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 11.sp,
-                    color = rarityColor
-                )
-                Spacer(modifier = Modifier.height(Spacing.xs))
-                Text(
-                    text = item.description ?: "",
-                    fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.7f),
-                    maxLines = 2
-                )
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-                if (item.discountActive == true && item.originalCost != null && !hasPurchased) {
-                    Text(
-                        text = "🪙 ${item.originalCost}",
-                        fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.7f),
-                        style = TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .background(WrongRed, RoundedCornerShape(Spacing.xs))
-                            .padding(horizontal = Spacing.xs, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = "OFFER",
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(Spacing.xs))
-
-                if (isEquipped) {
-                    Text(
-                        text = "Active",
-                        color = CorrectGreen,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-                } else if (hasPurchased) {
-                    Text(
-                        text = "Owned",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-                } else {
-                    Text(
-                        text = "🪙 ${item.cost}",
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 16.sp,
-                        color = rarityColor
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ShopHeroCard(
-    item: ShopItem,
-    inventoryIds: List<String>,
-    user: User?,
-    onClick: () -> Unit
-) {
-    val hasPurchased = inventoryIds.contains(item.id)
-    val isEquipped = when (item.type) {
-        "theme" -> user?.theme == item.value
-        "avatar" -> user?.avatar == item.value
-        "badge" -> user?.active_badge == item.value
-        "banner" -> user?.active_banner == item.value
-        else -> false
-    }
-
-    val rarityColor = getRarityColor(item.rarity ?: "Common")
-    val isLocked = item.required_rank?.let { getRankValue(user?.rank ?: "") < getRankValue(it) } ?: false
-
-    // Legendary+ hero cards breathe — gated so reduce-motion (and lower tiers) sit still.
-    val scaleValue = if (Rarity.from(item.rarity) >= Rarity.Legendary && !MotionManager.reduceMotion) {
-        val infiniteTransition = rememberInfiniteTransition(label = "heroGlow")
-        infiniteTransition.animateFloat(
-            initialValue = 0.99f,
-            targetValue = 1.01f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(2000, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "pulse"
-        ).value
-    } else 1f
-
-    RarityCardFrame(
-        rarity = item.rarity ?: "Common",
-        modifier = Modifier
-            .fillMaxWidth()
-            .scale(scaleValue)
-            .pressable { onClick() }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Spacing.l)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "✨ TODAY'S HERO ITEM",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = rarityColor,
-                    letterSpacing = 1.sp
-                )
-                Text(
-                    text = (item.rarity ?: "Common").uppercase(),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = rarityColor.copy(alpha = 0.8f),
-                    letterSpacing = 0.5.sp
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(160.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))
-                    .border(1.5.dp, rarityColor.copy(alpha = 0.4f), RoundedCornerShape(20.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                when (item.type) {
-                    "theme" -> ThemePreview(themeKey = item.value, modifier = Modifier.fillMaxSize())
-                    "avatar" -> MathAvatar(avatarKey = item.value, modifier = Modifier.fillMaxSize(), fontSize = 64.sp)
-                    "banner" -> ProfileBanner(bannerKey = item.value, modifier = Modifier.fillMaxSize())
-                    "badge" -> AchievementBadge(achievementId = item.value, modifier = Modifier.fillMaxSize())
-                    else -> Text("📦", fontSize = 48.sp)
-                }
-                if (isLocked) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                            Text("🔒", fontSize = 32.sp)
-                            Text("Rank locked", fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f))
-                        }
-                    }
-                }
-            }
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.xs)
-            ) {
-                Text(
-                    text = item.name,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 22.sp,
-                    color = Color.White,
-                    textAlign = TextAlign.Center
-                )
-                if (!item.description.isNullOrEmpty()) {
-                    Text(
-                        text = item.description,
-                        fontSize = 13.sp,
-                        color = Color.White.copy(alpha = 0.7f),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = Spacing.m)
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (item.discountActive == true && item.originalCost != null && !hasPurchased) {
-                    Text(
-                        text = "🪙 ${item.originalCost}",
-                        fontSize = 14.sp,
-                        color = Color.White.copy(alpha = 0.7f),
-                        style = TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
-                    )
-                    Spacer(modifier = Modifier.width(Spacing.s))
-                }
-
-                if (isEquipped) {
-                    Text(
-                        text = "Equipped",
-                        color = CorrectGreen,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                } else if (hasPurchased) {
-                    Text(
-                        text = "Owned",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                } else {
-                    Text(
-                        text = "🪙 ${item.cost}",
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 18.sp,
-                        color = rarityColor
-                    )
-                }
             }
         }
     }
@@ -836,7 +236,7 @@ fun DailyShopItemCard(
         rarity = item.rarity ?: "Common",
         modifier = Modifier
             .fillMaxWidth()
-            .pressable { onClick() }
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -896,14 +296,6 @@ fun DailyShopItemCard(
             }
 
             Column(horizontalAlignment = Alignment.End) {
-                if (item.discountActive == true && item.originalCost != null && !hasPurchased) {
-                    Text(
-                        text = "🪙 ${item.originalCost}",
-                        fontSize = 11.sp,
-                        color = Color.White.copy(alpha = 0.7f),
-                        style = TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
-                    )
-                }
                 if (isEquipped) {
                     Text(
                         text = "Active",
@@ -942,7 +334,7 @@ fun UtilityShopItemCard(
         rarity = item.rarity ?: "Common",
         modifier = Modifier
             .fillMaxWidth()
-            .pressable { onClick() }
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -996,8 +388,6 @@ fun UtilityShopItemCard(
     }
 }
 
-private val SeasonGold = Color(0xFFFFD54A)
-
 /**
  * Season Tokens wallet + the coin→token conversion (the deep end-game sink, ultra-review #66/#75).
  * Tokens are earned by converting surplus coins and spent on token-only prestige cosmetics, so
@@ -1014,7 +404,7 @@ fun SeasonTokenWallet(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(CornerRadius.m))
-            .background(Color(0xFF2A2438))
+            .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, SeasonGold.copy(alpha = 0.5f), RoundedCornerShape(CornerRadius.m))
             .padding(Spacing.m),
         verticalArrangement = Arrangement.spacedBy(Spacing.s),

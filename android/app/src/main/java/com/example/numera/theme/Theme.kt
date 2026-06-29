@@ -1,6 +1,7 @@
 package com.example.numera.theme
 
 import android.content.Context
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -316,13 +317,51 @@ private val MidnightDarkColorScheme = darkColorScheme(
     onError = Color.White
 )
 
+// Studio — the flagship / default theme (docs/BrandIdentity.md). Warm "lobby" light: off-white paper,
+// graphite ink, Studio Indigo as the brand/active primary, Amber as the earned tertiary.
+private val StudioColorScheme = lightColorScheme(
+    primary = StudioPrimary,
+    secondary = StudioSecondary,
+    tertiary = StudioTertiary,
+    background = StudioBg,
+    surface = StudioSurface,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White,
+    onBackground = StudioOnSurface,
+    onSurface = StudioOnSurface,
+    outline = StudioBorder,
+    surfaceVariant = StudioSurfaceCard,
+    error = WrongRed,
+    onError = Color.White
+)
+
+// Studio dark — the higher-contrast "Arena/stadium" surface: deep graphite-indigo ground, lifted
+// indigo primary, amber for earned. Dark text on the lighter accents for legibility.
+private val StudioDarkColorScheme = darkColorScheme(
+    primary = Color(0xFF8E9BD6),
+    secondary = Color(0xFF5FB3A1),
+    tertiary = Color(0xFFE6B36A),
+    background = Color(0xFF15171F),
+    surface = Color(0xFF1C1F2A),
+    onPrimary = Color(0xFF12152B),
+    onSecondary = Color(0xFF06231C),
+    onTertiary = Color(0xFF2A1B05),
+    onBackground = Color(0xFFECEDF4),
+    onSurface = Color(0xFFECEDF4),
+    outline = Color(0xFF2E3344),
+    surfaceVariant = Color(0xFF232838),
+    error = WrongRed,
+    onError = Color.White
+)
+
 object ThemeManager {
-    var currentTheme by mutableStateOf("duolingo")
+    var currentTheme by mutableStateOf("studio")
     var isDarkMode by mutableStateOf(false)
 
     fun init(context: Context) {
         val prefs = context.getSharedPreferences("numera_prefs", Context.MODE_PRIVATE)
-        currentTheme = prefs.getString("current_theme", "duolingo") ?: "duolingo"
+        currentTheme = prefs.getString("current_theme", "studio") ?: "studio"
         isDarkMode = prefs.getBoolean("is_dark_mode", false)
     }
 
@@ -336,43 +375,78 @@ object ThemeManager {
     }
 }
 
+// Theme-key → color scheme. Extracted so NumeraTheme, VaultTheme, and any future focused surface
+// resolve the same mapping instead of re-listing every theme. Unknown keys fall back to Studio.
+internal fun darkColorSchemeFor(themeKey: String): ColorScheme = when (themeKey) {
+    "duolingo", "theme_duolingo" -> DuoDarkColorScheme
+    "cyberpunk", "theme_cyberpunk" -> CyberDarkColorScheme
+    "eclipse", "theme_eclipse", "neon_eclipse", "theme_neon_eclipse" -> EclipseDarkColorScheme
+    "emerald", "theme_emerald", "emerald_abyss", "theme_emerald_abyss" -> EmeraldDarkColorScheme
+    "crimson", "theme_crimson", "crimson_nebula", "theme_crimson_nebula" -> CrimsonDarkColorScheme
+    "aurora", "theme_aurora" -> AuroraDarkColorScheme
+    "ocean", "theme_ocean" -> OceanDarkColorScheme
+    "sunset", "theme_sunset" -> SunsetDarkColorScheme
+    "midnight", "theme_midnight" -> MidnightDarkColorScheme
+    "studio", "theme_studio" -> StudioDarkColorScheme
+    else -> StudioDarkColorScheme
+}
+
+internal fun lightColorSchemeFor(themeKey: String): ColorScheme = when (themeKey) {
+    "duolingo", "theme_duolingo" -> DuoColorScheme
+    "cyberpunk", "theme_cyberpunk" -> CyberColorScheme
+    "eclipse", "theme_eclipse", "neon_eclipse", "theme_neon_eclipse" -> EclipseColorScheme
+    "emerald", "theme_emerald", "emerald_abyss", "theme_emerald_abyss" -> EmeraldColorScheme
+    "crimson", "theme_crimson", "crimson_nebula", "theme_crimson_nebula" -> CrimsonColorScheme
+    "aurora", "theme_aurora" -> AuroraColorScheme
+    "ocean", "theme_ocean" -> OceanColorScheme
+    "sunset", "theme_sunset" -> SunsetColorScheme
+    "midnight", "theme_midnight" -> MidnightColorScheme
+    "studio", "theme_studio" -> StudioColorScheme
+    else -> StudioColorScheme
+}
+
 @Composable
 fun NumeraTheme(
     darkTheme: Boolean = ThemeManager.isDarkMode,
     content: @Composable () -> Unit
 ) {
     val themeKey = ThemeManager.currentTheme
-    val colorScheme = if (darkTheme) {
-        when (themeKey) {
-            "duolingo", "theme_duolingo" -> DuoDarkColorScheme
-            "cyberpunk", "theme_cyberpunk" -> CyberDarkColorScheme
-            "eclipse", "theme_eclipse", "neon_eclipse", "theme_neon_eclipse" -> EclipseDarkColorScheme
-            "emerald", "theme_emerald", "emerald_abyss", "theme_emerald_abyss" -> EmeraldDarkColorScheme
-            "crimson", "theme_crimson", "crimson_nebula", "theme_crimson_nebula" -> CrimsonDarkColorScheme
-            "aurora", "theme_aurora" -> AuroraDarkColorScheme
-            "ocean", "theme_ocean" -> OceanDarkColorScheme
-            "sunset", "theme_sunset" -> SunsetDarkColorScheme
-            "midnight", "theme_midnight" -> MidnightDarkColorScheme
-            else -> DuoDarkColorScheme
-        }
-    } else {
-        when (themeKey) {
-            "duolingo", "theme_duolingo" -> DuoColorScheme
-            "cyberpunk", "theme_cyberpunk" -> CyberColorScheme
-            "eclipse", "theme_eclipse", "neon_eclipse", "theme_neon_eclipse" -> EclipseColorScheme
-            "emerald", "theme_emerald", "emerald_abyss", "theme_emerald_abyss" -> EmeraldColorScheme
-            "crimson", "theme_crimson", "crimson_nebula", "theme_crimson_nebula" -> CrimsonColorScheme
-            "aurora", "theme_aurora" -> AuroraColorScheme
-            "ocean", "theme_ocean" -> OceanColorScheme
-            "sunset", "theme_sunset" -> SunsetColorScheme
-            "midnight", "theme_midnight" -> MidnightColorScheme
-            else -> DuoColorScheme
-        }
-    }
+    val colorScheme = if (darkTheme) darkColorSchemeFor(themeKey) else lightColorSchemeFor(themeKey)
 
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
         content = content
+    )
+}
+
+/**
+ * The Arena "stadium" surface (docs/BrandIdentity.md §4.2). Live matches always render on the
+ * focused, higher-contrast dark Studio scheme — regardless of the player's chosen theme — so a match
+ * *feels* like a match (the "lobby vs. stadium" rule). Wrap a duel/match screen in this; screens that
+ * use `MaterialTheme.colorScheme.*` tokens (no hardcoded colors) restyle automatically.
+ */
+@Composable
+fun ArenaStadiumTheme(content: @Composable () -> Unit) {
+    MaterialTheme(
+        colorScheme = StudioDarkColorScheme,
+        typography = Typography,
+        content = content,
+    )
+}
+
+/**
+ * The Shop "Vault" surface (docs/ShopOverhaul.md §3). The shop is a premium, museum-case dark
+ * surface — its rarity frames, glows, and light-on-dark text depend on a dark ground — but unlike
+ * the Arena it **tints to the player's equipped theme** (Studio → graphite-indigo + amber, Ocean →
+ * navy + cyan, …) rather than always Studio, so the Vault feels like *their* collection. Wrap the
+ * shop in this; everything inside reads `MaterialTheme.colorScheme.*` and restyles automatically.
+ */
+@Composable
+fun VaultTheme(content: @Composable () -> Unit) {
+    MaterialTheme(
+        colorScheme = darkColorSchemeFor(ThemeManager.currentTheme),
+        typography = Typography,
+        content = content,
     )
 }

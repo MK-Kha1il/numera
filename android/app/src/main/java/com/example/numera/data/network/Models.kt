@@ -113,6 +113,12 @@ data class User(
     val theme: String? = null,
     val avatar: String? = null,
     val active_banner: String? = null,
+    // New cosmetic equip slots (docs/ShopOverhaul.md §8, Stage D)
+    val active_title: String? = null,
+    val active_effect: String? = null,
+    val active_victory: String? = null,
+    val active_tap: String? = null,
+    val active_frame: String? = null,
     val assessment_taken: Int? = null,
     val onboarding_complete: Int? = 0,
     val is_guest: Int? = 0,
@@ -124,6 +130,8 @@ data class User(
     val arena_wins: Int? = null,
     val elo: Int? = null,
     val competitive_matches: Int? = null,
+    val competitive_rank: String? = null, // unified competitive rank (mirror of user_ratings global)
+    val rank_revealed: Int? = 0,          // one-time placement rank-reveal ceremony fired (audit #20)
     val total_coins_earned: Int? = null,
     val total_coins_spent: Int? = null,
     val xp_booster_uses_left: Int? = null,
@@ -149,8 +157,12 @@ data class PublicProfile(
     val theme: String? = null,
     val avatar: String? = null,
     val active_banner: String? = null,
+    val active_frame: String? = null,
+    val active_effect: String? = null,
     val solved_count: Int,
     val arena_wins: Int,
+    val competitive_rank: String? = null,
+    val active_title: String? = null,
     val mastery: CategoryMastery
 )
 
@@ -516,6 +528,23 @@ data class ProblemReportResponse(
     val success: Boolean = false
 )
 
+// In-app Help & Support ticket (Settings → Contact Support / Report a Bug / Request a Feature).
+// kind = "support" | "bug" | "feature". Backed by /api/feedback.
+@Serializable
+data class FeedbackRequest(
+    val kind: String,
+    val subject: String? = null,
+    val body: String,
+    val appVersion: String? = null
+)
+
+@Serializable
+data class FeedbackResponse(
+    val success: Boolean = false,
+    val id: Int = 0,
+    val message: String? = null
+)
+
 // School channel: class-code create/join + teacher roster.
 @Serializable
 data class ClassCreateRequest(val name: String)
@@ -829,6 +858,8 @@ data class ShopResponse(
     val catalogItems: List<ShopItem>? = null,
     val seasonItems: List<ShopItem>? = null,
     val tokenItems: List<ShopItem>? = null,
+    val ownedItems: List<ShopItem>? = null, // every owned cosmetic (incl. earn-only) — equip anytime
+    val earnableItems: List<ShopItem>? = null, // earn-only prestige NOT yet owned (the "Earnable" tab)
     val seasonInfo: ShopSeasonInfo? = null,
     val seasonTokens: Int? = 0,
     val utilities: List<UtilityBalance>? = null,
@@ -1303,6 +1334,296 @@ data class SeasonLeaderboardResponse(
     val yourRank: Int? = null
 )
 
+// ---- Unified competitive rating (NRS) — GET /api/rating/profile ----
+// One (mu/sigma) rating per domain; `displayRating` is the conservative mu−2σ shown to the player,
+// `rank` its ladder label. The `profile` map is keyed by domain ("global" + the 8 math domains).
+// See docs/specs/Spec-RatingUnification.md.
+data class DomainRating(
+    val displayRating: Int = 0,
+    val rank: String = "Unranked (Placement: 0/5)",
+    val provisional: Boolean = false, // σ still wide → show `?`, rating not yet calibrated
+    val progress: Float = 0f,        // 0..1 through the current division (divisions/pips)
+    val pointsToNext: Int? = null,   // display points to the next division (null at Grandmaster)
+    val nextRank: String? = null,
+    val sessionsCount: Int = 0,
+    val mu: Double = 0.0,
+    val velocity: Double = 0.0
+)
+
+data class RatingProfileResponse(
+    val profile: Map<String, DomainRating> = emptyMap()
+)
+
+// ---- Apex tier — GET /api/rating/apex (leaderboard-only standing above the rank thresholds) ----
+data class ApexEntry(
+    val position: Int = 0,
+    val userId: Int = 0,
+    val username: String = "",
+    val avatar: String? = null,
+    val displayRating: Int = 0,
+    val rank: String = ""
+)
+data class ApexStanding(
+    val position: Int = 0,
+    val displayRating: Int = 0
+)
+data class ApexResponse(
+    val size: Int = 0,
+    val cutoffRating: Int? = null,
+    val leaders: List<ApexEntry> = emptyList(),
+    val you: ApexStanding? = null // null unless the viewer is inside the apex
+)
+
+// ---- Competitive match history — GET /api/rating/matches (returns a bare array) ----
+data class MatchHistoryEntry(
+    val id: Int = 0,
+    val mode: String = "",
+    val opponentId: Int? = null,
+    val opponentName: String? = null,
+    val myScore: Int = 0,
+    val oppScore: Int = 0,
+    val result: String = "",
+    val ratingDelta: Double = 0.0,
+    val refId: Int? = null,   // replayable source (e.g. the reasoning round id)
+    val createdAt: Long = 0,
+    val commended: Boolean = false,   // you have honored this opponent (audit #24)
+    val commendable: Boolean = false  // a real human opponent you can still commend
+)
+
+// ---- Shareable rank card — GET /api/rating/share-card (audit #22, viral loop) ----
+data class ShareCardResponse(
+    val text: String = "",
+    val placed: Boolean = false,
+    val rank: String? = null,
+    val displayRating: Int? = null,
+    val title: String? = null
+)
+
+// ---- Live group/class competitive rooms — audit #19 ----
+data class CreateLiveRoomRequest(val category: String? = null, val level: Int? = null)
+data class LiveAnswerRequest(val problemIndex: Int, val answer: String)
+data class LiveRoomProblem(val question: String = "", val options: List<String> = emptyList())
+data class LiveStanding(
+    val position: Int = 0,
+    val userId: Int = 0,
+    val username: String = "",
+    val score: Int = 0,
+    val answered: Int = 0
+)
+data class LiveYou(val score: Int = 0, val answered: Int = 0)
+data class LiveRoomResponse( // create / join
+    val roomId: Int = 0,
+    val code: String = "",
+    val problemCount: Int = 0,
+    val status: String = "lobby",
+    val isHost: Boolean = false
+)
+data class LiveRoomState( // GET /api/live-rooms/:id
+    val roomId: Int = 0,
+    val code: String = "",
+    val status: String = "lobby",
+    val isHost: Boolean = false,
+    val problemCount: Int = 0,
+    val problems: List<LiveRoomProblem> = emptyList(),
+    val you: LiveYou = LiveYou(),
+    val standings: List<LiveStanding> = emptyList()
+)
+data class LiveStartResponse(val status: String = "active", val problems: List<LiveRoomProblem> = emptyList())
+data class LiveAnswerResponse(val correct: Boolean = false, val score: Int = 0, val answered: Int = 0, val total: Int = 0)
+data class LiveFinishResponse(val status: String = "done", val podium: List<LiveStanding> = emptyList())
+
+// ---- Honor / commendation system — audit #24 ----
+data class CommendRequest(
+    val matchId: Int,
+    val type: String = "good_game" // good_game | tough_opponent | good_sport
+)
+data class CommendResponse(
+    val success: Boolean = false,
+    val commended: Boolean = false,
+    val alreadyCommended: Boolean = false,
+    val toUserId: Int = 0
+)
+data class HonorResponse(
+    val total: Int = 0,
+    val level: Int = 0,
+    val byType: Map<String, Int> = emptyMap()
+)
+
+// ---- Reasoning round replay — GET /api/reasoning-duel/:id/review ----
+data class ReasoningReviewItem(
+    val question: String = "",
+    val options: List<String> = emptyList(),
+    val yourAnswer: String? = null,
+    val correctAnswer: String = "",
+    val answerCorrect: Boolean = false,
+    val reasonQuestion: String = "",
+    val reasonOptions: List<String> = emptyList(),
+    val yourReasonIndex: Int? = null,
+    val reasonCorrectIndex: Int = 0,
+    val reasonCorrect: Boolean = false,
+    val reasonExplanation: String = "",
+    val banked: Boolean = false
+)
+
+data class ReasoningReviewResponse(
+    val roundId: Int = 0,
+    val total: Int = 0,
+    val banked: Int = 0,
+    val items: List<ReasoningReviewItem> = emptyList()
+)
+
+// ---- Competitive titles — GET /api/rating/titles, POST .../select ----
+data class TitleEntry(
+    val id: String = "",
+    val name: String = "",
+    val desc: String = "",
+    val earned: Boolean = false,
+    val active: Boolean = false
+)
+
+data class TitlesResponse(
+    val active: String = "",
+    val titles: List<TitleEntry> = emptyList()
+)
+
+data class SelectTitleRequest(val title: String)
+
+data class SelectTitleResponse(
+    val success: Boolean = false,
+    val active: String = "",
+    val error: String? = null
+)
+
+// ---- Head-to-head rivals — GET /api/rating/rivals (returns a bare array) ----
+data class RivalEntry(
+    val opponentId: Int = 0,
+    val opponentName: String = "",
+    val opponentAvatar: String? = null,
+    val wins: Int = 0,
+    val losses: Int = 0,
+    val draws: Int = 0,
+    val total: Int = 0,
+    val lastPlayed: Long = 0
+)
+
+// ---- Rating timeline — GET /api/rating/history (returns a bare array) ----
+data class RatingHistoryEntry(
+    val domain: String = "global",
+    val displayBefore: Int = 0,
+    val displayAfter: Int = 0,
+    val delta: Double = 0.0,
+    val gameMode: String = "",
+    val sessionCategory: String? = null,
+    val sessionLevel: Int = 0,
+    val explanation: String = "",
+    val createdAt: Long = 0
+)
+
+// ---- Season peak badges ("Act Rank") — GET /api/rating/season-history ----
+// A permanent record of the highest competitive rank reached in each ended season.
+data class SeasonAward(
+    val seasonId: Int = 0,
+    val seasonName: String = "",
+    val peakDisplay: Int = 0,
+    val peakRank: String = "",
+    val awardedAt: Long = 0
+)
+
+data class SeasonHistoryResponse(
+    val awards: List<SeasonAward> = emptyList()
+)
+
+// ---- Seasonal Rank Reward track — GET /api/rating/reward-track, POST .../claim ----
+data class RewardTier(
+    val tierIndex: Int = 0,
+    val tierName: String = "",
+    val tokens: Int = 0,
+    val coins: Int = 0,
+    val cosmetic: String? = null, // season-exclusive earn-only banner at the Diamond tier (audit #14)
+    val reached: Boolean = false,
+    val claimed: Boolean = false
+)
+
+data class RewardTrackSeason(
+    val id: Int = 0,
+    val name: String = "",
+    val endAt: Long = 0,
+    val daysRemaining: Int = 0
+)
+
+data class RewardTrackResponse(
+    val season: RewardTrackSeason = RewardTrackSeason(),
+    val peakRank: String = "",
+    val peakTier: Int = -1,
+    val tiers: List<RewardTier> = emptyList()
+)
+
+data class ClaimTierRequest(val tier: Int)
+
+data class RewardClaimResponse(
+    val success: Boolean = false,
+    val tierName: String = "",
+    val tokensAwarded: Int = 0,
+    val coinsAwarded: Int = 0,
+    val seasonTokens: Int = 0,
+    val coins: Int = 0,
+    val error: String? = null
+)
+
+// ---- Reasoning Arena (understanding-gated ranked mode) ----
+// A point banks only if BOTH the answer AND the chosen reason are correct. See routes/reasoningDuel.js.
+data class ReasoningProblemDto(
+    val question: String = "",
+    val options: List<String> = emptyList(),
+    val reasonQuestion: String = "",
+    val reasonOptions: List<String> = emptyList()
+)
+
+data class ReasoningStartResponse(
+    val roundId: Int = 0,
+    val problemCount: Int = 0,
+    val domain: String? = null, // the round's dominant domain (the focused ladder, when chosen)
+    val problems: List<ReasoningProblemDto> = emptyList()
+)
+
+// Optional focus: climb a specific domain ladder ("rank up my Algebra"). Null/absent = mixed round.
+data class ReasoningStartRequest(
+    val domain: String? = null
+)
+
+// The domains offerable as a focus (each has enough authored reason-sets to fill a round).
+data class ReasoningDomainsResponse(
+    val domains: List<String> = emptyList()
+)
+
+data class ReasoningSubmitRequest(
+    val answers: List<String>,
+    val reasons: List<Int>
+)
+
+data class ReasoningResultItem(
+    val answerCorrect: Boolean = false,
+    val reasonCorrect: Boolean = false,
+    val banked: Boolean = false,
+    val correctAnswer: String = "",
+    val reasonCorrectIndex: Int = 0,
+    val reasonExplanation: String = ""
+)
+
+data class ReasoningSubmitResponse(
+    val success: Boolean = false,
+    val banked: Int = 0,
+    val answerCorrect: Int = 0,
+    val total: Int = 0,
+    val ratingCounted: Boolean = true,
+    val ratingDelta: Double = 0.0,
+    val newDisplayRating: Int? = null,
+    val newRank: String? = null,
+    val promoted: Boolean = false,
+    val perProblem: List<ReasoningResultItem> = emptyList(),
+    val reviewQueued: Int = 0 // concepts you missed, queued into spaced review (audit #25)
+)
+
 // ---- Learning plan (goal-driven concept path — audit #19) ----
 @Serializable
 data class LearningPlanStep(
@@ -1501,6 +1822,17 @@ data class ClubLeaderboardEntry(
     val memberCount: Int = 0,
     val totalLevel: Int = 0,
     val totalXp: Int = 0,
+    val position: Int = 0
+)
+
+// Club SKILL ladder (audit #17): clubs ranked by avg competitive rating of placed members, not XP.
+data class ClubSkillEntry(
+    val id: Int = 0,
+    val name: String = "",
+    val memberCount: Int = 0,
+    val ratedMembers: Int = 0,
+    val avgRating: Int = 0,
+    val clubRank: String = "Unrated",
     val position: Int = 0
 )
 

@@ -45,17 +45,25 @@ function getUserWithMastery(userId, callback) {
         theme: user.theme,
         avatar: user.avatar,
         active_banner: user.active_banner || 'banner_default',
+        // New cosmetic equip slots (docs/ShopOverhaul.md §8). Empty string = nothing equipped.
+        active_title: user.active_title || '',
+        active_effect: user.active_effect || '',
+        active_victory: user.active_victory || '',
+        active_tap: user.active_tap || '',
+        active_frame: user.active_frame || '',
         assessment_taken: user.assessment_taken || 0,
         onboarding_complete: user.onboarding_complete || 0,
         is_guest: user.is_guest || 0,
         display_name: user.display_name || null,
         reminders_opt_in: user.reminders_opt_in || 0,
-        league: user.league || 'Bronze',
+        league: user.league || 'Quartz',
         league_points: user.league_points || 0,
         solved_count: user.solved_count || 0,
         arena_wins: user.arena_wins || 0,
         elo: user.elo || 1000,
         competitive_matches: user.competitive_matches || 0,
+        competitive_rank: user.competitive_rank || 'Unranked (Placement: 0/5)',
+        rank_revealed: user.rank_revealed || 0,
         total_coins_earned: user.total_coins_earned !== undefined ? user.total_coins_earned : 100,
         total_coins_spent: user.total_coins_spent || 0,
         xp_booster_uses_left: user.xp_booster_uses_left || 0,
@@ -138,7 +146,7 @@ function checkAndResetQuestsAndLeagues(userId, callback) {
             }
 
             if (now - lastLeagueReset >= 7 * 86400) {
-              const currentLeague = uRow.league || 'Bronze';
+              const currentLeague = uRow.league || 'Quartz';
 
               db.all(
                 'SELECT id, league_points FROM users WHERE league = ? ORDER BY league_points DESC',
@@ -150,7 +158,9 @@ function checkAndResetQuestsAndLeagues(userId, callback) {
                   const totalInLeague = standings.length;
 
                   let newLeague = currentLeague;
-                  const leaguesOrder = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+                  // Weekly league has its OWN "stone" ladder (docs/BrandIdentity.md §8) so it stops
+                  // colliding with the permanent Bronze..Grandmaster competitive rank.
+                  const leaguesOrder = ['Quartz', 'Onyx', 'Jade', 'Topaz', 'Obsidian'];
                   const currentIdx = leaguesOrder.indexOf(currentLeague);
 
                   if (rankIndex !== -1) {

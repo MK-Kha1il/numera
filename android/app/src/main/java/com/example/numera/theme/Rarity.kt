@@ -1,5 +1,6 @@
 package com.example.numera.theme
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
@@ -20,6 +21,19 @@ val RarityEpicIndigo     = Color(0xFF4B0082)
 val RarityLegendaryAmber = Color(0xFFFDB813)
 val RarityLegendaryRose  = Color(0xFFB76E79)
 val RarityMythicRoyal    = Color(0xFF6A0DAD)
+// Mythic's signature accent — a bright iridescent orchid, deliberately distinct from Legendary's
+// amber and Epic's blue-violet so a Mythic reads in under half a second (docs/ShopOverhaul.md §7).
+val RarityMythicIridescent = Color(0xFFE05CFF)
+
+// The prismatic sweep used by the *animated* Mythic frame. A seamless loop (ends where it starts).
+val MythicIridescence = listOf(
+    Color(0xFF7C4DFF), // violet
+    Color(0xFF00E5FF), // cyan
+    Color(0xFF69F0AE), // mint
+    Color(0xFFFFD54A), // gold
+    Color(0xFFFF5EC8), // magenta
+    Color(0xFF7C4DFF), // loop back to violet
+)
 
 enum class Rarity(
     val label: String,
@@ -32,7 +46,7 @@ enum class Rarity(
     Rare("Rare", RarityRareTeal, listOf(RarityRareTeal, RarityRareBlue), 0.25f),
     Epic("Epic", RarityEpicViolet, listOf(RarityEpicViolet, RarityEpicIndigo), 0.5f),
     Legendary("Legendary", RarityLegendaryAmber, listOf(RarityLegendaryRose, RarityLegendaryAmber), 0.75f),
-    Mythic("Mythic", MedalGold, listOf(RarityMythicRoyal, MedalGold, MilestoneGold), 1f);
+    Mythic("Mythic", RarityMythicIridescent, listOf(RarityMythicRoyal, RarityMythicIridescent, MedalGold), 1f);
 
     val borderBrush: Brush get() = Brush.linearGradient(gradientColors)
 
@@ -50,3 +64,11 @@ enum class Rarity(
         }
     }
 }
+
+/** Animated prismatic border brush for Mythic frames; [offset] is the shimmer translation so the
+ *  iridescence sweeps. The one treatment that makes Mythic unmistakable next to Legendary. */
+fun mythicIridescentBrush(offset: Float): Brush = Brush.linearGradient(
+    colors = MythicIridescence,
+    start = Offset(offset, 0f),
+    end = Offset(offset + 420f, 420f),
+)
