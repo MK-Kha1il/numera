@@ -15,6 +15,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.numera.motion.MotionManager
 import com.example.numera.theme.CornerRadius
 import com.example.numera.theme.Spacing
 
@@ -29,6 +30,12 @@ import com.example.numera.theme.Spacing
 /** A horizontally-sweeping shimmer brush that animates forever. Cheap — one transition per call site. */
 @Composable
 fun rememberShimmerBrush(): Brush {
+    val base = MaterialTheme.colorScheme.surfaceVariant
+    val highlight = MaterialTheme.colorScheme.outline.copy(alpha = 0.40f)
+    // Reduce-motion: a soft static gradient instead of a forever-sweeping shimmer.
+    if (MotionManager.reduceMotion) {
+        return Brush.linearGradient(listOf(base, highlight, base))
+    }
     val transition = rememberInfiniteTransition(label = "skeletonShimmer")
     val translate by transition.animateFloat(
         initialValue = -300f,
@@ -39,8 +46,6 @@ fun rememberShimmerBrush(): Brush {
         ),
         label = "shimmerTranslate"
     )
-    val base = MaterialTheme.colorScheme.surfaceVariant
-    val highlight = MaterialTheme.colorScheme.outline.copy(alpha = 0.40f)
     return Brush.linearGradient(
         colors = listOf(base, highlight, base),
         start = Offset(translate, 0f),

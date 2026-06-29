@@ -5,7 +5,6 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -75,7 +74,19 @@ fun LessonScreen(
         val cardBgColor = if (isMilestone) MilestoneSurface else MaterialTheme.colorScheme.surfaceVariant
         val borderColor = if (isMilestone) MilestoneBorder else MaterialTheme.colorScheme.outline
         val onSurfaceColor = if (isMilestone) MilestoneOnSurface else MaterialTheme.colorScheme.onBackground
-        
+
+        // Staggered reveal (M8): the lesson's opening sections cascade in so the concept unfolds
+        // rather than dumping all at once. Honours reduce-motion (everything shows immediately).
+        var revealStep by remember { mutableStateOf(0) }
+        LaunchedEffect(Unit) { repeat(4) { delay(110); revealStep++ } }
+        @Composable
+        fun Reveal(step: Int, content: @Composable () -> Unit) {
+            AnimatedVisibility(
+                visible = com.example.numera.motion.MotionManager.reduceMotion || revealStep > step,
+                enter = fadeIn() + slideInVertically { it / 8 },
+            ) { content() }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -108,6 +119,7 @@ fun LessonScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(Spacing.l)
             ) {
+                Reveal(0) {
                 if (!lessonContent.isNullOrEmpty()) {
                     if (lessonContent!!.contains("$") || lessonContent!!.contains("\\")) {
                         MathText(
@@ -125,7 +137,9 @@ fun LessonScreen(
                         )
                     }
                 }
-                
+                }
+
+                Reveal(1) {
                 lessonSections?.let { s ->
                     if (!s.intuitionHook.isNullOrBlank()) {
                         LessonSectionCard("💡 THINK FIRST", s.intuitionHook!!, primaryColor, onSurfaceColor, borderColor, cardBgColor)
@@ -153,7 +167,9 @@ fun LessonScreen(
                         }
                     }
                 }
+                }
 
+                Reveal(2) {
                 if (!lessonFormula.isNullOrEmpty()) {
                     Box(
                         modifier = Modifier
@@ -186,6 +202,7 @@ fun LessonScreen(
                             )
                         }
                     }
+                }
                 }
                 
                 if (examplesList.isNotEmpty()) {

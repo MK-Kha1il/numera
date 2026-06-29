@@ -4,7 +4,7 @@ import java.util.Calendar
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -586,7 +586,7 @@ fun RegisterScreen(
                                     if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                                     CircleShape
                                 )
-                                .clickable { selectedAvatar = avatarKey },
+                                .pressable { selectedAvatar = avatarKey },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -877,7 +877,7 @@ fun GoogleAuthMockDialog(
                                     if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                                     CircleShape
                                 )
-                                .clickable { selectedAvatar = avatarKey },
+                                .pressable { selectedAvatar = avatarKey },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(

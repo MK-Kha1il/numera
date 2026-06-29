@@ -2,11 +2,14 @@ package com.example.numera.ui.screens
 
 import android.util.Log
 import androidx.compose.animation.*
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,6 +40,8 @@ import com.example.numera.sound.SoundManager
 import com.example.numera.theme.*
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.DuoCard
+import com.example.numera.ui.components.animatedInt
+import com.example.numera.ui.components.CelebrationTier
 import com.example.numera.ui.components.VictoryParticles
 import com.example.numera.ui.components.MathText
 import com.example.numera.ui.components.RankBadge
@@ -85,6 +90,10 @@ fun DuelGameScreen(
     var streakCount by remember { mutableIntStateOf(0) }
     // One beat of anticipation (names square off) before the first problem appears.
     var showVsIntro by remember { mutableStateOf(true) }
+    // 3·2·1·GO countdown gate, shown right after the VS intro (M5).
+    var showCountdown by remember { mutableStateOf(true) }
+    // Rank captured at join, so a rank change at duel end can be read as a promotion (M6).
+    var preMatchRank by remember { mutableStateOf("") }
 
     var isDuelOver by remember { mutableStateOf(false) }
     // How many problems the learner missed this duel — drives the post-duel "review your
@@ -120,6 +129,7 @@ fun DuelGameScreen(
                 val favs = favsDeferred.await()
                 myUserId = profile.id
                 myUsername = profile.username
+                preMatchRank = profile.rank
                 favoritedQuestions = favs.map { it.question }.toSet()
             }
         } catch (e: Exception) {
@@ -253,6 +263,49 @@ fun DuelGameScreen(
         return
     }
 
+    // 3·2·1·GO countdown (M5) — a beat of tension after the matchup, before the first problem.
+    if (showCountdown && !isDuelOver) {
+        var count by remember { mutableIntStateOf(3) }
+        LaunchedEffect(Unit) {
+            for (n in 3 downTo 1) {
+                count = n
+                SoundManager.playTick()
+                com.example.numera.haptic.HapticManager.playMedium()
+                kotlinx.coroutines.delay(700)
+            }
+            count = 0 // GO
+            SoundManager.playClick()
+            com.example.numera.haptic.HapticManager.playSuccess()
+            kotlinx.coroutines.delay(550)
+            showCountdown = false
+        }
+        Box(
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.Center
+        ) {
+            @Composable
+            fun CountLabel(c: Int) = Text(
+                text = if (c == 0) "GO!" else "$c",
+                fontSize = if (c == 0) 64.sp else 96.sp,
+                fontWeight = FontWeight.Black,
+                color = if (c == 0) CorrectGreen else MaterialTheme.colorScheme.primary
+            )
+            if (com.example.numera.motion.MotionManager.reduceMotion) {
+                CountLabel(count)
+            } else {
+                AnimatedContent(
+                    targetState = count,
+                    transitionSpec = {
+                        ((scaleIn(initialScale = 1.8f) + fadeIn()) togetherWith
+                            (scaleOut(targetScale = 0.5f) + fadeOut())) using null
+                    },
+                    label = "countdown"
+                ) { c -> CountLabel(c) }
+            }
+        }
+        return
+    }
+
     if (isDuelOver) {
         val didIWin = duelWinnerId == myUserId
         val isCasual = eloInfo?.optBoolean("isCasual", false) ?: false
@@ -282,7 +335,22 @@ fun DuelGameScreen(
         ) {
             // Result pops in with the reward spring; a win earns a confetti burst on top.
             var endRevealed by remember { mutableStateOf(false) }
-            LaunchedEffect(Unit) { endRevealed = true }
+            // Rank-up celebration (M6): a win that changed my rank = a promotion (you don't get
+            // promoted on a loss). preMatchRank was captured at join.
+            val promoted = didIWin && myNewRank.isNotEmpty() &&
+                preMatchRank.isNotEmpty() && myNewRank != preMatchRank
+            var rankUpBurst by remember { mutableStateOf(false) }
+            // Rating ticks up from the pre-match value to the new one after the card settles —
+            // the gain (or loss) is *felt* as motion, not read as static text. Seeds at the old
+            // rating; the LaunchedEffect bumps the target so animatedInt actually counts.
+            var ratingTarget by remember { mutableIntStateOf(myNewElo - myChange) }
+            LaunchedEffect(Unit) {
+                endRevealed = true
+                if (!isCasual && myChange != 0) {
+                    kotlinx.coroutines.delay(AnimDuration.slow.toLong())
+                    ratingTarget = myNewElo
+                }
+            }
             AnimatedVisibility(visible = endRevealed, enter = Motion.rewardEnter()) {
             DuoCard(
                 modifier = Modifier
@@ -324,11 +392,14 @@ fun DuelGameScreen(
                     )
 
                     if (!isCasual) {
+                        val shownRating = animatedInt(ratingTarget)
                         Text(
-                            text = "New Rating: $myNewElo (${if (myChange >= 0) "+" else ""}$myChange)",
+                            text = "New Rating: $shownRating (${if (myChange >= 0) "+" else ""}$myChange)",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
+                            color = if (myChange > 0) CorrectGreen
+                                    else if (myChange < 0) WrongRed
+                                    else MaterialTheme.colorScheme.onBackground
                         )
 
                         Row(
@@ -342,6 +413,43 @@ fun DuelGameScreen(
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
+                        }
+
+                        // Promotion celebration — the largest motion in the duel, reserved for an
+                        // earned rank-up: an Epic fanfare + a second confetti burst (M6).
+                        if (promoted) {
+                            var rankUpShown by remember { mutableStateOf(false) }
+                            LaunchedEffect(Unit) {
+                                kotlinx.coroutines.delay(AnimDuration.xslow.toLong())
+                                rankUpShown = true
+                                CelebrationTier.Epic.fire()
+                                rankUpBurst = true
+                            }
+                            AnimatedVisibility(visible = rankUpShown, enter = Motion.rewardEnter()) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(MilestoneGold.copy(alpha = 0.15f))
+                                        .border(BorderStroke(2.dp, MilestoneGold), RoundedCornerShape(16.dp))
+                                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                                ) {
+                                    Text(
+                                        text = "⬆ RANK UP!",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = MilestoneGold,
+                                        letterSpacing = 1.sp
+                                    )
+                                    Text(
+                                        text = "Promoted to $myNewRank",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
                         }
 
                         if (didICheat) {
@@ -404,6 +512,9 @@ fun DuelGameScreen(
                 var winBurst by remember { mutableStateOf(true) }
                 VictoryParticles(trigger = winBurst) { winBurst = false }
             }
+            if (promoted) {
+                VictoryParticles(trigger = rankUpBurst) { rankUpBurst = false }
+            }
         }
         return
     }
@@ -422,6 +533,15 @@ fun DuelGameScreen(
         val total = problemsList.size.coerceAtLeast(1)
         val myBar by animateFloatAsState(myProgress / total.toFloat(), Motion.standard(), label = "myBar")
         val oppBar by animateFloatAsState(oppProgress / total.toFloat(), Motion.standard(), label = "oppBar")
+        // Score pop (M4): the live score punches up briefly each time I score — felt momentum,
+        // not just a number change. Only my points trigger it; honours reduce-motion.
+        val scorePop = remember { Animatable(1f) }
+        LaunchedEffect(myPoints) {
+            if (myPoints > 0 && !com.example.numera.motion.MotionManager.reduceMotion) {
+                scorePop.snapTo(1.3f)
+                scorePop.animateTo(1f, spring(dampingRatio = 0.42f, stiffness = Spring.StiffnessMedium))
+            }
+        }
         DuoCard(
             modifier = Modifier.fillMaxWidth(),
             backgroundColor = MaterialTheme.colorScheme.surfaceVariant
@@ -448,7 +568,9 @@ fun DuelGameScreen(
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = Spacing.s)
+                        modifier = Modifier
+                            .padding(horizontal = Spacing.s)
+                            .graphicsLayer { scaleX = scorePop.value; scaleY = scorePop.value }
                     )
                     Text(
                         text = opponentName,
@@ -535,21 +657,38 @@ fun DuelGameScreen(
                     .padding(8.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (currentProblem.question.contains("$") || currentProblem.question.contains("\\")) {
-                    MathText(
-                        text = currentProblem.question,
-                        fontSizePx = 52,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                } else {
-                    Text(
-                        text = currentProblem.question,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Center
-                    )
+                // Round transition (M2): each new question fades + settles in; the in-place answer
+                // reveal (same index) doesn't re-animate. Vertical slide avoids reflowing LaTeX.
+                AnimatedContent(
+                    targetState = currentProblemIdx,
+                    transitionSpec = {
+                        val spec = if (com.example.numera.motion.MotionManager.reduceMotion) {
+                            fadeIn() togetherWith fadeOut()
+                        } else {
+                            (fadeIn(Motion.enter()) + slideInVertically(Motion.enter()) { it / 8 }) togetherWith
+                                fadeOut(Motion.exit())
+                        }
+                        spec using null
+                    },
+                    label = "duelQuestion"
+                ) { idx ->
+                    val q = (problemsList.getOrNull(idx) ?: currentProblem).question
+                    if (q.contains("$") || q.contains("\\")) {
+                        MathText(
+                            text = q,
+                            fontSizePx = 52,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        Text(
+                            text = q,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
 
                 val isFav = favoritedQuestions.contains(currentProblem.question)

@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
@@ -29,6 +28,7 @@ import com.example.numera.data.network.*
 import com.example.numera.sound.SoundManager
 import com.example.numera.theme.*
 import com.example.numera.ui.components.ProfileBanner
+import com.example.numera.ui.components.pressable
 import com.example.numera.ui.components.MathAvatar
 import com.example.numera.ui.components.RankBadge
 import com.example.numera.ui.components.AchievementBadge
@@ -283,7 +283,7 @@ fun ProfileScreen(
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.xl)
                     .clip(RoundedCornerShape(CornerRadius.m))
-                    .clickable { selectedSubTab = 1 }
+                    .pressable { selectedSubTab = 1 }
                     .padding(vertical = Spacing.xs),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.s),
                 verticalAlignment = Alignment.CenterVertically
@@ -458,7 +458,7 @@ fun ProfileScreen(
                                                 RoundedCornerShape(CornerRadius.m)
                                             )
                                             .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                                            .clickable {
+                                            .pressable {
                                                 com.example.numera.haptic.HapticManager.playSoft()
                                                 scope.launch(Dispatchers.IO) {
                                                     try {
@@ -515,7 +515,7 @@ fun ProfileScreen(
                                                 RoundedCornerShape(CornerRadius.m)
                                             )
                                             .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                                            .clickable {
+                                            .pressable {
                                                 com.example.numera.haptic.HapticManager.playSoft()
                                                 scope.launch(Dispatchers.IO) {
                                                     try {
@@ -571,7 +571,7 @@ fun ProfileScreen(
                                                 RoundedCornerShape(CornerRadius.m)
                                             )
                                             .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                                            .clickable {
+                                            .pressable {
                                                 com.example.numera.haptic.HapticManager.playSoft()
                                                 scope.launch(Dispatchers.IO) {
                                                     try {
@@ -664,7 +664,7 @@ fun ProfileScreen(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         modifier = Modifier
                                             .width(90.dp)
-                                            .clickable {
+                                            .pressable {
                                                 com.example.numera.sound.SoundManager.playClick()
                                                 com.example.numera.haptic.HapticManager.playSoft()
                                                 selectedRelicDetail = Pair(relic.second, relic.third + (if (isUnlocked) "\n\nStatus: Unlocked!" else "\n\nStatus: Locked"))
@@ -871,7 +871,7 @@ fun ProfileScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(CornerRadius.m))
-                                    .clickable { onShowUserProfile(friend.id) }
+                                    .pressable { onShowUserProfile(friend.id) }
                                     .padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -976,7 +976,7 @@ fun ProfileScreen(
                                         if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                                         RoundedCornerShape(20.dp)
                                     )
-                                    .clickable {
+                                    .pressable {
                                         selectedCategoryTab = cat
                                     },
                                 colors = CardDefaults.cardColors(
@@ -1284,7 +1284,7 @@ fun ProfileScreen(
                                     if (selectedCollectionFilterId == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                                     RoundedCornerShape(20.dp)
                                 )
-                                .clickable {
+                                .pressable {
                                     selectedCollectionFilterId = null
                                 },
                             colors = CardDefaults.cardColors(
@@ -1310,7 +1310,7 @@ fun ProfileScreen(
                                         if (selectedCollectionFilterId == col.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                                         RoundedCornerShape(20.dp)
                                     )
-                                    .clickable {
+                                    .pressable {
                                         selectedCollectionFilterId = col.id
                                     },
                                 colors = CardDefaults.cardColors(
@@ -1334,7 +1334,7 @@ fun ProfileScreen(
                                     Text(
                                         text = "✏️",
                                         fontSize = 11.sp,
-                                        modifier = Modifier.clickable {
+                                        modifier = Modifier.pressable {
                                             renameCollectionName = col.name
                                             renameCollectionPublic = col.is_public == 1
                                             collectionToRename = col
@@ -1343,7 +1343,7 @@ fun ProfileScreen(
                                     Text(
                                         text = "🗑️",
                                         fontSize = 11.sp,
-                                        modifier = Modifier.clickable {
+                                        modifier = Modifier.pressable {
                                             collectionToDelete = col
                                         }
                                     )
@@ -1412,7 +1412,7 @@ fun ProfileScreen(
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = MaterialTheme.colorScheme.primary,
-                                                    modifier = Modifier.clickable {
+                                                    modifier = Modifier.pressable {
                                                         exerciseToAssign = ex
                                                     }
                                                 )
@@ -1422,7 +1422,7 @@ fun ProfileScreen(
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = WrongRed,
-                                                    modifier = Modifier.clickable {
+                                                    modifier = Modifier.pressable {
                                                         // Optimistic: drop it from the list immediately, sync in the background.
                                                         scope.launch {
                                                             runOptimistic(

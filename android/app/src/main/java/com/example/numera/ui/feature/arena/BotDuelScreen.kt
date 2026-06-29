@@ -1,6 +1,6 @@
 package com.example.numera.ui.feature.arena
 
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -75,7 +75,7 @@ fun BotDuelScreen(onExit: () -> Unit) {
         if (phase == "select") {
             Text("Pick an opponent. Beat the bot's score to win coins.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
             tiers.forEach { (key, name, sub) ->
-                DuoCard(modifier = Modifier.fillMaxWidth().clickable(enabled = !busy) { start(key) }) {
+                DuoCard(modifier = Modifier.fillMaxWidth().pressable(enabled = !busy) { start(key) }) {
                     Row(modifier = Modifier.fillMaxWidth().padding(Spacing.l), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -112,7 +112,7 @@ fun BotDuelScreen(onExit: () -> Unit) {
                 }
                 problems[qIndex].options.forEach { opt ->
                     Card(
-                        modifier = Modifier.fillMaxWidth().clickable(enabled = !busy) {
+                        modifier = Modifier.fillMaxWidth().pressable(enabled = !busy) {
                             val updated = answers + opt
                             if (updated.size >= problems.size) { answers = updated; submit(updated) }
                             else { answers = updated; qIndex = updated.size }

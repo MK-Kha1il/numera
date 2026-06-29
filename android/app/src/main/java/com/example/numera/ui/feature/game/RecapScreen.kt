@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.MathProblem
 import com.example.numera.data.network.RetrofitClient
+import com.example.numera.ui.components.animatedInt
 import com.example.numera.theme.CorrectGreen
 import com.example.numera.theme.DuoSecondary
 import com.example.numera.theme.DuoTertiary
@@ -89,10 +90,15 @@ fun RecapScreen(
     var badgeCardVisible by remember { mutableStateOf(false) }
     var multipliersVisible by remember { mutableStateOf(false) }
     var animateProgressBar by remember { mutableStateOf(false) }
+    // Reward tally counts up once the stats card lands — a satisfying earned-it reveal (M7).
+    var xpShown by remember { mutableStateOf(0) }
+    var coinShown by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
         delay(150)
         statsCardVisible = true
+        xpShown = xpReward
+        coinShown = coinReward
         delay(250)
         levelCardVisible = true
         animateProgressBar = true
@@ -159,11 +165,11 @@ fun RecapScreen(
                     ) {
                         Column {
                             Text("XP Earned", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
-                            Text("+$xpReward XP", fontWeight = FontWeight.Black, fontSize = 20.sp, color = primaryColor)
+                            Text("+${animatedInt(xpShown)} XP", fontWeight = FontWeight.Black, fontSize = 20.sp, color = primaryColor)
                         }
                         Column {
                             Text("Coins Earned", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
-                            Text("+$coinReward 🪙", fontWeight = FontWeight.Black, fontSize = 20.sp, color = MaterialTheme.colorScheme.tertiary)
+                            Text("+${animatedInt(coinShown)} 🪙", fontWeight = FontWeight.Black, fontSize = 20.sp, color = MaterialTheme.colorScheme.tertiary)
                         }
                         Column {
                             Text("Accuracy", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)

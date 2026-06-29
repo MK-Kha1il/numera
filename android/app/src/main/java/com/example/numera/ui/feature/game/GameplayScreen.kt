@@ -5,7 +5,8 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
+import com.example.numera.ui.components.PressFeedback
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -274,7 +275,7 @@ fun GameplayScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f))
-                                .clickable {
+                                .pressable(feedback = PressFeedback.Silent) {
                                     SoundManager.playClick()
                                     com.example.numera.haptic.HapticManager.playSoft()
                                     showReference = true
@@ -612,7 +613,7 @@ fun GameplayScreen(
                                             )
                                         )
                                     )
-                                    .clickable {
+                                    .pressable(feedback = PressFeedback.Silent) {
                                         com.example.numera.haptic.HapticManager.playSoft()
                                         showCalculator = false
                                         showWhiteboard = false
@@ -653,7 +654,7 @@ fun GameplayScreen(
                                             )
                                         )
                                     )
-                                    .clickable {
+                                    .pressable(feedback = PressFeedback.Silent) {
                                         com.example.numera.haptic.HapticManager.playSoft()
                                         showTip = false
                                         showWhiteboard = false
@@ -696,7 +697,7 @@ fun GameplayScreen(
                                         )
                                     )
                                     .border(BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)), shape = RoundedCornerShape(12.dp))
-                                    .clickable {
+                                    .pressable(feedback = PressFeedback.Silent) {
                                         com.example.numera.haptic.HapticManager.playSoft()
                                         showTip = false
                                         showCalculator = false
@@ -1012,7 +1013,7 @@ fun GameplayScreen(
                                     .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
                                     .background(bg)
                                     .then(
-                                        if (!answered) Modifier.clickable {
+                                        if (!answered) Modifier.pressable(feedback = PressFeedback.Silent) {
                                             com.example.numera.haptic.HapticManager.playSoft()
                                             selfExplainChoice = i
                                         } else Modifier
@@ -1072,7 +1073,7 @@ fun GameplayScreen(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
                                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                                        .clickable {
+                                        .pressable(feedback = PressFeedback.Silent) {
                                             com.example.numera.haptic.HapticManager.playSoft()
                                             showHint = true
                                         }
@@ -1118,7 +1119,7 @@ fun GameplayScreen(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
                                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                                        .clickable {
+                                        .pressable(feedback = PressFeedback.Silent) {
                                             com.example.numera.haptic.HapticManager.playSoft()
                                             workedStepsShown = 1
                                         }
@@ -1187,7 +1188,7 @@ fun GameplayScreen(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
                                                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                                                .clickable {
+                                                .pressable(feedback = PressFeedback.Silent) {
                                                     com.example.numera.haptic.HapticManager.playSoft()
                                                     workedStepsShown += 1
                                                 }
@@ -1250,7 +1251,7 @@ fun GameplayScreen(
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
                             .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
-                            .clickable { showReport = true }
+                            .pressable(feedback = PressFeedback.Silent) { showReport = true }
                             .padding(horizontal = Spacing.m, vertical = Spacing.s)
                     )
                 }

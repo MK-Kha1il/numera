@@ -2,7 +2,7 @@ package com.example.numera.ui.feature.game
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -102,7 +102,7 @@ fun ReportProblemDialog(
                                     if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                                     RoundedCornerShape(20.dp)
                                 )
-                                .clickable { reason = key }
+                                .pressable { reason = key }
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
                         )
                     }

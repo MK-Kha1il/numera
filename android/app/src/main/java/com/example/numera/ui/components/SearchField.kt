@@ -2,7 +2,7 @@ package com.example.numera.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.theme.MotionTokens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -94,7 +94,7 @@ fun NumeraSearchField(
                 animate = false,
                 modifier = Modifier
                     .clip(RoundedCornerShape(CornerRadius.full))
-                    .clickable { onValueChange("") }
+                    .pressable(pressScale = MotionTokens.pressScaleSmall) { onValueChange("") }
                     .padding(Spacing.xs)
             )
         }

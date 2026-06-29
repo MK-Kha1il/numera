@@ -2,7 +2,7 @@ package com.example.numera.ui.feature.archive
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -97,7 +97,7 @@ fun LevelNode(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(100.dp)
-            .clickable(enabled = isUnlocked, onClick = onClick)
+            .pressable(enabled = isUnlocked, onClick = onClick)
     ) {
         if (isActive) {
             // Subtle glowing backdrop

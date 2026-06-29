@@ -3,7 +3,7 @@ package com.example.numera.ui.feature.onboarding
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -184,7 +184,7 @@ fun SelectableCard(
             .clip(RoundedCornerShape(CornerRadius.l))
             .background(bg)
             .border(BorderStroke(if (selected) 2.dp else 1.dp, borderColor), RoundedCornerShape(CornerRadius.l))
-            .clickable { onClick() }
+            .pressable { onClick() }
             .padding(Spacing.m),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.xs),

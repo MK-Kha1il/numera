@@ -1,6 +1,12 @@
 package com.example.numera.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.numera.motion.MotionManager
 import com.example.numera.theme.Alpha
 import com.example.numera.theme.Spacing
 
@@ -75,7 +82,17 @@ private fun EmptyArt(kind: EmptyIllustration) {
     val primary = MaterialTheme.colorScheme.primary
     val secondary = MaterialTheme.colorScheme.secondary
     val faint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-    Canvas(modifier = Modifier.size(120.dp)) {
+    // Gentle breathing so the empty state feels alive, never dead (Phase 6); still under reduce-motion.
+    val breathe: Float = if (MotionManager.reduceMotion) 1f else {
+        val transition = rememberInfiniteTransition(label = "emptyBreathe")
+        transition.animateFloat(
+            initialValue = 0.97f,
+            targetValue = 1.03f,
+            animationSpec = infiniteRepeatable(tween(2600), RepeatMode.Reverse),
+            label = "breatheScale"
+        ).value
+    }
+    Canvas(modifier = Modifier.size(120.dp).scale(breathe)) {
         val w = size.width
         val h = size.height
         val sw = 4.dp.toPx()

@@ -2,7 +2,7 @@ package com.example.numera.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.theme.MotionTokens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -95,7 +95,7 @@ private fun RowScope.MathKeyButton(
                 MaterialTheme.colorScheme.outline.copy(alpha = 0.5f * alpha),
                 RoundedCornerShape(CornerRadius.m),
             )
-            .clickable(enabled = enabled, onClick = onClick)
+            .pressable(enabled = enabled, feedback = PressFeedback.Silent, pressScale = MotionTokens.pressScaleSmall, onClick = onClick)
             .padding(horizontal = Spacing.xs)
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,

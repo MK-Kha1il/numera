@@ -1,6 +1,6 @@
 package com.example.numera.ui.feature.arena
 
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -121,7 +121,7 @@ fun AsyncDuelScreen(user: User?, onExit: () -> Unit) {
                 }
                 problems[qIndex].options.forEach { opt ->
                     Card(
-                        modifier = Modifier.fillMaxWidth().clickable(enabled = !busy) {
+                        modifier = Modifier.fillMaxWidth().pressable(enabled = !busy) {
                             val updated = answers + opt
                             if (updated.size >= problems.size) { answers = updated; submitPlay(updated) }
                             else { answers = updated; qIndex = updated.size }

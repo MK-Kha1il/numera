@@ -22,6 +22,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.theme.*
+import com.example.numera.ui.components.pressable
+import com.example.numera.ui.components.PressFeedback
 
 // Slide-up scientific calculator overlay, hoisted out of SoloGameScreen. State lives in the
 // parent (so input/memory/history persist across open/close) and is passed in as MutableState;
@@ -230,7 +232,7 @@ fun BoxScope.CalculatorOverlay(
                                             .height(38.dp)
                                             .clip(RoundedCornerShape(10.dp))
                                             .background(bgColor)
-                                            .clickable {
+                                            .pressable(feedback = PressFeedback.Silent, pressScale = MotionTokens.pressScaleSmall) {
                                                 com.example.numera.haptic.HapticManager.playSoft()
                                                 calcIsError = false
                                                 when (key) {

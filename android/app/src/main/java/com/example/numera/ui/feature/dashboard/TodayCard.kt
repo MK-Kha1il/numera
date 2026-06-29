@@ -2,7 +2,6 @@ package com.example.numera.ui.feature.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.TodayResponse
 import com.example.numera.theme.CornerRadius
 import com.example.numera.theme.Spacing
+import com.example.numera.ui.components.pressable
 
 /**
  * The "Today" composer card: ONE ordered session plan (review → learn → puzzle → duel →
@@ -90,7 +90,7 @@ fun TodayCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(CornerRadius.m))
-                    .clickable(enabled = !item.done) { onItemClick(item.key) }
+                    .pressable(enabled = !item.done) { onItemClick(item.key) }
                     .padding(vertical = Spacing.s, horizontal = Spacing.xs),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.m),

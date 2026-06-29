@@ -2,7 +2,7 @@ package com.example.numera.ui.feature.onboarding
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -125,7 +125,7 @@ fun AhaStep(
                             BorderStroke(if (isSel) 2.dp else 1.dp, if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
                             RoundedCornerShape(CornerRadius.l),
                         )
-                        .clickable { SoundManager.playClick(); selected = opt }
+                        .pressable { selected = opt }
                         .padding(Spacing.l),
                     contentAlignment = Alignment.CenterStart,
                 ) {

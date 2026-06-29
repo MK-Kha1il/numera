@@ -1,7 +1,7 @@
 package com.example.numera.ui.feature.profile
 
 import android.util.Log
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -113,7 +113,7 @@ fun LearningPlanScreen(onBack: () -> Unit, onPractice: (String, Int) -> Unit) {
                     }
                     DuoCard(
                         modifier = Modifier.fillMaxWidth().then(
-                            if (reachable) Modifier.clickable { onPractice(step.category, step.level) } else Modifier
+                            if (reachable) Modifier.pressable { onPractice(step.category, step.level) } else Modifier
                         )
                     ) {
                         Row(

@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -74,9 +75,11 @@ fun NumeraBreadcrumbs(
 @Composable
 private fun CrumbChip(crumb: Crumb, isCurrent: Boolean) {
     val interaction = remember { MutableInteractionSource() }
+    val pressed = interaction.collectIsPressedAsState().value
     val clickable = crumb.onClick != null && !isCurrent
     val base = Modifier
         .clip(RoundedCornerShape(CornerRadius.s))
+        .then(if (clickable) Modifier.pressScale(pressed) else Modifier)
         .then(
             if (clickable) Modifier
                 .clickable(

@@ -251,7 +251,7 @@ private fun CommandRow(cmd: CommandItem, onRun: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(CornerRadius.m))
-            .clickable {
+            .pressable(feedback = PressFeedback.Silent) {
                 SoundManager.playClick()
                 HapticManager.playSoft()
                 onRun()

@@ -3,7 +3,7 @@ package com.example.numera.ui.screens
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.example.numera.ui.components.pressable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -513,7 +513,7 @@ fun MainTabsScreen(
                                     },
                                     RoundedCornerShape(CornerRadius.m)
                                 )
-                                .clickable {
+                                .pressable {
                                     com.example.numera.sound.SoundManager.playClick()
                                     com.example.numera.haptic.HapticManager.playSoft()
                                     showCommitmentDialog = true
@@ -834,7 +834,7 @@ private fun GuestBanner(onSave: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-            .clickable(onClick = onSave)
+            .pressable(onClick = onSave)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)

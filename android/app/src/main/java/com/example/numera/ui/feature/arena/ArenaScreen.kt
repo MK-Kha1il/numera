@@ -6,7 +6,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +28,7 @@ import com.example.numera.theme.*
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.RankBadge
+import com.example.numera.ui.components.pressable
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -762,7 +762,7 @@ private fun ArenaModeTile(
         modifier = modifier
             .height(180.dp)
             .clip(RoundedCornerShape(20.dp))
-            .clickable {
+            .pressable {
                 com.example.numera.haptic.HapticManager.playSoft()
                 onClick()
             },
