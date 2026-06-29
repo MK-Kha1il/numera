@@ -598,6 +598,38 @@ const concepts = {
     ]
   },
 
+  // ---- Inequalities II (variables on both sides, distributing, and word problems) ----
+  "inequality_var_both_sides": {
+    name: "Inequalities with Variables on Both Sides",
+    prereqs: ["inequality_two_step", "linear_variable_both_sides"],
+    baseElo: 1180,
+    misconceptions: [
+      { id: "flipped_direction", label: "Flipped the inequality though it was divided by a positive number", rule: (ans) => ans },
+      { id: "forgot_to_divide", label: "Collected the variable terms but never divided by their coefficient", rule: (ans) => ans },
+      { id: "treated_as_equation", label: "Answered with = as if it were an equation", rule: (ans) => ans }
+    ]
+  },
+  "inequality_distribute": {
+    name: "Inequalities with Distribution",
+    prereqs: ["inequality_two_step", "linear_two_step"],
+    baseElo: 1210,
+    misconceptions: [
+      { id: "flipped_direction", label: "Flipped the inequality with no negative divisor present", rule: (ans) => ans },
+      { id: "forgot_to_subtract", label: "Divided correctly but never subtracted the inner constant", rule: (ans) => ans },
+      { id: "treated_as_equation", label: "Answered with = as if it were an equation", rule: (ans) => ans }
+    ]
+  },
+  "inequality_word": {
+    name: "Word Problems with Inequalities",
+    prereqs: ["inequality_two_step", "multi_step_word"],
+    baseElo: 1240,
+    misconceptions: [
+      { id: "wrong_direction", label: "Used ≥ when 'at most' calls for ≤ (or vice versa)", rule: (ans) => ans },
+      { id: "subtracted_instead", label: "Subtracted the unit cost instead of dividing by it", rule: (ans) => ans },
+      { id: "used_the_total", label: "Reported the budget itself instead of the number of items it buys", rule: (ans) => ans }
+    ]
+  },
+
   // ---- Geometry depth (solid measurement — volume, surface area, circumference) ----
   "geo_volume_rect": {
     name: "Volume of a Rectangular Prism",
@@ -1623,6 +1655,9 @@ const STANDARDS = {
   inequality_flip_negative: "7.EE.B.4b",
   inequality_two_step: "7.EE.B.4b",
   inequality_compound: "HSA-REI.B.3",
+  inequality_var_both_sides: "HSA-REI.B.3",
+  inequality_distribute: "HSA-REI.B.3",
+  inequality_word: "7.EE.B.4b",
   geo_volume_rect: "6.G.A.2",
   geo_surface_area_rect: "6.G.A.4",
   geo_circumference: "7.G.B.4",

@@ -155,6 +155,10 @@ const CONCEPT_TO_LEVEL = {
   inequality_flip_negative: { category: 'inequalities', level: 11 },
   inequality_two_step:      { category: 'inequalities', level: 13 },
   inequality_compound:      { category: 'inequalities', level: 15 },
+  // Inequalities II — variables both sides, distribution, word problems (band raised to 19).
+  inequality_var_both_sides: { category: 'inequalities', level: 17 },
+  inequality_distribute:     { category: 'inequalities', level: 18 },
+  inequality_word:           { category: 'inequalities', level: 19 },
   // Functions strand (8.F — notation, tables, rate of change). Keys skip 10 (boss-routed).
   function_evaluate:        { category: 'functions',  level: 7  },
   function_table:           { category: 'functions',  level: 9  },

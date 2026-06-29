@@ -1635,6 +1635,94 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
+  // INEQUALITIES II (variables both sides, distribution, word problems).
+  // ===========================================================================
+  inequality_var_both_sides: {
+    title: "Inequalities with Variables on Both Sides",
+    formula: "ax + b < cx + d \\implies (a - c)\\,x < d - b",
+    oneLineSummary: "Gather the variable terms on one side and the numbers on the other — only a divide by a NEGATIVE flips the sign, never the act of moving terms.",
+    intuitionHook: "Two phone plans: Plan A is $\\$5x + 30$, Plan B is $\\$2x + 45$ for $x$ months. 'When is A cheaper?' asks $5x + 30 < 2x + 45$. Sweep the $x$'s to one side — subtract $2x$ — and the numbers to the other — subtract $30$: $3x < 15$, so $x < 5$. A wins for the first five months. Moving terms across the inequality never flips it; that only happens when you divide by a negative.",
+    whatItIs: "An inequality with $x$ on both sides, like $5x + 3 < 2x + 12$. You collect the variable terms on one side and the constants on the other, then divide by the variable's coefficient — exactly like solving the matching equation, but watching for the one flip rule.",
+    whyItWorks: "Adding or subtracting the SAME thing from both sides never changes which side is larger — slide both runners forward equally and whoever was ahead is still ahead. So subtracting $2x$ and subtracting $3$ leaves the inequality's direction untouched and gathers it into $(a - c)x < d - b$. The direction only reverses when you multiply or divide both sides by a NEGATIVE number; if you arrange the subtraction so the surviving coefficient $a - c$ is positive, no flip happens at all. Forgetting to actually divide by that coefficient — answering with $d - b$ — leaves the job half done, just as in a two-step solve.",
+    whenToUse: "Comparing two linear options (plans, costs, rentals) to find when one overtakes the other, break-even analysis with a range answer, and any 'for what values is this side bigger' question.",
+    representations: [
+      { kind: "collect", label: "Sweep the sides", body: "$5x + 3 < 2x + 12 \\to 3x < 9 \\to x < 3$. Variables left, numbers right, then divide." },
+      { kind: "no_flip", label: "Moving ≠ flipping", body: "Subtracting $2x$ from both sides keeps $<$ as $<$ — only dividing by a negative would flip it." },
+      { kind: "compare", label: "When does A beat B?", body: "$5x+30 < 2x+45$ means 'Plan A cheaper': solve to $x < 5$, the months A wins." }
+    ],
+    commonMistakes: [
+      { label: "Flipping for no reason", why: "Reversing the sign while only adding/subtracting or dividing by a positive coefficient.", fix: "The flip rule fires ONLY on multiply/divide by a negative. Arrange terms so the coefficient is positive and keep the sign as is." },
+      { label: "Stopping before dividing", why: "Reaching $3x < 9$ and answering $x < 9$ — skipping the divide by $3$.", fix: "Finish the isolation: divide both sides by the coefficient, $x < 9 \\div 3 = 3$." },
+      { label: "Answering with =", why: "Solving it like an equation and reporting a single value instead of a range.", fix: "An inequality's answer is a RANGE: keep the $<$ (or $>$) all the way to the end." }
+    ],
+    connections: [
+      { concept: "linear_variable_both_sides", note: "Same collect-and-divide algebra as the equation; here the relation is an inequality with a range answer." },
+      { concept: "inequality_two_step", note: "Once the variables are gathered on one side, what remains is exactly a two-step inequality." },
+      { concept: "inequality_flip_negative", note: "The flip rule still applies — but only if the surviving coefficient comes out negative." }
+    ],
+    examples: [
+      { question: "Solve $5x + 3 < 2x + 12$.", answer: "x < 3", explanation: "Subtract $2x$ and $3$: $3x < 9$. Divide by $3$ (positive, no flip): $x < 3$." },
+      { question: "Solve $6x + 1 < 4x + 9$.", answer: "x < 4", explanation: "Subtract $4x$ and $1$: $2x < 8$, so $x < 4$." }
+    ]
+  },
+  inequality_distribute: {
+    title: "Inequalities with Distribution",
+    formula: "a(x + b) \\le c \\implies x + b \\le \\tfrac{c}{a} \\implies x \\le \\tfrac{c}{a} - b",
+    oneLineSummary: "Clear the parentheses first — either distribute the coefficient or divide both sides by it — then isolate x, watching only for a negative-divisor flip.",
+    intuitionHook: "A caterer charges $\\$4$ per guest plus a setup that effectively bundles $2$ extra guests: $4(x + 2)$ dollars. With a $\\$32$ budget, $4(x + 2) \\le 32$. Divide by $4$: $x + 2 \\le 8$, then subtract the $2$: $x \\le 6$. Six real guests fit. The parentheses just hide a quick first step — undo the multiply, then undo the add.",
+    whatItIs: "An inequality where a coefficient multiplies a parenthesized expression, like $3(x + 2) \\le 18$. You remove the parentheses — by distributing the coefficient across the inside, or by dividing both sides by it — and then solve the resulting two-step inequality.",
+    whyItWorks: "$a(x + b)$ means $a$ copies of $(x + b)$, which the distributive law expands to $ax + ab$ — the coefficient hits EVERY term inside, not just the $x$. Equivalently, dividing both sides by $a$ (when $a$ is positive) undoes the multiplication in one move and keeps the inequality's direction, leaving $x + b \\le c/a$. Either route, the inner constant $b$ still has to be subtracted to free $x$; forgetting it leaves the answer shifted by $b$. As always, the sign flips only if you divide by a negative — distributing a positive coefficient never flips it.",
+    whenToUse: "Pricing with a per-unit rate plus a bundled extra, scaling a grouped quantity against a limit, and any inequality where a factor sits outside parentheses.",
+    representations: [
+      { kind: "divide_first", label: "Undo the multiply", body: "$3(x + 2) \\le 18 \\to x + 2 \\le 6 \\to x \\le 4$. Divide by $3$, then subtract $2$." },
+      { kind: "distribute", label: "Or expand it", body: "$3(x + 2) = 3x + 6 \\le 18 \\to 3x \\le 12 \\to x \\le 4$ — the $3$ multiplies BOTH $x$ and $2$." },
+      { kind: "no_flip", label: "Positive factor, no flip", body: "Dividing by the positive $3$ keeps $\\le$ as $\\le$ — only a negative factor would reverse it." }
+    ],
+    commonMistakes: [
+      { label: "Distributing to only the first term", why: "Writing $3(x + 2) = 3x + 2$ — the coefficient skipped the inner constant.", fix: "The factor multiplies EVERYTHING in the parentheses: $3 \\cdot x + 3 \\cdot 2 = 3x + 6$." },
+      { label: "Forgetting to subtract the constant", why: "Dividing to $x + 2 \\le 6$ and answering $x \\le 6$ — leaving the $+2$ attached.", fix: "After clearing the coefficient, undo the inner add: subtract $2$ to get $x \\le 4$." },
+      { label: "Flipping without a negative", why: "Reversing the sign even though the coefficient is positive.", fix: "No negative divisor, no flip. Keep $\\le$ unless you divide both sides by a negative." }
+    ],
+    connections: [
+      { concept: "inequality_two_step", note: "After the parentheses are cleared, the rest is a plain two-step inequality." },
+      { concept: "square_binomial", note: "Both rely on the distributive law — here a single factor across a sum, not a product of two." },
+      { concept: "inequality_var_both_sides", note: "Distribution often appears first; clearing it leaves variables to gather and divide." }
+    ],
+    examples: [
+      { question: "Solve $3(x + 2) \\le 18$.", answer: "x ≤ 4", explanation: "Divide by $3$: $x + 2 \\le 6$. Subtract $2$: $x \\le 4$." },
+      { question: "Solve $2(x + 3) \\le 14$.", answer: "x ≤ 4", explanation: "Divide by $2$: $x + 3 \\le 7$, then subtract $3$: $x \\le 4$." }
+    ]
+  },
+  inequality_word: {
+    title: "Word Problems with Inequalities",
+    formula: "\\text{cost} \\le \\text{budget} \\implies a\\,x \\le B \\implies x \\le \\tfrac{B}{a}",
+    oneLineSummary: "Translate 'at most / at least' into ≤ or ≥, build the inequality, and solve — the words pick the direction, the algebra picks the value.",
+    intuitionHook: "You have $\\$20$ and ride tickets cost $\\$4$ each. 'How many can I ride?' isn't $20$ and isn't $4$ — it's however many $\\$4$ chunks fit in $\\$20$: $4x \\le 20$, so $x \\le 5$. The phrase 'have $\\$20$ to spend' is the $\\le$: your spending can reach the budget but not pass it.",
+    whatItIs: "A real-world problem whose answer is a range, not a single number: you translate the situation into an inequality (choosing $\\le$ for 'at most/no more than', $\\ge$ for 'at least/no less than'), then solve it. The hard part is the translation; the solving is ordinary.",
+    whyItWorks: "'At most' caps a quantity from above — the total can equal the limit but not exceed it — which is exactly what $\\le$ means; 'at least' sets a floor, giving $\\ge$. Once the inequality $a x \\le B$ is written, dividing by the positive unit cost $a$ converts a budget in dollars into a count of items and keeps the direction (positive divisor, no flip). The classic errors are not algebra but translation: pointing the sign the wrong way, or treating the budget $B$ as the answer instead of the number of items $B$ buys.",
+    whenToUse: "Budgets and spending limits, minimum requirements (scores, hours, savings goals), capacity limits, and any 'how many can I / must I' question that comes with a 'most' or 'least'.",
+    representations: [
+      { kind: "translate", label: "Words to symbols", body: "'$\\$20$ to spend, $\\$4$ each' → $4x \\le 20$. 'At most' is $\\le$; the budget is the right side." },
+      { kind: "solve", label: "Divide to a count", body: "$4x \\le 20 \\to x \\le 5$: dividing dollars by dollars-per-ride gives a number of rides." },
+      { kind: "interpret", label: "Read the range", body: "$x \\le 5$ means $0,1,2,3,4,5$ rides all fit — the most is $5$, not the budget $20$." }
+    ],
+    commonMistakes: [
+      { label: "Wrong inequality direction", why: "Using $\\ge$ for an 'at most' budget (or $\\le$ for an 'at least' goal).", fix: "Match the words: 'at most / no more than' → $\\le$; 'at least / no less than' → $\\ge$. Test with a number." },
+      { label: "Subtracting instead of dividing", why: "Computing $B - a$ — taking one item's cost off the budget rather than splitting the budget into items.", fix: "Equal-cost items split the budget: divide $B$ by the unit cost $a$, don't subtract it once." },
+      { label: "Reporting the budget", why: "Answering $20$ (the dollars) when the question asks for the number of rides.", fix: "Solve for $x$, the count. The budget is on the other side of the inequality, not the answer." }
+    ],
+    connections: [
+      { concept: "inequality_two_step", note: "Once translated, most budget inequalities are a one- or two-step solve." },
+      { concept: "multi_step_word", note: "Same translate-the-words skill as word equations, but the keyword signals a $\\le$ or $\\ge$." },
+      { concept: "unit_price", note: "Dividing a total by a per-item cost is the same move that turns a budget into a count." }
+    ],
+    examples: [
+      { question: "Tickets cost $\\$4$ each and you have $\\$20$. Write and solve an inequality for the number of tickets $x$ you can buy.", answer: "x ≤ 5", explanation: "Total cost at most the budget: $4x \\le 20$, so $x \\le 5$." },
+      { question: "Notebooks cost $\\$3$ each and you have $\\$21$. At most how many can you buy?", answer: "x ≤ 7", explanation: "$3x \\le 21$, divide by $3$: $x \\le 7$." }
+    ]
+  },
+
+  // ===========================================================================
   // GEOMETRY DEPTH (solid measurement — volume, surface area, circumference).
   // ===========================================================================
   geo_volume_rect: {
@@ -4948,7 +5036,11 @@ function levelToConceptId(category, level) {
     if (lvl <= 9) return 'inequality_one_step_mult';
     if (lvl <= 11) return 'inequality_flip_negative';
     if (lvl <= 13) return 'inequality_two_step';
-    return 'inequality_compound';
+    if (lvl <= 15) return 'inequality_compound';
+    // Inequalities II (templates 17/18/19).
+    if (lvl <= 17) return 'inequality_var_both_sides';
+    if (lvl <= 18) return 'inequality_distribute';
+    return 'inequality_word';
   }
   if (cat === 'functions') {
     if (lvl <= 7) return 'function_evaluate';

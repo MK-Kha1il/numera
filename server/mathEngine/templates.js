@@ -3280,6 +3280,52 @@ templates.inequalities = {
       explanation: `A compound inequality is a sandwich — whatever you do, do to ALL THREE parts. Subtract $${b}$ everywhere: $${a} - ${b} < x < ${c} - ${b}$, so $${lo} < x < ${hi}$. Dropping a side keeps numbers the sandwich was built to exclude.`,
       type: "inequality_compound"
     };
+  },
+  // ---- Inequalities II (keys 17/18/19 — variables both sides, distribution, word problems) ----
+  // Variables on both sides: ax + b < cx + d with a − c ≥ 2 (positive coefficient, so no flip).
+  // Collect the x's on the left, the numbers on the right, divide. Answer is an "x < q" string.
+  17: (_diffFactor, idx) => {
+    const a = 4 + (idx % 2);          // 4 or 5
+    const c = 1 + (idx % 2);          // 1 or 2 (a − c ≥ 2, so the not-divided distractor ≠ answer)
+    const q = 2 + (idx % 4);          // 2..5 (solution boundary)
+    const b = 1 + (idx % 3);          // 1..3
+    const diff = a - c;               // ≥ 2
+    const d = b + diff * q;           // chosen so (a − c)x < d − b ⇒ x < q
+    return {
+      question: `Solve: $${a}x + ${b} < ${c}x + ${d}$`,
+      answer: `x < ${q}`,
+      distractors: [`x > ${q}`, `x < ${diff * q}`, `x = ${q}`], // flipped with no negative; forgot to divide; equation thinking
+      explanation: `Get the variables on one side: subtract $${c}x$ and $${b}$ from both sides → $${diff}x < ${diff * q}$. Divide by the POSITIVE $${diff}$ (no flip): $x < ${q}$. The coefficient $${diff}$ is positive, so the $<$ stays exactly as it is — and you must still divide, not stop at $${diff * q}$.`,
+      type: "inequality_var_both_sides"
+    };
+  },
+  // Distribution: a(x + b) ≤ c. Expand (or divide first), then isolate x. Answer is an "x ≤ q" string.
+  18: (_diffFactor, idx) => {
+    const a = 2 + (idx % 3);          // 2..4
+    const b = 1 + (idx % 3);          // 1..3
+    const q = 2 + (idx % 4);          // 2..5
+    const c = a * (q + b);            // a(x + b) ≤ c ⇒ x ≤ q
+    return {
+      question: `Solve: $${a}(x + ${b}) \\le ${c}$`,
+      answer: `x ≤ ${q}`,
+      distractors: [`x ≥ ${q}`, `x ≤ ${q + b}`, `x = ${q}`], // flipped with no negative; divided but forgot to subtract b; equation thinking
+      explanation: `Divide both sides by $${a}$ first: $x + ${b} \\le ${q + b}$. Then subtract $${b}$: $x \\le ${q}$. (Or distribute: $${a}x + ${a * b} \\le ${c}$ gives the same result.) No negative divisor appeared, so the $\\le$ never flips — and the $+ ${b}$ inside still has to be undone.`,
+      type: "inequality_distribute"
+    };
+  },
+  // Word problem → inequality: a fixed budget B buys items at unit cost a; "at most" means ≤.
+  // Translate to ax ≤ B and solve. Answer is an "x ≤ q" string (the strand's solution form).
+  19: (_diffFactor, idx) => {
+    const a = 2 + (idx % 4);          // 2..5 (cost per ride)
+    const q = 4 + (idx % 5);          // 4..8 (max affordable)
+    const B = a * q;                  // total budget
+    return {
+      question: `Each ride costs $\\$${a}$. Maya has $\\$${B}$ to spend. Write and solve an inequality for the number of rides $x$ she can afford.`,
+      answer: `x ≤ ${q}`,
+      distractors: [`x ≥ ${q}`, `x ≤ ${B - a}`, `x ≤ ${B}`], // wrong direction for "at most"; subtracted instead of dividing; used the budget as the count
+      explanation: `"Can afford" means total cost is AT MOST the budget: $${a}x \\le ${B}$. Divide both sides by $${a}$: $x \\le ${q}$, so Maya can take at most $${q}$ rides. The budget $${B}$ is dollars, not rides — divide by the price to convert.`,
+      type: "inequality_word"
+    };
   }
 };
 
