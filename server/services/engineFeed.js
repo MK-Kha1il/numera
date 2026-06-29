@@ -60,6 +60,7 @@ async function feedEngineOutcome(db, userId, conceptKey, opts = {}) {
     usedCalculator = false,
     templateType = conceptKey,
     params = {},
+    misconceptionTags = null,
   } = opts;
   try {
     if (!conceptKey) return;
@@ -102,7 +103,10 @@ async function feedEngineOutcome(db, userId, conceptKey, opts = {}) {
     // Misconception tracking — classify a wrong answer into a named error pattern and persist it;
     // resolve known ones on a correct answer. Powers the learner-facing Growth Insights.
     if (!isCorrect && wrongAnswer != null && correctAnswer != null) {
-      const m = MisconceptionEngine.classifyMisconception(conceptId, correctAnswer, wrongAnswer, params || {});
+      // Merge any echoed misconception tags into the params bag so the classifier's tagged-distractor
+      // path can diagnose non-numeric answers (fractions, coordinates, inequalities, …).
+      const classifyParams = misconceptionTags ? { ...(params || {}), misc: misconceptionTags } : (params || {});
+      const m = MisconceptionEngine.classifyMisconception(conceptId, correctAnswer, wrongAnswer, classifyParams);
       if (m.id !== 'unclassified') {
         await MisconceptionEngine.recordMisconception(db, userId, conceptId, m.id, m.label);
       }

@@ -10,6 +10,7 @@
 
 const { generateDistractors } = require('./distractors');
 const { generatePythagoreanTriple } = require('./symbolic');
+const { deriveTransfer, canDeriveTransfer, listDerivable } = require('./deriveActiveLearning');
 
 // Scale a base integer by difficulty, keeping it a sensible whole number ≥ min.
 const scale = (base, diffFactor, min = 1) => Math.max(min, Math.round(base * (diffFactor || 1)));
@@ -113,11 +114,16 @@ const TRANSFER_TEMPLATES = {
   },
 };
 
-// Concept ids that have an authored transfer framing.
-const TRANSFER_CONCEPTS = Object.keys(TRANSFER_TEMPLATES);
+// Concept ids that can serve a transfer challenge: hand-authored framings FIRST (highest quality,
+// used as the ultimate fallback), then every concept whose authored applied example can be
+// re-shaped into a transfer item (see deriveActiveLearning.js). This lifts transfer from the 8
+// hand-authored concepts to ~half the catalog without fabricating content.
+const TRANSFER_CONCEPTS = Array.from(
+  new Set([...Object.keys(TRANSFER_TEMPLATES), ...listDerivable().transfer])
+);
 
 function hasTransfer(conceptId) {
-  return !!TRANSFER_TEMPLATES[conceptId];
+  return !!TRANSFER_TEMPLATES[conceptId] || canDeriveTransfer(conceptId);
 }
 
 // Build a transfer problem for a concept, or null if the concept has no transfer framing yet.
@@ -125,7 +131,9 @@ function hasTransfer(conceptId) {
 // transfer metadata used for recording the out-of-context outcome.
 function buildTransferProblem(conceptId, diffFactor = 1, idx = 0) {
   const template = TRANSFER_TEMPLATES[conceptId];
-  if (!template) return null;
+  // No hand-authored framing — fall back to one derived from the concept's authored applied
+  // example (returns null if the concept has no numeric+applied example to draw on).
+  if (!template) return deriveTransfer(conceptId);
 
   const raw = template(diffFactor, idx);
   const correct = raw.answer.toString();

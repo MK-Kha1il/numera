@@ -291,6 +291,42 @@ fun LessonScreen(
                             }
                         }
                     }
+
+                    // ✨ Curiosity spark — the surprising bit (server: curiosityEngine.js). The pay-off
+                    // that turns "I solved it" into "I want to know more".
+                    val spark = s.spark
+                    if (spark != null && spark.title.isNotBlank()) {
+                        val sparkLabel = when (spark.type) {
+                            "shortcut" -> "✨ ELEGANT SHORTCUT"
+                            "counterintuitive" -> "✨ PLOT TWIST"
+                            "wonder" -> "✨ A MOMENT OF WONDER"
+                            else -> "✨ THE SURPRISING BIT"
+                        }
+                        Text(
+                            text = sparkLabel,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = primaryColor,
+                            letterSpacing = 0.5.sp
+                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(primaryColor.copy(alpha = 0.06f))
+                                .border(1.5.dp, primaryColor.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                                .padding(Spacing.l),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = spark.title,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = onSurfaceColor
+                            )
+                            LessonProse(spark.body, onSurfaceColor.copy(alpha = 0.9f), 26)
+                        }
+                    }
                 }
             }
 

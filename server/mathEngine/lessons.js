@@ -12,14 +12,15 @@ function getLessonAndExamples(category, level) {
 
   // Concept-first content for the foundational path (non-milestone levels).
   if (!MILESTONE_LEVELS.has(lvl)) {
-    const rich = getConceptLesson(levelToConceptId(category, lvl));
+    const conceptId = levelToConceptId(category, lvl);
+    const rich = getConceptLesson(conceptId);
     if (rich) {
       return {
         lessonTitle:   rich.title,
         lessonContent: rich.oneLineSummary,
         lessonFormula: rich.formula,
         examples:      rich.examples,
-        sections:      buildSections(rich)
+        sections:      buildSections(rich, conceptId)
       };
     }
   }
@@ -29,7 +30,7 @@ function getLessonAndExamples(category, level) {
   const legacy = getLegacyLessonAndExamples(category, lvl);
   if (lvl === 10) {
     const p = getConceptLesson('pythagorean');
-    if (p) legacy.sections = buildSections(p);
+    if (p) legacy.sections = buildSections(p, 'pythagorean');
   }
   return legacy;
 }

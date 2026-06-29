@@ -94,6 +94,8 @@ templates.arithmetic = {
       question: choose(formulations),
       answer,
       explanation: `First, perform the addition:\n$$${a} + ${b} = ${a + b}$$\nSubsequently, subtract $${c}$:\n$$${a + b} - ${c} = ${answer}$$`,
+      distractors: [a + b + c, answer + 1, answer - 1], // treated the subtraction as addition; near misses
+      misc: { added_through: String(a + b + c) },
       type: "arithmetic_mixed"
     };
   },
@@ -126,6 +128,8 @@ templates.arithmetic = {
     return {
       question: `Evaluate the subtraction under borrowing: $$${a} - ${b}$$`,
       answer,
+      distractors: [answer + 10, a + b, answer + 1], // borrow slip; added instead of subtracting; near miss
+      misc: { wrong_borrow: String(answer + 10), inverse_op: String(a + b) },
       explanation: `Since the units digit of the minuend ($${a % 10}$) is smaller than that of the subtrahend ($${b % 10}$), borrow $10$ from the tens column:\n$$10 + ${a % 10} - ${b % 10} = ${10 + (a % 10) - (b % 10)}$$\nThen subtract the tens column:\n$$${Math.floor(a / 10) - 1 - Math.floor(b / 10)}0$$\nThis yields:\n$$${a} - ${b} = ${answer}$$`,
       type: "arithmetic_sub"
     };
@@ -145,6 +149,8 @@ templates.arithmetic = {
       question: choose(formulations),
       answer,
       explanation: `Multiplication represents repeated addition. Adding $${a}$ to itself $${b}$ times yields:\n$$${a} \\times ${b} = ${answer}$$`,
+      distractors: [a + b, a * (b + 1), answer + 1], // added instead of multiplying; off-by-factor; near miss
+      misc: { add_instead_mult: String(a + b), off_by_factor: String(a * (b + 1)) },
       type: "arithmetic_mult"
     };
   },
@@ -196,6 +202,8 @@ templates.arithmetic = {
         question: `A right-angled triangle has perpendicular sides of length $a = ${sa}$ and $b = ${sb}$. Calculate the length of the hypotenuse $c$:`,
         answer: sc,
         explanation: `By the Pythagorean Theorem:\n$$c^2 = a^2 + b^2 = ${sa}^2 + ${sb}^2 = ${sa * sa} + ${sb * sb} = ${sc * sc}$$\nTaking the square root:\n$$c = \\sqrt{${sc * sc}} = ${sc}$$`,
+        distractors: [sa + sb, sc - sa, sc + 1], // added the side lengths; subtracted instead of √(a²+b²); near miss
+        misc: { linear_sum: String(sa + sb), sub_hypotenuse: String(sc - sa) },
         type: "pythagorean"
       };
     } else {
@@ -203,6 +211,8 @@ templates.arithmetic = {
         question: `A right-angled triangle has a hypotenuse of length $c = ${sc}$ and one side $a = ${sa}$. Determine the length of the remaining side $b$:`,
         answer: sb,
         explanation: `By the Pythagorean Theorem:\n$$a^2 + b^2 = c^2 \\implies ${sa}^2 + b^2 = ${sc}^2$$\n$$${sa * sa} + b^2 = ${sc * sc} \\implies b^2 = ${sc * sc - sa * sa}$$\nTaking the square root:\n$$b = \\sqrt{${sc * sc - sa * sa}} = ${sb}$$`,
+        distractors: [sc - sa, sc + sa, sb + 1], // subtracted the lengths instead of √(c²−a²); added them; near miss
+        misc: { sub_hypotenuse: String(sc - sa), linear_sum: String(sc + sa) },
         type: "pythagorean"
       };
     }
@@ -283,6 +293,8 @@ templates.algebra = {
     return {
       question: v.question,
       answer: xVal,
+      distractors: [Math.round((c + b) / a), Math.round(c / a), xVal + 1], // divided before subtracting; forgot the constant; near miss
+      misc: { divide_before_subtract: String(Math.round((c + b) / a)), forgot_constant: String(Math.round(c / a)) },
       explanation: v.explanation,
       type: "linear_two_step"
     };
@@ -385,6 +397,8 @@ templates.algebra = {
       question: `Compute the trace of the square matrix $A$: $$A = \\begin{pmatrix} ${matrix.a} & ${matrix.c} \\\\ ${matrix.d} & ${matrix.b} \\end{pmatrix}$$`,
       answer: matrix.trace,
       explanation: `The trace of a square matrix $\\text{tr}(A)$ is the sum of its main diagonal elements:\n$$\\text{tr}(A) = a_{11} + a_{22} = ${matrix.a} + ${matrix.b} = ${matrix.trace}$$`,
+      distractors: [matrix.a * matrix.b - matrix.c * matrix.d, matrix.a + matrix.b + matrix.c + matrix.d, matrix.trace + 1], // determinant; summed all entries; near miss
+      misc: { det_instead_trace: String(matrix.a * matrix.b - matrix.c * matrix.d), summed_all_entries: String(matrix.a + matrix.b + matrix.c + matrix.d) },
       type: "matrix_trace"
     };
   },
@@ -405,7 +419,14 @@ templates.algebra = {
       { question: `Vectors $\\vec{u} = (${a}, ${c})$ and $\\vec{v} = (${b}, ${d})$ form the columns of a matrix. Compute $\\det = ad - bc$.`, explanation: `This is the 2D cross-product of the column vectors.\n${work}` },
     ];
     const v = variants[idx % variants.length];
-    return { question: v.question, answer, explanation: v.explanation, type: "matrix_determinant" };
+    return {
+      question: v.question,
+      answer,
+      distractors: [a * d + b * c, a * d, answer + 1], // added the diagonals (ad+bc); main diagonal only (ad); near miss
+      misc: { added_diagonals: String(a * d + b * c), main_diagonal_only: String(a * d) },
+      explanation: v.explanation,
+      type: "matrix_determinant",
+    };
   },
   19: (diffFactor, idx) => {
     // Determinant with negative entries
@@ -447,6 +468,7 @@ templates.algebra = {
       question: `Solve the system for $x$ by substitution:\n$$y = ${mStr}x ${cStr}$$\n$$${a === 1 ? '' : a}x + ${b === 1 ? '' : b}y = ${k}$$`,
       answer: x,
       distractors: [wrongVar, signSlip, badCoef],
+      misc: { sign_slip_on_constant: String(signSlip), forgot_to_distribute: String(badCoef) },
       explanation: `The first equation already gives $y = ${mStr}x ${cStr}$. Substitute it into the second:\n$$${a === 1 ? '' : a}x + ${b === 1 ? '' : b}(${mStr}x ${cStr}) = ${k}$$\nDistribute and collect the $x$-terms — the coefficient becomes $a + b\\cdot m = ${a} + ${b}\\cdot${m} = ${coef}$ — giving $${coef}x = ${k - b * c}$, so $x = ${x}$. (Back-substituting gives $y = ${y}$, but the question asked for $x$.)`,
       type: "linear_system_substitution",
       xVal: x, yVal: y
@@ -471,6 +493,7 @@ templates.algebra = {
       question: `Solve the system for $x$ by elimination:\n$$${a1 === 1 ? '' : a1}x + ${b1 === 1 ? '' : b1}y = ${c1}$$\n$$${a2 === 1 ? '' : a2}x + ${b2 === 1 ? '' : b2}y = ${c2}$$`,
       answer: x,
       distractors: [wrongVar, noScale, signSlip],
+      misc: { added_without_scaling: String(noScale), sign_slip_combining: String(signSlip) },
       explanation: `Neither variable's coefficients match, so SCALE first. To eliminate $y$, multiply the first equation by $${b2}$ and the second by $${b1}$, then subtract: the $y$-terms cancel and $${xDen}x = ${xNum}$, so $x = ${x}$. (Substituting back gives $y = ${y}$, but the question asked for $x$.) Adding the equations without scaling leaves both $x$ and $y$ — the classic slip.`,
       type: "linear_system_elimination",
       xVal: x, yVal: y
@@ -570,6 +593,7 @@ templates.algebra = {
       question: `Use the quadratic formula to find the LARGER root of $$${aStr}x^2 ${bStr}x ${cStr} = 0.$$`,
       answer: big,
       distractors: [usedPlusB, forgotTwoA, small],
+      misc: { used_plus_b: String(usedPlusB), forgot_two_a: String(forgotTwoA), reported_smaller_root: String(small) },
       explanation: `Here $a = ${a}$, $b = ${b}$, $c = ${c}$. The discriminant is $b^2 - 4ac = ${b * b} - ${4 * a * c} = ${disc}$, and $\\sqrt{${disc}} = ${sq}$. The quadratic formula gives $x = \\dfrac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} = \\dfrac{${-b} \\pm ${sq}}{${2 * a}}$, so the roots are $${big}$ and $${small}$. The larger root is $${big}$. (Using $+b$ instead of $-b$, or dividing by $a$ rather than $2a$, are the classic slips.)`,
       type: "quadratic_formula"
     };
@@ -641,6 +665,7 @@ templates.algebra = {
       question: `Solve by completing the square. What is the LARGER root of $$x^2 ${bStr}x ${cStr} = 0?$$`,
       answer: larger,
       distractors: [forgotPm, usedB, smaller],
+      misc: { forgot_plus_minus: String(forgotPm), used_b_not_half: String(usedB), reported_smaller_root: String(smaller) },
       explanation: `Move the constant: $x^2 ${bStr}x = ${-c}$. Half of the $x$-coefficient is $\\dfrac{${b}}{2} = ${half}$, and $(${half})^2 = ${halfSq}$. Add $${halfSq}$ to both sides to complete the square: $(x ${half < 0 ? `- ${Math.abs(half)}` : `+ ${half}`})^2 = ${-c} + ${halfSq} = ${k * k}$. Take the square root of both sides: $x ${half < 0 ? `- ${Math.abs(half)}` : `+ ${half}`} = \\pm${k}$, so $x = ${-half} \\pm ${k}$. The roots are $${larger}$ and $${smaller}$; the larger is $${larger}$. (Forgetting the $\\pm$ leaves only $x = ${-half}$; halving wrongly — using $b$ instead of $b/2$ — is the other classic slip.)`,
       type: "complete_the_square"
     };
@@ -713,6 +738,8 @@ templates.combinatorics = {
       question: choose(formulations),
       answer: factorial(n),
       explanation: `The number of linear arrangements (permutations) of $n$ unique items is given by $n!$:\n$$${n}! = ${factorial(n)}$$`,
+      distractors: [factorial(n) * 2, Math.round(factorial(n) / 2), factorial(n) + n], // doubled; divided out order (combination); near miss
+      misc: { linear_factorial: String(factorial(n) * 2), comb_instead_perm: String(Math.round(factorial(n) / 2)) },
       type: "permutations"
     };
   },
@@ -738,6 +765,8 @@ templates.combinatorics = {
       question: `How many distinct permutations can be formed using the letters of the word $\\text{"${w.word}"}$?`,
       answer: ans,
       explanation: `Using the multiset permutation formula:\n$$P = \\frac{N!}{\\prod n_i!} = \\frac{${len}!}{${dupFactor}!} = ${ans}$$`,
+      distractors: [factorial(len), ans + 1, Math.max(1, ans - 1)], // forgot to divide by the repeats; near misses
+      misc: { linear_factorial: String(factorial(len)) },
       type: "permutations"
     };
   },
@@ -769,6 +798,8 @@ templates.combinatorics = {
     return {
       question: v.question,
       answer: ans,
+      distractors: [ans * 2, ans + 1, ans - 1], // counted ordered (permutation, forgot ÷k!); near misses
+      misc: { perm_instead_comb: String(ans * 2) },
       explanation: v.explanation,
       type: "combinations"
     };
@@ -875,6 +906,8 @@ templates.combinatorics = {
         question: `Find the coefficient of the $${choice.text}$ term in the expansion of $(x+y)^{${choice.n}}$:`,
         answer: choice.coeff,
         explanation: `By the Binomial Theorem, the coefficient of the term $x^{n-k}y^k$ in the expansion of $(x+y)^n$ is $\\binom{n}{k}$:\n$$\\binom{${choice.n}}{${choice.k}} = \\frac{${choice.n}!}{${choice.k}!(${choice.n}-${choice.k})!} = ${choice.coeff}$$`,
+        distractors: [choice.coeff + choice.n, choice.coeff + 1, choice.coeff - 1], // off-by-one degree index; near misses
+        misc: { exponent_slip: String(choice.coeff + choice.n) },
         type: "binomial"
       };
     } else {
@@ -1078,6 +1111,8 @@ templates.number_theory = {
     return {
       question: v.question,
       answer: mult,
+      distractors: [a + b, mult * 2, mult + 1], // added instead of finding the common divisor; doubled; near miss
+      misc: { sum_instead_gcd: String(a + b) },
       explanation: v.explanation,
       type: "gcd"
     };
@@ -1109,7 +1144,15 @@ templates.number_theory = {
       { question: `Around a ring of $${mod}$ positions ($0..${mod - 1}$), a token at position $${a % mod}$ moves forward $${b}$ steps. Where does it land?`, explanation: `Cyclic movement is addition mod $${mod}$:\n${why}` },
     ];
     const v = variants[idx % variants.length];
-    return { question: v.question, answer, explanation: v.explanation, type: "modulo", mod };
+    return {
+      question: v.question,
+      answer,
+      distractors: [(answer + 1) % mod, answer + mod, (answer - 1 + mod) % mod], // off-by-one remainder; over-corrected with the modulus; near miss
+      misc: { off_by_one_mod: String((answer + 1) % mod), added_modulus: String(answer + mod) },
+      explanation: v.explanation,
+      type: "modulo",
+      mod,
+    };
   },
   44: (diffFactor, idx) => {
     // Modular multiplication
@@ -1135,6 +1178,8 @@ templates.number_theory = {
       question: `Evaluate the modular exponent: $$${base}^{${power}} \\pmod{${mod}}$$`,
       answer,
       explanation: `Compute the power: $${base}^{${power}} = ${Math.pow(base, power)}$. Dividing by $${mod}$ yields a remainder of $${answer}$:\n$$${Math.pow(base, power)} \\equiv ${answer} \\pmod{${mod}}$$`,
+      distractors: [(answer + 1) % mod, answer + mod, (answer - 1 + mod) % mod], // off-by-one remainder; over-corrected with modulus; near miss
+      misc: { off_by_one_mod: String((answer + 1) % mod), added_modulus: String(answer + mod) },
       type: "modulo",
       mod
     };
@@ -1149,6 +1194,8 @@ templates.number_theory = {
       question: `Evaluate the modular exponent: $$${base}^{${power}} \\pmod{${mod}}$$`,
       answer,
       explanation: `Calculate the power: $${base}^{${power}} = ${Math.pow(base, power)}$. Dividing by $${mod}$ yields the remainder $${answer}$:\n$$${Math.pow(base, power)} \\equiv ${answer} \\pmod{${mod}}$$`,
+      distractors: [(answer + 1) % mod, answer + mod, (answer - 1 + mod) % mod], // off-by-one remainder; over-corrected with modulus; near miss
+      misc: { off_by_one_mod: String((answer + 1) % mod), added_modulus: String(answer + mod) },
       type: "modulo",
       mod
     };
@@ -1466,6 +1513,7 @@ templates.geometry = {
       question: `Two interior angles of a triangle measure $${a}^{\\circ}$ and $${c}^{\\circ}$. What is the measure of the third angle, in degrees?`,
       answer,
       distractors: [180 - a, a + c, 180 - c], // subtracted one angle only; added the two; other slip
+      misc: { added_given: String(a + c), subtracted_one_only: String(180 - a) },
       explanation: `The interior angles of a triangle sum to $180^{\\circ}$, so the third angle is $180 - ${a} - ${c} = ${answer}$.`,
       type: "geo_angles_triangle"
     };
@@ -1511,7 +1559,8 @@ templates.geometry = {
         answer: `${2 * r}\\pi`,
         distractors: [`${r}\\pi`, `${r * r}\\pi`, `${2 * r * r}\\pi`], // forgot the 2; area instead; mixed both formulas
         explanation: `Circumference is $\\pi$ times the DIAMETER: $C = 2\\pi r = 2 \\pi (${r}) = ${2 * r}\\pi$. Squaring the radius ($${r * r}\\pi$) measures area — the inside, not the rim.`,
-        type: "geo_circumference"
+        type: "geo_circumference",
+        misc: { radius_diameter_mixup: `${r}\\pi`, area_confusion: `${r * r}\\pi` }
       };
     }
     const d = 2 * (3 + (idx % 5)); // even 6..14
@@ -1532,7 +1581,8 @@ templates.geometry = {
       answer: `${r * r * h}\\pi`,
       distractors: [`${r * h}\\pi`, `${2 * r * h}\\pi`, `${4 * r * r * h}\\pi`], // forgot to square; lateral surface; used the diameter
       explanation: `A cylinder is a circle of area $\\pi r^2 = ${r * r}\\pi$ swept up through height $${h}$: $V = \\pi r^2 h = ${r * r}\\pi \\times ${h} = ${r * r * h}\\pi$. Forgetting the square ($${r * h}\\pi$) sweeps a line, not a disk.`,
-      type: "geo_volume_cylinder"
+      type: "geo_volume_cylinder",
+      misc: { forgot_square: `${r * h}\\pi`, used_diameter: `${4 * r * r * h}\\pi` }
     };
   },
   // Composite figure: an L-shape is a rectangle with a corner bitten off.
@@ -1560,7 +1610,8 @@ templates.geometry = {
       answer,
       distractors: [`${2 * r}\\pi`, `${r}\\pi`, `${2 * r * r}\\pi`], // circumference 2πr; rπ; doubled area
       explanation: `The area of a circle is $A = \\pi r^2 = \\pi (${r})^2 = ${r * r}\\pi$.`,
-      type: "geo_circle_area"
+      type: "geo_circle_area",
+      misc: { circumference_instead: `${2 * r}\\pi` }
     };
   },
   // Angle pairs where two lines cross: vertical (equal) vs adjacent (supplementary).
@@ -1594,7 +1645,8 @@ templates.geometry = {
       answer: base * h,
       distractors: [base * slant, base + h, 2 * (base + h)], // used the slanted side; added; perimeter-ish
       explanation: `A parallelogram is a rectangle with a triangle slid from one end to the other — same base, same HEIGHT, same area: $A = b \\times h = ${base} \\times ${h} = ${base * h}$. The slanted side ($${slant}$) is longer than the height and is never used for area.`,
-      type: "geo_area_parallelogram"
+      type: "geo_area_parallelogram",
+      base, slant, h // exposed for the classifier (slanted-side product; base+height)
     };
   },
   // Area of a trapezoid: average the two parallel sides, times the height.
@@ -1608,7 +1660,8 @@ templates.geometry = {
       answer,
       distractors: [b1 * b2, (b1 + b2) * h, b1 * h], // multiplied the bases; forgot to halve; used one base only
       explanation: `Average the two parallel sides, then multiply by the height: $A = \\frac{${b1} + ${b2}}{2} \\times ${h} = ${(b1 + b2) / 2} \\times ${h} = ${answer}$. The average is what a trapezoid contributes that a rectangle (equal sides) does not — forgetting to halve doubles the area.`,
-      type: "geo_area_trapezoid"
+      type: "geo_area_trapezoid",
+      b1, b2, h // exposed for the classifier (forgot to halve; used one base only)
     };
   },
   // Volume of a cone: V = (1/3) pi r^2 h. h is a multiple of 3 so the pi-coefficient stays integer.
@@ -1620,6 +1673,7 @@ templates.geometry = {
       question: `What is the volume of a cone with radius $${r}$ and height $${h}$? Give your answer in terms of $\\pi$.`,
       answer: `${coef}\\pi`,
       distractors: [`${r * r * h}\\pi`, `${(r * h) / 3}\\pi`, `${(4 * r * r * h) / 3}\\pi`], // cylinder (no 1/3); forgot to square; used the diameter
+      misc: { forgot_third: `${r * r * h}\\pi`, forgot_square: `${(r * h) / 3}\\pi` }, // (placed before explanation; order-independent)
       explanation: `A cone is exactly one-third of the cylinder with the same base and height — pour three cones of water to fill the can. So $V = \\frac{1}{3}\\pi r^2 h = \\frac{1}{3}\\pi (${r})^2(${h}) = ${coef}\\pi$. Dropping the $\\frac{1}{3}$ gives the whole cylinder $${r * r * h}\\pi$.`,
       type: "geo_volume_cone"
     };
@@ -1632,6 +1686,7 @@ templates.geometry = {
       question: `What is the volume of a sphere with radius $${r}$? Give your answer in terms of $\\pi$.`,
       answer: `${coef}\\pi`,
       distractors: [`${r * r * r}\\pi`, `${(4 * r * r) / 3}\\pi`, `${4 * r * r * r}\\pi`], // dropped 4/3; squared not cubed; forgot to divide by 3
+      misc: { forgot_four_thirds: `${r * r * r}\\pi`, squared_not_cubed: `${(4 * r * r) / 3}\\pi` },
       explanation: `The volume of a sphere is $V = \\frac{4}{3}\\pi r^3 = \\frac{4}{3}\\pi (${r})^3 = \\frac{4}{3}\\pi (${r * r * r}) = ${coef}\\pi$. The radius is CUBED (volume is three-dimensional), and the $\\frac{4}{3}$ is essential — without it you under-count to $${r * r * r}\\pi$.`,
       type: "geo_volume_sphere"
     };
@@ -1663,6 +1718,7 @@ templates.geometry = {
       question: `What is the total surface area of a cylinder with radius $${r}$ and height $${h}$? Give your answer in terms of $\\pi$.`,
       answer: `${coef}\\pi`,
       distractors: [`${2 * r * h}\\pi`, `${2 * r * r}\\pi`, `${r * r * h}\\pi`], // lateral side only; two caps only; computed the volume
+      misc: { lateral_only: `${2 * r * h}\\pi`, used_volume: `${r * r * h}\\pi` },
       explanation: `Unroll the cylinder: two circular caps ($2 \\times \\pi r^2 = ${2 * r * r}\\pi$) plus a rectangular label whose width is the circumference $2\\pi r$ and height $${h}$ ($2\\pi r h = ${2 * r * h}\\pi$). Total $= ${2 * r * r}\\pi + ${2 * r * h}\\pi = ${coef}\\pi$. The label alone forgets the lids; the volume $${r * r * h}\\pi$ measures filling, not covering.`,
       type: "geo_surface_cylinder"
     };
@@ -1674,6 +1730,7 @@ templates.geometry = {
       question: `What is the surface area of a sphere with radius $${r}$? Give your answer in terms of $\\pi$.`,
       answer: `${4 * r * r}\\pi`,
       distractors: [`${4 * r}\\pi`, `${r * r}\\pi`, `${2 * r * r}\\pi`], // forgot to square; dropped the 4; used 2 instead of 4
+      misc: { forgot_square: `${4 * r}\\pi`, wrong_coefficient: `${2 * r * r}\\pi` },
       explanation: `A sphere's surface area is $4\\pi r^2 = 4\\pi (${r})^2 = ${4 * r * r}\\pi$ — exactly four times the area of a flat circle of the same radius (a remarkable fact, also the curved area of its bounding cylinder). The radius is squared (area is 2-D), and the leading number is $4$, not $1$ or $2$.`,
       type: "geo_surface_sphere"
     };
@@ -1688,6 +1745,7 @@ templates.geometry = {
       question: `A cone has radius $${r}$ and slant height $${l}$. What is its total surface area? Give your answer in terms of $\\pi$.`,
       answer: `${coef}\\pi`,
       distractors: [`${r * l}\\pi`, `${r * r}\\pi`, `${2 * r * l}\\pi`], // slanted side only; base only; treated the side like a cylinder
+      misc: { lateral_only: `${r * l}\\pi`, base_only: `${r * r}\\pi` },
       explanation: `A cone's surface is its circular base ($\\pi r^2 = ${r * r}\\pi$) plus the curved side, which unrolls into a sector of area $\\pi r l = ${r * l}\\pi$ (slant height $l$ as the sector's radius). Total $= ${r * r}\\pi + ${r * l}\\pi = ${coef}\\pi$. The slanted side alone forgets the base; the base alone forgets the side.`,
       type: "geo_surface_cone"
     };
@@ -1724,6 +1782,7 @@ templates.number_sense = {
       question: `What is $\\frac{${p}}{${q}}$ of $${N}$?`,
       answer,
       distractors: [N - answer, N / q, p * q], // the complement; just one part; multiplied p·q
+      misc: { took_complement: String(N - answer) },
       explanation: `$\\frac{${p}}{${q}}$ of $${N}$ is $\\frac{${p}}{${q}} \\times ${N} = ${answer}$.`,
       type: "fraction_of"
     };
@@ -1754,7 +1813,8 @@ templates.number_sense = {
       answer,
       distractors: [change, N - change, N + P], // reported just the increase; decreased instead; added P directly
       explanation: `The increase is $${P}\\%$ of $${N} = ${change}$, so the new price is $${N} + ${change} = ${answer}$.`,
-      type: "percent_change"
+      type: "percent_change",
+      N, P // exposed so the misconception classifier can diagnose a persisted wrong answer
     };
   },
   // Metric conversion, alternating directions. Distractors stay powers of 10 apart.
@@ -1772,6 +1832,7 @@ templates.number_sense = {
         question: `Convert $${v}$ ${big} to ${small}.`,
         answer: v * f,
         distractors: [v * f / 10, v * f * 10, v * f / 100], // one power of ten short; one too many; two short
+        misc: { wrong_power: String(v * f / 10) },
         explanation: `$1$ ${big} $= ${f}$ ${small}, so $${v}$ ${big} $= ${v} \\times ${f} = ${v * f}$ ${small}. Metric prefixes move by powers of ten — count the zeros, don't guess them.`,
         type: "unit_convert_metric"
       };
@@ -1794,6 +1855,7 @@ templates.number_sense = {
         question: `How many minutes are in $${h}$ hours and $${m}$ minutes?`,
         answer,
         distractors: [60 * h, 100 * h + m, h + m], // dropped the extra minutes; used 100 min/hour; added raw numbers
+        misc: { used_100: String(100 * h + m), dropped_remainder: String(60 * h) },
         explanation: `Each hour is $60$ minutes: $${h} \\times 60 = ${60 * h}$, plus the leftover $${m}$: $${answer}$ minutes. Time runs on $60$s, not $100$s — the decimal instinct is the trap.`,
         type: "unit_convert_time"
       };
@@ -1843,6 +1905,7 @@ templates.number_sense = {
       question: `Evaluate $${b}^{${e}}$.`,
       answer,
       distractors: [b * e, Math.pow(b, e - 1), b + e], // multiplied instead of powered; off-by-one exponent; added
+      misc: { multiplied_base_exp: String(b * e) },
       explanation: `$${b}^{${e}}$ means $${b}$ multiplied by itself $${e}$ times: $${b}^{${e}} = ${answer}$.`,
       type: "exponent_power"
     };
@@ -1857,6 +1920,7 @@ templates.number_sense = {
       question: `Solve the proportion for $x$: $\\frac{${a}}{${b}} = \\frac{x}{${big}}$`,
       answer: x,
       distractors: [a + (big - b), a * b, x + a], // kept the DIFFERENCE equal (additive trap); multiplied the wrong pair; overshot a step
+      misc: { additive_thinking: String(a + (big - b)) },
       explanation: `The denominator grew by a factor of $${k}$ (because $${b} \\times ${k} = ${big}$), so the numerator must grow by the SAME factor: $x = ${a} \\times ${k} = ${x}$. Adding the gap ($+${big - b}$, giving $${a + big - b}$) keeps the difference equal — proportions keep the RATIO equal, and those are different promises.`,
       type: "proportion_solve"
     };
@@ -1911,6 +1975,7 @@ templates.number_sense = {
         question: `Maya buys $${n}$ notebooks at $\\$${p}$ each and pays with a $\\$50$ bill. How much change does she get?`,
         answer: 50 - cost,
         distractors: [cost, 50 - n - p, 50 - p], // stopped at the cost; subtracted the parts; bought one notebook
+        misc: { stopped_early: String(cost), wrong_operation_chain: String(50 - n - p) },
         explanation: `Two steps, in order: the notebooks cost $${n} \\times ${p} = \\$${cost}$; the change is what's left of the bill: $50 - ${cost} = \\$${50 - cost}$. The cost is a STOP on the way, not the destination — reread the question before answering.`,
         type: "multi_step_word"
       };
@@ -1923,6 +1988,7 @@ templates.number_sense = {
       question: `Liam has $\\$${T}$. He buys $${k}$ books at $\\$${q}$ each. How much money does he have left?`,
       answer: T - spent,
       distractors: [spent, T - q, T - k - q], // stopped at the spending; one book only; subtracted the parts
+      misc: { stopped_early: String(spent), wrong_operation_chain: String(T - k - q) },
       explanation: `First the spending: $${k} \\times ${q} = \\$${spent}$. Then what remains: $${T} - ${spent} = \\$${T - spent}$. Multi-step problems hide the real question behind an intermediate number — finish the chain.`,
       type: "multi_step_word"
     };
@@ -1937,7 +2003,8 @@ templates.number_sense = {
       answer: P + up,
       distractors: [up, P - up, P + pct], // gave the markup; subtracted it; added the percent as dollars
       explanation: `A markup ADDS to the cost: the increase is $${pct}\\%$ of $\\$${P} = \\$${up}$, so the price becomes $${P} + ${up} = \\$${P + up}$. (Keeping $${100 + pct}\\%$ of the cost in one step: $${P} \\times ${(100 + pct) / 100} = \\$${P + up}$.) A discount would subtract — a markup climbs.`,
-      type: "percent_markup"
+      type: "percent_markup",
+      P, pct // exposed for the misconception classifier
     };
   },
   // Percent error: |measured - true| / TRUE × 100. Always an OVER-measurement so the
@@ -1953,7 +2020,8 @@ templates.number_sense = {
       answer: errPct,
       distractors: [Math.round((diff / measured) * 100), diff, errPct + 5], // divided by measured; raw difference; near miss
       explanation: `Percent error scales the miss against the TRUE value: $\\frac{|${measured} - ${T}|}{${T}} \\times 100 = \\frac{${diff}}{${T}} \\times 100 = ${errPct}\\%$. Dividing by the measured value ($${measured}$) answers a subtly different — and wrong — question: the accepted truth is the yardstick, not your own reading.`,
-      type: "percent_error"
+      type: "percent_error",
+      T, measured // exposed for the misconception classifier
     };
   }
 };
@@ -1989,7 +2057,8 @@ templates.statistics = {
       answer: m,
       distractors: [sum, m + 2, m - 2],
       explanation: `Add the values to get ${sum}, then divide by how many there are (4): ${sum} / 4 = ${m}.`,
-      type: "stat_mean"
+      type: "stat_mean",
+      sum // exposed for the misconception classifier (forgot to divide → reported the total)
     };
   },
   // Median: the middle value of the SORTED list (the unsorted-middle is offered as a trap).
@@ -2003,7 +2072,8 @@ templates.statistics = {
       answer,
       distractors: [vals[2], sorted[0], sorted[4]], // middle of the unsorted list; min; max
       explanation: `Order the values: ${sorted.join(', ')}. The middle (3rd of 5) value is ${answer}.`,
-      type: "stat_median"
+      type: "stat_median",
+      unsortedMid: vals[2] // exposed for the classifier (took the middle WITHOUT sorting)
     };
   },
   // Range: largest minus smallest (the spread varies so the answer isn't constant).
@@ -2018,7 +2088,8 @@ templates.statistics = {
       answer,
       distractors: [max, max + min, base + 2], // gave the max; summed instead; a stray value
       explanation: `Range = largest - smallest = ${max} - ${min} = ${answer}.`,
-      type: "stat_range"
+      type: "stat_range",
+      max, min // exposed for the classifier (gave the max; summed the extremes)
     };
   },
   // Work BACKWARDS from the mean: the total is the mean's hidden promise.
@@ -2033,7 +2104,8 @@ templates.statistics = {
       answer: x,
       distractors: [M, 4 * M, a + b + c], // repeated the mean; gave the total; summed the three
       explanation: `A mean of $${M}$ over four scores promises a TOTAL of $4 \\times ${M} = ${4 * M}$. The three known scores supply $${a} + ${b} + ${c} = ${a + b + c}$, so the fourth must contribute the rest: $${4 * M} - ${a + b + c} = ${x}$. The mean itself is rarely any individual score — it's the total in disguise.`,
-      type: "mean_missing_value"
+      type: "mean_missing_value",
+      M // exposed for the classifier (repeated the mean; gave 4·M the total)
     };
   },
   // Probability as a percent (operands chosen so the percent is a whole number).
@@ -2057,6 +2129,7 @@ templates.statistics = {
       question: `One spinner has $${a}$ equal sections (one is red); another has $${b}$ equal sections (one is blue). You spin both. What is the probability of landing on red AND blue?`,
       answer: `1/${a * b}`,
       distractors: [`1/${a + b}`, `${a + b}/${a * b}`, `1/${b}`], // added the denominators; added the probabilities; ignored the first spinner
+      misc: { added_probabilities: `${a + b}/${a * b}`, ignored_second_event: `1/${b}` },
       explanation: `The spins don't influence each other, so the probabilities MULTIPLY: $\\frac{1}{${a}} \\times \\frac{1}{${b}} = \\frac{1}{${a * b}}$ — of the $${a * b}$ equally likely outcome PAIRS, exactly one is (red, blue). Adding probabilities is only for either-or questions about a single draw, never for both-at-once.`,
       type: "compound_probability"
     };
@@ -2070,6 +2143,7 @@ templates.statistics = {
       question: `A bag holds $20$ marbles, $${fav}$ of them red. What is the probability of drawing a marble that is NOT red, as a percent?`,
       answer: 100 - pct,
       distractors: [pct, fav, total - fav], // gave P(red); the red count; the non-red count (not a percent)
+      misc: { used_event_itself: String(pct), wrong_whole: String(total - fav) },
       explanation: `Every marble is red OR not red, and the two chances fill the whole $100\\%$: $P(\\text{red}) = \\frac{${fav}}{20} = ${pct}\\%$, so $P(\\text{not red}) = 100\\% - ${pct}\\% = ${100 - pct}\\%$. The complement is what's LEFT of certainty — subtract from $100$, not from the count.`,
       type: "probability_complement"
     };
@@ -2087,6 +2161,7 @@ templates.statistics = {
         `${win}/${total}`,                        // only the first draw
         `${(win - 1)}/${(total - 1)}`             // only the second draw
       ],
+      misc: { treated_independent: `${win * win}/${total * total}`, one_draw_only: `${win}/${total}` },
       explanation: `The first draw is $\\frac{${win}}{${total}}$ gold. Now the bag has ONE fewer gold and one fewer marble, so the second is $\\frac{${win - 1}}{${total - 1}}$. Multiply: $\\frac{${win}}{${total}} \\times \\frac{${win - 1}}{${total - 1}} = \\frac{${win * (win - 1)}}{${total * (total - 1)}}$. Without replacement, the second denominator DROPS — the draws are no longer independent.`,
       type: "prob_without_replacement"
     };
@@ -2163,6 +2238,7 @@ templates.statistics = {
         `${total}/${fav}`,        // flipped the fraction (total over favorable)
         `${on}/${od}`             // ODDS wins:losses read as a probability (favorable over non-favorable)
       ],
+      misc: { gave_complement: `${cn}/${cd}`, flipped_fraction: `${total}/${fav}`, gave_odds: `${on}/${od}` },
       explanation: `Theoretical probability is favorable over TOTAL outcomes: $\\frac{${fav}}{${total}} = \\frac{${rn}}{${rd}}$ in simplest form. $\\frac{${cn}}{${cd}}$ is the chance of NOT winning (the complement); $\\frac{${total}}{${fav}}$ flips numerator and denominator; and $\\frac{${on}}{${od}}$ is the ODDS (wins to losses, $${fav}$ over $${cf}$), which uses the wrong denominator — probability divides by the total, not by the losers.`,
       type: "stat_theoretical_prob"
     };
@@ -2188,6 +2264,7 @@ templates.statistics = {
         `${trials}/${succ}`,     // flipped the fraction (trials over successes)
         `${on}/${od}`            // successes over FAILURES (odds, wrong denominator)
       ],
+      misc: { gave_other_outcome: `${fn}/${fd}`, flipped_fraction: `${trials}/${succ}`, gave_odds: `${on}/${od}` },
       explanation: `Experimental probability uses what actually HAPPENED: heads over total FLIPS, $\\frac{${succ}}{${trials}} = \\frac{${rn}}{${rd}}$ in simplest form. $\\frac{${fn}}{${fd}}$ is the experimental probability of tails; $\\frac{${trials}}{${succ}}$ flips the fraction; and $\\frac{${on}}{${od}}$ divides heads by TAILS (the odds), not by the total flips.`,
       type: "stat_experimental_prob"
     };
@@ -2256,6 +2333,7 @@ templates.expressions = {
       question: `Simplify: $${a}x + ${b}x$`,
       answer: `${sum}x`,
       distractors: [`${a * b}x`, `${sum}x^2`, `${sum}`], // multiplied coefficients; added exponents; dropped x
+      misc: { multiplied_coeffs: `${a * b}x` },
       explanation: `Like terms share the variable, so add their coefficients: $${a}x + ${b}x = (${a} + ${b})x = ${sum}x$.`,
       type: "combine_like_terms"
     };
@@ -2269,6 +2347,7 @@ templates.expressions = {
         question: `Translate into an expression: "$${b}$ more than $${a}$ times a number $x$".`,
         answer: `${a}x + ${b}`,
         distractors: [`${a}(x + ${b})`, `${b}x + ${a}`, `${a}x - ${b}`], // grouped the addition inside; swapped the roles; flipped more/less
+        misc: { grouped_wrongly: `${a}(x + ${b})`, swapped_roles: `${b}x + ${a}`, reversed_subtraction: `${a}x - ${b}` },
         explanation: `Build it inside-out: "$${a}$ times a number" is $${a}x$; "$${b}$ more than" THAT adds $${b}$ afterwards: $${a}x + ${b}$. Wrapping it as $${a}(x + ${b})$ multiplies the $${b}$ too — the words never asked for that.`,
         type: "translate_expression"
       };
@@ -2289,6 +2368,7 @@ templates.expressions = {
       question: `Expand: $${a}(x + ${b})$`,
       answer: `${a}x + ${a * b}`,
       distractors: [`${a}x + ${b}`, `x + ${a * b}`, `${a}x + ${a + b}`], // forgot to distribute to constant; to first term; added instead of multiplied
+      misc: { partial_distribute: `${a}x + ${b}` },
       explanation: `Multiply $${a}$ by each term inside the parentheses: $${a}(x + ${b}) = ${a}x + ${a * b}$.`,
       type: "distribute"
     };
@@ -2304,6 +2384,7 @@ templates.expressions = {
         question: `Expand: $(x + ${a})(x + ${b})$`,
         answer: `x^2 + ${S}x + ${P}`,
         distractors: [`x^2 + ${P}`, `x^2 + ${P}x + ${S}`, `x^2 + ${S}x + ${S}`], // skipped Outer/Inner; swapped sum and product; used the sum twice
+        misc: { forgot_middle: `x^2 + ${P}`, swapped_sum_product: `x^2 + ${P}x + ${S}` },
         explanation: `Four products — First $x \\cdot x$, Outer $x \\cdot ${b}$, Inner $${a} \\cdot x$, Last $${a} \\cdot ${b}$: $x^2 + ${b}x + ${a}x + ${P} = x^2 + ${S}x + ${P}$. The middle term comes from the Outer+Inner pairs — skipping them is the classic slip.`,
         type: "foil_binomials"
       };
@@ -2325,6 +2406,7 @@ templates.expressions = {
         question: `Expand: $(x + ${a})^2$`,
         answer: `x^2 + ${D}x + ${Q}`,
         distractors: [`x^2 + ${Q}`, `x^2 + ${a}x + ${Q}`, `x^2 + ${D}x + ${D}`], // the freshman's dream; forgot to double the middle; doubled the last term too
+        misc: { dropped_middle_term: `x^2 + ${Q}`, forgot_double: `x^2 + ${a}x + ${Q}` },
         explanation: `$(x + ${a})^2 = (x + ${a})(x + ${a})$ — FOIL it: $x^2 + ${a}x + ${a}x + ${Q} = x^2 + ${D}x + ${Q}$. The middle term appears TWICE (once Outer, once Inner), which is where the $2$ in $2ax$ comes from. $x^2 + ${Q}$ ignores both cross terms.`,
         type: "square_binomial"
       };
@@ -2347,6 +2429,7 @@ templates.expressions = {
         question: `Factor: $x^2 + ${S}x + ${P}$`,
         answer: `(x + ${a})(x + ${b})`,
         distractors: [`(x + 1)(x + ${P})`, `(x + 1)(x + ${S - 1})`, `(x - ${a})(x - ${b})`], // right product, wrong sum; right sum, wrong product; flipped the signs
+        misc: { product_pair_wrong_sum: `(x + 1)(x + ${P})`, sign_mix: `(x - ${a})(x - ${b})` },
         explanation: `Hunt for two numbers that MULTIPLY to $${P}$ and ADD to $${S}$: $${a}$ and $${b}$. Then $x^2 + ${S}x + ${P} = (x + ${a})(x + ${b})$ — FOIL it back to check both conditions, not just one.`,
         type: "factor_trinomial"
       };
@@ -2451,6 +2534,7 @@ templates.integers = {
         question: `Which of these integers is the smallest? $${vals[0]}, \\;\\; ${m + 2}, \\;\\; ${vals[1]}, \\;\\; ${m + 6}$`,
         answer: fmt(vals[0]),
         distractors: [fmt(vals[1]), fmt(m + 2), fmt(m + 6)], // the 'smaller-looking' negative; the positives
+        misc: { magnitude_as_size: fmt(vals[1]), negatives_above_positives: fmt(m + 6) },
         explanation: `On the number line, smaller means further LEFT. Both negatives sit left of both positives, and between the negatives, $${vals[0]}$ lies further left than $${vals[1]}$ — a bigger debt is a smaller balance. Digits measure distance from zero, not order.`,
         type: "integer_compare"
       };
@@ -2503,6 +2587,7 @@ templates.integers = {
       question: `Calculate: $-${a} + ${b} \\times (-${c})$`,
       answer,
       distractors: [(-a + b) * -c, -a + b * c, a + b * c], // added before multiplying; treated -c as c; dropped both signs
+      misc: { left_to_right: String((-a + b) * -c) },
       explanation: `Multiplication first: $${b} \\times (-${c}) = -${b * c}$. Then combine: $-${a} + (-${b * c}) = ${answer}$. Working left to right computes $(-${a} + ${b}) \\times (-${c})$ — a different expression entirely.`,
       type: "integer_ops"
     };
@@ -2588,6 +2673,7 @@ templates.decimals = {
       question: `Which of these decimals is the largest? $${a}, \\;\\; ${b}, \\;\\; ${c}, \\;\\; ${d}$`,
       answer: a,
       distractors: [c, b, d], // the longest string; the bare tenths; the smallest
+      misc: { longer_is_larger: c, shorter_is_larger: b },
       explanation: `Compare place by place, left to right: the tenths digit decides first — $${a}$ and $${b}$ start with $${t}$, beating the $${t - 1}$s regardless of how many digits follow. Then hundredths: $5 > 0$. Length is not size: $${c}$ wears the most digits and still loses to $${b}$.`,
       type: "decimal_compare"
     };
@@ -2624,6 +2710,7 @@ templates.decimals = {
         `0.${a}${b}`,                                                          // glued the digits
         `0.${a}`                                                               // numerator as tenths
       ],
+      misc: { glued_digits: `0.${a}${b}` },
       explanation: `The fraction bar is a division: $${a} \\div ${b} = ${dec}$. The digits of the fraction never just move behind a point — $\\frac{${a}}{${b}}$ means '$${a}$ split $${b}$ ways', and only dividing performs the split.`,
       type: "fraction_decimal_convert"
     };
@@ -2728,7 +2815,8 @@ templates.fractions = {
         [baseN, baseD + 1]     // near miss
       ]),
       explanation: `Divide the top and bottom by their greatest common factor $${gcd(num, den)}$: $\\frac{${num}}{${den}} = ${answer}$.`,
-      type: "fraction_simplify"
+      type: "fraction_simplify",
+      misc: { partial_reduce: reduceFrac(baseN, den) } // only divided the numerator
     };
   },
   // Add fractions with unlike denominators (find a common denominator first).
@@ -2752,7 +2840,8 @@ templates.fractions = {
         [cn - 1, cd]           // near miss
       ]),
       explanation: `Rewrite over the common denominator $${cd}$: $\\frac{${a * d}}{${cd}} + \\frac{${c * b}}{${cd}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
-      type: "fraction_add"
+      type: "fraction_add",
+      misc: { add_across: reduceFrac(a + c, b + d) } // tag the distractor with its misconception
     };
   },
   // Mixed numbers ↔ improper fractions. Odd denominators keep the complement slip distinct.
@@ -2767,7 +2856,8 @@ templates.fractions = {
         answer: `${improper}/${d}`,
         distractors: [`${w + n}/${d}`, `${w * d}/${d}`, `${w}${n}/${d}`], // added w to the numerator; dropped the extra part; glued the digits
         explanation: `The whole number hides $${w} \\times ${d} = ${w * d}$ ${d}ths; add the $${n}$ extra: $\\frac{${improper}}{${d}}$. The whole number must be MULTIPLIED by the denominator first — never just added or glued onto the numerator.`,
-        type: "mixed_number"
+        type: "mixed_number",
+        misc: { added_whole_to_numerator: `${w + n}/${d}`, digit_concatenation: `${w}${n}/${d}` }
       };
     }
     return {
@@ -2800,7 +2890,8 @@ templates.fractions = {
         [cn + 2, cd]           // near miss
       ]),
       explanation: `Rewrite over the common denominator $${cd}$: $\\frac{${a * d}}{${cd}} - \\frac{${c * b}}{${cd}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
-      type: "fraction_sub"
+      type: "fraction_sub",
+      misc: { sub_across: reduceFrac(a - c, (b - d) || 1) } // subtracted straight across
     };
   },
   // Which fraction is largest? A same-gap family n/(n+g): the piece missing from 1 shrinks as n grows.
@@ -2835,7 +2926,8 @@ templates.fractions = {
         [cn - 1, cd]           // near miss
       ]),
       explanation: `Multiply straight across: $\\frac{${a} \\times ${c}}{${b} \\times ${d}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
-      type: "fraction_mult"
+      type: "fraction_mult",
+      misc: { cross_multiply: reduceFrac(a * d, b * c) } // cross-multiplied (the division procedure)
     };
   },
   // Divide fractions — keep, change to multiply, flip the second (multiply by the reciprocal).
@@ -2857,7 +2949,8 @@ templates.fractions = {
         [cn, cd + 1]           // near miss
       ]),
       explanation: `Dividing is multiplying by the reciprocal (keep–change–flip): $\\frac{${a}}{${b}} \\div \\frac{${c}}{${d}} = \\frac{${a}}{${b}} \\times \\frac{${d}}{${c}} = \\frac{${cn}}{${cd}} = ${answer}$.`,
-      type: "fraction_div"
+      type: "fraction_div",
+      misc: { forgot_to_flip: reduceFrac(a * c, b * d) } // multiplied across without flipping
     };
   },
   // Adding/subtracting SIGNED fractions — the rational-number band (7.NS). Common denominator
@@ -2882,6 +2975,7 @@ templates.fractions = {
           [total + 1, cd],             // near miss
           [total - 1, cd]              // near miss
         ]),
+        misc: { dropped_sign: reduceFrac(a * d + c * b, cd), subtracted_a_negative_wrong: reduceFrac(-a * d - c * b, cd) },
         explanation: `Common denominator $${cd}$: $-\\frac{${a * d}}{${cd}} + \\frac{${c * b}}{${cd}} = \\frac{-${a * d} + ${c * b}}{${cd}} = \\frac{${total}}{${cd}} = ${answer}$. Rewrite over a common denominator first, THEN combine the signed numerators by the integer rules.`,
         type: "fraction_negative"
       };
@@ -2945,6 +3039,7 @@ templates.powers = {
       question: `Simplify: $(${k}x)^{${n}}$`,
       answer: `${kn}x^${n}`,
       distractors: [`${k}x^${n}`, `${k * n}x^${n}`, `${kn}x^${n + 1}`], // didn't raise the coefficient; multiplied k·n instead of k^n; wrong exponent
+      misc: { skipped_coefficient: `${k}x^${n}`, multiplied_coefficient: `${k * n}x^${n}` },
       explanation: `The exponent applies to EVERY factor inside the parentheses: $(${k}x)^{${n}} = ${k}^{${n}} \\cdot x^{${n}} = ${kn}x^{${n}}$. The coefficient $${k}$ gets raised too — leaving it as $${k}$, or multiplying $${k} \\times ${n}$, forgets that the power means repeated MULTIPLICATION of the whole product.`,
       type: "exponent_power_of_product"
     };
@@ -2958,6 +3053,7 @@ templates.powers = {
       question: `Simplify: $x^{${a}} \\cdot x^{${b}}$`,
       answer: `x^${sum}`,
       distractors: [`x^${a * b}`, `2x^${sum}`, `x^${Math.abs(a - b) || 1}`], // multiplied exponents; invented a coefficient; subtracted
+      misc: { multiplied_exponents: `x^${a * b}` },
       explanation: `$x^{${a}}$ means ${a} copies of $x$ multiplied, and $x^{${b}}$ means ${b} more — so together there are $${a} + ${b} = ${sum}$ copies: $x^{${sum}}$. Multiplying the exponents (getting $x^{${a * b}}$) counts copies of copies, which is the POWER rule, not the product rule.`,
       type: "exponent_product_rule"
     };
@@ -2971,6 +3067,7 @@ templates.powers = {
       question: `Simplify: $(x^{${a}})^{${b}}$`,
       answer: `x^${prod}`,
       distractors: [`x^${a + b}`, `x^${Math.pow(a, b)}`, `x^${prod + 1}`], // added (product-rule reflex); raised the exponent itself; near miss
+      misc: { added_exponents: `x^${a + b}`, raised_exponent: `x^${Math.pow(a, b)}` },
       explanation: `$(x^{${a}})^{${b}}$ makes $${b}$ copies of the whole pile $x^{${a}}$ — $${b}$ piles of $${a}$ copies is $${a} \\times ${b} = ${prod}$ copies: $x^{${prod}}$. ADDING the exponents is the product rule ($x^{${a}} \\cdot x^{${b}}$), where the piles sit side by side instead of nesting.`,
       type: "exponent_power_rule"
     };
@@ -2984,6 +3081,7 @@ templates.powers = {
       question: `Simplify: $\\frac{x^{${a}}}{x^{${b}}}$`,
       answer: `x^${diff}`,
       distractors: [`x^${a + b}`, a % b === 0 ? `x^${a / b}` : `x^${b - a}`, `x^${diff + 1}`], // added; divided (or reversed); near miss
+      misc: a % b === 0 ? { divided_exponents: `x^${a / b}` } : { subtracted_backwards: `x^${b - a}` },
       explanation: `Each $x$ below cancels one $x$ above: $${b}$ of the $${a}$ copies cancel, leaving $${a} - ${b} = ${diff}$ copies — $x^{${diff}}$. Subtract the exponents; never divide them.`,
       type: "exponent_quotient_rule"
     };
@@ -3025,6 +3123,7 @@ templates.powers = {
         `${lead}${dec} × 10^${e - 1}`,          // mantissa left outside 1–10
         `0.${lead}${dec} × 10^${e + 1}`         // mantissa below 1
       ],
+      misc: { exponent_miscount: `${mantissa} × 10^${e - 1}`, mantissa_out_of_range: `${lead}${dec} × 10^${e - 1}` },
       explanation: `Move the decimal point until exactly one nonzero digit is left of it: $${value} \\rightarrow ${mantissa}$, a shift of $${e}$ places, so $${value} = ${mantissa} \\times 10^{${e}}$. The leading number must be at least $1$ and less than $10$.`,
       type: "scientific_notation"
     };
@@ -3170,6 +3269,7 @@ templates.graphing = {
         `(${x1 + x2}, ${y1 + y2})`,           // summed without halving
         `(${dx}, ${dy})`                      // subtracted instead of averaging
       ],
+      misc: { halved_difference: `(${dx / 2}, ${dy / 2})`, forgot_to_halve: `(${x1 + x2}, ${y1 + y2})` },
       explanation: `Average each coordinate: $x = \\frac{${x1} + ${x2}}{2} = ${mx}$ and $y = \\frac{${y1} + ${y2}}{2} = ${my}$. The midpoint is the AVERAGE of the endpoints — adding without halving lands past the far end, and halving only the difference forgets where the segment starts.`,
       type: "midpoint",
       x1, y1, x2, y2
@@ -3200,6 +3300,7 @@ templates.graphing = {
         question: `Reflect the point $(${x}, ${y})$ over the x-axis. What are its new coordinates?`,
         answer: `(${x}, -${y})`,
         distractors: [`(-${x}, ${y})`, `(-${x}, -${y})`, `(${y}, ${x})`], // flipped x instead; negated both; swapped
+        misc: { wrong_coordinate: `(-${x}, ${y})`, negated_both: `(-${x}, -${y})` },
         explanation: `The x-axis is the floor; reflecting across it flips only the HEIGHT: $y \\to -y$, while $x$ (the left-right position) stays put. $(${x}, ${y}) \\to (${x}, -${y})$. The axis you reflect over is the one whose coordinate holds STILL.`,
         type: "coord_reflect"
       };
@@ -3222,6 +3323,7 @@ templates.graphing = {
       question: `Translate the point $(${x}, ${y})$ right $${dx}$ and up $${dy}$. What are its new coordinates?`,
       answer: `(${x + dx}, ${y + dy})`,
       distractors: [`(${x + dy}, ${y + dx})`, `(${x - dx}, ${y - dy})`, `(${x}, ${y + dx + dy})`], // swapped the shifts; moved the wrong way; piled both onto y
+      misc: { wrong_axis: `(${x}, ${y + dx + dy})`, wrong_sign: `(${x - dx}, ${y - dy})` },
       explanation: `Horizontal and vertical moves are independent: 'right $${dx}$' adds to the x-coordinate ($${x} + ${dx} = ${x + dx}$), 'up $${dy}$' adds to the y-coordinate ($${y} + ${dy} = ${y + dy}$). Each shift travels on its OWN axis — $(${x + dx}, ${y + dy})$.`,
       type: "coord_translate"
     };
@@ -3235,6 +3337,7 @@ templates.graphing = {
       question: `Rotate the point $(${x}, ${y})$ by $180°$ about the origin. What are its new coordinates?`,
       answer: `(-${x}, -${y})`,
       distractors: [`(-${x}, ${y})`, `(${x}, -${y})`, `(${y}, ${x})`], // negated only x; only y; swapped instead
+      misc: { negated_one: `(-${x}, ${y})`, swapped: `(${y}, ${x})` },
       explanation: `A $180°$ turn sends every point straight through the origin to the opposite side, so BOTH coordinates reverse sign: $(${x}, ${y}) \\to (-${x}, -${y})$. Flipping just one coordinate is a reflection across an axis, not a half-turn.`,
       type: "coord_rotate_180"
     };
@@ -3248,6 +3351,7 @@ templates.graphing = {
       question: `Rotate the point $(${x}, ${y})$ by $90°$ counterclockwise about the origin. What are its new coordinates?`,
       answer: `(-${y}, ${x})`,
       distractors: [`(${y}, ${x})`, `(${y}, -${x})`, `(-${x}, -${y})`], // swapped, no sign; rotated clockwise; did 180° instead
+      misc: { swapped_no_sign: `(${y}, ${x})`, wrong_direction: `(${y}, -${x})` },
       explanation: `A quarter-turn counterclockwise swaps the coordinates and negates the new x: $(x, y) \\to (-y, x)$, so $(${x}, ${y}) \\to (-${y}, ${x})$. The point that pointed right-and-up now points up-and-left. Swapping without the sign change, or signing the wrong coordinate, sends it the wrong way ($90°$ clockwise is $(y, -x)$).`,
       type: "coord_rotate_90"
     };
@@ -3261,6 +3365,7 @@ templates.graphing = {
       question: `Dilate the point $(${x}, ${y})$ by a scale factor of $${k}$, centered at the origin. What are its new coordinates?`,
       answer: `(${k * x}, ${k * y})`,
       distractors: [`(${x + k}, ${y + k})`, `(${k * x}, ${y})`, `(${x}, ${k * y})`], // added k; scaled only x; scaled only y
+      misc: { added_factor: `(${x + k}, ${y + k})`, scaled_one: `(${k * x}, ${y})` },
       explanation: `A dilation from the origin multiplies BOTH coordinates by the scale factor: $(${x}, ${y}) \\to (${k} \\cdot ${x}, ${k} \\cdot ${y}) = (${k * x}, ${k * y})$. The point moves $${k}$ times farther from the origin along the same ray — the shape stays similar, only its size changes. Adding $${k}$ shifts the point instead of scaling it.`,
       type: "coord_dilate"
     };
@@ -3284,6 +3389,7 @@ templates.inequalities = {
         question: `Solve: $x + ${a} > ${b}$`,
         answer: `x > ${v}`,
         distractors: [`x < ${v}`, `x > ${b + a}`, `x = ${v}`], // flipped for no reason; added instead of subtracting; equation thinking
+        misc: { flipped_direction: `x < ${v}`, wrong_inverse_op: `x > ${b + a}`, treated_as_equation: `x = ${v}` },
         explanation: `Subtract $${a}$ from both sides: $x > ${b} - ${a}$, so $x > ${v}$. Adding or subtracting NEVER flips an inequality — the order of two numbers doesn't change when both slide the same distance.`,
         type: "inequality_one_step_add"
       };
@@ -3307,6 +3413,7 @@ templates.inequalities = {
       question: `Solve: $${a}x < ${b}$`,
       answer: `x < ${q}`,
       distractors: [`x > ${q}`, `x < ${b - a}`, `x = ${q}`], // flipped though the divisor is positive; subtracted instead of dividing; equation thinking
+      misc: { flipped_direction: `x > ${q}`, subtracted_instead: `x < ${b - a}` },
       explanation: `Divide both sides by $${a}$: $x < \\frac{${b}}{${a}} = ${q}$. Dividing by a POSITIVE number keeps the inequality's direction — the flip rule only fires for negatives.`,
       type: "inequality_one_step_mult"
     };
@@ -3321,6 +3428,7 @@ templates.inequalities = {
         question: `Solve: $-${a}x < ${b}$`,
         answer: `x > -${q}`,
         distractors: [`x < -${q}`, `x > ${q}`, `x < ${q}`], // forgot the flip; dropped the negative; both slips
+        misc: { forgot_flip: `x < -${q}`, dropped_negative: `x > ${q}` },
         explanation: `Divide both sides by $-${a}$ — and dividing by a NEGATIVE flips the inequality: $x > \\frac{${b}}{-${a}} = -${q}$. Check with a number: $x = 0$ satisfies the original ($0 < ${b}$), and indeed $0 > -${q}$.`,
         type: "inequality_flip_negative"
       };
@@ -3343,6 +3451,7 @@ templates.inequalities = {
       question: `Solve: $${a}x + ${b} \\le ${c}$`,
       answer: `x ≤ ${q}`,
       distractors: [`x ≥ ${q}`, `x ≤ ${a * q}`, `x = ${q}`], // flipped without a negative; subtracted b but forgot to divide; equation thinking
+      misc: { flipped_direction: `x ≥ ${q}`, forgot_to_divide: `x ≤ ${a * q}` },
       explanation: `Undo the operations in reverse order: subtract $${b}$ ($${a}x \\le ${a * q}$), then divide by $${a}$ ($x \\le ${q}$). No negative divisor appeared, so the $\\le$ never flips.`,
       type: "inequality_two_step"
     };
@@ -3357,6 +3466,7 @@ templates.inequalities = {
       question: `Solve: $${a} < x + ${b} < ${c}$`,
       answer: `${lo} < x < ${hi}`,
       distractors: [`${a} < x < ${c}`, `${a} < x < ${hi}`, `x < ${hi}`], // never subtracted; subtracted on the right only; dropped the left bound
+      misc: { one_side_only: `${a} < x < ${hi}`, dropped_constraint: `x < ${hi}` },
       explanation: `A compound inequality is a sandwich — whatever you do, do to ALL THREE parts. Subtract $${b}$ everywhere: $${a} - ${b} < x < ${c} - ${b}$, so $${lo} < x < ${hi}$. Dropping a side keeps numbers the sandwich was built to exclude.`,
       type: "inequality_compound"
     };
@@ -3442,6 +3552,7 @@ templates.functions = {
       question: `A table pairs inputs with outputs:\n$x$: $1, 2, 3, 4$\n$y$: $${row(1)}, ${row(2)}, ${row(3)}, ${row(4)}$\nWhich rule produces this table?`,
       answer: `y = ${r}x + ${s}`,
       distractors: [`y = ${r + s}x`, `y = ${s}x + ${r}`, `y = ${r}x - ${s}`], // fits the first row only; swapped rate and start; sign slip
+      misc: { first_row_only: `y = ${r + s}x`, swapped_coefficients: `y = ${s}x + ${r}` },
       explanation: `Check the STEP between rows: each $+1$ in $x$ adds $${r}$ to $y$ — that's the coefficient. Then anchor any row: at $x = 1$, $y = ${row(1)} = ${r} + ${s}$, so the constant is $${s}$. The rule $y = ${r + s}x$ matches the first row and nothing after — one row is never enough evidence.`,
       type: "function_table"
     };
@@ -3834,6 +3945,7 @@ templates.rates = {
       question: `Simplify the ratio $${a} : ${b}$ to its lowest terms.`,
       answer: `${p}:${q}`,
       distractors: [`${a}:${b}`, `${q}:${p}`, `${b}:${a}`], // didn't simplify; reversed; reversed and unsimplified
+      misc: { didnt_simplify: `${a}:${b}`, reversed: `${q}:${p}` },
       explanation: `Divide both parts by their greatest common factor, $${g}$: $${a} \\div ${g} = ${p}$ and $${b} \\div ${g} = ${q}$, giving $${p}:${q}$. A ratio is in lowest terms when the two numbers share no factor bigger than $1$ — and the order ($${p}$ then $${q}$) must be kept.`,
       type: "ratio_simplify"
     };
@@ -3972,6 +4084,7 @@ templates.factors = {
       question: `Write $${it.n}$ as a product of its prime factors.`,
       answer: it.a,
       distractors: it.d, // composite factors left in, or an incomplete factorization
+      misc: { used_composite: it.d[0], incomplete: it.d[2] }, // d[0]=composite left in; d[2]=incomplete
       explanation: `Break $${it.n}$ down until every factor is prime: ${it.a}. A prime factorization may contain ONLY primes (2, 3, 5, 7, …) — the other options still hide composite numbers that can be split further.`,
       type: "prime_factorization"
     };

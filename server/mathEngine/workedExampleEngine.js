@@ -151,7 +151,9 @@ function hasControlChar(s) {
 //
 // Shape: { problem, steps: [{ action, math, why }] }
 function buildWorkedExampleJson(conceptId) {
-  const entry = conceptId && WORKED_EXAMPLES[conceptId];
+  // Hand-authored example first; otherwise re-shape the concept's authored worked example into
+  // faded steps (deriveActiveLearning.js). Required lazily to avoid a load-order cycle.
+  const entry = (conceptId && WORKED_EXAMPLES[conceptId]) || require('./deriveActiveLearning').deriveWorkedExample(conceptId);
   if (!entry) return '';
 
   return JSON.stringify({

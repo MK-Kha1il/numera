@@ -182,7 +182,9 @@ function hasControlChar(s) {
 // Shape: { question, options: [{ text, correct }], explanation }
 // Exactly one option has correct=true. Options are shuffled so the answer isn't always first.
 function buildSelfExplainJson(conceptId) {
-  const entry = conceptId && SELF_EXPLAIN[conceptId];
+  // Hand-authored reason-set first; otherwise derive one from the concept's authored principle
+  // + a real misconception (deriveActiveLearning.js). Required lazily to avoid a load-order cycle.
+  const entry = (conceptId && SELF_EXPLAIN[conceptId]) || require('./deriveActiveLearning').deriveSelfExplain(conceptId);
   if (!entry) return '';
 
   const options = [

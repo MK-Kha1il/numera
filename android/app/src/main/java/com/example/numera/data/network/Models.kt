@@ -224,7 +224,17 @@ data class MathProblem(
     // The generator's template/concept key for this problem. Reported back in per-answer telemetry
     // so the server's learning-intelligence engine (mastery, retention, misconceptions) can attribute
     // the outcome to the right concept. Server-supplied; absent on client-built fixtures.
-    val templateType: String? = null
+    val templateType: String? = null,
+    // The generator's numeric params (e.g. {"a":3,"b":5}) for this problem, echoed back in telemetry
+    // so the server's param-aware misconception rules can diagnose a wrong answer precisely (not just
+    // the real-time socratic probe). Never contains the answer. Empty/absent when the template
+    // exposes no params (those concepts diagnose from the answer alone).
+    val params: Map<String, Double>? = null,
+    // Misconception tags: { misconceptionId -> the exact wrong-option value it produces }. Echoed
+    // back in telemetry so the server can diagnose a wrong answer of ANY type (fractions, coordinates,
+    // inequalities, LaTeX) by value-match — the only path that works for non-numeric answers. The
+    // values are the wrong options the learner can already see, so this reveals nothing new.
+    val misconceptionTags: Map<String, String>? = null
 )
 
 @Serializable
@@ -256,6 +266,14 @@ data class LessonConnection(
     val note: String = ""
 )
 
+// Curiosity "spark" — the surprising bit at the end of a lesson (server: curiosityEngine.js).
+@Serializable
+data class LessonSpark(
+    val type: String? = null,   // pattern | shortcut | counterintuitive | wonder
+    val title: String = "",
+    val body: String = ""
+)
+
 @Serializable
 data class LessonSections(
     val intuitionHook: String? = null,
@@ -264,7 +282,8 @@ data class LessonSections(
     val whenToUse: String? = null,
     val representations: List<LessonRepresentation>? = null,
     val commonMistakes: List<LessonMistake>? = null,
-    val connections: List<LessonConnection>? = null
+    val connections: List<LessonConnection>? = null,
+    val spark: LessonSpark? = null
 )
 
 @Serializable
@@ -604,6 +623,15 @@ data class EstimationResponse(
     val problems: List<MathProblem> = emptyList()
 )
 
+// Error detection / "Spot the Mistake": a server-assembled set where each question shows a worked
+// solution with one corrupted line and asks which line is wrong. Same MCQ shape as the others.
+@Serializable
+data class ErrorDetectionResponse(
+    val count: Int = 0,
+    val level: Int = 1,
+    val problems: List<MathProblem> = emptyList()
+)
+
 // Upgrades a guest account in place into a full account (keeps all progress). Same shape as
 // RegisterRequest; sent to /api/auth/convert with the guest's bearer token.
 @Serializable
@@ -687,7 +715,12 @@ data class TelemetryRequest(
     val speed: Float? = null,
     val templateType: String? = null,
     val correctAnswer: String? = null,
-    val wrongAnswer: String? = null
+    val wrongAnswer: String? = null,
+    // The live problem's generator params, echoed so the server's param-aware misconception rules
+    // can diagnose the wrong answer precisely. Null/empty when the template exposed no params.
+    val params: Map<String, Double>? = null,
+    // Misconception tags echoed for value-match diagnosis of non-numeric wrong answers.
+    val misconceptionTags: Map<String, String>? = null
 )
 
 @Serializable

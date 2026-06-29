@@ -43,7 +43,8 @@ const concepts = {
     prereqs: ["arithmetic_sub", "arithmetic_div"],
     baseElo: 900,
     misconceptions: [
-      { id: "left_to_right", label: "Evaluated strictly left-to-right", rule: (ans, p) => (p.a + p.b) * p.c }
+      { id: "left_to_right", label: "Evaluated strictly left-to-right", rule: (ans, p) => (p.a + p.b) * p.c },
+      { id: "added_through", label: "Treated every operation as addition (ignored precedence entirely)", rule: (ans, p) => p.a + p.b + p.c }
     ]
   },
   "pythagorean": {
@@ -62,7 +63,8 @@ const concepts = {
     prereqs: ["arithmetic_sub"],
     baseElo: 950,
     misconceptions: [
-      { id: "inverse_sign_slip", label: "Forgot to invert operator sign", rule: (ans, p) => p.b + p.a }
+      { id: "inverse_sign_slip", label: "Forgot to invert operator sign", rule: (ans, p) => p.b + p.a },
+      { id: "reversed_subtraction", label: "Subtracted in the wrong order (constant − result)", rule: (ans, p) => p.a - p.b }
     ]
   },
   "linear_two_step": {
@@ -70,7 +72,8 @@ const concepts = {
     prereqs: ["linear_one_step"],
     baseElo: 1100,
     misconceptions: [
-      { id: "divide_before_subtract", label: "Divided before subtracting constants", rule: (ans, p) => Math.round((p.c + p.b) / p.a) }
+      { id: "divide_before_subtract", label: "Divided before subtracting constants", rule: (ans, p) => Math.round((p.c + p.b) / p.a) },
+      { id: "forgot_constant", label: "Divided the result by the coefficient without subtracting the constant first", rule: (ans, p) => Math.round(p.c / p.a) }
     ]
   },
   "quadratic": {
@@ -87,7 +90,8 @@ const concepts = {
     prereqs: ["arithmetic_add"],
     baseElo: 1200,
     misconceptions: [
-      { id: "det_instead_trace", label: "Calculated determinant (ad-bc) instead of trace", rule: (ans, p) => p.a * p.b - p.c * p.d }
+      { id: "det_instead_trace", label: "Calculated determinant (ad-bc) instead of trace", rule: (ans, p) => p.a * p.b - p.c * p.d },
+      { id: "summed_all_entries", label: "Added all four entries instead of just the main diagonal", rule: (ans, p) => p.a + p.b + p.c + p.d }
     ]
   },
   "matrix_determinant": {
@@ -95,7 +99,8 @@ const concepts = {
     prereqs: ["arithmetic_mult", "arithmetic_sub"],
     baseElo: 1350,
     misconceptions: [
-      { id: "added_diagonals", label: "Added diagonal elements (ad+bc)", rule: (ans, p) => p.a * p.d + p.b * p.c }
+      { id: "added_diagonals", label: "Added diagonal elements (ad+bc)", rule: (ans, p) => p.a * p.d + p.b * p.c },
+      { id: "main_diagonal_only", label: "Used only the main-diagonal product (ad), ignoring the anti-diagonal", rule: (ans, p) => p.a * p.d }
     ]
   },
 
@@ -105,7 +110,8 @@ const concepts = {
     prereqs: ["arithmetic_add"],
     baseElo: 1050,
     misconceptions: [
-      { id: "exact_count", label: "Off by one (n instead of n+1)", rule: (ans) => ans - 1 }
+      { id: "exact_count", label: "Off by one (n instead of n+1)", rule: (ans) => ans - 1 },
+      { id: "over_counted", label: "Added an extra pigeon (n+2 instead of n+1)", rule: (ans) => ans + 1 }
     ]
   },
   "permutations": {
@@ -113,7 +119,8 @@ const concepts = {
     prereqs: ["arithmetic_mult"],
     baseElo: 1200,
     misconceptions: [
-      { id: "linear_factorial", label: "Total factorial without repeats division", rule: (ans, p) => ans * 2 }
+      { id: "linear_factorial", label: "Total factorial without repeats division", rule: (ans, p) => ans * 2 },
+      { id: "comb_instead_perm", label: "Divided out order — computed a combination instead of a permutation", rule: (ans) => Math.round(ans / 2) }
     ]
   },
   "combinations": {
@@ -157,7 +164,8 @@ const concepts = {
     prereqs: ["arithmetic_div"],
     baseElo: 1100,
     misconceptions: [
-      { id: "product_instead_gcd", label: "Calculated product instead of divisor", rule: (ans, p) => p.a * p.b }
+      { id: "product_instead_gcd", label: "Calculated product instead of divisor", rule: (ans, p) => p.a * p.b },
+      { id: "sum_instead_gcd", label: "Added the two numbers instead of finding their common divisor", rule: (ans, p) => p.a + p.b }
     ]
   },
   "modular_arithmetic": {
@@ -165,7 +173,8 @@ const concepts = {
     prereqs: ["arithmetic_div"],
     baseElo: 1250,
     misconceptions: [
-      { id: "off_by_one_mod", label: "Off-by-one remainder under modulus wrapper", rule: (ans, p) => (ans + 1) % p.mod }
+      { id: "off_by_one_mod", label: "Off-by-one remainder under modulus wrapper", rule: (ans, p) => (ans + 1) % p.mod },
+      { id: "added_modulus", label: "Added the modulus to the remainder (over-corrected to a positive representative)", rule: (ans, p) => ans + p.mod }
     ]
   },
   "totient": {
@@ -325,7 +334,8 @@ const concepts = {
     prereqs: ["arithmetic_sub"],
     baseElo: 750,
     misconceptions: [
-      { id: "sum_to_360", label: "Assumed the angles sum to 360° instead of 180°", rule: (ans) => ans + 180 }
+      { id: "added_given", label: "Added the two given angles instead of subtracting them from 180°", rule: (ans) => ans + 180 },
+      { id: "subtracted_one_only", label: "Subtracted only one of the two given angles from 180°", rule: (ans) => ans + 180 }
     ]
   },
   "geo_circle_area": {
@@ -367,7 +377,8 @@ const concepts = {
     prereqs: ["percentage_of"],
     baseElo: 850,
     misconceptions: [
-      { id: "reported_change_only", label: "Gave only the change, not the new total", rule: (ans) => ans }
+      { id: "reported_change_only", label: "Gave only the change, not the new total", rule: (ans, p) => Math.round((p.N * p.P) / 100) },
+      { id: "added_percent_as_dollars", label: "Added the percent number directly to the price", rule: (ans, p) => p.N + p.P }
     ]
   },
   "exponent_power": {
@@ -393,7 +404,7 @@ const concepts = {
     prereqs: ["arithmetic_div"],
     baseElo: 700,
     misconceptions: [
-      { id: "forgot_divide", label: "Reported the total instead of dividing by the count", rule: (ans) => ans }
+      { id: "forgot_divide", label: "Reported the total instead of dividing by the count", rule: (ans, p) => p.sum }
     ]
   },
   "stat_median": {
@@ -401,7 +412,7 @@ const concepts = {
     prereqs: ["arithmetic_add"],
     baseElo: 740,
     misconceptions: [
-      { id: "unsorted_middle", label: "Took the middle of the unsorted list", rule: (ans) => ans }
+      { id: "unsorted_middle", label: "Took the middle of the unsorted list", rule: (ans, p) => p.unsortedMid }
     ]
   },
   "stat_range": {
@@ -409,7 +420,8 @@ const concepts = {
     prereqs: ["arithmetic_sub"],
     baseElo: 660,
     misconceptions: [
-      { id: "gave_max", label: "Reported the maximum instead of max − min", rule: (ans) => ans }
+      { id: "gave_max", label: "Reported the maximum instead of max − min", rule: (ans, p) => p.max },
+      { id: "summed_extremes", label: "Added the largest and smallest instead of subtracting", rule: (ans, p) => p.max + p.min }
     ]
   },
   "stat_probability": {
@@ -970,7 +982,7 @@ const concepts = {
     baseElo: 1000,
     misconceptions: [
       { id: "square_cube_mixup", label: "Found the square root (or square) instead of the cube root", rule: (ans) => ans * ans },
-      { id: "divided_by_three", label: "Divided by three instead of un-cubing", rule: (ans) => ans }
+      { id: "doubled_root", label: "Doubled the root instead of cube-rooting", rule: (ans) => ans * 2 }
     ]
   },
   "exponent_power_rule": {
@@ -1000,8 +1012,8 @@ const concepts = {
     prereqs: ["stat_mean", "linear_one_step"],
     baseElo: 1080,
     misconceptions: [
-      { id: "repeated_the_mean", label: "Assumed the missing score equals the mean", rule: (ans) => ans },
-      { id: "forgot_total", label: "Never converted the mean back into a total", rule: (ans) => ans }
+      { id: "repeated_the_mean", label: "Assumed the missing score equals the mean", rule: (ans, p) => p.M },
+      { id: "forgot_total", label: "Never converted the mean back into a total", rule: (ans, p) => 4 * p.M }
     ]
   },
 
@@ -1045,8 +1057,8 @@ const concepts = {
     prereqs: ["percentage_of"],
     baseElo: 920,
     misconceptions: [
-      { id: "gave_the_discount", label: "Reported the discount amount instead of the final price", rule: (ans) => ans },
-      { id: "subtracted_percent_as_dollars", label: "Subtracted the percent number directly from the price", rule: (ans) => ans }
+      { id: "gave_the_discount", label: "Reported the discount amount instead of the final price", rule: (ans, p) => Math.round((p.P * p.pct) / 100) },
+      { id: "subtracted_percent_as_dollars", label: "Subtracted the percent number directly from the price", rule: (ans, p) => p.P - p.pct }
     ]
   },
   "simple_interest": {
@@ -1185,8 +1197,8 @@ const concepts = {
     prereqs: ["percent_discount"],
     baseElo: 960,
     misconceptions: [
-      { id: "gave_the_markup", label: "Reported the increase instead of the new total", rule: (ans) => ans },
-      { id: "used_decrease", label: "Subtracted the markup instead of adding it", rule: (ans) => ans }
+      { id: "gave_the_markup", label: "Reported the increase instead of the new total", rule: (ans, p) => Math.round((p.P * p.pct) / 100) },
+      { id: "used_decrease", label: "Subtracted the markup instead of adding it", rule: (ans, p) => p.P - Math.round((p.P * p.pct) / 100) }
     ]
   },
   "percent_error": {
@@ -1194,8 +1206,8 @@ const concepts = {
     prereqs: ["percent_markup", "percent_change"],
     baseElo: 1080,
     misconceptions: [
-      { id: "divided_by_measured", label: "Divided by the measured value instead of the true value", rule: (ans) => ans },
-      { id: "forgot_to_scale", label: "Reported the raw difference, never converting to a percent", rule: (ans) => ans }
+      { id: "divided_by_measured", label: "Divided by the measured value instead of the true value", rule: (ans, p) => Math.round(((p.measured - p.T) / p.measured) * 100) },
+      { id: "forgot_to_scale", label: "Reported the raw difference, never converting to a percent", rule: (ans, p) => p.measured - p.T }
     ]
   },
 
@@ -1249,7 +1261,7 @@ const concepts = {
     prereqs: ["geo_area_rect"],
     baseElo: 900,
     misconceptions: [
-      { id: "used_slant", label: "Multiplied by the slanted side instead of the perpendicular height", rule: (ans) => ans },
+      { id: "used_slant", label: "Multiplied by the slanted side instead of the perpendicular height", rule: (ans, p) => p.base * p.slant },
       { id: "added_sides", label: "Added base and height instead of multiplying", rule: (ans, p) => p.base + p.h }
     ]
   },
@@ -1258,8 +1270,8 @@ const concepts = {
     prereqs: ["geo_area_parallelogram"],
     baseElo: 1020,
     misconceptions: [
-      { id: "forgot_to_average", label: "Multiplied the base sum by the height without halving", rule: (ans) => ans },
-      { id: "one_base_only", label: "Used only one of the two parallel sides", rule: (ans) => ans }
+      { id: "forgot_to_average", label: "Multiplied the base sum by the height without halving", rule: (ans, p) => (p.b1 + p.b2) * p.h },
+      { id: "one_base_only", label: "Used only one of the two parallel sides", rule: (ans, p) => p.b1 * p.h }
     ]
   },
 

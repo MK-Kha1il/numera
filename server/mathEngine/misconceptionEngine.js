@@ -44,9 +44,25 @@ const GLOBAL_PATTERNS = [
 function classifyMisconception(conceptId, correctAnswer, wrongAnswer, params = {}) {
   const num_correct = parseFloat(correctAnswer);
   const num_wrong   = parseFloat(wrongAnswer);
+  const concept = concepts[conceptId];
+
+  // 0. TAGGED DISTRACTORS — the most reliable signal, and the only one that works for non-numeric
+  //    answers (fractions, coordinates, inequalities, LaTeX). The generator tags each of its
+  //    distractors with the misconception it encodes (params.misc = { miscId: exactOptionValue });
+  //    we match the learner's chosen wrong answer to a tag by exact value. No formula to get wrong —
+  //    the generator already computed the value. The label comes from the knowledge graph.
+  const tags = params && typeof params.misc === 'object' ? params.misc : null;
+  if (tags) {
+    const wrongStr = String(wrongAnswer).trim();
+    for (const miscId of Object.keys(tags)) {
+      if (String(tags[miscId]).trim() === wrongStr) {
+        const m = (concept && concept.misconceptions || []).find((x) => x.id === miscId);
+        return { id: miscId, label: m ? m.label : miscId, source: 'tagged' };
+      }
+    }
+  }
 
   // 1. Try concept-specific misconception rules from knowledgeGraph
-  const concept = concepts[conceptId];
   if (concept && concept.misconceptions) {
     for (const m of concept.misconceptions) {
       try {
