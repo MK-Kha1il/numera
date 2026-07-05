@@ -162,7 +162,7 @@ fun NotificationsDialog(
                                             Text(
                                                 text = formatRelativeTime(item.created_at),
                                                 fontSize = 10.sp,
-                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                                             )
                                         }
                                         Spacer(modifier = Modifier.height(2.dp))

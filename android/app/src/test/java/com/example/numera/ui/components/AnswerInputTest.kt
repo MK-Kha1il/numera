@@ -43,10 +43,10 @@ class AnswerInputTest {
             var v by remember { mutableStateOf("") }
             AnswerInput(value = v, onValueChange = { v = it }, onSubmit = { submitted++ }, enabled = true)
         }
-        compose.onNodeWithText("SUBMIT").performClick() // DuoButton uppercases its label
+        compose.onNodeWithText("Submit").performClick()
         assertEquals(0, submitted)
         compose.onNodeWithText("-").performClick() // appends via the math strip
-        compose.onNodeWithText("SUBMIT").performClick()
+        compose.onNodeWithText("Submit").performClick()
         assertEquals(1, submitted)
     }
 }

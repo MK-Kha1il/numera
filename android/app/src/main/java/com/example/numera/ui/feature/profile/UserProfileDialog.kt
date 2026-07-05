@@ -176,11 +176,11 @@ fun UserProfileDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Column {
-                                        Text("Solved problems", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                        Text("Solved problems", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                         Text("${profile.solved_count}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
-                                        Text("Arena victories", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                        Text("Arena victories", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                         Text("${profile.arena_wins}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                     }
                                 }

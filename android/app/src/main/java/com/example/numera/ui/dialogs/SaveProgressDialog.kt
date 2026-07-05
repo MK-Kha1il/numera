@@ -1,4 +1,5 @@
 package com.example.numera.ui.dialogs
+import com.example.numera.theme.Alpha
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -200,7 +201,7 @@ fun SaveProgressDialog(
                     TextButton(onClick = onDismiss) {
                         Text(
                             text = "Not now",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                             fontWeight = FontWeight.Medium
                         )
                     }

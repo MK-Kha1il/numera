@@ -1,4 +1,5 @@
 package com.example.numera.ui.feature.game
+import com.example.numera.theme.Alpha
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutCubic
@@ -164,15 +165,15 @@ fun RecapScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text("XP Earned", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+                            Text("XP Earned", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 12.sp)
                             Text("+${animatedInt(xpShown)} XP", fontWeight = FontWeight.Black, fontSize = 20.sp, color = primaryColor)
                         }
                         Column {
-                            Text("Coins Earned", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+                            Text("Coins Earned", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 12.sp)
                             Text("+${animatedInt(coinShown)} 🪙", fontWeight = FontWeight.Black, fontSize = 20.sp, color = MaterialTheme.colorScheme.tertiary)
                         }
                         Column {
-                            Text("Accuracy", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+                            Text("Accuracy", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 12.sp)
                             val acc = if (problemsList.isNotEmpty()) (correctFirstTryCount * 100) / problemsList.size else 100
                             Text("$acc%", fontWeight = FontWeight.Black, fontSize = 20.sp, color = CorrectGreen)
                         }
@@ -187,11 +188,11 @@ fun RecapScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column {
-                                Text("Speed Bonus", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+                                Text("Speed Bonus", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 12.sp)
                                 Text(if (speedBonusGained > 0) "+$speedBonusGained XP ⏱️" else "0 XP", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = DuoSecondary)
                             }
                             Column {
-                                Text("Perfect Combo", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+                                Text("Perfect Combo", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 12.sp)
                                 Text(if (comboBonusGained > 0) "+$comboBonusGained XP ⚡" else "0 XP", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = DuoTertiary)
                             }
                         }
@@ -203,7 +204,7 @@ fun RecapScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
-                        Text("✨ Consistency Climb:", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 13.sp)
+                        Text("✨ Consistency Climb:", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 13.sp)
                         Text("$currentStreakDays Days", fontWeight = FontWeight.Bold, color = DuoTertiary)
                     }
                 }
@@ -224,7 +225,7 @@ fun RecapScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Level $userLevel", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("$userXP / $nextLevelXP XP", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("$userXP / $nextLevelXP XP", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
 
                     Spacer(modifier = Modifier.height(6.dp))
@@ -259,7 +260,7 @@ fun RecapScreen(
                 ) {
                     RankBadge(rankName = userRank, modifier = Modifier.size(54.dp))
                     Column {
-                        Text("Current Rating Medal", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Current Rating Medal", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         Text(userRank, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = primaryColor)
                     }
                 }

@@ -66,7 +66,7 @@ fun LearningPlanScreen(onBack: () -> Unit, onPractice: (String, Int) -> Unit) {
                         )
                         Text(
                             "${p.done} of ${p.total} concepts learned · ${p.percent}%",
-                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                         )
                         LinearProgressIndicator(
                             progress = { (p.percent / 100f).coerceIn(0f, 1f) },
@@ -85,9 +85,9 @@ fun LearningPlanScreen(onBack: () -> Unit, onPractice: (String, Int) -> Unit) {
                 p.nextStep?.let { next ->
                     DuoCard(modifier = Modifier.fillMaxWidth(), borderColor = MaterialTheme.colorScheme.primary) {
                         Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
-                            Text("▶ NEXT UP", fontWeight = FontWeight.ExtraBold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                            Text("▶ Next up", fontWeight = FontWeight.ExtraBold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                             Text(next.name, fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                            Text("${next.category} · Level ${next.level}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("${next.category} · Level ${next.level}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                             DuoButton(text = "Practice this", onClick = { onPractice(next.category, next.level) }, modifier = Modifier.fillMaxWidth())
                         }
                     }

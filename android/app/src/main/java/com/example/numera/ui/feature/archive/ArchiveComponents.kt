@@ -186,7 +186,7 @@ fun LevelNode(
                         brush = startBadgeBrush,
                         shape = RoundedCornerShape(6.dp)
                     )
-                    .border(1.dp, Color.White.copy(alpha = 0.6f), shape = RoundedCornerShape(6.dp))
+                    .border(1.dp, Color.White.copy(alpha = Alpha.secondary), shape = RoundedCornerShape(6.dp))
                     .padding(horizontal = Spacing.s, vertical = 2.dp)
             ) {
                 Text(
@@ -243,7 +243,7 @@ fun StageHeaderCard(
                 width = 1.5.dp,
                 brush = Brush.horizontalGradient(
                     colors = listOf(
-                        startColor.copy(alpha = 0.6f),
+                        startColor.copy(alpha = Alpha.secondary),
                         endColor.copy(alpha = 0.2f)
                     )
                 ),

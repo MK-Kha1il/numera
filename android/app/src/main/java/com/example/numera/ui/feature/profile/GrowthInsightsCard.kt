@@ -51,7 +51,7 @@ fun GrowthInsightsCard(
             Text(
                 text = "What your practice shows — the things you've got down, and the habits worth a second look.",
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
             )
 
             if (profile.strengths.isNotEmpty()) {
@@ -182,7 +182,7 @@ private fun WatchAreaRow(w: GrowthWatchArea) {
             Text(
                 text = context,
                 fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
             )
             if (expanded && hasTip) {
                 Text(

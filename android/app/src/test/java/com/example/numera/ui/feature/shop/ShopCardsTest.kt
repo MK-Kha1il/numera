@@ -15,8 +15,8 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * Guards the seasonal-sink shop surfaces (ultra-review #66/#75): the token wallet shows the
- * balance + converts, and a prestige card shows its token price + claims. DuoButton uppercases
- * its label, so the action text is matched in upper case.
+ * balance + converts, and a prestige card shows its token price + claims. Action labels
+ * render in sentence case.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], qualifiers = "w411dp-h891dp")
@@ -32,7 +32,7 @@ class ShopCardsTest {
         }
         compose.onNodeWithText("👑 Season Tokens").assertIsDisplayed()
         compose.onNodeWithText("5").assertIsDisplayed()
-        compose.onNodeWithText("CONVERT", substring = true).performClick()
+        compose.onNodeWithText("Convert 500 🪙 → 1 Token").performClick()
         assertTrue(converted)
     }
 
@@ -53,7 +53,7 @@ class ShopCardsTest {
         }
         compose.onNodeWithText("Celestial Avatar").assertIsDisplayed()
         compose.onNodeWithText("👑 3 tokens").assertIsDisplayed()
-        compose.onNodeWithText("CLAIM", substring = true).performClick()
+        compose.onNodeWithText("Claim", substring = true).performClick()
         assertTrue(claimed)
     }
 }

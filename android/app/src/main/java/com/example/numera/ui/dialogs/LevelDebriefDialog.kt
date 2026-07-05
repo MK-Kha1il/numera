@@ -265,7 +265,7 @@ fun LevelDebriefDialog(
                     ) {
                         com.example.numera.ui.components.NumeraIcon(
                             type = com.example.numera.ui.components.NumeraIconType.Close,
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                         )
                     }
                 }
@@ -330,7 +330,7 @@ fun LevelDebriefDialog(
 
                 // Concepts Header
                 Text(
-                    text = "LEARNING FOCUS",
+                    text = "Learning focus",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
                     color = MaterialTheme.colorScheme.secondary,

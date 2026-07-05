@@ -161,12 +161,12 @@ class GameplayScreenTest {
     launchAndAwaitGameplay()
     compose.onNodeWithText("alpha").performClick()
     compose.waitUntil(timeoutMillis = 5_000) {
-      compose.onAllNodesWithText("REVIEW SOLUTION").fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithText("Review Solution").fetchSemanticsNodes().isNotEmpty()
     }
     // Hidden before reveal.
     compose.onAllNodesWithContentDescription("Correct").assertCountEquals(0)
     compose.waitForIdle()
-    compose.onNodeWithText("REVIEW SOLUTION").performClick()
+    compose.onNodeWithText("Review Solution").performClick()
     // Revealed after — the correct option now carries the ✓ checkmark.
     compose.waitUntil(timeoutMillis = 5_000) {
       compose.onAllNodesWithContentDescription("Correct").fetchSemanticsNodes().isNotEmpty()
@@ -228,16 +228,15 @@ class GameplayScreenTest {
   fun reviewSolution_afterWrongAnswer_opensSolutionDialog() {
     launchAndAwaitGameplay()
     compose.onNodeWithText("alpha").performClick()
-    // DuoButton uppercases its label.
     compose.waitUntil(timeoutMillis = 5_000) {
-      compose.onAllNodesWithText("REVIEW SOLUTION").fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithText("Review Solution").fetchSemanticsNodes().isNotEmpty()
     }
     compose.waitForIdle()
-    compose.onNodeWithText("REVIEW SOLUTION").performClick()
+    compose.onNodeWithText("Review Solution").performClick()
     compose.waitUntil(timeoutMillis = 5_000) {
-      compose.onAllNodesWithText("💡 SOLUTION BREAKDOWN").fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithText("💡 Solution breakdown").fetchSemanticsNodes().isNotEmpty()
     }
-    compose.onNodeWithText("💡 SOLUTION BREAKDOWN").assertIsDisplayed()
+    compose.onNodeWithText("💡 Solution breakdown").assertIsDisplayed()
     // The worked solution still reveals the correct answer — just one tap away, not up front.
     compose.onNodeWithText("Correct Answer:").assertIsDisplayed()
   }
@@ -246,14 +245,14 @@ class GameplayScreenTest {
   fun continueAfterCorrect_advancesToSecondProblem() {
     launchAndAwaitGameplay()
     compose.onNodeWithText("bravo").performClick()
-    // DuoButton renders its label uppercased, so the advance CTA is "CONTINUE".
+    // After a correct answer the advance CTA is "Continue".
     compose.waitUntil(timeoutMillis = 5_000) {
-      compose.onAllNodesWithText("CONTINUE").fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithText("Continue").fetchSemanticsNodes().isNotEmpty()
     }
     // The feedback banner slides in (AnimatedVisibility); let it settle so the button is laid out
     // at its final, on-screen position before we tap it (a mid-slide tap can miss).
     compose.waitForIdle()
-    compose.onNodeWithText("CONTINUE").performClick()
+    compose.onNodeWithText("Continue").performClick()
     // Advancing rebuilds the gameplay for idx 1 (TYPED); its question card should now render.
     compose.waitUntil(timeoutMillis = 5_000) {
       compose.onAllNodesWithText(q1).fetchSemanticsNodes().isNotEmpty()
@@ -292,15 +291,15 @@ class GameplayScreenTest {
     repeat(2) {
       compose.onNodeWithText("wrong").performClick()
       compose.waitUntil(timeoutMillis = 5_000) {
-        compose.onAllNodesWithText("REVIEW SOLUTION").fetchSemanticsNodes().isNotEmpty()
+        compose.onAllNodesWithText("Review Solution").fetchSemanticsNodes().isNotEmpty()
       }
       compose.waitForIdle()
-      compose.onNodeWithText("REVIEW SOLUTION").performClick()
+      compose.onNodeWithText("Review Solution").performClick()
       compose.waitUntil(timeoutMillis = 5_000) {
-        compose.onAllNodesWithText("RETRY EXERCISE").fetchSemanticsNodes().isNotEmpty()
+        compose.onAllNodesWithText("Retry Exercise").fetchSemanticsNodes().isNotEmpty()
       }
       compose.waitForIdle()
-      compose.onNodeWithText("RETRY EXERCISE").performClick()
+      compose.onNodeWithText("Retry Exercise").performClick()
       compose.waitForIdle()
     }
     // Third mistake empties the hearts -> kind, free "keep going" dialog (no failure/paywall).
@@ -309,7 +308,7 @@ class GameplayScreenTest {
       compose.onAllNodesWithText("🌱 Let's slow down").fetchSemanticsNodes().isNotEmpty()
     }
     compose.onNodeWithText("🌱 Let's slow down").assertIsDisplayed()
-    // The way forward is always free — never gated behind a purchase. (DuoButton uppercases.)
-    compose.onNodeWithText("KEEP GOING").assertIsDisplayed()
+    // The way forward is always free — never gated behind a purchase.
+    compose.onNodeWithText("Keep going").assertIsDisplayed()
   }
 }

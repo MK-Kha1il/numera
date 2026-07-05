@@ -37,8 +37,7 @@ class MasteryUpCelebrationTest {
         compose.setContent {
             MasteryUpCelebration(category = "algebra", label = "Mastered", onContinue = { continued = true })
         }
-        // DuoButton renders its label uppercased.
-        compose.onNodeWithText("KEEP CLIMBING").performClick()
+        compose.onNodeWithText("Keep climbing").performClick()
         assertTrue(continued)
     }
 }

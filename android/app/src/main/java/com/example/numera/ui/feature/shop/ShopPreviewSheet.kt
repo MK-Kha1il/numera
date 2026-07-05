@@ -193,7 +193,7 @@ fun HeroShowcasePanel(
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)),
+                                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = Alpha.secondary)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text("🔒", fontSize = 24.sp)

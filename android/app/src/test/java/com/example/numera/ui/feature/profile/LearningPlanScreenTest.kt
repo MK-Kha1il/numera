@@ -47,7 +47,7 @@ class LearningPlanScreenTest {
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithText("Adding Fractions", substring = true).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("▶ NEXT UP", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("▶ Next up", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Adding Integers", substring = true).assertIsDisplayed()
     }
 }

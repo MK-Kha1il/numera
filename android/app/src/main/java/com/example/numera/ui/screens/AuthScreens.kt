@@ -278,7 +278,7 @@ fun LoginScreen(
 
                 Text(
                     text = "Unlock your math potential",
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = Alpha.secondary),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -413,7 +413,7 @@ fun LoginScreen(
                     TextButton(onClick = { showForgotPassword = true }) {
                         Text(
                             text = "Forgot password?",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -828,7 +828,7 @@ fun GoogleAuthMockDialog(
                 Text(
                     text = "Numera wants to use google.com to sign in.",
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                     textAlign = TextAlign.Center
                 )
 
@@ -893,7 +893,7 @@ fun GoogleAuthMockDialog(
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     DuoButton(
                         text = "Continue",

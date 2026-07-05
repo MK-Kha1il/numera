@@ -142,21 +142,21 @@ fun LessonScreen(
                 Reveal(1) {
                 lessonSections?.let { s ->
                     if (!s.intuitionHook.isNullOrBlank()) {
-                        LessonSectionCard("💡 THINK FIRST", s.intuitionHook!!, primaryColor, onSurfaceColor, borderColor, cardBgColor)
+                        LessonSectionCard("💡 Think first", s.intuitionHook!!, primaryColor, onSurfaceColor, borderColor, cardBgColor)
                     }
                     if (!s.whatItIs.isNullOrBlank()) {
-                        LessonSectionCard("WHAT IT IS", s.whatItIs!!, primaryColor, onSurfaceColor, borderColor, MaterialTheme.colorScheme.surface)
+                        LessonSectionCard("What it is", s.whatItIs!!, primaryColor, onSurfaceColor, borderColor, MaterialTheme.colorScheme.surface)
                     }
                     if (!s.whyItWorks.isNullOrBlank()) {
-                        LessonSectionCard("WHY IT WORKS", s.whyItWorks!!, primaryColor, onSurfaceColor, borderColor, MaterialTheme.colorScheme.surface)
+                        LessonSectionCard("Why it works", s.whyItWorks!!, primaryColor, onSurfaceColor, borderColor, MaterialTheme.colorScheme.surface)
                     }
                     if (!s.whenToUse.isNullOrBlank()) {
-                        LessonSectionCard("WHEN TO USE IT", s.whenToUse!!, primaryColor, onSurfaceColor, borderColor, MaterialTheme.colorScheme.surface)
+                        LessonSectionCard("When to use it", s.whenToUse!!, primaryColor, onSurfaceColor, borderColor, MaterialTheme.colorScheme.surface)
                     }
                     val reps = s.representations ?: emptyList()
                     if (reps.isNotEmpty()) {
                         Text(
-                            text = "SEE IT DIFFERENTLY",
+                            text = "See it differently",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = primaryColor,
@@ -182,7 +182,7 @@ fun LessonScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "CORE FORMULA / CONCEPT",
+                                text = "Core formula",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = primaryColor,
@@ -207,7 +207,7 @@ fun LessonScreen(
                 
                 if (examplesList.isNotEmpty()) {
                     Text(
-                        text = "WORKED EXAMPLES",
+                        text = "Worked examples",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = primaryColor,
@@ -260,7 +260,7 @@ fun LessonScreen(
                     val mistakes = s.commonMistakes ?: emptyList()
                     if (mistakes.isNotEmpty()) {
                         Text(
-                            text = "⚠️ COMMON MISTAKES",
+                            text = "⚠️ Common mistakes",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.error,
@@ -279,7 +279,7 @@ fun LessonScreen(
                                 Text(text = m.label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = onSurfaceColor)
                                 if (!m.why.isNullOrBlank()) LessonProse(m.why!!, onSurfaceColor.copy(alpha = 0.75f), 26)
                                 if (!m.fix.isNullOrBlank()) {
-                                    Text(text = "✓ FIX", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CorrectGreen)
+                                    Text(text = "✓ Fix", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CorrectGreen)
                                     LessonProse(m.fix!!, onSurfaceColor.copy(alpha = 0.85f), 26)
                                 }
                             }
@@ -288,7 +288,7 @@ fun LessonScreen(
                     val connections = s.connections ?: emptyList()
                     if (connections.isNotEmpty()) {
                         Text(
-                            text = "🔗 HOW THIS CONNECTS",
+                            text = "🔗 How this connects",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = primaryColor,
@@ -314,10 +314,10 @@ fun LessonScreen(
                     val spark = s.spark
                     if (spark != null && spark.title.isNotBlank()) {
                         val sparkLabel = when (spark.type) {
-                            "shortcut" -> "✨ ELEGANT SHORTCUT"
-                            "counterintuitive" -> "✨ PLOT TWIST"
-                            "wonder" -> "✨ A MOMENT OF WONDER"
-                            else -> "✨ THE SURPRISING BIT"
+                            "shortcut" -> "✨ Elegant shortcut"
+                            "counterintuitive" -> "✨ Plot twist"
+                            "wonder" -> "✨ A moment of wonder"
+                            else -> "✨ The surprising bit"
                         }
                         Text(
                             text = sparkLabel,

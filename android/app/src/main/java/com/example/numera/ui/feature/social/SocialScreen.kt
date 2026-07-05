@@ -154,9 +154,8 @@ fun SocialScreen() {
         if (tab == "leaderboard") {
             item {
                 Text(
-                    text = "🏆 FRIENDS RANKING",
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 16.sp,
+                    text = "Friends ranking",
+                    style = AppText.sectionTitle,
                     color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.padding(top = Spacing.s)
                 )
@@ -166,7 +165,7 @@ fun SocialScreen() {
                     Text(
                         "Add friends to see how you rank against them.",
                         fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                     )
                 }
             } else {
@@ -176,9 +175,8 @@ fun SocialScreen() {
 
         item {
             Text(
-                text = "MY FRIENDS",
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 16.sp,
+                text = "My friends",
+                style = AppText.sectionTitle,
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.padding(top = Spacing.s)
             )
@@ -238,8 +236,8 @@ fun SocialScreen() {
                             }
 
                             Column {
-                                Text(text = friend.username, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                Text(text = "${friend.rank} (Lvl ${friend.level})", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                Text(text = friend.username, style = AppText.rowTitle)
+                                Text(text = "${friend.rank} (Lvl ${friend.level})", style = AppText.caption, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                             }
                         }
 
@@ -282,7 +280,7 @@ fun SocialScreen() {
                                             }
                                         }
                                     ) {
-                                        Text("Decline", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 13.sp)
+                                        Text("Decline", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 13.sp)
                                     }
                                 }
                             }
@@ -303,7 +301,7 @@ fun SocialScreen() {
                                             }
                                         }
                                     ) {
-                                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 13.sp)
+                                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 13.sp)
                                     }
                                 }
                             }
@@ -356,7 +354,7 @@ fun SocialScreen() {
                                             }
                                         }
                                     ) {
-                                        Text("Remove", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 13.sp)
+                                        Text("Remove", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 13.sp)
                                     }
                                 }
                             }
@@ -388,18 +386,17 @@ private fun LeaderboardRow(entry: FriendLeaderboardEntry) {
                     1 -> MilestoneGold
                     2 -> MedalSilver
                     3 -> MedalBronze
-                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                 },
                 modifier = Modifier.width(36.dp)
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     if (entry.isMe) "${entry.username} (you)" else entry.username,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
+                    style = AppText.rowTitle,
                     color = if (entry.isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 )
-                Text("${entry.rank} · Lvl ${entry.level}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Text("${entry.rank} · Lvl ${entry.level}", style = AppText.caption, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
             }
             Text("${entry.xp} XP", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
         }

@@ -37,8 +37,7 @@ class RecommendationNudgeTest {
       )
     }
     compose.onNodeWithText("Ready for a transfer challenge?").assertIsDisplayed()
-    // DuoButton uppercases its label.
-    compose.onNodeWithText("TAKE THE CHALLENGE").performClick()
+    compose.onNodeWithText("Take the challenge").performClick()
     assert(transferTapped) { "transfer CTA should invoke onTakeTransferChallenge" }
   }
 
@@ -64,7 +63,7 @@ class RecommendationNudgeTest {
     }
     compose.onNodeWithText("Sharpen a specific skill").assertIsDisplayed()
     compose.onNodeWithText("Build speed with timed drills.").assertIsDisplayed()
-    compose.onNodeWithText("KEEP PRACTISING").performClick()
+    compose.onNodeWithText("Keep practising").performClick()
     assert(continueTapped)
   }
 

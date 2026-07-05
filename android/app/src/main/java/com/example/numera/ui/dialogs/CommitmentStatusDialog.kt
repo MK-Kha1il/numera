@@ -138,7 +138,7 @@ fun CommitmentStatusDialog(
             ) {
                 if (loading) {
                     CircularProgressIndicator(modifier = Modifier.size(40.dp))
-                    Text("Opening commitment space...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text("Opening commitment space...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                 } else if (restorationMessage != null) {
                     Text("✨ Restore Success ✨", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Text(restorationMessage!!, textAlign = TextAlign.Center)
@@ -161,7 +161,7 @@ fun CommitmentStatusDialog(
                     Text(
                         text = "Question ${currentQuestionIndex + 1} of $totalQuestions",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                     )
                     
                     val q = challengeQuestions[currentQuestionIndex % challengeQuestions.size]
@@ -243,7 +243,7 @@ fun CommitmentStatusDialog(
                     Text(
                         text = status?.message ?: "",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                         textAlign = TextAlign.Center
                     )
 
@@ -253,13 +253,13 @@ fun CommitmentStatusDialog(
                     ) {
                         Card(modifier = Modifier.weight(1f)) {
                             Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Climb", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                Text("Climb", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                 Text("$currentClimb days", fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                         Card(modifier = Modifier.weight(1f)) {
                             Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Best Run", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                Text("Best Run", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                 Text("$bestClimb days", fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             }
                         }
@@ -271,13 +271,13 @@ fun CommitmentStatusDialog(
                     ) {
                         Card(modifier = Modifier.weight(1f)) {
                             Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Habit Index", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                Text("Habit Index", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                 Text("${(index * 100).toInt()}%", fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                         Card(modifier = Modifier.weight(1f)) {
                             Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Burnout Risk", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                Text("Burnout Risk", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                 Text(
                                     text = burnout.replaceFirstChar { it.uppercaseChar() },
                                     fontSize = 15.sp,
@@ -318,7 +318,7 @@ fun CommitmentStatusDialog(
                                 com.example.numera.sound.SoundManager.playClick()
                                 handleRecommit("shield")
                             },
-                            color = if (shields > 0) StatusInfo else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            color = if (shields > 0) StatusInfo else MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                             modifier = Modifier.fillMaxWidth(),
                             enabled = shields > 0
                         )
@@ -329,7 +329,7 @@ fun CommitmentStatusDialog(
                                 com.example.numera.sound.SoundManager.playClick()
                                 handleRecommit("coins")
                             },
-                            color = if ((status?.coins ?: 0) >= 150) Color(0xFFFFB300) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            color = if ((status?.coins ?: 0) >= 150) Color(0xFFFFB300) else MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                             modifier = Modifier.fillMaxWidth(),
                             enabled = (status?.coins ?: 0) >= 150
                         )
@@ -353,7 +353,7 @@ fun CommitmentStatusDialog(
                                 Text(
                                     text = "Buy it back before the day's out — one bad day shouldn't cost you weeks.",
                                     fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                                     textAlign = TextAlign.Center
                                 )
                                 Spacer(modifier = Modifier.height(Spacing.s))
@@ -363,7 +363,7 @@ fun CommitmentStatusDialog(
                                         com.example.numera.sound.SoundManager.playClick()
                                         handleStreakRepair()
                                     },
-                                    color = if ((status?.coins ?: 0) >= offer.cost) Color(0xFFFFB300) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                    color = if ((status?.coins ?: 0) >= offer.cost) Color(0xFFFFB300) else MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                                     modifier = Modifier.fillMaxWidth(),
                                     enabled = (status?.coins ?: 0) >= offer.cost && !isRestoring
                                 )

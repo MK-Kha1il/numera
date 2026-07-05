@@ -91,7 +91,7 @@ fun MasteryProfileCard(
             Text(
                 text = "How your understanding breaks down — not just whether you're right, but whether it's fast, sticky, and unaided.",
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
             )
 
             DIMENSIONS.forEach { dim ->

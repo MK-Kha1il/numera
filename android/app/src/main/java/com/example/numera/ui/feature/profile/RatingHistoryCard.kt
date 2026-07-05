@@ -63,7 +63,7 @@ fun RatingHistoryCard(
             Text(
                 text = "Your recent rated results and where they left your rating.",
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
             )
 
             history.take(10).forEach { e ->

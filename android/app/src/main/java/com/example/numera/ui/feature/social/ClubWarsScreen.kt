@@ -140,7 +140,7 @@ fun ClubWarsScreen(onBack: () -> Unit) {
                             Row(modifier = Modifier.fillMaxWidth().padding(Spacing.l), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(c.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                    Text("${c.memberCount} ${if (c.memberCount == 1) "member" else "members"}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                    Text("${c.memberCount} ${if (c.memberCount == 1) "member" else "members"}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                 }
                                 DuoButton(text = "Challenge", onClick = { declare(c.id) }, enabled = !busy)
                             }
@@ -164,7 +164,7 @@ fun ClubWarsScreen(onBack: () -> Unit) {
                         )
                         w.youPlayed -> Text("You scored ${w.yourScore}/${w.problemCount} for your club. 🎯", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         amInThisWar -> DuoButton(text = "▶ Play for your club", onClick = { answers = emptyList(); qIndex = 0; phase = "playing" }, modifier = Modifier.fillMaxWidth())
-                        else -> Text("You're not in either of these clubs.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        else -> Text("You're not in either of these clubs.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                 }
             }
@@ -218,7 +218,7 @@ private fun WarCard(w: ClubWar, onClick: () -> Unit) {
 private fun WarStandings(w: ClubWar) {
     DuoCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
-            Text(w.concept, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+            Text(w.concept, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 SideScore(w.challenger, w.myClubId)
                 Text("${if (w.status == "active") (w.msRemaining / 86_400_000L) else 0}d", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))

@@ -1,4 +1,5 @@
 package com.example.numera.ui.feature.game
+import com.example.numera.theme.Alpha
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,7 +46,7 @@ fun ReviewSolutionDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "💡 SOLUTION BREAKDOWN",
+                text = "💡 Solution breakdown",
                 fontWeight = FontWeight.Black,
                 fontSize = 18.sp,
                 color = MaterialTheme.colorScheme.primary
@@ -66,7 +67,7 @@ fun ReviewSolutionDialog(
                         .padding(Spacing.m)
                 ) {
                     Column {
-                        Text("Question:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Question:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         if (problem.question.contains("$") || problem.question.contains("\\")) {
                             MathText(text = problem.question, fontSizePx = 30, color = MaterialTheme.colorScheme.onSurface)
                         } else {
@@ -74,7 +75,7 @@ fun ReviewSolutionDialog(
                         }
 
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text("Correct Answer:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Correct Answer:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         Text(text = problem.correctAnswer, fontWeight = FontWeight.ExtraBold, color = CorrectGreen)
                     }
                 }
@@ -91,7 +92,7 @@ fun ReviewSolutionDialog(
                 }
 
                 Spacer(modifier = Modifier.height(Spacing.s))
-                Text("💡 Tip: Retry the question to lock in the logic!", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Text("💡 Tip: Retry the question to lock in the logic!", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
             }
         },
         confirmButton = {
@@ -109,7 +110,7 @@ fun ReviewSolutionDialog(
                     text = "Close",
                     onClick = onDismiss,
                     modifier = Modifier.weight(0.8f),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                 )
             }
         }

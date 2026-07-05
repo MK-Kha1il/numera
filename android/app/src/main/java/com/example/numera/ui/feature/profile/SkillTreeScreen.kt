@@ -83,7 +83,7 @@ fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit, onD
                                     StageChip(agg.stage)
                                 }
                                 OverallBar(agg.overall, stageColor(agg.stage))
-                                Text("${agg.conceptCount} concepts practiced", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                Text("${agg.conceptCount} concepts practiced", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                 Spacer(Modifier.height(Spacing.xs))
                                 DimensionGrid(agg.dimensions, tree.dimensions.associate { it.key to it.label })
                             }
@@ -109,7 +109,7 @@ fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit, onD
                         Text(
                             "These are slipping — a quick review locks them back in.",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = Alpha.secondary)
                         )
                         reviewNodes.forEach { node -> ConceptCard(node, dimLabels, onPractice, onDiscuss) }
                     }
@@ -197,7 +197,7 @@ private fun DimensionGrid(d: MasteryDimensions, labels: Map<String, String>) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         rows.forEach { (key, value) ->
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(labels[key] ?: key.replaceFirstChar { it.uppercase() }, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), modifier = Modifier.width(86.dp))
+                Text(labels[key] ?: key.replaceFirstChar { it.uppercase() }, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), modifier = Modifier.width(86.dp))
                 MiniBar(value, Modifier.weight(1f))
             }
         }

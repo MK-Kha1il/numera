@@ -146,9 +146,9 @@ fun WeeklyActivityChart(activityDays: List<ActivityDay>) {
                         Text(label, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                     }
                 }
-                StatChip("BEST DAY", bestDay.toString(), primary, Modifier.weight(1f))
-                StatChip("ACTIVE DAYS", "$activeDays/7", secondary, Modifier.weight(1f))
-                StatChip("DAILY AVG", (totalSolved / 7).toString(), MaterialTheme.colorScheme.tertiary, Modifier.weight(1f))
+                StatChip("Best day", bestDay.toString(), primary, Modifier.weight(1f))
+                StatChip("Active days", "$activeDays/7", secondary, Modifier.weight(1f))
+                StatChip("Daily avg", (totalSolved / 7).toString(), MaterialTheme.colorScheme.tertiary, Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(18.dp))

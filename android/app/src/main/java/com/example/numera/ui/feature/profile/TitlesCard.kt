@@ -41,12 +41,12 @@ fun TitlesCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("🎖️ Titles", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                Text("🎖️ Titles", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
                 if (titles.active.isNotEmpty()) {
                     Text("Clear", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable { onSelect("") })
                 }
             }
-            Text("Earn titles by competing, then equip one to show by your name.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+            Text("Earn titles by competing, then equip one to show by your name.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
 
             titles.titles.forEach { t ->
                 Row(

@@ -1,4 +1,5 @@
 package com.example.numera.ui.dialogs
+import com.example.numera.theme.Alpha
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -63,10 +64,10 @@ fun ClassesDialog(onDismiss: () -> Unit) {
                 if (r != null) {
                     TextButton(onClick = { roster = null }) { Text("← Back to classes") }
                     Text(r.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text("Join code: ${r.code}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text("Join code: ${r.code}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     Spacer(Modifier.height(Spacing.xs))
                     if (r.members.isEmpty()) {
-                        Text("No students have joined yet. Share the code above.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("No students have joined yet. Share the code above.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     } else {
                         r.members.forEach { m ->
                             Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
@@ -145,7 +146,7 @@ fun ClassesDialog(onDismiss: () -> Unit) {
                             ) {
                                 Column(Modifier.weight(1f)) {
                                     Text(c.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    Text("Code ${c.code} · ${c.memberCount} student${if (c.memberCount == 1) "" else "s"}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                    Text("Code ${c.code} · ${c.memberCount} student${if (c.memberCount == 1) "" else "s"}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                 }
                                 Text("View →", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             }

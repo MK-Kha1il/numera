@@ -140,7 +140,7 @@ private fun StatTile(emoji: String, value: String, label: String, accent: Color,
         Column(modifier = Modifier.fillMaxWidth().padding(Spacing.m), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(emoji, fontSize = 20.sp)
             Text(value, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = accent)
-            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
         }
     }
 }

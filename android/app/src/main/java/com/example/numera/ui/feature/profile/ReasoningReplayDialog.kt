@@ -54,7 +54,7 @@ fun ReasoningReplayDialog(review: ReasoningReviewResponse, onDismiss: () -> Unit
                                 "Problem ${i + 1} ${if (item.banked) "· banked ✓" else ""}",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (item.banked) CorrectGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                color = if (item.banked) CorrectGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                             )
                             MathText(text = item.question, fontSizePx = 32)
 

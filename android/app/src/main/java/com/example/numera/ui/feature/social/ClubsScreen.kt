@@ -109,7 +109,7 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
                         Text("${mine?.members?.size ?: 0} members", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                     }
                 }
-                Text("TEAM RANKING", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
+                Text("Team ranking", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
                 mine?.members?.forEach { m ->
                     val canManage = club.isOwner && m.id != club.ownerId
                     ClubMemberRow(
@@ -151,16 +151,16 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
                 }
 
                 // ---- Browse ----
-                Text("BROWSE CLUBS", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
+                Text("Browse clubs", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
                 if (clubs.isEmpty()) {
-                    Text("No clubs yet — be the first to start one!", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text("No clubs yet — be the first to start one!", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                 } else {
                     clubs.forEach { c ->
                         DuoCard(modifier = Modifier.fillMaxWidth()) {
                             Row(modifier = Modifier.fillMaxWidth().padding(Spacing.l), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(c.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                    Text("${c.memberCount} ${if (c.memberCount == 1) "member" else "members"}${if (!c.description.isNullOrBlank()) " · ${c.description}" else ""}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), maxLines = 2)
+                                    Text("${c.memberCount} ${if (c.memberCount == 1) "member" else "members"}${if (!c.description.isNullOrBlank()) " · ${c.description}" else ""}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), maxLines = 2)
                                 }
                                 DuoButton(text = "Join", onClick = { act({ RetrofitClient.apiService.joinClub(it, c.id) }, "Couldn't join.") }, enabled = !busy)
                             }
@@ -172,7 +172,7 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
             // Top Clubs — two ladders: Activity (combined level/XP) and Skill (avg competitive rating,
             // audit #17 — so a tight crew of strong mathematicians can out-rank a horde of grinders).
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth().padding(top = Spacing.s)) {
-                Text("🏆 TOP CLUBS", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
+                Text("🏆 Top clubs", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
                     LadderChip("Activity", clubLadderMode == "activity") { clubLadderMode = "activity" }
                     LadderChip("Skill", clubLadderMode == "skill") { clubLadderMode = "skill" }
@@ -180,7 +180,7 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
             }
             if (clubLadderMode == "activity") {
                 if (topClubs.isEmpty()) {
-                    Text("No clubs ranked yet.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text("No clubs ranked yet.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                 } else {
                     topClubs.forEach { tc ->
                         val isMine = mine?.club?.id == tc.id
@@ -192,7 +192,7 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
                 }
             } else {
                 if (skillClubs.isEmpty()) {
-                    Text("No clubs ranked yet.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text("No clubs ranked yet.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                 } else {
                     skillClubs.forEach { sc ->
                         val isMine = mine?.club?.id == sc.id
@@ -234,12 +234,12 @@ private fun ClubLadderRow(position: Int, name: String, isMine: Boolean, subtitle
                 "#$position",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 15.sp,
-                color = when (position) { 1 -> MilestoneGold; 2 -> MedalSilver; 3 -> MedalBronze; else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) },
+                color = when (position) { 1 -> MilestoneGold; 2 -> MedalSilver; 3 -> MedalBronze; else -> MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary) },
                 modifier = Modifier.width(36.dp)
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(if (isMine) "$name (your club)" else name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isMine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                Text(subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Text(subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
             }
         }
     }
@@ -260,7 +260,7 @@ private fun ClubMemberRow(
                 "#${m.position}",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 15.sp,
-                color = when (m.position) { 1 -> MilestoneGold; 2 -> MedalSilver; 3 -> MedalBronze; else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) },
+                color = when (m.position) { 1 -> MilestoneGold; 2 -> MedalSilver; 3 -> MedalBronze; else -> MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary) },
                 modifier = Modifier.width(36.dp)
             )
             Column(modifier = Modifier.weight(1f)) {
@@ -268,7 +268,7 @@ private fun ClubMemberRow(
                     Text(m.username, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     if (isOwner) Text("👑", fontSize = 12.sp)
                 }
-                Text("${m.rank} · Lvl ${m.level}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Text("${m.rank} · Lvl ${m.level}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
             }
             Text("${m.xp} XP", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
             if (canManage) {

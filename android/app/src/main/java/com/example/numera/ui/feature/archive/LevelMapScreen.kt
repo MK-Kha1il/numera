@@ -529,7 +529,7 @@ fun LevelMapScreen(
                 ) {
                     item {
                         Text(
-                            text = "SCIENTIFICALLY PLANNED PATHWAY",
+                            text = "Scientifically planned pathway",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary,
@@ -538,7 +538,7 @@ fun LevelMapScreen(
                         Text(
                             text = "Complete levels in sequence. Categories interleave automatically for scientifically proven long-term memory retention.",
                             fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(vertical = Spacing.xs)
                         )
@@ -683,7 +683,7 @@ fun LevelMapScreen(
                                         Text(
                                             text = if (puzzle.solved_today == true) "Completed today! +50 XP, +30 🪙" else "Solve for +50 XP and +30 🪙",
                                             fontSize = 12.sp,
-                                            color = if (puzzle.solved_today == true) CorrectGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                            color = if (puzzle.solved_today == true) CorrectGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                                         )
                                     }
                                     DuoButton(
@@ -737,7 +737,7 @@ fun LevelMapScreen(
                                         Text(
                                             text = "Review your ${mistakesList.size} unresolved mathematical mistakes",
                                             fontSize = 12.sp,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                                         )
                                     }
                                     // Give the learner a choice: review the mistakes, or ignore
@@ -780,7 +780,7 @@ fun LevelMapScreen(
                                                 "Ignore",
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                                             )
                                         }
                                     }
@@ -913,7 +913,7 @@ fun LevelMapScreen(
                 ) {
                     item {
                         Text(
-                            text = "SPACED REPETITION REVIEWS",
+                            text = "Spaced repetition reviews",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -921,7 +921,7 @@ fun LevelMapScreen(
                         Text(
                             text = "Concepts you struggled with in the past are automatically scheduled for active recall based on the SuperMemo SM-2 algorithm.",
                             fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                             modifier = Modifier.padding(vertical = Spacing.xs)
                         )
                     }
@@ -1018,7 +1018,7 @@ fun LevelMapScreen(
                         .padding(Spacing.l)
                 ) {
                     Text(
-                        text = "INFINITE ARCHIVE EXPLORER",
+                        text = "Infinite archive explorer",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -1026,7 +1026,7 @@ fun LevelMapScreen(
                     Text(
                         text = "Search through thousands of historical and procedurally generated challenges.",
                         fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                         modifier = Modifier.padding(vertical = Spacing.xs)
                     )
                     
@@ -1257,7 +1257,7 @@ fun LevelMapScreen(
                                             Text(
                                                 text = "Source: ${item.source}",
                                                 fontSize = 11.sp,
-                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                                                 fontWeight = FontWeight.Medium
                                             )
                                         }

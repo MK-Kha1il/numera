@@ -43,7 +43,7 @@ fun RivalsCard(
             Text(
                 text = "Your head-to-head record against the players you've faced most.",
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
             )
 
             meaningful.take(8).forEach { r ->
@@ -66,7 +66,7 @@ fun RivalsCard(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Black,
                         color = when {
-                            even -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            even -> MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                             leading -> CorrectGreen
                             else -> WrongRed
                         },

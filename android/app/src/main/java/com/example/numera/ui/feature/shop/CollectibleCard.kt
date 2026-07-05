@@ -198,7 +198,7 @@ private fun ShopTitleArt(item: ShopItem, accent: Color) {
         modifier = Modifier
             .clip(RoundedCornerShape(CornerRadius.full))
             .background(accent.copy(alpha = 0.16f))
-            .border(1.dp, accent.copy(alpha = 0.6f), RoundedCornerShape(CornerRadius.full))
+            .border(1.dp, accent.copy(alpha = Alpha.secondary), RoundedCornerShape(CornerRadius.full))
             .padding(horizontal = Spacing.s, vertical = Spacing.xs),
     ) {
         Text(
@@ -259,7 +259,7 @@ private fun ShopMotifArt(accent: Color, motif: ShopMotif) {
                     val a = (2.0 * PI * i / n).toFloat()
                     val r1 = w * 0.30f
                     val r2 = w * 0.40f
-                    drawLine(accent.copy(alpha = 0.6f), Offset(cx + cos(a) * r1, cy + sin(a) * r1), Offset(cx + cos(a) * r2, cy + sin(a) * r2), strokeWidth = 2f)
+                    drawLine(accent.copy(alpha = Alpha.secondary), Offset(cx + cos(a) * r1, cy + sin(a) * r1), Offset(cx + cos(a) * r2, cy + sin(a) * r2), strokeWidth = 2f)
                 }
             }
         }

@@ -67,7 +67,7 @@ fun TwoFactorSettingsSection() {
                         null -> "Checking status…"
                     },
                     fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                 )
             }
             if (enabled == true) {
@@ -202,7 +202,7 @@ fun TwoFactorSettingsSection() {
             Text(
                 "Each can be used once if you lose your authenticator. Store them somewhere safe — they won't be shown again.",
                 fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
             )
             Spacer(Modifier.height(6.dp))
             Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(CornerRadius.m), modifier = Modifier.fillMaxWidth()) {

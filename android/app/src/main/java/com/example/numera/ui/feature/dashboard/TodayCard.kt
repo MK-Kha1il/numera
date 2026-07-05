@@ -1,4 +1,5 @@
 package com.example.numera.ui.feature.dashboard
+import com.example.numera.theme.Alpha
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,7 +44,7 @@ fun TodayCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(CornerRadius.l))
             .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f), RoundedCornerShape(CornerRadius.l))
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = Alpha.secondary), RoundedCornerShape(CornerRadius.l))
             .padding(Spacing.l),
         verticalArrangement = Arrangement.spacedBy(Spacing.s),
     ) {
@@ -62,7 +63,7 @@ fun TodayCard(
                 text = "$doneCount/${today.items.size}",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
             )
         }
 

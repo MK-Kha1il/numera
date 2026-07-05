@@ -56,7 +56,7 @@ fun ConceptDiscussionScreen(conceptId: String, conceptName: String, onBack: () -
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("💬 Discussion", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
-                Text(conceptName, fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+                Text(conceptName, fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = Alpha.secondary))
             }
             TextButton(onClick = onBack) { Text("Close") }
         }
@@ -197,7 +197,7 @@ private fun PostCard(post: ConceptPost, onDelete: () -> Unit, onUpvote: () -> Un
                     // You can't upvote your own post — show the count only.
                     Text("▲ ${post.votes}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                 } else {
-                    val accent = if (post.voted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    val accent = if (post.voted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                     TextButton(onClick = onUpvote, contentPadding = PaddingValues(horizontal = Spacing.s)) {
                         Text("▲ ${post.votes}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = accent)
                     }

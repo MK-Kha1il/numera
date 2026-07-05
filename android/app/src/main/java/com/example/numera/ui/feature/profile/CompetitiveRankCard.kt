@@ -109,7 +109,7 @@ fun CompetitiveRankCard(
             Text(
                 text = "One rating, earned across solo practice and ranked duels.",
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
             )
 
             // Hero row: the overall rank.
@@ -135,7 +135,7 @@ fun CompetitiveRankCard(
                         },
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                     )
                     // Apex tier (audit #23): the leaderboard-only standing above the rank thresholds.
                     if (apexStanding != null) {
@@ -189,7 +189,7 @@ fun CompetitiveRankCard(
                         text = global.pointsToNext?.let { "$it points to ${global.nextRank}" } ?: "Next: ${global.nextRank}",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                     )
                 }
             }

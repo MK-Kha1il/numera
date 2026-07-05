@@ -1,4 +1,5 @@
 package com.example.numera.ui.feature.game
+import com.example.numera.theme.Alpha
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -87,7 +88,7 @@ fun KeepGoingDialog(
                 TextButton(onClick = onExit) {
                     Text(
                         "Leave for now",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                     )
                 }
             }

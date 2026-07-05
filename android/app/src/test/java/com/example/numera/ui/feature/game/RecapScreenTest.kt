@@ -22,7 +22,7 @@ import org.robolectric.annotation.GraphicsMode
 /**
  * Guards the recap (isGameOver) end-screen so it can be carved into a RecapScreen composable. The
  * only way to reach the recap is to actually finish a session, so this drives a one-problem level
- * to completion: answer correctly -> tap FINISH GAME -> the stubbed completeSession resolves ->
+ * to completion: answer correctly -> tap Finish Game -> the stubbed completeSession resolves ->
  * the recap renders. Asserts the recap's stable header.
  *
  * Plain-text problem (no $/\, avoids the KaTeX WebView) + tall viewport, same reliability strategy
@@ -69,12 +69,12 @@ class RecapScreenTest {
       compose.onAllNodesWithText("Only question here.").fetchSemanticsNodes().isNotEmpty()
     }
     compose.onNodeWithText("right").performClick()
-    // Single problem -> this is the last one, so the CTA is "FINISH GAME" (DuoButton uppercases).
+    // Single problem -> this is the last one, so the CTA is "Finish Game".
     compose.waitUntil(timeoutMillis = 5_000) {
-      compose.onAllNodesWithText("FINISH GAME").fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithText("Finish Game").fetchSemanticsNodes().isNotEmpty()
     }
     compose.waitForIdle()
-    compose.onNodeWithText("FINISH GAME").performClick()
+    compose.onNodeWithText("Finish Game").performClick()
     // completeSession resolves on Main -> isGameOver flips -> recap renders.
     compose.waitUntil(timeoutMillis = 10_000) {
       compose.onAllNodesWithText("LEVEL RECAP").fetchSemanticsNodes().isNotEmpty()

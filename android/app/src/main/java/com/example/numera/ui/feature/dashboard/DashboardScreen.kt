@@ -40,6 +40,130 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** Promotion / demotion state of a standings row (Weekly leagues only; Global passes [None]). */
+private enum class StandingHighlight { None, Promo, Demo }
+
+/**
+ * One ranked leaderboard row, shared by the Weekly-leagues and Global standings surfaces — was
+ * ~120 lines of near-identical inline `DuoCard` rows duplicated across two sub-tabs (audit #7).
+ * Figures (rank, score) render via [AppText.stat] (tabular) so the columns don't jitter on scroll.
+ */
+@Composable
+private fun StandingRow(
+    rank: Int,
+    avatarKey: String?,
+    username: String,
+    subtitle: String,
+    trailingValue: String,
+    isSelf: Boolean,
+    highlight: StandingHighlight,
+    onClick: () -> Unit,
+) {
+    val borderColor = when {
+        isSelf -> MaterialTheme.colorScheme.primary
+        highlight == StandingHighlight.Promo -> CorrectGreen
+        highlight == StandingHighlight.Demo -> WrongRed
+        else -> MaterialTheme.colorScheme.outline
+    }
+    val backgroundColor = when {
+        isSelf -> MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
+        highlight == StandingHighlight.Promo -> CorrectGreen.copy(alpha = 0.03f)
+        highlight == StandingHighlight.Demo -> WrongRed.copy(alpha = 0.03f)
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    DuoCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .pressable { onClick() },
+        borderColor = borderColor,
+        backgroundColor = backgroundColor
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.m)
+            ) {
+                Text(
+                    text = "#$rank",
+                    style = AppText.stat,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp,
+                    color = when (rank) {
+                        1 -> MedalGold
+                        2 -> MedalSilver
+                        3 -> MedalBronze
+                        else -> MaterialTheme.colorScheme.onBackground
+                    }
+                )
+
+                MathAvatar(
+                    avatarKey = avatarKey,
+                    modifier = Modifier
+                        .size(IconSize.l)
+                        .clip(CircleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), CircleShape)
+                )
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = username,
+                            style = AppText.rowTitle,
+                            color = if (isSelf) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                        if (isSelf) {
+                            Text(
+                                text = " (You)",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = subtitle,
+                        style = AppText.caption,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
+                    )
+                }
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+            ) {
+                if (highlight != StandingHighlight.None) {
+                    val chipColor = if (highlight == StandingHighlight.Promo) CorrectGreen else WrongRed
+                    val chipText = if (highlight == StandingHighlight.Promo) "Promo ↗" else "Demotion ↘"
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(CornerRadius.s))
+                            .background(chipColor.copy(alpha = 0.15f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(chipText, color = chipColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Text(
+                    text = trailingValue,
+                    style = AppText.stat,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun DashboardScreen(
     user: User?,
@@ -51,6 +175,9 @@ fun DashboardScreen(
 ) {
     val toast = LocalToast.current
     var homeSubTab by remember { mutableStateOf(0) }
+    // Within the "Standings" sub-tab: 0 = Weekly leagues, 1 = Global. The two former top-level
+    // sub-tabs collapsed into one ranked surface with a filter (audit #3/#7).
+    var standingsFilter by remember { mutableStateOf(0) }
     var questsList by remember { mutableStateOf<List<Quest>>(emptyList()) }
     var leagueLeaderboard by remember { mutableStateOf<LeagueLeaderboardResponse?>(null) }
     var secondsLeft by remember { mutableStateOf<Long>(0L) }
@@ -141,13 +268,11 @@ fun DashboardScreen(
     // without reshuffling. The list re-sorts only when the tab is refreshed (re-fetched).
     val sortedQuests = questsList
 
-    LaunchedEffect(homeSubTab) {
-        if (homeSubTab == 0) {
-            fetchQuests()
-        } else if (homeSubTab == 1) {
-            fetchLeagueLeaderboard()
-        } else if (homeSubTab == 2) {
-            fetchGlobalLeaderboard()
+    LaunchedEffect(homeSubTab, standingsFilter) {
+        when {
+            homeSubTab == 0 -> fetchQuests()
+            standingsFilter == 0 -> fetchLeagueLeaderboard()
+            else -> fetchGlobalLeaderboard()
         }
     }
 
@@ -183,13 +308,10 @@ fun DashboardScreen(
             containerColor = MaterialTheme.colorScheme.surface
         ) {
             Tab(selected = homeSubTab == 0, onClick = { homeSubTab = 0 }) {
-                Text("Daily Drills", modifier = Modifier.padding(14.dp), fontWeight = FontWeight.Bold)
+                Text("Daily Drills", modifier = Modifier.padding(Spacing.m), fontWeight = FontWeight.Bold)
             }
             Tab(selected = homeSubTab == 1, onClick = { homeSubTab = 1 }) {
-                Text("Weekly Leagues", modifier = Modifier.padding(14.dp), fontWeight = FontWeight.Bold)
-            }
-            Tab(selected = homeSubTab == 2, onClick = { homeSubTab = 2 }) {
-                Text("Global Standings", modifier = Modifier.padding(14.dp), fontWeight = FontWeight.Bold)
+                Text("Standings", modifier = Modifier.padding(Spacing.m), fontWeight = FontWeight.Bold)
             }
         }
 
@@ -266,14 +388,13 @@ fun DashboardScreen(
                     Column(modifier = Modifier.padding(horizontal = Spacing.xs)) {
                         Text(
                             text = "Today's drills",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.ExtraBold,
+                            style = AppText.sectionTitle,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
                             text = "Three quick reps. Each one sharpens you for the Arena.",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            style = AppText.rowSubtitle,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                             modifier = Modifier.padding(top = Spacing.xs)
                         )
                     }
@@ -311,17 +432,16 @@ fun DashboardScreen(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = quest.name,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 15.sp,
+                                        style = AppText.rowTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = quest.description,
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        style = AppText.rowSubtitle,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                                     )
 
-                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Spacer(modifier = Modifier.height(Spacing.xs))
 
                                     val targetProgressFraction = (quest.current.toFloat() / quest.target.toFloat()).coerceAtMost(1.0f)
                                     var animProgressFraction by remember(quest.type) { mutableStateOf(0f) }
@@ -349,7 +469,7 @@ fun DashboardScreen(
                                             text = "${quest.current} / ${quest.target}",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (quest.current >= quest.target) CorrectGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                            color = if (quest.current >= quest.target) CorrectGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                                         )
 
                                         Row(
@@ -398,7 +518,7 @@ fun DashboardScreen(
                                             } else {
                                                 Text(
                                                     text = "Active",
-                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.Medium
                                                 )
@@ -411,16 +531,37 @@ fun DashboardScreen(
                     }
                 }
             }
-        } else if (targetHomeSubTab == 1) {
+        } else {
+            // Standings — Weekly leagues / Global collapsed into one ranked surface (audit #3/#7).
             val currentDivision = leagueLeaderboard?.league ?: "Quartz"
             val showDemotion = currentDivision != "Quartz"
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(Spacing.l),
-                verticalArrangement = Arrangement.spacedBy(Spacing.m)
-            ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.l, vertical = Spacing.s),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+                ) {
+                    FilterChip(
+                        selected = standingsFilter == 0,
+                        onClick = { standingsFilter = 0 },
+                        label = { Text("Weekly leagues") }
+                    )
+                    FilterChip(
+                        selected = standingsFilter == 1,
+                        onClick = { standingsFilter = 1 },
+                        label = { Text("Global") }
+                    )
+                }
+
+                if (standingsFilter == 0) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(Spacing.l),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.m)
+                    ) {
                 item {
                     DuoCard(modifier = Modifier.fillMaxWidth()) {
                         Column(
@@ -430,24 +571,22 @@ fun DashboardScreen(
                         ) {
                             Text(
                                 text = "$currentDivision League",
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.ExtraBold,
+                                style = AppText.cardTitle,
                                 color = MaterialTheme.colorScheme.primary,
                                 textAlign = TextAlign.Center
                             )
 
                             Text(
                                 text = "Ends in: ${formatTimeRemaining(secondsLeft)}",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
+                                style = AppText.rowTitle,
                                 color = MaterialTheme.colorScheme.secondary,
                                 textAlign = TextAlign.Center
                             )
 
                             Text(
                                 text = "Weekly Standings: Earn XP to climb. Top 3 promote to next league, bottom 3 (except Quartz) demote.",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                style = AppText.rowSubtitle,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -468,135 +607,30 @@ fun DashboardScreen(
                         val isPromo = index < 3
                         val isDemo = showDemotion && (totalSize >= 5 && index >= totalSize - 3)
 
-                        val itemBorderColor = when {
-                            isSelf -> MaterialTheme.colorScheme.primary
-                            isPromo -> CorrectGreen
-                            isDemo -> WrongRed
-                            else -> MaterialTheme.colorScheme.outline
-                        }
-
-                        val itemBgColor = when {
-                            isSelf -> MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
-                            isPromo -> CorrectGreen.copy(alpha = 0.03f)
-                            isDemo -> WrongRed.copy(alpha = 0.03f)
-                            else -> MaterialTheme.colorScheme.surfaceVariant
-                        }
-
-                        DuoCard(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .pressable { onShowUserProfile(competitor.id) },
-                            borderColor = itemBorderColor,
-                            backgroundColor = itemBgColor
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(Spacing.xs),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.m)
-                                ) {
-                                    Text(
-                                        text = "#${index + 1}",
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 16.sp,
-                                        color = when (index) {
-                                            0 -> MedalGold
-                                            1 -> MedalSilver
-                                            2 -> MedalBronze
-                                            else -> MaterialTheme.colorScheme.onBackground
-                                        }
-                                    )
-
-                                    MathAvatar(
-                                        avatarKey = competitor.avatar,
-                                        modifier = Modifier
-                                            .size(IconSize.l)
-                                            .clip(CircleShape)
-                                            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), CircleShape),
-                                        fallbackEmoji = when (competitor.avatar) {
-                                            "avatar_owl" -> "🦉"
-                                            "avatar_fox" -> "🦊"
-                                            "avatar_koala" -> "🐨"
-                                            "avatar_panda" -> "🐼"
-                                            else -> "📐"
-                                        }
-                                    )
-
-                                    Column {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                text = competitor.username,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 15.sp,
-                                                color = if (isSelf) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                            )
-                                            if (isSelf) {
-                                                Text(
-                                                    text = " (You)",
-                                                    fontSize = 12.sp,
-                                                    color = MaterialTheme.colorScheme.primary,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            }
-                                        }
-
-                                        Text(
-                                            text = "Level ${competitor.level}",
-                                            fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                        )
-                                    }
-                                }
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
-                                ) {
-                                    when {
-                                        isPromo -> {
-                                            Box(
-                                                modifier = Modifier
-                                                    .clip(RoundedCornerShape(CornerRadius.s))
-                                                    .background(CorrectGreen.copy(alpha = 0.15f))
-                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                                            ) {
-                                                Text("Promo ↗", color = CorrectGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                            }
-                                        }
-                                        isDemo -> {
-                                            Box(
-                                                modifier = Modifier
-                                                    .clip(RoundedCornerShape(CornerRadius.s))
-                                                    .background(WrongRed.copy(alpha = 0.15f))
-                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                                            ) {
-                                                Text("Demotion ↘", color = WrongRed, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                            }
-                                        }
-                                    }
-
-                                    Text(
-                                        text = "${competitor.league_points} pts",
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.secondary
-                                    )
-                                }
-                            }
-                        }
+                        StandingRow(
+                            rank = index + 1,
+                            avatarKey = competitor.avatar,
+                            username = competitor.username,
+                            subtitle = "Level ${competitor.level}",
+                            trailingValue = "${competitor.league_points} pts",
+                            isSelf = isSelf,
+                            highlight = when {
+                                isPromo -> StandingHighlight.Promo
+                                isDemo -> StandingHighlight.Demo
+                                else -> StandingHighlight.None
+                            },
+                            onClick = { onShowUserProfile(competitor.id) }
+                        )
                     }
                 }
-            }
-        } else if (targetHomeSubTab == 2) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(Spacing.l),
-                verticalArrangement = Arrangement.spacedBy(Spacing.m)
-            ) {
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(Spacing.l),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.m)
+                    ) {
                 item {
                     DuoCard(modifier = Modifier.fillMaxWidth()) {
                         Column(
@@ -606,15 +640,14 @@ fun DashboardScreen(
                         ) {
                             Text(
                                 text = "🌍 Global Leaderboard",
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.ExtraBold,
+                                style = AppText.cardTitle,
                                 color = MaterialTheme.colorScheme.primary,
                                 textAlign = TextAlign.Center
                             )
                             Text(
                                 text = "All-time rankings of top Numera solvers worldwide by total XP.",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                style = AppText.rowSubtitle,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -636,81 +669,20 @@ fun DashboardScreen(
                 } else {
                     itemsIndexed(globalLeaderboard) { index, globalUser ->
                         val isSelf = globalUser.id == user?.id
-                        val itemBorderColor = if (isSelf) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-                        val itemBgColor = if (isSelf) MaterialTheme.colorScheme.primary.copy(alpha = 0.05f) else MaterialTheme.colorScheme.surfaceVariant
-
-                        DuoCard(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .pressable { onShowUserProfile(globalUser.id) },
-                            borderColor = itemBorderColor,
-                            backgroundColor = itemBgColor
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(Spacing.xs),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.m)
-                                ) {
-                                    Text(
-                                        text = "#${index + 1}",
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 16.sp,
-                                        color = when (index) {
-                                            0 -> MedalGold
-                                            1 -> MedalSilver
-                                            2 -> MedalBronze
-                                            else -> MaterialTheme.colorScheme.onBackground
-                                        }
-                                    )
-
-                                    MathAvatar(
-                                        avatarKey = globalUser.avatar,
-                                        modifier = Modifier
-                                            .size(IconSize.l)
-                                            .clip(CircleShape)
-                                            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), CircleShape)
-                                    )
-
-                                    Column {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                text = globalUser.username,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 15.sp,
-                                                color = if (isSelf) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                            )
-                                            if (isSelf) {
-                                                Text(
-                                                    text = " (You)",
-                                                    fontSize = 12.sp,
-                                                    color = MaterialTheme.colorScheme.primary,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            }
-                                        }
-
-                                        Text(
-                                            text = "Level ${globalUser.level} · ${globalUser.rank}",
-                                            fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                        )
-                                    }
-                                }
-
-                                Text(
-                                    text = "${globalUser.xp} XP",
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.secondary
-                                )
-                            }
-                        }
+                        StandingRow(
+                            rank = index + 1,
+                            avatarKey = globalUser.avatar,
+                            username = globalUser.username,
+                            subtitle = "Level ${globalUser.level} · ${globalUser.rank}",
+                            trailingValue = "${globalUser.xp} XP",
+                            isSelf = isSelf,
+                            highlight = StandingHighlight.None,
+                            onClick = { onShowUserProfile(globalUser.id) }
+                        )
                     }
                 }
+            }
+        }
             }
         }
     }

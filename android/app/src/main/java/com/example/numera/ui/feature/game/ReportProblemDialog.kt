@@ -1,4 +1,5 @@
 package com.example.numera.ui.feature.game
+import com.example.numera.theme.Alpha
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -159,7 +160,7 @@ fun ReportProblemDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
             }
         }
     )

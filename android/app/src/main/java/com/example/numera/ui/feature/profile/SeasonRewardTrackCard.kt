@@ -55,14 +55,14 @@ fun SeasonRewardTrackCard(
                         text = "${track.season.daysRemaining}d left",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                     )
                 }
             }
             Text(
                 text = "Reach a tier this season to claim its reward. The track resets when the season ends.",
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
             )
 
             track.tiers.forEach { tier -> RewardTierRow(tier = tier, onClaim = onClaim) }

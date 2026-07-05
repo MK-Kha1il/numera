@@ -120,7 +120,7 @@ fun BoxScope.TipOverlay(
                             metadata.learningObjective?.let { objective ->
                                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                                     Text(
-                                        text = "LEARNING OBJECTIVE",
+                                        text = "Learning objective",
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.secondary,
@@ -138,7 +138,7 @@ fun BoxScope.TipOverlay(
                             metadata.commonMistakes?.let { pitfall ->
                                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                                     Text(
-                                        text = "WATCH OUT FOR",
+                                        text = "Watch out for",
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = WrongRed,
@@ -187,7 +187,7 @@ fun BoxScope.TipOverlay(
                         Text(
                             text = "Tip unavailable for this exercise.",
                             fontSize = 15.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                         )
                     }
                 }

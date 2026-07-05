@@ -162,7 +162,7 @@ private fun EmptyArt(kind: EmptyIllustration) {
         }
 
         // A couple of sparkles for warmth.
-        drawCircle(secondary.copy(alpha = 0.6f), radius = w * 0.02f, center = Offset(w * 0.74f, h * 0.30f))
+        drawCircle(secondary.copy(alpha = Alpha.secondary), radius = w * 0.02f, center = Offset(w * 0.74f, h * 0.30f))
         drawCircle(primary.copy(alpha = 0.5f), radius = w * 0.015f, center = Offset(w * 0.26f, h * 0.66f))
     }
 }
