@@ -138,11 +138,16 @@ router.post('/api/challenges', authenticateToken, (req, res) => {
 });
 
 // Look up a challenge by code: metadata + answer-stripped problems + your attempt (if any) + board.
+// Serving the problems also STARTS the attempt clock (first view wins; re-viewing never resets
+// it): the speed tiebreak is measured server-side from this stamp, so it can't be faked.
 router.get('/api/challenges/:code', authenticateToken, async (req, res) => {
   const code = String(req.params.code || '').toUpperCase();
   try {
     const ch = await new Promise((resolve, reject) => db.get('SELECT * FROM custom_challenges WHERE code = ?', [code], (e, r) => (e ? reject(e) : resolve(r))));
     if (!ch) return res.status(404).json({ error: 'Challenge not found' });
+    await new Promise((resolve, reject) =>
+      db.run('INSERT OR IGNORE INTO challenge_starts (challenge_id, user_id, started_at) VALUES (?, ?, ?)', [ch.id, req.user.id, Date.now()], (e) => (e ? reject(e) : resolve()))
+    );
     const creator = await new Promise((resolve, reject) => db.get('SELECT username FROM users WHERE id = ?', [ch.creator_id], (e, r) => (e ? reject(e) : resolve(r))));
     const mine = await new Promise((resolve, reject) => db.get('SELECT score, elapsed_ms FROM challenge_attempts WHERE challenge_id = ? AND user_id = ?', [ch.id, req.user.id], (e, r) => (e ? reject(e) : resolve(r))));
     const problems = JSON.parse(ch.problems_json).map((p) => ({ question: p.question, options: p.options }));
@@ -166,10 +171,12 @@ router.get('/api/challenges/:code', authenticateToken, async (req, res) => {
 
 // Submit a one-shot attempt: score it, record it, bump play_count. One attempt per user — a replay
 // returns the existing result without re-scoring, so the board can't be gamed by retrying.
+// Elapsed time is SERVER-measured (now − the challenge_starts stamp from when the problems were
+// first served). The old client-supplied elapsedMs let a tampering client send 0ms and win every
+// speed tiebreak; the body field is now ignored.
 router.post('/api/challenges/:code/play', authenticateToken, (req, res) => {
   const code = String(req.params.code || '').toUpperCase();
   const answers = Array.isArray(req.body.answers) ? req.body.answers : null;
-  const elapsedMs = Math.max(0, parseInt(req.body.elapsedMs, 10) || 0);
   if (!answers) return res.status(400).json({ error: 'answers array required' });
 
   withTransaction(async (tx) => {
@@ -179,12 +186,15 @@ router.post('/api/challenges/:code/play', authenticateToken, (req, res) => {
     if (existing) {
       return { challengeId: ch.id, alreadyPlayed: true, score: existing.score, elapsedMs: existing.elapsed_ms, total: ch.problem_count };
     }
+    const start = await tx.get('SELECT started_at FROM challenge_starts WHERE challenge_id = ? AND user_id = ?', [ch.id, req.user.id]);
+    if (!start) throw httpError(400, 'Fetch the challenge before playing it');
     const problems = JSON.parse(ch.problems_json);
     let score = 0;
     for (let i = 0; i < problems.length; i++) {
       if (areEquivalent(answers[i], problems[i].answer)) score += 1;
     }
     const now = Date.now();
+    const elapsedMs = Math.max(0, now - start.started_at);
     await tx.run('INSERT INTO challenge_attempts (challenge_id, user_id, score, elapsed_ms, created_at) VALUES (?, ?, ?, ?, ?)', [ch.id, req.user.id, score, elapsedMs, now]);
     await tx.run('UPDATE custom_challenges SET play_count = play_count + 1 WHERE id = ?', [ch.id]);
     return { challengeId: ch.id, alreadyPlayed: false, score, elapsedMs, total: problems.length };

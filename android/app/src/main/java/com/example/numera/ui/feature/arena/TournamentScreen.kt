@@ -137,7 +137,7 @@ fun TournamentScreen(user: User?, onExit: () -> Unit) {
         DuoCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 Text(cur.tournament.title, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-                Text("${cur.tournament.conceptName} · ${cur.tournament.problemCount} problems", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Text("${cur.tournament.conceptName} · ${cur.tournament.problemCount} problems", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                 Text("⏳ ${remaining(cur.tournament.msRemaining)} · top 3 win coins", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             }
         }
@@ -186,7 +186,7 @@ fun TournamentScreen(user: User?, onExit: () -> Unit) {
                         fontSize = 14.sp,
                         color = when {
                             isMe -> MaterialTheme.colorScheme.primary
-                            row.isBot -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            row.isBot -> MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                             else -> MaterialTheme.colorScheme.onSurface
                         },
                         modifier = Modifier.weight(1f)

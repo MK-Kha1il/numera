@@ -107,7 +107,7 @@ fun AsyncDuelScreen(user: User?, onExit: () -> Unit) {
                             )
                             if (won && (res?.reward ?: 0) > 0) Text("+${res?.reward} coins", fontWeight = FontWeight.Bold, color = MilestoneGold)
                         } else {
-                            Text("Waiting for your opponent to play…", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), textAlign = TextAlign.Center)
+                            Text("Waiting for your opponent to play…", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), textAlign = TextAlign.Center)
                         }
                     }
                 }
@@ -147,7 +147,7 @@ fun AsyncDuelScreen(user: User?, onExit: () -> Unit) {
                     Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                         Text("Challenge a Friend", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
                         if (friends.isEmpty()) {
-                            Text("Add friends to challenge them to a duel.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("Add friends to challenge them to a duel.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         } else {
                             friends.forEach { f ->
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -162,7 +162,7 @@ fun AsyncDuelScreen(user: User?, onExit: () -> Unit) {
                 // Your duels
                 Text("Your Duels", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.align(Alignment.Start))
                 if (matches.isEmpty()) {
-                    Text("No active duels yet. Challenge a friend above!", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text("No active duels yet. Challenge a friend above!", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                 } else {
                     matches.forEach { m ->
                         DuoCard(modifier = Modifier.fillMaxWidth()) {
@@ -180,7 +180,7 @@ fun AsyncDuelScreen(user: User?, onExit: () -> Unit) {
                                         m.played -> "Waiting for opponent"
                                         else -> m.status
                                     }
-                                    Text(sub, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                    Text(sub, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                 }
                                 if (m.yourTurn) {
                                     DuoButton(text = "Play", onClick = { startPlay(m.matchId) }, enabled = !busy)

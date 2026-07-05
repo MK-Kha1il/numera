@@ -174,7 +174,7 @@ fun LiveRoomScreen(onExit: () -> Unit) {
             "lobby" -> {
                 DuoCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.fillMaxWidth().padding(Spacing.xl), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
-                        Text("ROOM CODE", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                        Text("Room code", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         Text(code, fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp, color = MaterialTheme.colorScheme.primary)
                         Text(if (isHost) "Share the code, then start when everyone's in." else "Waiting for the host to start…", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                     }

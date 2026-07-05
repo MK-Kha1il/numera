@@ -65,7 +65,7 @@ fun SeasonScreen(user: User?, onExit: () -> Unit) {
                         Text(d.season.name, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
                         Text("⏳ ${daysLeft(d.season.endAt)} days left · top 3 win 500 / 300 / 150 coins", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         d.yourRank?.let { Text("Your rank: #$it", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary) }
-                            ?: Text("Play ranked duels to set a peak rating and climb the board.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            ?: Text("Play ranked duels to set a peak rating and climb the board.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                 }
 
@@ -84,7 +84,7 @@ fun SeasonScreen(user: User?, onExit: () -> Unit) {
                                     "#${row.position}",
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 15.sp,
-                                    color = when (row.position) { 1 -> MilestoneGold; 2 -> MedalSilver; 3 -> MedalBronze; else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) },
+                                    color = when (row.position) { 1 -> MilestoneGold; 2 -> MedalSilver; 3 -> MedalBronze; else -> MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary) },
                                     modifier = Modifier.width(40.dp)
                                 )
                                 Text(

@@ -34,7 +34,16 @@ data class SoloGame(
 ) : NavKey
 
 @Serializable
-data class DuelGame(val roomId: String, val opponentName: String) : NavKey
+data class DuelGame(
+    val roomId: String,
+    val opponentName: String,
+    // Opponent's competitive rank for the VS intro player card (social presence).
+    val opponentRank: String? = null,
+    // Own id, passed from the arena so the duel never depends on a network fetch to know
+    // which side of the room it is (a failed profile fetch used to corrupt attribution).
+    val myUserId: Int = 0,
+    val ranked: Boolean = false
+) : NavKey
 
 @Serializable
 data class LegacyGame(val puzzleId: Int) : NavKey

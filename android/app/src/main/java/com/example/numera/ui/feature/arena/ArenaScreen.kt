@@ -38,7 +38,7 @@ import org.json.JSONObject
 @Composable
 fun ArenaScreen(
     user: User?,
-    onStartDuelGame: (String, String) -> Unit
+    onStartDuelGame: (com.example.numera.DuelGame) -> Unit
 ) {
     var matchmakingMode by remember { mutableStateOf<String?>(null) } // null, "ranked", "casual"
     var friendLobbyState by remember { mutableStateOf<String?>(null) } // null, "create", "join_input", "join"
@@ -46,6 +46,14 @@ fun ArenaScreen(
     var joinRoomCodeInput by remember { mutableStateOf("") }
     var friendRoomError by remember { mutableStateOf("") }
     var queueSecondsElapsed by remember { mutableIntStateOf(0) }
+    // Server-pushed bot offer (never forced): after ~10s of empty queue the server offers a
+    // clearly-labeled practice bot inside the same live-duel experience.
+    var botOfferAvailable by remember { mutableStateOf(false) }
+    // Matchmaking failures the player must actually see (already-in-match, match start failed).
+    var queueError by remember { mutableStateOf("") }
+    // Process-death rejoin: a live match found on entry (app was killed mid-duel; the server's
+    // disconnect grace is still ticking) — offered back to the player instead of lost blind.
+    var resumeDuel by remember { mutableStateOf<com.example.numera.DuelGame?>(null) }
     var showPuzzleRush by remember { mutableStateOf(false) }
     var showAsyncDuel by remember { mutableStateOf(false) }
     var showBotDuel by remember { mutableStateOf(false) }
@@ -68,7 +76,13 @@ fun ArenaScreen(
     DisposableEffect(Unit) {
         onDispose {
             SocketClient.leaveQueue()
-            SocketClient.disconnect()
+            // Do NOT tear the socket down while a found match is being handed to DuelGameScreen —
+            // this dispose fires as the navigation completes, and disconnect() also off()s the
+            // listeners the duel screen just registered (the old always-disconnect here was the
+            // root cause of duels freezing on "waiting" / never receiving duel_end).
+            if (!SocketClient.duelHandoffActive) {
+                SocketClient.disconnect()
+            }
         }
     }
 
@@ -79,16 +93,26 @@ fun ArenaScreen(
 
             sock?.off("friend_room_created")
             sock?.off("friend_room_error")
+            sock?.off("friend_room_expired")
             sock?.off("duel_start")
             sock?.off("matchmaking_error")
+            sock?.off("bot_offer")
 
             sock?.on("matchmaking_error") { args ->
                 val data = args.getOrNull(0) as? JSONObject ?: return@on
                 val code = data.optString("code")
+                val message = data.optString("message")
                 scope.launch(Dispatchers.Main) {
                     matchmakingMode = null
-                    if (code == "FAIRPLAY_CONSENT_REQUIRED") showRankedConsent = true
+                    when (code) {
+                        "FAIRPLAY_CONSENT_REQUIRED" -> showRankedConsent = true
+                        else -> queueError = message.ifEmpty { "Matchmaking failed — please try again." }
+                    }
                 }
+            }
+
+            sock?.on("bot_offer") { _ ->
+                scope.launch(Dispatchers.Main) { botOfferAvailable = true }
             }
 
             sock?.on("friend_room_created") { args ->
@@ -108,31 +132,58 @@ fun ArenaScreen(
                 }
             }
 
+            sock?.on("friend_room_expired") { _ ->
+                scope.launch(Dispatchers.Main) {
+                    if (friendLobbyState == "create") {
+                        friendRoomCode = ""
+                        friendLobbyState = null
+                        queueError = "Your lobby code expired — create a new one when your friend is ready."
+                    }
+                }
+            }
+
             sock?.on("duel_start") { args ->
                 val data = args.getOrNull(0) as? JSONObject ?: return@on
                 val roomId = data.getString("roomId")
-                val opponentObj = data.getJSONObject("opponent")
+                val opponentObj = data.optJSONObject("opponent")
+                val ranked = data.optBoolean("ranked", false)
 
                 var opponentName = "Opponent"
-                if (opponentObj.has("p1")) {
+                var opponentRank: String? = null
+                if (opponentObj != null && opponentObj.has("p1")) {
                     val p1 = opponentObj.getJSONObject("p1")
                     val p2 = opponentObj.getJSONObject("p2")
-                    if (p1.getInt("id") == user?.id) {
-                        opponentName = p2.getString("username")
-                    } else {
-                        opponentName = p1.getString("username")
-                    }
+                    val opp = if (p1.optInt("id") == user?.id) p2 else p1
+                    opponentName = opp.optString("username", "Opponent")
+                    opponentRank = opp.optString("rank").takeIf { it.isNotEmpty() && it != "null" }
                 }
 
+                // Hand the live socket to DuelGameScreen BEFORE navigating — see onDispose above.
+                SocketClient.duelHandoffActive = true
+                com.example.numera.analytics.Analytics.log("duel_match_found")
+                // The searching state resolves: an opponent exists. Alert, not alarming.
+                com.example.numera.sound.SoundManager.playMatchFound()
+                com.example.numera.haptic.HapticManager.playMedium()
                 scope.launch(Dispatchers.Main) {
                     matchmakingMode = null
                     friendLobbyState = null
-                    onStartDuelGame(roomId, opponentName)
+                    onStartDuelGame(
+                        com.example.numera.DuelGame(
+                            roomId = roomId,
+                            opponentName = opponentName,
+                            opponentRank = opponentRank,
+                            myUserId = user?.id ?: 0,
+                            ranked = ranked
+                        )
+                    )
                 }
             }
 
             if (matchmakingMode != null) {
+                queueError = ""
+                botOfferAvailable = false
                 SocketClient.joinQueue(matchmakingMode!!)
+                com.example.numera.analytics.Analytics.log("arena_queue_start")
             } else if (friendLobbyState == "create") {
                 SocketClient.createFriendRoom()
             } else if (friendLobbyState == "join") {
@@ -140,6 +191,7 @@ fun ArenaScreen(
             }
         } else {
             SocketClient.leaveQueue()
+            botOfferAvailable = false
         }
     }
 
@@ -149,6 +201,25 @@ fun ArenaScreen(
             while (matchmakingMode != null) {
                 kotlinx.coroutines.delay(1000)
                 queueSecondsElapsed++
+            }
+        }
+    }
+
+    // On entry: ask the server whether a live match is still waiting on us (process-death
+    // rejoin — the emit is buffered until the socket connects, so no connection race here).
+    LaunchedEffect(Unit) {
+        SocketClient.connect()
+        SocketClient.findMyDuel { roomId, oppName, oppRank, ranked ->
+            if (roomId != null) {
+                scope.launch(Dispatchers.Main) {
+                    resumeDuel = com.example.numera.DuelGame(
+                        roomId = roomId,
+                        opponentName = oppName,
+                        opponentRank = oppRank,
+                        myUserId = user?.id ?: 0,
+                        ranked = ranked
+                    )
+                }
             }
         }
     }
@@ -223,35 +294,36 @@ fun ArenaScreen(
                         Text(
                             text = "Time elapsed: ${queueSecondsElapsed}s",
                             fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                         )
 
                         Text(
                             text = if (queueSecondsElapsed < 6) "Finding the fairest opponent for your skill…"
                                    else "Widening the search to match you sooner…",
                             fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                             textAlign = TextAlign.Center
                         )
 
                         Spacer(modifier = Modifier.height(Spacing.l))
 
-                        // Guaranteed match: at current population the queue can sit empty
-                        // forever — after 20s offer a clearly-labeled bot duel instead of
-                        // an unbounded spinner. Leaving matchmaking happens via the same
-                        // state reset the Cancel button uses (the effect calls leaveQueue).
-                        if (queueSecondsElapsed >= 20) {
+                        // Guaranteed match: at current population the queue can sit empty forever.
+                        // The SERVER offers a clearly-labeled practice bot (~10s) — never forces
+                        // one — and accepting keeps the same live-duel experience: same countdown,
+                        // same race UI, just rating-neutral. Staying in the queue is also fine;
+                        // a human match still takes priority until the bot duel actually starts.
+                        if (botOfferAvailable) {
                             Text(
-                                text = "Quiet out there right now — sharpen up against a training bot while you wait?",
+                                text = "Quiet out there right now — face the training bot while you wait? Practice match, rating unchanged.",
                                 fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                                 textAlign = TextAlign.Center
                             )
                             DuoButton(
-                                text = "🤖 Duel a Bot Instead",
+                                text = "🤖 Face the Training Bot",
                                 onClick = {
-                                    matchmakingMode = null
-                                    showBotDuel = true
+                                    com.example.numera.analytics.Analytics.log("bot_offer_accepted")
+                                    SocketClient.acceptBotOffer()
                                 },
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.fillMaxWidth()
@@ -261,6 +333,7 @@ fun ArenaScreen(
                         DuoButton(
                             text = "Cancel Search",
                             onClick = {
+                                com.example.numera.analytics.Analytics.log("arena_queue_cancel")
                                 matchmakingMode = null
                             },
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
@@ -291,7 +364,7 @@ fun ArenaScreen(
 
                         if (friendRoomCode.isEmpty()) {
                             com.example.numera.ui.components.MathIconSpinner()
-                            Text("Generating Room Code...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 14.sp)
+                            Text("Generating Room Code...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 14.sp)
                         } else {
                             Text(
                                 text = friendRoomCode,
@@ -305,7 +378,7 @@ fun ArenaScreen(
                             Text(
                                 text = "Share this 4-digit code with your friend.",
                                 fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                                 textAlign = TextAlign.Center
                             )
 
@@ -406,6 +479,75 @@ fun ArenaScreen(
                 modifier = Modifier.fillMaxSize().padding(Spacing.l),
                 verticalArrangement = Arrangement.spacedBy(Spacing.l)
             ) {
+                // Live match still waiting on us (app died mid-duel): one tap back in before
+                // the disconnect grace forfeits it.
+                resumeDuel?.let { resume ->
+                    item {
+                        DuoCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            borderColor = CorrectGreen.copy(alpha = 0.6f)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(Spacing.m),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.m)
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "⚔️ Live match in progress",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "You're still in a match against ${resume.opponentName} — return now before it forfeits.",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
+                                DuoButton(
+                                    text = "Return",
+                                    color = CorrectGreen,
+                                    onClick = {
+                                        com.example.numera.analytics.Analytics.log("duel_resumed")
+                                        SocketClient.duelHandoffActive = true
+                                        resumeDuel = null
+                                        onStartDuelGame(resume.copy(myUserId = user?.id ?: resume.myUserId))
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Surface matchmaking failures instead of silently dropping back to the arena.
+                if (queueError.isNotEmpty()) {
+                    item {
+                        DuoCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            borderColor = WrongRed.copy(alpha = 0.6f)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(Spacing.m),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.m)
+                            ) {
+                                Text(
+                                    text = queueError,
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                DuoButton(
+                                    text = "OK",
+                                    onClick = { queueError = "" },
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Player Stats Header
                 item {
                     DuoCard(modifier = Modifier.fillMaxWidth()) {
@@ -461,7 +603,7 @@ fun ArenaScreen(
                                 Text(
                                     text = "Record: $wins W - ${cMatches - wins} L ($winRate% win rate)",
                                     fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                                 )
                             }
                         }
@@ -474,7 +616,7 @@ fun ArenaScreen(
                 item {
                     DuoCard(
                         modifier = Modifier.fillMaxWidth(),
-                        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = Alpha.secondary)
                     ) {
                         Box(modifier = Modifier.fillMaxWidth()) {
                             // Accent wash — the hero reads as the arena's marquee, not a gray box.
@@ -592,7 +734,7 @@ fun ArenaScreen(
                 // ── Secondary modes: a compact tappable grid — one glance, no scrolling marathon.
                 item {
                     Text(
-                        text = "MORE WAYS TO PLAY",
+                        text = "More ways to play",
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 13.sp,
                         letterSpacing = 1.sp,
@@ -841,10 +983,7 @@ private fun ArenaModeTile(
         modifier = modifier
             .height(180.dp)
             .clip(RoundedCornerShape(20.dp))
-            .pressable {
-                com.example.numera.haptic.HapticManager.playSoft()
-                onClick()
-            },
+            .pressable { onClick() },
         borderColor = accent.copy(alpha = 0.5f)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {

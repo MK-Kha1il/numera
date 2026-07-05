@@ -186,7 +186,7 @@ fun ChallengesScreen(onBack: () -> Unit) {
                                         "${c.conceptName} · ${c.problemCount} Qs · ${c.playCount} plays" +
                                             (if (c.isMine) " · yours" else "") +
                                             (c.yourScore?.let { " · your best $it/${c.problemCount}" } ?: ""),
-                                        fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                                     )
                                 }
                                 Text(c.code, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
@@ -246,7 +246,7 @@ fun ChallengesScreen(onBack: () -> Unit) {
                     DuoCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                             Text(d.title, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-                            Text("${d.conceptName} · ${d.problemCount} problems · by ${d.creator}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("${d.conceptName} · ${d.problemCount} problems · by ${d.creator}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                             Text("Code: ${d.code}  ·  ${d.playCount} plays", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         }
                     }

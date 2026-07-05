@@ -156,7 +156,7 @@ fun MainNavigation() {
         entry<MainTabs> {
           MainTabsScreen(
             onStartSoloGame = { soloGame -> backStack.add(soloGame) },
-            onStartDuelGame = { roomId, opponentName -> backStack.add(DuelGame(roomId, opponentName)) },
+            onStartDuelGame = { duelGame -> backStack.add(duelGame) },
             onStartLegacyGame = { puzzleId -> backStack.add(LegacyGame(puzzleId)) },
             onLogout = {
               android.util.Log.d("Navigation", "onLogout callback executed, clearing token and navigating to Login")
@@ -193,12 +193,20 @@ fun MainNavigation() {
             DuelGameScreen(
               roomId = navKey.roomId,
               opponentName = navKey.opponentName,
+              opponentRank = navKey.opponentRank,
+              myUserIdHint = navKey.myUserId,
               onFinishGame = { backStack.removeLastOrNull() },
               // Replace the duel on the stack with a Growth Practice session over its misses,
               // so "back" from review returns to where the duel was launched, not the dead duel.
               onReviewMisses = {
                 backStack.removeLastOrNull()
                 backStack.add(SoloGame(category = "General", level = 0, gameMode = "mistakes_practice"))
+              },
+              // Rematch agreed: swap the finished duel for the fresh one, so "back" from the new
+              // match still returns to where the first duel was launched.
+              onRematch = { rematch ->
+                backStack.removeLastOrNull()
+                backStack.add(rematch)
               }
             )
           }

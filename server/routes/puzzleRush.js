@@ -169,7 +169,8 @@ router.get('/api/puzzle-rush/leaderboard', authenticateToken, (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       db.get(
-        "SELECT MAX(score) AS best FROM puzzle_rush_runs WHERE user_id = ? AND status = 'finished'",
+        // Same integrity bar as the public board: a flagged run isn't a "personal best" either.
+        "SELECT MAX(score) AS best FROM puzzle_rush_runs WHERE user_id = ? AND status = 'finished' AND integrity_flag = 0",
         [req.user.id],
         (e2, mine) => {
           res.json({ leaderboard: rows || [], personalBest: (mine && mine.best) || 0 });

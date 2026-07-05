@@ -1425,6 +1425,25 @@ const migrations = [
       await addColumn("ALTER TABLE users ADD COLUMN active_frame TEXT DEFAULT ''");
     },
   },
+  {
+    version: 63,
+    name: 'challenge_starts',
+    // Multiplayer overhaul: custom-challenge speed tiebreaks used a CLIENT-supplied elapsedMs —
+    // a tampering client could send 0ms and top every tie. The clock now starts server-side the
+    // first time the problems are served (GET /api/challenges/:code) and /play measures elapsed
+    // against that stamp, mirroring the tournaments fix. One row per (challenge, user); the first
+    // view wins (INSERT OR IGNORE), so re-viewing never resets the clock.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS challenge_starts (
+          challenge_id INTEGER NOT NULL,
+          user_id      INTEGER NOT NULL,
+          started_at   INTEGER NOT NULL,
+          UNIQUE (challenge_id, user_id)
+        )
+      `);
+    },
+  },
 ];
 
 /**

@@ -25,6 +25,11 @@ const ALLOWED_EVENTS = new Set([
   // Interactive-visual discovery signals: a learner reached an insight by manipulating
   // ('visual_discover') or answered the post-verify "why?" reflection ('visual_reflect').
   'visual_discover', 'visual_reflect',
+  // Multiplayer friction funnel (multiplayer overhaul, Phase 14): queue → match → finish,
+  // plus the leak points — cancels, forfeits, reconnects, draws, bot-offer conversions.
+  'arena_queue_start', 'arena_queue_cancel', 'duel_match_found', 'duel_finish',
+  'duel_forfeit', 'duel_draw', 'duel_reconnected', 'bot_offer_accepted', 'duel_rematch',
+  'duel_emote_sent', 'duel_resumed',
 ]);
 
 const today = () => new Date().toISOString().slice(0, 10);

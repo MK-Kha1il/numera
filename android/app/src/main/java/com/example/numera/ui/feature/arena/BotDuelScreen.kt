@@ -79,7 +79,7 @@ fun BotDuelScreen(onExit: () -> Unit) {
                     Row(modifier = Modifier.fillMaxWidth().padding(Spacing.l), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(sub, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text(sub, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         }
                         Text("▶", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
                     }
@@ -99,7 +99,7 @@ fun BotDuelScreen(onExit: () -> Unit) {
                             color = if (won) CorrectGreen else if (draw) MaterialTheme.colorScheme.onSurface else WrongRed
                         )
                         if (won && r.reward > 0) Text("+${r.reward} coins", fontWeight = FontWeight.Bold, color = MilestoneGold)
-                        else if (won) Text("Daily reward cap reached — played for practice.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        else if (won) Text("Daily reward cap reached — played for practice.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                 }
                 DuoButton(text = "Play again", onClick = { phase = "select" }, modifier = Modifier.fillMaxWidth())

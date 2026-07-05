@@ -69,8 +69,9 @@ test('a perfect attempt scores full marks and a replay is not re-scored', async 
   const stored = JSON.parse((await dbGet('SELECT problems_json FROM custom_challenges WHERE code = ?', [code])).problems_json);
 
   const player = await registerUser(ctx.base);
+  await api(ctx.base, 'GET', `/api/challenges/${code}`, { token: player.token }); // serving the problems starts the clock
   const answers = stored.map((p) => p.answer);
-  const play = await api(ctx.base, 'POST', `/api/challenges/${code}/play`, { token: player.token, body: { answers, elapsedMs: 4200 } });
+  const play = await api(ctx.base, 'POST', `/api/challenges/${code}/play`, { token: player.token, body: { answers } });
   assert.equal(play.status, 200);
   assert.equal(play.body.alreadyPlayed, false);
   assert.equal(play.body.score, stored.length);
@@ -83,23 +84,38 @@ test('a perfect attempt scores full marks and a replay is not re-scored', async 
   assert.equal(play.body.leaderboard.length, replay.body.leaderboard.length);
 });
 
-test('the leaderboard ranks by score then by speed', async () => {
+test('speed tiebreaks are SERVER-measured: a faked 0ms elapsedMs cannot outrank real speed', async () => {
   const author = await registerUser(ctx.base);
   const made = await createChallenge(author.token);
   const code = made.body.code;
   const stored = JSON.parse((await dbGet('SELECT problems_json FROM custom_challenges WHERE code = ?', [code])).problems_json);
   const allRight = stored.map((p) => p.answer);
 
-  // Two perfect scorers; the faster one should outrank the slower.
+  // "slow" fetches, dwells 400ms, then submits — CLAIMING 0ms (the old exploit).
   const slow = await registerUser(ctx.base);
-  const fast = await registerUser(ctx.base);
-  await api(ctx.base, 'POST', `/api/challenges/${code}/play`, { token: slow.token, body: { answers: allRight, elapsedMs: 9000 } });
-  const res = await api(ctx.base, 'POST', `/api/challenges/${code}/play`, { token: fast.token, body: { answers: allRight, elapsedMs: 3000 } });
+  await api(ctx.base, 'GET', `/api/challenges/${code}`, { token: slow.token });
+  await new Promise((r) => setTimeout(r, 400));
+  const slowRes = await api(ctx.base, 'POST', `/api/challenges/${code}/play`, { token: slow.token, body: { answers: allRight, elapsedMs: 0 } });
 
+  // "fast" fetches and submits immediately, claiming nothing.
+  const fast = await registerUser(ctx.base);
+  await api(ctx.base, 'GET', `/api/challenges/${code}`, { token: fast.token });
+  const res = await api(ctx.base, 'POST', `/api/challenges/${code}/play`, { token: fast.token, body: { answers: allRight } });
+
+  assert.ok(slowRes.body.elapsedMs >= 400, `server measured the real dwell (got ${slowRes.body.elapsedMs}ms despite the claimed 0ms)`);
   const board = res.body.leaderboard;
   const fastPos = board.find((r) => r.username === fast.username).position;
   const slowPos = board.find((r) => r.username === slow.username).position;
-  assert.ok(fastPos < slowPos, 'faster perfect score ranks higher');
+  assert.ok(fastPos < slowPos, 'genuinely faster perfect score ranks higher; the faked time is ignored');
+});
+
+test('playing without fetching the problems first is rejected (no clockless attempts)', async () => {
+  const author = await registerUser(ctx.base);
+  const made = await createChallenge(author.token);
+  const player = await registerUser(ctx.base);
+  const res = await api(ctx.base, 'POST', `/api/challenges/${made.body.code}/play`, { token: player.token, body: { answers: ['1'] } });
+  assert.equal(res.status, 400);
+  assert.match(res.body.error, /Fetch the challenge/);
 });
 
 test('playing an unknown code 404s', async () => {

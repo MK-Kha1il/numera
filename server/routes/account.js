@@ -68,6 +68,7 @@ const USER_SCOPED_TABLES = [
   'bot_matches',
   'club_members',
   'challenge_attempts',
+  'challenge_starts',
   'tournament_entries',
   'club_war_entries',
   'class_members',

@@ -18,6 +18,15 @@ object SocketClient {
     val isConnected: Boolean
         get() = mSocket?.connected() == true
 
+    // Duel handoff: set when a match is found (just before navigating ArenaScreen →
+    // DuelGameScreen). ArenaScreen leaves the composition during that navigation, and its
+    // onDispose used to unconditionally disconnect() — killing the socket (and wiping the duel
+    // screen's freshly-registered listeners via off()) right as the match began. That race was
+    // the root cause of duels that froze on "waiting for the arena" or never received duel_end.
+    // The screen that OWNS the socket at any moment is: Arena while queueing, Duel once handed off.
+    @Volatile
+    var duelHandoffActive: Boolean = false
+
     fun updateUrl(newUrl: String) {
         if (currentSocketUrl == newUrl) return
         currentSocketUrl = newUrl
@@ -61,6 +70,7 @@ object SocketClient {
     }
 
     fun disconnect() {
+        duelHandoffActive = false
         mSocket?.disconnect()
         mSocket?.off()
         mSocket = null
@@ -85,6 +95,48 @@ object SocketClient {
     fun joinFriendRoom(roomCode: String) {
         mSocket?.emit("join_friend_room", JSONObject().put("roomCode", roomCode))
         Log.d(TAG, "join_friend_room: $roomCode")
+    }
+
+    // Accept the server's matchmaking bot offer: the server pulls us from the queue and starts a
+    // clearly-labeled, rating-neutral practice duel in the same live-duel experience.
+    fun acceptBotOffer() {
+        mSocket?.emit("accept_bot")
+        Log.d(TAG, "accept_bot emitted")
+    }
+
+    // Explicit mid-duel exit (back button / leave): the server forfeits the match to the
+    // opponent immediately, so they aren't left waiting out a disconnect grace period.
+    fun leaveDuel(roomId: String) {
+        mSocket?.emit("leave_duel", JSONObject().put("roomId", roomId))
+        Log.d(TAG, "leave_duel: $roomId")
+    }
+
+    // "Run it back" from the result screen: first accepter waits, second accepter starts the
+    // rematch (the server replies rematch_pending / rematch_requested / rematch_unavailable /
+    // a fresh duel_start).
+    fun requestRematch(roomId: String) {
+        mSocket?.emit("request_rematch", JSONObject().put("roomId", roomId))
+        Log.d(TAG, "request_rematch: $roomId")
+    }
+
+    // Process-death rejoin: ask the server whether we have a live match (the arena calls this on
+    // entry and offers "return to your match" — the disconnect grace is still ticking).
+    fun findMyDuel(onResult: (roomId: String?, opponentName: String, opponentRank: String?, ranked: Boolean) -> Unit) {
+        mSocket?.emit("find_my_duel", io.socket.client.Ack { ackArgs ->
+            val res = ackArgs.getOrNull(0) as? JSONObject
+            val roomId = res?.optString("roomId")?.takeIf { it.isNotEmpty() && it != "null" }
+            onResult(
+                roomId,
+                res?.optString("opponentName", "Opponent") ?: "Opponent",
+                res?.optString("opponentRank")?.takeIf { it.isNotEmpty() && it != "null" },
+                res?.optBoolean("ranked", false) ?: false
+            )
+        })
+    }
+
+    // Positive-only duel emote (server allowlist + rate limit; relayed to the opponent only).
+    fun sendEmote(roomId: String, emote: String) {
+        mSocket?.emit("duel_emote", JSONObject().put("roomId", roomId).put("emote", emote))
     }
 
     // Live-room liveness: subscribe to a room's socket channel so server-side state changes (a player
@@ -119,16 +171,12 @@ object SocketClient {
     // which the caller uses to drive the answer-reveal animation and the favorite/archive payload.
     fun submitAnswer(
         roomId: String,
-        userId: Int,
         answer: String,
-        nextIndex: Int,
         onResult: ((correct: Boolean, correctAnswer: String, explanation: String) -> Unit)? = null
     ) {
         val data = JSONObject().apply {
             put("roomId", roomId)
-            put("userId", userId)
             put("answer", answer)
-            put("nextIndex", nextIndex)
         }
         if (onResult != null) {
             mSocket?.emit("submit_answer", arrayOf<Any>(data), io.socket.client.Ack { ackArgs ->
@@ -141,6 +189,6 @@ object SocketClient {
         } else {
             mSocket?.emit("submit_answer", data)
         }
-        Log.d(TAG, "submit_answer: answer=$answer idx=$nextIndex")
+        Log.d(TAG, "submit_answer: answer=$answer")
     }
 }

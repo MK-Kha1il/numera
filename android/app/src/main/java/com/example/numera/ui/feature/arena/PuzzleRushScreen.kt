@@ -80,7 +80,14 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
                 }
                 feedback = if (res.correct) "correct" else "wrong"
                 if (!res.correct) missedAnswer = res.correctAnswer
-                com.example.numera.haptic.HapticManager.playSoft()
+                // Score in a rush ≈ current streak, so the correct sound grows as the run heats up.
+                if (res.correct) {
+                    com.example.numera.sound.SoundManager.playCorrect(res.score)
+                    com.example.numera.haptic.HapticManager.playSuccess()
+                } else {
+                    com.example.numera.sound.SoundManager.playWrong()
+                    com.example.numera.haptic.HapticManager.playError()
+                }
                 delay(500) // let the feedback land
                 if (res.gameOver) {
                     finalScore = res.finalScore ?: score
@@ -169,7 +176,7 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
                     ) {
                         Text("Run Over", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary)
                         Text("$finalScore", fontWeight = FontWeight.Black, fontSize = 56.sp, color = MaterialTheme.colorScheme.secondary)
-                        Text("problems solved", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("problems solved", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         if (reward > 0) Text("+$reward coins", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MilestoneGold)
                         if (flagged) {
                             Text(
@@ -200,7 +207,7 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
                         verticalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
                         Text("Solve as many as you can.", fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center)
-                        Text("Three wrong answers ends the run. Difficulty climbs with every solve.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), textAlign = TextAlign.Center)
+                        Text("Three wrong answers ends the run. Difficulty climbs with every solve.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), textAlign = TextAlign.Center)
                         Spacer(modifier = Modifier.height(Spacing.xs))
                         Text("Your best: $personalBest", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.secondary)
                     }
