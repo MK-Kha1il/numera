@@ -19,7 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.CornerRadius as GeometryCornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.Brush
@@ -38,7 +38,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 @Composable
 fun DuoCard(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(20.dp),
+    shape: Shape = RoundedCornerShape(CornerRadius.l),
     borderColor: Color = MaterialTheme.colorScheme.outline,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     content: @Composable BoxScope.() -> Unit
@@ -49,12 +49,22 @@ fun DuoCard(
             backgroundColor.copy(alpha = 0.88f)
         )
     )
+    // Hybrid calm/energy: the neutral `outline` default reads as a quiet 1dp hairline so ordinary
+    // cards recede; any *accent* color passed in (selected / complete / promo / self) keeps the
+    // bolder 2dp border so competitive & reward states still pop. One edit, app-wide effect.
+    // (docs/UiUxSimplificationAudit-2026-06.md #1)
+    val isAccent = borderColor != MaterialTheme.colorScheme.outline
+    val cardBorder = if (isAccent) {
+        BorderStroke(2.dp, borderColor)
+    } else {
+        BorderStroke(1.dp, borderColor.copy(alpha = 0.4f))
+    }
     Box(
         modifier = modifier
             .clip(shape)
             .background(cardGradient)
-            .border(BorderStroke(2.dp, borderColor), shape = shape)
-            .padding(16.dp)
+            .border(cardBorder, shape = shape)
+            .padding(Spacing.l)
     ) {
         content()
     }
@@ -99,7 +109,7 @@ fun DuoButton(
         else -> color.copy(alpha = 0.8f)
     }
 
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(CornerRadius.l)
     val isPressed = remember { mutableStateOf(false) }
     val bottomDepth = 4.dp
     val offset = if (isPressed.value && enabled) bottomDepth else 0.dp
@@ -153,7 +163,7 @@ fun DuoButton(
                 if (enabled) {
                     drawRoundRect(
                         color = depthColor,
-                        cornerRadius = CornerRadius(16.dp.toPx(), 16.dp.toPx())
+                        cornerRadius = GeometryCornerRadius(CornerRadius.l.toPx(), CornerRadius.l.toPx())
                     )
                 }
             }
@@ -162,16 +172,15 @@ fun DuoButton(
             .clip(shape)
             .background(buttonGradient)
             .border(BorderStroke(1.dp, if (enabled) depthColor else Color(0xFFCCCCCC)), shape = shape)
-            .padding(vertical = 12.dp, horizontal = 24.dp),
+            .padding(vertical = Spacing.m, horizontal = Spacing.xl),
         contentAlignment = Alignment.Center
     ) {
+        // Sentence case (was .uppercase()): calmer, more premium. The satisfying 3D depth-press
+        // above stays — that's tactile energy, not visual shouting. Label role lives in AppText.
         Text(
-            text = text.uppercase(),
-            style = TextStyle(
-                color = if (enabled) Color.White else Color(0xFFAFAFAF),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.2.sp
+            text = text,
+            style = AppText.button.copy(
+                color = if (enabled) Color.White else Color(0xFFAFAFAF)
             )
         )
     }
@@ -256,7 +265,7 @@ fun GlossyProgressBar(
         modifier = modifier
             .fillMaxWidth()
             .height(14.dp)
-            .clip(RoundedCornerShape(7.dp))
+            .clip(RoundedCornerShape(CornerRadius.full))
             .background(trackColor)
     ) {
         if (progress > 0f) {
@@ -354,7 +363,7 @@ fun ClaimButton(
             )
             .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
             .clickable {
-                SoundManager.playClick()
+                SoundManager.playTapMedium()
                 com.example.numera.haptic.HapticManager.playMedium()
                 onClick()
             }

@@ -131,6 +131,9 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                 val token = RetrofitClient.authToken ?: ""
                 RetrofitClient.apiService.purchaseItem(token, PurchaseRequest(item.id))
                 withContext(Dispatchers.Main) {
+                    // Prestige claims speak the shop's language: the rarity-tiered unlock fanfare.
+                    com.example.numera.sound.SoundManager.playUnlock(Rarity.from(item.rarity).ordinal)
+                    com.example.numera.haptic.HapticManager.playSuccess()
                     toast.achievement("Claimed ${item.name}!")
                     RetrofitClient.triggerProfileRefresh()
                     fetchShop()

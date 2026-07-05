@@ -57,8 +57,9 @@ fun ContextMenuArea(
                     }
                 },
                 onLongClick = {
+                    // A surface is appearing — same language as sheets, not a button press.
                     HapticManager.playMedium()
-                    SoundManager.playClick()
+                    SoundManager.playSheetOpen()
                     expanded = true
                 }
             )

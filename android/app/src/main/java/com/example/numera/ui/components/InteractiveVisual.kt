@@ -123,13 +123,22 @@ private class VisualBridge(
     }
 }
 
-/** Map a renderer interaction event to tactile feedback (no-op if haptics are off). */
+/**
+ * Map a renderer interaction event to feedback. Dragging/predicting stays haptic-only —
+ * silence protects the thinking; only the *insight* moments speak.
+ */
 private fun playHapticFor(json: String) {
     val event = try { JSONObject(json).optString("event") } catch (e: Exception) { "" }
     when (event) {
         "manipulate", "predict" -> HapticManager.playSoft()
-        "discover" -> HapticManager.playMedium()
-        "solve" -> HapticManager.playSuccess()
+        "discover" -> {
+            com.example.numera.sound.SoundManager.playDiscovery()
+            HapticManager.playMedium()
+        }
+        "solve" -> {
+            com.example.numera.sound.SoundManager.playCorrect()
+            HapticManager.playSuccess()
+        }
     }
 }
 

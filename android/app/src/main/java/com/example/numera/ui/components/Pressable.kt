@@ -62,8 +62,8 @@ enum class PressFeedback {
         when (this) {
             Silent -> {}
             Light -> { SoundManager.playClick(); HapticManager.playSoft() }
-            Medium -> { SoundManager.playClick(); HapticManager.playMedium() }
-            Strong -> { SoundManager.playClick(); HapticManager.playSuccess() }
+            Medium -> { SoundManager.playTapMedium(); HapticManager.playMedium() }
+            Strong -> { SoundManager.playTapStrong(); HapticManager.playSuccess() }
         }
     }
 }
@@ -84,11 +84,11 @@ enum class CelebrationTier {
 
     fun fire() {
         when (this) {
-            Tiny -> { SoundManager.playClick(); HapticManager.playSoft() }
+            Tiny -> { SoundManager.playDiscovery(); HapticManager.playSoft() }
             Small -> { SoundManager.playRewardClaim(); HapticManager.playSuccess() }
-            Medium -> { SoundManager.playLevelUp(); HapticManager.playSuccess() }
+            Medium -> { SoundManager.playLevelComplete(); HapticManager.playSuccess() }
             Large -> { SoundManager.playLevelUp(); HapticManager.playMajorReward() }
-            Epic -> { SoundManager.playLevelUp(); HapticManager.playMajorReward() }
+            Epic -> { SoundManager.playPromotion(); HapticManager.playMajorReward() }
         }
     }
 }

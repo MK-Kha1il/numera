@@ -127,6 +127,7 @@ See the sprint plan and `docs/Architecture.md`.
 ## Subsystem docs
 - [Architecture](docs/Architecture.md) · [DataFlow](docs/DataFlow.md) · [Security](docs/Security.md)
 - [MathEngine](docs/MathEngine.md) · [ProgressionSystem](docs/ProgressionSystem.md) ·
-  [AchievementSystem](docs/AchievementSystem.md) · [DesignSystem](docs/DesignSystem.md)
+  [AchievementSystem](docs/AchievementSystem.md) · [DesignSystem](docs/DesignSystem.md) ·
+  [SoundDesign](docs/SoundDesign.md)
 - [BrandIdentity](docs/BrandIdentity.md) — the world/voice/visual/motion identity system (what the
   app should *feel* like); DesignSystem.md is the tokens that implement it.

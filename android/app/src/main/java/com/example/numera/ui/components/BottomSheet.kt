@@ -9,6 +9,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +43,11 @@ fun NumeraBottomSheet(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    // Motion audio: the sheet gliding in speaks once, softly, matched to the slide.
+    LaunchedEffect(Unit) {
+        SoundManager.playSheetOpen()
+        HapticManager.playSoft()
+    }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -118,11 +124,7 @@ fun SheetActionRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(CornerRadius.m))
-            .pressable(feedback = PressFeedback.Silent) {
-                SoundManager.playClick()
-                HapticManager.playSoft()
-                onClick()
-            }
+            .pressable { onClick() }
             .padding(vertical = Spacing.m, horizontal = Spacing.s),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.m)

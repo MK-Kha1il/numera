@@ -55,7 +55,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun MainTabsScreen(
     onStartSoloGame: (SoloGame) -> Unit,
-    onStartDuelGame: (String, String) -> Unit,
+    onStartDuelGame: (com.example.numera.DuelGame) -> Unit,
     onStartLegacyGame: (Int) -> Unit,
     onLogout: () -> Unit
 ) {
@@ -518,11 +518,7 @@ fun MainTabsScreen(
                                     },
                                     RoundedCornerShape(CornerRadius.m)
                                 )
-                                .pressable {
-                                    com.example.numera.sound.SoundManager.playClick()
-                                    com.example.numera.haptic.HapticManager.playSoft()
-                                    showCommitmentDialog = true
-                                }
+                                .pressable { showCommitmentDialog = true }
                                 .padding(horizontal = Spacing.s, vertical = Spacing.xs)
                         ) {
                             Text(
@@ -586,7 +582,7 @@ fun MainTabsScreen(
                         }
 
                         IconButton(onClick = {
-                            SoundManager.playClick()
+                            SoundManager.playSheetOpen()
                             com.example.numera.haptic.HapticManager.playSoft()
                             showNotificationsDialog = true
                         }) {
@@ -612,7 +608,7 @@ fun MainTabsScreen(
                                 previousTab = selectedTab
                             }
                             selectedTab = 5
-                            SoundManager.playClick()
+                            SoundManager.playNavigate()
                             com.example.numera.haptic.HapticManager.playSoft()
                         }) {
                             com.example.numera.ui.components.NumeraIcon(
@@ -647,14 +643,15 @@ fun MainTabsScreen(
                         NavigationBarItem(
                             selected = selectedTab == item.index,
                             onClick = {
-                                SoundManager.playClick()
+                                // Navigation says "moving", not "pressing" — a rising blip, not a click.
+                                SoundManager.playNavigate()
                                 com.example.numera.haptic.HapticManager.playSoft()
                                 selectedTab = item.index
                             },
                             icon = {
                                 com.example.numera.ui.components.NumeraIcon(
                                     type = item.iconType,
-                                    tint = if (selectedTab == item.index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    tint = if (selectedTab == item.index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                                 )
                             },
                             label = { Text(item.label, fontSize = 11.sp) }

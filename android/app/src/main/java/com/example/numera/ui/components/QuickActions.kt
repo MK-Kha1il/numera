@@ -65,7 +65,7 @@ fun QuickActionHero(
                 detectTapGestures(
                     onPress = { pressed = true; tryAwaitRelease(); pressed = false },
                     onTap = {
-                        SoundManager.playClick()
+                        SoundManager.playTapMedium()
                         HapticManager.playMedium()
                         action.onClick()
                     }

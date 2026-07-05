@@ -55,6 +55,9 @@ fun MasteryUpCelebration(
     LaunchedEffect(Unit) {
         revealed = true
         burst = true
+        // A learning milestone deserves its own voice — warm shimmer, not arena fireworks.
+        com.example.numera.sound.SoundManager.playMasteryUp()
+        com.example.numera.haptic.HapticManager.playMajorReward()
     }
 
     Box(

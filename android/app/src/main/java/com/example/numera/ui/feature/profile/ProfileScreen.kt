@@ -25,7 +25,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.*
-import com.example.numera.sound.SoundManager
 import com.example.numera.theme.*
 import com.example.numera.ui.components.ProfileBanner
 import com.example.numera.ui.components.pressable
@@ -511,7 +510,7 @@ fun ProfileScreen(
                     Text("✨ Climb Run", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     Text("${user?.streak ?: 0} Days", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    Text("Max climb: ${user?.max_streak ?: 0}d", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontWeight = FontWeight.Medium)
+                    Text("Max climb: ${user?.max_streak ?: 0}d", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontWeight = FontWeight.Medium)
                 }
             }
             Card(
@@ -523,7 +522,7 @@ fun ProfileScreen(
                     Text("🪙 Coins & Habits", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     Text("${user?.coins ?: 0}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    Text("Consistency: ${((user?.consistency_index ?: 0f) * 100).toInt()}%", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontWeight = FontWeight.Medium)
+                    Text("Consistency: ${((user?.consistency_index ?: 0f) * 100).toInt()}%", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -551,9 +550,9 @@ fun ProfileScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("🎒", fontSize = 20.sp)
                     Spacer(modifier = Modifier.width(Spacing.s))
-                    Text("Inventory & Customizer", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                    Text("Inventory & Customizer", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
                 }
-                Text("Equip your owned avatars, banners, and badges.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Text("Equip your owned avatars, banners, and badges.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                 Spacer(modifier = Modifier.height(Spacing.m))
 
                 if (inventoryLoading) {
@@ -566,7 +565,7 @@ fun ProfileScreen(
                     val ownedItems = allItems.filter { it.id in ownedIds }
 
                     if (ownedItems.isEmpty()) {
-                        Text("No items in inventory yet. Visit the Shop to purchase!", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("No items in inventory yet. Visit the Shop to purchase!", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     } else {
                         // ── Owned Avatars ──
                         val ownedAvatars = ownedItems.filter { it.type == "avatar" }
@@ -768,7 +767,7 @@ fun ProfileScreen(
                 Text(
                     text = "A collection of milestones proving consistency, discipline, and personal growth.",
                     fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                     modifier = Modifier.padding(top = 2.dp, bottom = Spacing.m)
                 )
 
@@ -814,7 +813,7 @@ fun ProfileScreen(
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
                                             textAlign = TextAlign.Center,
-                                            color = if (isUnlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                            color = if (isUnlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                                         )
                                     }
                                 }
@@ -854,7 +853,7 @@ fun ProfileScreen(
         ) {
             Column(modifier = Modifier.padding(Spacing.l)) {
                 Text("Milestone Rank Rewards", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Text("Unlock premium mathematical avatars and custom banners by raising your skill rating.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Text("Unlock premium mathematical avatars and custom banners by raising your skill rating.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                 Spacer(modifier = Modifier.height(Spacing.m))
                 
                 val milestones = listOf(
@@ -1028,11 +1027,11 @@ fun ProfileScreen(
                 }
                 
                 Spacer(modifier = Modifier.height(Spacing.m))
-                Text("Active Connections", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontWeight = FontWeight.SemiBold)
+                Text("Active Connections", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.height(6.dp))
                 
                 if (friendsList.isEmpty()) {
-                    Text("No friends added yet.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+                    Text("No friends added yet.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 12.sp)
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                         friendsList.forEach { friend ->
@@ -1061,7 +1060,7 @@ fun ProfileScreen(
                                     }
                                     Column {
                                         Text(friend.username, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                        Text("${friend.rank} (Lvl ${friend.level})", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                        Text("${friend.rank} (Lvl ${friend.level})", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                     }
                                 }
                                 
@@ -1125,7 +1124,7 @@ fun ProfileScreen(
                     Text(
                         text = "Complete milestone chains to unlock premium rewards and coins.",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                     )
                     Spacer(modifier = Modifier.height(Spacing.m))
                     
@@ -1177,7 +1176,7 @@ fun ProfileScreen(
                         if (categoryAchievements.isEmpty()) {
                             Text(
                                 text = "No milestones in this category.",
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                                 fontSize = 13.sp,
                                 modifier = Modifier.padding(vertical = Spacing.m)
                             )
@@ -1337,14 +1336,14 @@ fun ProfileScreen(
                                                                 fontWeight = FontWeight.Bold,
                                                                 textAlign = TextAlign.Center,
                                                                 maxLines = 1,
-                                                                color = if (state == "locked") MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
+                                                                color = if (state == "locked") MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary) else MaterialTheme.colorScheme.onSurface
                                                             )
                                                             
                                                             if (state == "active") {
                                                                 Text(
                                                                     text = "${milestone.progress}/${milestone.target_value}",
                                                                     fontSize = 9.sp,
-                                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                                                                     fontWeight = FontWeight.SemiBold
                                                                 )
 
@@ -1368,7 +1367,7 @@ fun ProfileScreen(
                                                             } else if (state == "unclaimed") {
                                                                 Text("Ready!", fontSize = 9.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                                                             } else {
-                                                                Text("Locked", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                                                Text("Locked", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                                             }
                                                             
                                                             if (state == "unclaimed") {
@@ -1382,7 +1381,16 @@ fun ProfileScreen(
                                                                                     token, AchievementClaimRequest(milestone.id)
                                                                                 )
                                                                                 withContext(Dispatchers.Main) {
-                                                                                    SoundManager.playRewardClaim()
+                                                                                    // Celebrate by how far up the chain this rung sits — late
+                                                                                    // rungs and big rewards earn a bigger moment.
+                                                                                    when {
+                                                                                        (milestone.chain_order ?: 1) >= 4 || milestone.reward_coins >= 500 ->
+                                                                                            com.example.numera.ui.components.CelebrationTier.Large.fire()
+                                                                                        (milestone.chain_order ?: 1) >= 2 || milestone.reward_coins >= 150 ->
+                                                                                            com.example.numera.ui.components.CelebrationTier.Medium.fire()
+                                                                                        else ->
+                                                                                            com.example.numera.ui.components.CelebrationTier.Small.fire()
+                                                                                    }
                                                                                     toast.achievement("Milestone reward claimed!")
                                                                                     onRefreshProfile()
                                                                                     fetchAchievements()
@@ -1425,7 +1433,7 @@ fun ProfileScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("📁", fontSize = 20.sp)
                             Spacer(modifier = Modifier.width(Spacing.s))
-                            Text("Collections", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                            Text("Collections", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
                         }
                         TextButton(onClick = {
                             newCollectionName = ""

@@ -571,7 +571,7 @@ fun SoloGameScreen(
                 Text(
                     "Check your connection and try again — your progress is safe.",
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = Alpha.secondary),
                     textAlign = TextAlign.Center,
                 )
                 DuoButton(onClick = { loadAttempt++ }, text = "Try Again")
@@ -654,12 +654,13 @@ fun SoloGameScreen(
             }
         }
         if (isCorrect) {
-            SoundManager.playCorrect()
-            com.example.numera.haptic.HapticManager.playSuccess()
-            showParticles = true
             score += 20
             solvedCount++
             correctStreak++
+            // Streak-aware: the base stays small (it plays constantly); momentum adds sparkle.
+            SoundManager.playCorrect(correctStreak)
+            com.example.numera.haptic.HapticManager.playSuccess()
+            showParticles = true
             if (!answeredWrongForCurrent) {
                 correctFirstTryCount++
                 perfectStreakCount++
@@ -840,8 +841,9 @@ fun SoloGameScreen(
                                 SoundManager.playLevelUp()
                                 com.example.numera.haptic.HapticManager.playMajorReward()
                             } else {
-                                SoundManager.playRewardClaim()
-                                com.example.numera.haptic.HapticManager.playMajorReward()
+                                // Session complete without a level-up is a MEDIUM moment, not a major one.
+                                SoundManager.playLevelComplete()
+                                com.example.numera.haptic.HapticManager.playSuccess()
                             }
                         }
                     }
@@ -892,7 +894,8 @@ fun SoloGameScreen(
                     val sec = timeLeft.toInt()
                     val prevSec = (timeLeft + 0.1f).toInt()
                     if (sec != prevSec) {
-                        SoundManager.playTick()
+                        // Pitch rises as time runs out — the sound itself carries the pressure.
+                        SoundManager.playTick(urgency = (5f - timeLeft) / 5f)
                         // Calm experience timer tension: final 3 seconds
                         if (timeLeft <= 3.1f) {
                             val intensity = (3.0f - timeLeft) / 3.0f
@@ -905,7 +908,8 @@ fun SoloGameScreen(
                 timeLeft = 0f
                 hasAnswered = true
                 selectedAnswer = ""
-                SoundManager.playWrong()
+                // Running out of time is a deflate, not a "you were wrong".
+                SoundManager.playTimeUp()
                 com.example.numera.haptic.HapticManager.playError()
                 errorsCount++
                 activeExplanation = "Time's up! Let's review the solution."

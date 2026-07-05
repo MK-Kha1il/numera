@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.haptic.HapticManager
+import com.example.numera.sound.SoundManager
 import com.example.numera.theme.*
 import kotlinx.coroutines.delay
 
@@ -114,6 +115,15 @@ private fun ToastRow(toast: ToastData, onDismiss: () -> Unit) {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(toast.id) {
         visible = true
+        // Only outcomes speak; Info toasts stay silent (haptic-only) so ambient notices never
+        // nag. Achievement toasts are also silent BY DESIGN: they always accompany a claim/unlock
+        // moment that owns the celebration audio — the toast is its visual echo, never a second voice.
+        when (toast.type) {
+            ToastType.Success -> SoundManager.playToastSuccess()
+            ToastType.Error -> SoundManager.playToastError()
+            ToastType.Achievement -> {}
+            ToastType.Info -> {}
+        }
         HapticManager.playSoft()
         delay(toast.durationMs)
         visible = false

@@ -74,7 +74,6 @@ fun SettingsScreen(
 
     // Tooltips
     var showHapticsTooltip by remember { mutableStateOf(!prefs.getBoolean("tooltip_haptics_dismissed", false)) }
-    var showMotionTooltip by remember { mutableStateOf(!prefs.getBoolean("tooltip_motion_dismissed", false)) }
 
     // Settings preferences
     var isDarkMode by remember { mutableStateOf(ThemeManager.isDarkMode) }
@@ -97,9 +96,7 @@ fun SettingsScreen(
 
     var timerEnabled by remember { mutableStateOf(prefs.getBoolean("timer_enabled", true)) }
     var autoClearWhiteboard by remember { mutableStateOf(prefs.getBoolean("auto_clear_whiteboard", true)) }
-    var animationIntensity by remember { mutableStateOf(prefs.getFloat("animation_intensity", 1.0f)) }
     var fontSizeScale by remember { mutableStateOf(prefs.getFloat("font_size_scale", 1.0f)) }
-    var reducedMotion by remember { mutableStateOf(prefs.getBoolean("reduced_motion", false)) }
 
     // Granular notification alerts
     var notifDaily by remember { mutableStateOf(prefs.getBoolean("notif_daily_puzzle", true)) }
@@ -156,7 +153,7 @@ fun SettingsScreen(
         val content: @Composable () -> Unit
     )
 
-    val allSettingsList = remember(isDarkMode, isHapticEnabled, isSoundMuted, soundVolume, timerEnabled, autoClearWhiteboard, animationIntensity, fontSizeScale, reducedMotion, notifDaily, notifStreak, notifFriends, notifAchievements, notifRanked, notifEvents, notifSeasonal, profilePrivate, telemetryEnabled, user) {
+    val allSettingsList = remember(isDarkMode, isHapticEnabled, isSoundMuted, soundVolume, timerEnabled, autoClearWhiteboard, fontSizeScale, notifDaily, notifStreak, notifFriends, notifAchievements, notifRanked, notifEvents, notifSeasonal, profilePrivate, telemetryEnabled, user) {
         listOf(
             SearchableSettingItem("Dark Mode", "Switch to obsidian dark aesthetic", "theme appearance night mode colors black") {
                 Row(
@@ -165,8 +162,8 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Dark Mode", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Switch to obsidian dark aesthetic", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Dark Mode", style = AppText.rowTitle)
+                        Text("Switch to obsidian dark aesthetic", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     Switch(
                         checked = ThemeManager.isDarkMode,
@@ -188,7 +185,7 @@ fun SettingsScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Haptic Feedback", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("Haptic Feedback", style = AppText.rowTitle)
                                 if (showHapticsTooltip) {
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Box(
@@ -204,7 +201,7 @@ fun SettingsScreen(
                                     }
                                 }
                             }
-                            Text("Tactile sensations on taps and events", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("Tactile sensations on taps and events", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         }
                         Switch(
                             checked = com.example.numera.haptic.HapticManager.isEnabled,
@@ -236,8 +233,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Sound Effects", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Toggle audio feedback", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("Sound Effects", style = AppText.rowTitle)
+                            Text("Toggle audio feedback", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         }
                         Switch(
                             checked = !isSoundMuted,
@@ -246,6 +243,8 @@ fun SettingsScreen(
                                 SoundManager.isMuted = !checked
                                 SoundManager.saveSettings(context)
                                 com.example.numera.haptic.HapticManager.playSoft()
+                                // Confirm re-enabling audibly (a mute toggle that stays silent feels broken).
+                                if (checked) SoundManager.playCorrect()
                             }
                         )
                     }
@@ -255,7 +254,7 @@ fun SettingsScreen(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xs),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Vol: ${(soundVolume * 100).toInt()}%", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), modifier = Modifier.width(55.dp))
+                            Text("Vol: ${(soundVolume * 100).toInt()}%", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), modifier = Modifier.width(55.dp))
                             Slider(
                                 value = soundVolume,
                                 onValueChange = {
@@ -264,6 +263,8 @@ fun SettingsScreen(
                                 },
                                 onValueChangeFinished = {
                                     SoundManager.saveSettings(context)
+                                    // Audible preview so the level can be judged without leaving Settings.
+                                    SoundManager.playCorrect()
                                 },
                                 valueRange = 0f..1f,
                                 modifier = Modifier.weight(1f)
@@ -279,8 +280,8 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Reduce Motion", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Dial back confetti and looping backgrounds", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Reduce Motion", style = AppText.rowTitle)
+                        Text("Dial back confetti and looping backgrounds", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     Switch(
                         checked = reduceMotion,
@@ -295,11 +296,11 @@ fun SettingsScreen(
             },
             SearchableSettingItem("Share progress with a parent", "Email a progress summary to a parent or guardian", "parent guardian family progress report email share school") {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Text("Share progress with a parent", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Share progress with a parent", style = AppText.rowTitle)
                     Text(
                         "Add a parent or guardian's email, then send them a plain-language summary of how you're doing. You're in control — clear it anytime.",
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                     )
                     Spacer(modifier = Modifier.height(Spacing.s))
                     OutlinedTextField(
@@ -357,8 +358,8 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Level Countdown Timer", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Add time constraints to your math problems", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Level Countdown Timer", style = AppText.rowTitle)
+                        Text("Add time constraints to your math problems", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     Switch(
                         checked = timerEnabled,
@@ -377,8 +378,8 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Auto-clear Whiteboard", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Reset drawing pad when answer is evaluated", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Auto-clear Whiteboard", style = AppText.rowTitle)
+                        Text("Reset drawing pad when answer is evaluated", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     Switch(
                         checked = autoClearWhiteboard,
@@ -390,82 +391,16 @@ fun SettingsScreen(
                     )
                 }
             },
-            SearchableSettingItem("Reduced Motion", "Reduce visual animation intensities and transit speeds", "motion animations performance speed graphics") {
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Reduced Motion", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                if (showMotionTooltip) {
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), RoundedCornerShape(Spacing.xs))
-                                            .pressable {
-                                                prefs.edit().putBoolean("tooltip_motion_dismissed", true).apply()
-                                                showMotionTooltip = false
-                                            }
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
-                                        Text("Info ?", fontSize = 9.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-                            Text("Disable high intensity layout animations", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                        }
-                        Switch(
-                            checked = reducedMotion,
-                            onCheckedChange = {
-                                reducedMotion = it
-                                saveToggle("reduced_motion", it)
-                                com.example.numera.haptic.HapticManager.playSoft()
-                            }
-                        )
-                    }
-                    if (showMotionTooltip) {
-                        Spacer(modifier = Modifier.height(Spacing.xs))
-                        Text(
-                            text = "💡 Reduced motion simplifies tab transition fades and eliminates particle bursts. Tap 'Info ?' to dismiss.",
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = Spacing.xs)
-                        )
-                    }
-                }
-            },
-            SearchableSettingItem("Animation Intensity", "Adjust graphics scale and particle density", "graphics detail effects quality animations speed") {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text("Animation Intensity", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text("Control graphics rendering scales: ${(animationIntensity * 100).toInt()}%", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Slider(
-                        value = animationIntensity,
-                        onValueChange = {
-                            animationIntensity = it
-                        },
-                        onValueChangeFinished = {
-                            prefs.edit().putFloat("animation_intensity", animationIntensity).apply()
-                        },
-                        valueRange = 0f..1.2f,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
             SearchableSettingItem("Text Font Size", "Scale screen typography readability sizes", "accessibility read display letters typography") {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Text("Font Readability Size", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Font Readability Size", style = AppText.rowTitle)
                     val fontLabel = when {
                         fontSizeScale <= 0.85f -> "Small (Accessibility)"
                         fontSizeScale <= 1.05f -> "Normal (Default)"
                         fontSizeScale <= 1.25f -> "Large (Readability)"
                         else -> "Extra Large"
                     }
-                    Text("Scale: $fontLabel", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text("Scale: $fontLabel", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     Spacer(modifier = Modifier.height(6.dp))
                     Slider(
                         value = fontSizeScale,
@@ -487,8 +422,8 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Change Username", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Current: ${user?.username ?: "Not set"}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Change Username", style = AppText.rowTitle)
+                        Text("Current: ${user?.username ?: "Not set"}", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                 }
@@ -500,8 +435,8 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Email Management", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Linked: ${if (user?.email.isNullOrBlank()) "None" else user?.email}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Email Management", style = AppText.rowTitle)
+                        Text("Linked: ${if (user?.email.isNullOrBlank()) "None" else user?.email}", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                 }
@@ -513,8 +448,8 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Active Sessions", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Audit and revoke connected devices", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Active Sessions", style = AppText.rowTitle)
+                        Text("Audit and revoke connected devices", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                 }
@@ -526,8 +461,8 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Security Activity Log", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Glance audit list of account actions", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Security Activity Log", style = AppText.rowTitle)
+                        Text("Glance audit list of account actions", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                 }
@@ -539,8 +474,8 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Private Profile", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Hide your rating, rank, and Relics from others", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Private Profile", style = AppText.rowTitle)
+                        Text("Hide your rating, rank, and Relics from others", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     Switch(
                         checked = profilePrivate,
@@ -567,8 +502,8 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Telemetry Diagnostics", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Share anonymous crashes for app stability", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Telemetry Diagnostics", style = AppText.rowTitle)
+                        Text("Share anonymous crashes for app stability", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     Switch(
                         checked = telemetryEnabled,
@@ -591,8 +526,8 @@ fun SettingsScreen(
             SearchableSettingItem("Daily Puzzle Reminders", "Get notified when daily challenge is ready", "alerts daily quest schedule timers notifications") {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Daily Puzzle Reminders", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Never miss your daily math challenges", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Daily Puzzle Reminders", style = AppText.rowTitle)
+                        Text("Never miss your daily math challenges", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     Switch(checked = notifDaily, onCheckedChange = { notifDaily = it; saveToggle("notif_daily_puzzle", it); com.example.numera.haptic.HapticManager.playSoft() })
                 }
@@ -600,8 +535,8 @@ fun SettingsScreen(
             SearchableSettingItem("Streak Danger Reminders", "Alerts when streak is close to resetting", "alerts streaks fire consistency notifications") {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Streak Reminders", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Alerts when your consistency streak is in danger", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Streak Reminders", style = AppText.rowTitle)
+                        Text("Alerts when your consistency streak is in danger", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     Switch(checked = notifStreak, onCheckedChange = { notifStreak = it; saveToggle("notif_streak", it); com.example.numera.haptic.HapticManager.playSoft() })
                 }
@@ -609,8 +544,8 @@ fun SettingsScreen(
             SearchableSettingItem("Social & Friend Alerts", "Notify on friend duels and status connections", "alerts social request duel notifications") {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Friend Activity", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Duels invitations and connection alerts", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Friend Activity", style = AppText.rowTitle)
+                        Text("Duels invitations and connection alerts", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     Switch(checked = notifFriends, onCheckedChange = { notifFriends = it; saveToggle("notif_friends", it); com.example.numera.haptic.HapticManager.playSoft() })
                 }
@@ -618,8 +553,8 @@ fun SettingsScreen(
             SearchableSettingItem("Achievement Completed Alerts", "Trigger badge unlock confirmations", "alerts badges accomplishments notifications") {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Achievement Alerts", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Trigger banner on badge unlocks", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Achievement Alerts", style = AppText.rowTitle)
+                        Text("Trigger banner on badge unlocks", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     Switch(checked = notifAchievements, onCheckedChange = { notifAchievements = it; saveToggle("notif_achievements", it); com.example.numera.haptic.HapticManager.playSoft() })
                 }
@@ -627,8 +562,8 @@ fun SettingsScreen(
             SearchableSettingItem("Ranked Rating Changes", "Alerts when your rank or rating shifts", "alerts ranked rating arena matches notifications") {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Ranked Activity", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Rating changes and league promotions", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Ranked Activity", style = AppText.rowTitle)
+                        Text("Rating changes and league promotions", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     Switch(checked = notifRanked, onCheckedChange = { notifRanked = it; saveToggle("notif_ranked", it); com.example.numera.haptic.HapticManager.playSoft() })
                 }
@@ -636,8 +571,8 @@ fun SettingsScreen(
             SearchableSettingItem("Live Quests Event Notifications", "Alerts when seasonal global events begin", "alerts quests events seasons notifications") {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Event Notifications", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Live updates for global quests challenges", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Event Notifications", style = AppText.rowTitle)
+                        Text("Live updates for global quests challenges", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     Switch(checked = notifEvents, onCheckedChange = { notifEvents = it; saveToggle("notif_events", it); com.example.numera.haptic.HapticManager.playSoft() })
                 }
@@ -645,8 +580,8 @@ fun SettingsScreen(
             SearchableSettingItem("Seasonal Content Alerts", "Notify on shop content inventory additions", "alerts calendar themes shop updates notifications") {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Seasonal Updates", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Shop inventory catalog adjustments", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Seasonal Updates", style = AppText.rowTitle)
+                        Text("Shop inventory catalog adjustments", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     Switch(checked = notifSeasonal, onCheckedChange = { notifSeasonal = it; saveToggle("notif_seasonal", it); com.example.numera.haptic.HapticManager.playSoft() })
                 }
@@ -704,11 +639,11 @@ fun SettingsScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search settings (e.g. haptics, privacy)...", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) },
+                placeholder = { Text("Search settings (e.g. haptics, privacy)...", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)) },
                 leadingIcon = {
                     com.example.numera.ui.components.NumeraIcon(
                         type = com.example.numera.ui.components.NumeraIconType.Search,
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                         modifier = Modifier.size(20.dp)
                     )
                 },
@@ -717,7 +652,7 @@ fun SettingsScreen(
                         IconButton(onClick = { searchQuery = ""; com.example.numera.haptic.HapticManager.playSoft() }) {
                             com.example.numera.ui.components.NumeraIcon(
                                 type = com.example.numera.ui.components.NumeraIconType.Close,
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                                 modifier = Modifier.size(IconSize.s)
                             )
                         }
@@ -751,7 +686,7 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth().padding(Spacing.xxl),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No settings matched your search query.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 13.sp)
+                    Text("No settings matched your search query.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 13.sp)
                 }
             } else {
                 Card(
@@ -775,111 +710,6 @@ fun SettingsScreen(
         } else {
             // Grouped Category Mode
 
-            // 1. QUICK PREFERENCES ROW (At the top)
-            Column(modifier = Modifier.padding(horizontal = Spacing.l, vertical = 6.dp)) {
-                Text(
-                    text = "Quick Preferences",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(start = Spacing.s, bottom = 6.dp)
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
-                ) {
-                    // Dark Mode compact
-                    Card(
-                        modifier = Modifier.weight(1f).height(65.dp),
-                        shape = RoundedCornerShape(CornerRadius.m),
-                        onClick = {
-                            ThemeManager.isDarkMode = !ThemeManager.isDarkMode
-                            ThemeManager.saveSettings(context)
-                            com.example.numera.haptic.HapticManager.playSoft()
-                        },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (ThemeManager.isDarkMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(6.dp),
-                            verticalArrangement = Arrangement.SpaceBetween,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            androidx.compose.material3.Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Default.Brightness4,
-                                contentDescription = "Dark Mode Icon",
-                                tint = if (ThemeManager.isDarkMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text("Dark Mode", fontWeight = FontWeight.Bold, fontSize = 10.sp)
-                        }
-                    }
-
-                    // Haptics compact — use isHapticEnabled (Compose state) for colors/tint so
-                    // the card recomposes immediately on click without needing another button press.
-                    Card(
-                        modifier = Modifier.weight(1f).height(65.dp),
-                        shape = RoundedCornerShape(CornerRadius.m),
-                        onClick = {
-                            val nextVal = !com.example.numera.haptic.HapticManager.isEnabled
-                            com.example.numera.haptic.HapticManager.isEnabled = nextVal
-                            isHapticEnabled = nextVal           // ← trigger recompose
-                            com.example.numera.haptic.HapticManager.saveSettings(context)
-                            if (nextVal) com.example.numera.haptic.HapticManager.playSoft()
-                        },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isHapticEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(6.dp),
-                            verticalArrangement = Arrangement.SpaceBetween,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            androidx.compose.material3.Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Default.Vibration,
-                                contentDescription = "Haptics Icon",
-                                tint = if (isHapticEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text("Haptic Feed", fontWeight = FontWeight.Bold, fontSize = 10.sp)
-                        }
-                    }
-
-                    // Quick Mute compact
-                    Card(
-                        modifier = Modifier.weight(1f).height(65.dp),
-                        shape = RoundedCornerShape(CornerRadius.m),
-                        onClick = {
-                            val nextMute = !isSoundMuted
-                            isSoundMuted = nextMute
-                            SoundManager.isMuted = nextMute
-                            SoundManager.saveSettings(context)
-                            com.example.numera.haptic.HapticManager.playSoft()
-                        },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (!isSoundMuted) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(6.dp),
-                            verticalArrangement = Arrangement.SpaceBetween,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            androidx.compose.material3.Icon(
-                                imageVector = if (isSoundMuted) androidx.compose.material.icons.Icons.Default.VolumeOff else androidx.compose.material.icons.Icons.Default.VolumeUp,
-                                contentDescription = "Mute Icon",
-                                tint = if (!isSoundMuted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text("App Audio", fontWeight = FontWeight.Bold, fontSize = 10.sp)
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.m))
 
             // 2. ACCOUNT SECTION CARD
             Card(
@@ -895,7 +725,7 @@ fun SettingsScreen(
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(Spacing.s))
-                        Text("Account settings", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                        Text("Account settings", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
                     
@@ -915,8 +745,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Password Management", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Update your account credentials", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("Password Management", style = AppText.rowTitle)
+                            Text("Update your account credentials", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         }
                         NumeraIcon(
                             type = if (showPasswordSection) NumeraIconType.ChevronUp else NumeraIconType.ChevronDown,
@@ -1064,7 +894,7 @@ fun SettingsScreen(
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(Spacing.s))
-                        Text("Gameplay options", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                        Text("Gameplay options", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
@@ -1102,13 +932,13 @@ fun SettingsScreen(
                             animate = false
                         )
                         Spacer(modifier = Modifier.width(Spacing.s))
-                        Text("Appearance & themes", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                        Text("Appearance & themes", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
                     // Accent theme equip blocks
-                    Text("🎨 Equipped Theme Accent", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text("Unlock and choose your math identity", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text("🎨 Equipped Theme Accent", style = AppText.rowTitle)
+                    Text("Unlock and choose your math identity", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     
                     val themesList = listOf(
@@ -1176,12 +1006,8 @@ fun SettingsScreen(
                     allSettingsList.first { it.title == "Dark Mode" }.content()
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
-                    // Reduced motion accessibilities
-                    allSettingsList.first { it.title == "Reduced Motion" }.content()
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-
-                    // Animation Intensity
-                    allSettingsList.first { it.title == "Animation Intensity" }.content()
+                    // Reduce motion (accessibility) — the single, functional MotionManager-backed control
+                    allSettingsList.first { it.title == "Reduce Motion" }.content()
                 }
             }
 
@@ -1201,7 +1027,7 @@ fun SettingsScreen(
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(Spacing.s))
-                        Text("Granular notification control", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                        Text("Granular notification control", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
@@ -1213,8 +1039,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Email Reminders", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Streak, win-back & weekly recap emails (synced to your account)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("Email Reminders", style = AppText.rowTitle)
+                            Text("Streak, win-back & weekly recap emails (synced to your account)", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         }
                         Switch(
                             checked = emailReminders,
@@ -1274,7 +1100,7 @@ fun SettingsScreen(
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(Spacing.s))
-                        Text("Privacy & Security controls", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                        Text("Privacy & Security controls", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
@@ -1294,8 +1120,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Export Account Data", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Download GDPR-compliant JSON profile history", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("Export Account Data", style = AppText.rowTitle)
+                            Text("Download GDPR-compliant JSON profile history", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         }
                         Button(
                             onClick = {
@@ -1352,8 +1178,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Delete Account", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.error)
-                            Text("Permanently wipe profile data (Irreversible)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("Delete Account", style = AppText.rowTitle, color = MaterialTheme.colorScheme.error)
+                            Text("Permanently wipe profile data (Irreversible)", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         }
                         Button(
                             onClick = { showDeleteDialog = true },
@@ -1382,7 +1208,7 @@ fun SettingsScreen(
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(Spacing.s))
-                        Text("Help & Support", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                        Text("Help & Support", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
@@ -1393,8 +1219,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Frequently Asked Questions", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Find answers to common problem queries", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("Frequently Asked Questions", style = AppText.rowTitle)
+                            Text("Find answers to common problem queries", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         }
                         NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                     }
@@ -1407,8 +1233,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Contact Customer Support", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Submit feedback direct to creators", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("Contact Customer Support", style = AppText.rowTitle)
+                            Text("Submit feedback direct to creators", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         }
                         NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                     }
@@ -1421,8 +1247,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Report a System Bug", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Log mathematical template formatting errors", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("Report a System Bug", style = AppText.rowTitle)
+                            Text("Log mathematical template formatting errors", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         }
                         NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                     }
@@ -1435,8 +1261,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Request New Feature", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Suggest topics, avatars, or banner options", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("Request New Feature", style = AppText.rowTitle)
+                            Text("Suggest topics, avatars, or banner options", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         }
                         NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                     }
@@ -1449,8 +1275,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Community Guidelines", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Code of conduct for duels and social chats", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Text("Community Guidelines", style = AppText.rowTitle)
+                            Text("Code of conduct for duels and social chats", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         }
                         NumeraIcon(type = NumeraIconType.ChevronRight, tint = MaterialTheme.colorScheme.primary)
                     }
@@ -1469,15 +1295,15 @@ fun SettingsScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         com.example.numera.ui.components.NumeraIcon(
                             type = com.example.numera.ui.components.NumeraIconType.Learn,
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(Spacing.s))
-                        Text("About Numera", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("About Numera", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Client Version", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Client Version", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         Text("v1.2.0 (Build 3020)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
@@ -1487,7 +1313,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Privacy Policy", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                        NumeraIcon(type = NumeraIconType.ChevronRight, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        NumeraIcon(type = NumeraIconType.ChevronRight, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
 
@@ -1496,7 +1322,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Terms of Service", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                        NumeraIcon(type = NumeraIconType.ChevronRight, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        NumeraIcon(type = NumeraIconType.ChevronRight, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
 
@@ -1505,7 +1331,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Credits & Contributors", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                        NumeraIcon(type = NumeraIconType.ChevronRight, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        NumeraIcon(type = NumeraIconType.ChevronRight, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                 }
             }
@@ -1543,7 +1369,7 @@ fun SettingsScreen(
             title = { Text("Change Username", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
-                    Text("Your username is how friends identify you in duels.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text("Your username is how friends identify you in duels.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     OutlinedTextField(
                         value = newUsername,
                         onValueChange = { newUsername = it },
@@ -1630,7 +1456,7 @@ fun SettingsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                     if (!showVerifyInput) {
-                        Text("Link your email address to recover your account.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Link your email address to recover your account.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         OutlinedTextField(
                             value = emailText,
                             onValueChange = { emailText = it },
@@ -1640,7 +1466,7 @@ fun SettingsScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
-                        Text("Enter the 6-digit verification code sent to $emailText.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Enter the 6-digit verification code sent to $emailText.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         if (sentCode.isNotEmpty()) {
                             Text("Local Sandbox Code: $sentCode", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
                         }
@@ -1770,7 +1596,7 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth().height(260.dp),
                     verticalArrangement = Arrangement.spacedBy(Spacing.s)
                 ) {
-                    Text("Revoking a session will immediately force that device to log out.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text("Revoking a session will immediately force that device to log out.", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     if (loadingSessions) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -1807,10 +1633,10 @@ fun SettingsScreen(
                                                     }
                                                 }
                                             }
-                                            Text("IP: ${session.ip_address}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                            Text("IP: ${session.ip_address}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                             val dateStr = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US)
                                                 .format(java.util.Date(session.created_at * 1000))
-                                            Text("Connected: $dateStr", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                            Text("Connected: $dateStr", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                         }
                                         if (!session.is_current) {
                                             Button(
@@ -1878,7 +1704,7 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth().height(280.dp),
                     verticalArrangement = Arrangement.spacedBy(Spacing.s)
                 ) {
-                    Text("A transparent record of security events related to your profile credentials.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text("A transparent record of security events related to your profile credentials.", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     if (loadingLogs) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -1891,7 +1717,7 @@ fun SettingsScreen(
                         ) {
                             if (logsList.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text("No security events logged yet.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+                                    Text("No security events logged yet.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 12.sp)
                                 }
                             } else {
                                 logsList.forEach { log ->
@@ -1909,11 +1735,11 @@ fun SettingsScreen(
                                                 Text(eventLabel, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                                                 val logDate = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US)
                                                     .format(java.util.Date(log.timestamp * 1000))
-                                                Text(logDate, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                                Text(logDate, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                             }
                                             Spacer(modifier = Modifier.height(Spacing.xs))
                                             Text(log.details, fontSize = 11.sp)
-                                            Text("Origin IP: ${log.ip_address}", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                            Text("Origin IP: ${log.ip_address}", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                                         }
                                     }
                                 }
@@ -1992,17 +1818,17 @@ fun SettingsScreen(
                 ) {
                     Column {
                         Text("How do I raise my rating and rank?", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        Text("Your rating climbs as you solve problems above your level — in solo practice and in ranked Arena duels alike. Both feed the same rating, and your rank tier follows it.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Your rating climbs as you solve problems above your level — in solo practice and in ranked Arena duels alike. Both feed the same rating, and your rank tier follows it.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     HorizontalDivider()
                     Column {
                         Text("What are Streak Shields?", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        Text("Streak Shields automatically protect your daily consistency streak if you fail to log in and complete a level. Purchase them in the Shop.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Streak Shields automatically protect your daily consistency streak if you fail to log in and complete a level. Purchase them in the Shop.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                     HorizontalDivider()
                     Column {
                         Text("How are Relics unlocked?", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        Text("Milestone Relics are unlocked automatically in your Profile when you maintain active daily consistency paths for 3, 7, 30, and 100 days.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Milestone Relics are unlocked automatically in your Profile when you maintain active daily consistency paths for 3, 7, 30, and 100 days.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }
                 }
             },
@@ -2025,7 +1851,7 @@ fun SettingsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                     if (!submitted) {
-                        Text("Submit a ticket directly to our development team.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Submit a ticket directly to our development team.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         OutlinedTextField(
                             value = subject,
                             onValueChange = { subject = it },
@@ -2102,7 +1928,7 @@ fun SettingsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                     if (!submitted) {
-                        Text("Let us know about errors in math generation, UI glitches, or freezes.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Let us know about errors in math generation, UI glitches, or freezes.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         OutlinedTextField(
                             value = bugTitle,
                             onValueChange = { bugTitle = it },
@@ -2178,7 +2004,7 @@ fun SettingsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                     if (!submitted) {
-                        Text("Tell us what would make Numera better — a topic, a mode, an avatar, anything.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text("Tell us what would make Numera better — a topic, a mode, an avatar, anything.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                         OutlinedTextField(
                             value = idea,
                             onValueChange = { idea = it },
@@ -2301,12 +2127,12 @@ fun SettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text("Numera Quest Math Client", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                    Text("Developed by Antigravity and the AAC AI Coding Team.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text("Developed by Antigravity and the AAC AI Coding Team.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     Spacer(modifier = Modifier.height(6.dp))
                     Text("Special Thanks:", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    Text("• Duolingo, for layout gamification inspiration.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                    Text("• Jetpack Compose & Material 3, enabling sleek layouts.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                    Text("• Our dedicated Beta Testers, pointing out bugs.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text("• Duolingo, for layout gamification inspiration.", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
+                    Text("• Jetpack Compose & Material 3, enabling sleek layouts.", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
+                    Text("• Our dedicated Beta Testers, pointing out bugs.", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                 }
             },
             confirmButton = {

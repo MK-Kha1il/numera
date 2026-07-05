@@ -266,7 +266,7 @@ fun GameplayScreen(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
                     Text(
                         text = "Exercise ${currentProblemIdx + 1} of ${problemsList.size}",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -277,9 +277,7 @@ fun GameplayScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f))
-                                .pressable(feedback = PressFeedback.Silent) {
-                                    SoundManager.playClick()
-                                    com.example.numera.haptic.HapticManager.playSoft()
+                                .pressable {
                                     showReference = true
                                 }
                                 .padding(horizontal = Spacing.s, vertical = 5.dp),
@@ -983,11 +981,14 @@ fun GameplayScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = Spacing.xs),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(com.example.numera.theme.CornerRadius.l),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (correct) CorrectGreen.copy(alpha = 0.08f) else WrongRed.copy(alpha = 0.08f)
+                    containerColor = if (correct) CorrectGreen.copy(alpha = 0.06f) else WrongRed.copy(alpha = 0.06f)
                 ),
-                border = BorderStroke(1.5.dp, if (correct) CorrectGreen.copy(alpha = 0.3f) else WrongRed.copy(alpha = 0.3f))
+                // Calmer container so the problem stays the loudest element (audit #9): a 1dp hairline
+                // tint instead of a heavy 1.5dp border; the green/red still carries the correct/wrong
+                // signal, and the encouragement header keeps its energy (a reward/feedback moment).
+                border = BorderStroke(1.dp, if (correct) CorrectGreen.copy(alpha = 0.22f) else WrongRed.copy(alpha = 0.22f))
             ) {
                 Column(
                     modifier = Modifier.padding(14.dp),
@@ -1089,6 +1090,8 @@ fun GameplayScreen(
                                         .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
                                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
                                         .pressable(feedback = PressFeedback.Silent) {
+                                            // Help arriving sounds like help — one gentle note, not a button.
+                                            SoundManager.playReveal()
                                             com.example.numera.haptic.HapticManager.playSoft()
                                             showHint = true
                                         }
@@ -1106,7 +1109,7 @@ fun GameplayScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.06f))
                                         .padding(Spacing.m),
                                     horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                                 ) {
@@ -1135,6 +1138,7 @@ fun GameplayScreen(
                                         .clip(RoundedCornerShape(com.example.numera.theme.CornerRadius.s))
                                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
                                         .pressable(feedback = PressFeedback.Silent) {
+                                            SoundManager.playReveal()
                                             com.example.numera.haptic.HapticManager.playSoft()
                                             workedStepsShown = 1
                                         }
@@ -1192,7 +1196,7 @@ fun GameplayScreen(
                                                     text = w,
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.Normal,
-                                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = Alpha.secondary),
                                                     lineHeight = 15.sp
                                                 )
                                             }
@@ -1242,7 +1246,7 @@ fun GameplayScreen(
                                     showReviewDialog = true
                                 },
                                 modifier = Modifier.weight(1f),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                             )
                         }
 

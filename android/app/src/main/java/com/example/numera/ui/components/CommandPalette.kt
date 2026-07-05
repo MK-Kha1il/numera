@@ -86,7 +86,7 @@ class CommandPaletteController {
         private set
 
     fun open() {
-        SoundManager.playClick()
+        SoundManager.playSheetOpen()
         HapticManager.playSoft()
         isOpen = true
     }

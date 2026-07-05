@@ -86,7 +86,7 @@ private fun CrumbChip(crumb: Crumb, isCurrent: Boolean) {
                     interactionSource = interaction,
                     indication = ripple(),
                 ) {
-                    SoundManager.playClick()
+                    SoundManager.playNavigate()
                     HapticManager.playSoft()
                     crumb.onClick?.invoke()
                 }
