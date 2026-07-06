@@ -167,13 +167,31 @@ body density; the two-eyebrow header on gameplay (mode label + category label).
 *(Resolved since first draft: Shop tab grouping — shipped 9→6; color-only state #75 — verified
 already satisfied on every flagged surface.)*
 
+## 5b. BlueStacks visual QA pass — DONE (2026-07-06, screenshots in session scratchpad)
+
+Guest session, fresh APK, live server. **Verified on device:** launch lands on the Today plan
+(the existing "Your home base" spotlight now matches the landing); top-bar coins/level pills render
+vector icons + tabular figures; RewardChip on quest rows and the Train daily-puzzle card; Shop shows
+6 tabs (all fit without scrolling) with the full Cosmetics filter row; Profile identity chips are
+vector (flame/coin/trophy) and the "Milestones" group label + learning-story order read correctly;
+gameplay header is a true quiet eyebrow with the equation as hero; wrong answer = red + ✗ (correct
+stays hidden), reveal = green + ✓; "Solution breakdown" dialog carries the Tip icon.
+
+**The QA pass also caught a real shipped server bug** (fixed + guarded, commit 9c71b9b): the
+`shop_items` type CHECK constraint predated Stage D, so all 22 title/effect/victory/tap/frame
+cosmetics were silently dropped by the `INSERT OR IGNORE` seed on every boot — the live-cosmetics
+catalog never existed in any running DB, and the old Titles/Effects tabs were always empty. Fixed
+the CHECK, added `test/shopSeedIntegrity.test.js` (pins every seeded family + asserts the catalog
+serves them), verified the recovered items render in the app. This is the argument for visual QA
+in one screenshot: code-grounded audits and 1240 passing tests never noticed an empty product surface.
+
 ## 6. Remaining weaknesses (honest list)
 
 1. **The emoji dialect is the last big incoherence** — 344 lines across 61 files mixing Unicode
    rendering with the crisp vector language. Mechanical-ish but large; needs the icon set extended
-   first.
-2. **No device-screenshot verification in this sprint** — all findings/fixes are code-grounded +
-   render-test-guarded; a visual QA pass (backlog #8) is the missing proof layer.
+   first (quest-type icons: pencil/puzzle/bolt/brain — now unblocked, since the QA loop exists).
+2. ~~No device-screenshot verification~~ — **done** (§5b); hearts-in-level-mode is the one changed
+   surface not directly screenshotted (daily-puzzle mode has no hearts).
 3. **Brand tension is managed, not eliminated** — competition-first energy vs. calm learning base
    is a budget, and every new feature will try to overspend it. The design-language section above
    is the contract; hold the line in review.
