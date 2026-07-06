@@ -23,7 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.CornerRadius as GeometryCornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.pointerInput
@@ -256,18 +256,22 @@ fun GameplayScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Math-as-hero: the header is *chrome* — a tiny caps eyebrow, not a co-headline.
+                // The equation below stays the loudest element on screen.
                 Text(
                     text = if (gameMode == "mistakes_practice") "GROWTH PRACTICE" else if (isLegacyPuzzle) "LEGACY PUZZLE" else "${category.uppercase()} · LEVEL $level",
                     color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
+                    fontSize = 11.sp,
+                    letterSpacing = 0.8.sp
                 )
 
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
                     Text(
                         text = "Exercise ${currentProblemIdx + 1} of ${problemsList.size}",
+                        style = NumeralStyle,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
-                        fontSize = 14.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
                     // Reference: open the concept/formula reminder without leaving the exercise.
@@ -275,7 +279,7 @@ fun GameplayScreen(
                     if (hasReference) {
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(RoundedCornerShape(CornerRadius.m))
                                 .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f))
                                 .pressable {
                                     showReference = true
@@ -341,15 +345,21 @@ fun GameplayScreen(
                 )
 
                 if (gameMode == "level") {
+                    // Lives as vector hearts: filled = remaining, hollow + muted = spent — the
+                    // state reads by shape as well as color (not emoji, not color-only).
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         repeat(3) { i ->
                             val active = i < heartsLeft
-                            Text(
-                                text = if (active) "❤️" else "🖤",
-                                fontSize = 14.sp
+                            NumeraIcon(
+                                type = NumeraIconType.Favorite,
+                                filled = active,
+                                tint = if (active) WrongRed else MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.disabled),
+                                animate = false,
+                                contentDescription = if (i == 0) "$heartsLeft of 3 hearts left" else "",
+                                modifier = Modifier.size(IconSize.s)
                             )
                         }
                     }
@@ -363,6 +373,8 @@ fun GameplayScreen(
                     
                     Text(
                         text = "⏱️ ${sec}s",
+                        // Tabular digits so the countdown doesn't jitter as figures change.
+                        style = NumeralStyle,
                         color = if (timeLeft <= 5f) WrongRed else DuoSecondary,
                         fontWeight = FontWeight.Black,
                         fontSize = 14.sp,
@@ -534,9 +546,9 @@ fun GameplayScreen(
                         .align(Alignment.TopEnd)
                         .padding(top = Spacing.xxxl, end = Spacing.m)
                         .width(200.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(CornerRadius.s))
                         .background(MaterialTheme.colorScheme.secondaryContainer)
-                        .border(1.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(8.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(CornerRadius.s))
                         .padding(Spacing.s)
                 ) {
                     Row(
@@ -584,8 +596,8 @@ fun GameplayScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(10.dp))
-                                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
+                                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(CornerRadius.m))
+                                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), RoundedCornerShape(CornerRadius.m))
                                     .padding(horizontal = 10.dp, vertical = 5.dp)
                             ) {
                                 Text(
@@ -604,7 +616,7 @@ fun GameplayScreen(
                             // Tip Button
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .clip(RoundedCornerShape(CornerRadius.m))
                                     .background(
                                         Brush.verticalGradient(
                                             listOf(
@@ -645,7 +657,7 @@ fun GameplayScreen(
                             // Calculator Button
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .clip(RoundedCornerShape(CornerRadius.m))
                                     .background(
                                         Brush.verticalGradient(
                                             listOf(
@@ -687,7 +699,7 @@ fun GameplayScreen(
                             // Try Paper Button
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .clip(RoundedCornerShape(CornerRadius.m))
                                     .background(
                                         Brush.verticalGradient(
                                             listOf(
@@ -696,7 +708,7 @@ fun GameplayScreen(
                                             )
                                         )
                                     )
-                                    .border(BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)), shape = RoundedCornerShape(12.dp))
+                                    .border(BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)), shape = RoundedCornerShape(CornerRadius.m))
                                     .pressable(feedback = PressFeedback.Silent) {
                                         com.example.numera.haptic.HapticManager.playSoft()
                                         showTip = false
@@ -804,7 +816,7 @@ fun GameplayScreen(
                             placeholder = { Text("Value...") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(CornerRadius.l),
                             enabled = !hasAnswered,
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = if (currentProblem.correctAnswer.all { it.isDigit() || it == '-' || it == '.' || it == '/' }) KeyboardType.Number else KeyboardType.Text,
@@ -911,17 +923,17 @@ fun GameplayScreen(
                                         if (!hasAnswered) {
                                             drawRoundRect(
                                                 color = depthColor,
-                                                cornerRadius = CornerRadius(Spacing.l.toPx(), Spacing.l.toPx())
+                                                cornerRadius = GeometryCornerRadius(Spacing.l.toPx(), Spacing.l.toPx())
                                             )
                                         }
                                     }
                                     .padding(bottom = if (isPressed.value && !hasAnswered) Spacing.zero else bottomDepth)
                                     .offset(y = offset)
-                                    .clip(RoundedCornerShape(16.dp))
+                                    .clip(RoundedCornerShape(CornerRadius.l))
                                     .background(bgColor)
                                     .border(
                                         BorderStroke(1.5.dp, outlineColor),
-                                        shape = RoundedCornerShape(16.dp)
+                                        shape = RoundedCornerShape(CornerRadius.l)
                                     )
                                     .padding(Spacing.l),
                                 contentAlignment = Alignment.Center

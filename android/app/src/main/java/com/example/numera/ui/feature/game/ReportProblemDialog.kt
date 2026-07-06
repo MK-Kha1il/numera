@@ -1,5 +1,6 @@
 package com.example.numera.ui.feature.game
 import com.example.numera.theme.Alpha
+import com.example.numera.theme.CornerRadius
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -96,12 +97,12 @@ fun ReportProblemDialog(
                             color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier
                                 .padding(vertical = 4.dp)
-                                .clip(RoundedCornerShape(20.dp))
+                                .clip(RoundedCornerShape(CornerRadius.l))
                                 .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
                                 .border(
                                     1.dp,
                                     if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
-                                    RoundedCornerShape(20.dp)
+                                    RoundedCornerShape(CornerRadius.l)
                                 )
                                 .pressable { reason = key }
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
@@ -114,7 +115,7 @@ fun ReportProblemDialog(
                     label = { Text("Add detail (optional)") },
                     singleLine = false,
                     maxLines = 3,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(CornerRadius.m),
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (error != null) {

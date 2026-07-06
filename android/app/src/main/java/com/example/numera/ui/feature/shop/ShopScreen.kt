@@ -171,10 +171,8 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                     }
                 }
 
-                // Search (only on the browsable grid tabs that filter by query)
-                if (selectedTab == ShopTab.Cosmetics || selectedTab == ShopTab.Themes ||
-                    selectedTab == ShopTab.Titles || selectedTab == ShopTab.Effects
-                ) {
+                // Search (only on the browsable grid tab that filters by query)
+                if (selectedTab == ShopTab.Cosmetics) {
                     Spacer(Modifier.height(Spacing.s))
                     VaultSearchField(query = searchQuery, onQueryChange = { searchQuery = it })
                 }
@@ -207,34 +205,16 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                                 )
                             }
                             ShopTab.Cosmetics -> CosmeticsTab(
-                                cosmetics = catalogItems.filter { it.type == "avatar" || it.type == "banner" || it.type == "badge" },
+                                // One browsable grid: every purchasable cosmetic family; the
+                                // former Titles/Effects/Themes tabs live on as type filters.
+                                cosmetics = catalogItems.filter {
+                                    it.type == "avatar" || it.type == "banner" || it.type == "badge" ||
+                                        it.type == "title" || it.type == "effect" || it.type == "victory" ||
+                                        it.type == "tap" || it.type == "theme"
+                                },
                                 query = searchQuery, sort = sort, onSort = { sort = it },
                                 typeFilter = typeFilter, onType = { typeFilter = it },
                                 savedOnly = savedOnly, onSavedToggle = { savedOnly = !savedOnly },
-                                user = user, inventoryIds = inventoryIds, favorites = favorites,
-                                onCardClick = onCardClick, onToggleFav = onToggleFav,
-                            )
-                            ShopTab.Titles -> FilteredGridTab(
-                                base = catalogItems.filter { it.type == "title" },
-                                query = searchQuery, sort = sort, onSort = { sort = it },
-                                savedOnly = savedOnly, onSavedToggle = { savedOnly = !savedOnly },
-                                emptyEmoji = "🎖️", emptyMessage = "No titles match. Buy one to wear it under your name.",
-                                user = user, inventoryIds = inventoryIds, favorites = favorites,
-                                onCardClick = onCardClick, onToggleFav = onToggleFav,
-                            )
-                            ShopTab.Effects -> FilteredGridTab(
-                                base = catalogItems.filter { it.type == "effect" || it.type == "victory" || it.type == "tap" },
-                                query = searchQuery, sort = sort, onSort = { sort = it },
-                                savedOnly = savedOnly, onSavedToggle = { savedOnly = !savedOnly },
-                                emptyEmoji = "✨", emptyMessage = "No effects match. Clear the filter to see profile, victory & tap effects.",
-                                user = user, inventoryIds = inventoryIds, favorites = favorites,
-                                onCardClick = onCardClick, onToggleFav = onToggleFav,
-                            )
-                            ShopTab.Themes -> FilteredGridTab(
-                                base = catalogItems.filter { it.type == "theme" },
-                                query = searchQuery, sort = sort, onSort = { sort = it },
-                                savedOnly = savedOnly, onSavedToggle = { savedOnly = !savedOnly },
-                                emptyEmoji = "🎨", emptyMessage = "No themes match. Clear the filter to see them all.",
                                 user = user, inventoryIds = inventoryIds, favorites = favorites,
                                 onCardClick = onCardClick, onToggleFav = onToggleFav,
                             )
@@ -305,7 +285,8 @@ private fun VaultHeader(coins: Int, boosterUses: Int, tokens: Int) {
             horizontalArrangement = Arrangement.spacedBy(Spacing.s),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            WalletPill(text = "🪙 $coins", accent = MaterialTheme.colorScheme.primary)
+            WalletPill(text = "$coins", accent = MaterialTheme.colorScheme.primary, icon = NumeraIconType.Coins)
+            // 👑 stays: it's the Season Token brand glyph (kept per the calm/energy hybrid).
             if (tokens > 0) WalletPill(text = "👑 $tokens", accent = SeasonGold)
             Spacer(Modifier.weight(1f))
             if (boosterUses > 0) {
@@ -316,15 +297,20 @@ private fun VaultHeader(coins: Int, boosterUses: Int, tokens: Int) {
 }
 
 @Composable
-private fun WalletPill(text: String, accent: Color) {
-    Box(
+private fun WalletPill(text: String, accent: Color, icon: NumeraIconType? = null) {
+    Row(
         modifier = Modifier
             .clip(Shape(CornerRadius.full))
             .background(accent.copy(alpha = 0.14f))
             .border(1.dp, accent.copy(alpha = 0.45f), Shape(CornerRadius.full))
             .padding(horizontal = Spacing.m, vertical = Spacing.s),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
-        Text(text, fontSize = 15.sp, fontWeight = FontWeight.Black, color = accent)
+        if (icon != null) {
+            NumeraIcon(type = icon, modifier = Modifier.size(IconSize.s), tint = accent, animate = false)
+        }
+        Text(text, style = NumeralStyle, fontSize = 15.sp, fontWeight = FontWeight.Black, color = accent)
     }
 }
 

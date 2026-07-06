@@ -184,9 +184,9 @@ fun LevelNode(
                     .offset(y = (-48).dp)
                     .background(
                         brush = startBadgeBrush,
-                        shape = RoundedCornerShape(6.dp)
+                        shape = RoundedCornerShape(CornerRadius.s)
                     )
-                    .border(1.dp, Color.White.copy(alpha = Alpha.secondary), shape = RoundedCornerShape(6.dp))
+                    .border(1.dp, Color.White.copy(alpha = Alpha.secondary), shape = RoundedCornerShape(CornerRadius.s))
                     .padding(horizontal = Spacing.s, vertical = 2.dp)
             ) {
                 Text(

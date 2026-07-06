@@ -116,7 +116,7 @@ fun BoxScope.CalculatorOverlay(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(CornerRadius.s))
                                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
                                 .padding(horizontal = 10.dp, vertical = Spacing.xs),
                             verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -139,9 +139,9 @@ fun BoxScope.CalculatorOverlay(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(64.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(CornerRadius.m))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-                            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(CornerRadius.m))
                             .padding(horizontal = 14.dp, vertical = 6.dp),
                         contentAlignment = Alignment.CenterEnd
                     ) {
@@ -230,7 +230,7 @@ fun BoxScope.CalculatorOverlay(
                                         modifier = Modifier
                                             .weight(weight)
                                             .height(38.dp)
-                                            .clip(RoundedCornerShape(10.dp))
+                                            .clip(RoundedCornerShape(CornerRadius.m))
                                             .background(bgColor)
                                             .pressable(feedback = PressFeedback.Silent, pressScale = MotionTokens.pressScaleSmall) {
                                                 com.example.numera.haptic.HapticManager.playSoft()

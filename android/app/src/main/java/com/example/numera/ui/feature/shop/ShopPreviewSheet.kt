@@ -91,7 +91,7 @@ fun HeroShowcasePanel(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = Spacing.xs)
-            .border(2.dp, rarityColor.copy(alpha = 0.7f), RoundedCornerShape(20.dp)),
+            .border(2.dp, rarityColor.copy(alpha = 0.7f), RoundedCornerShape(CornerRadius.l)),
         shape = RoundedCornerShape(CornerRadius.xl),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {

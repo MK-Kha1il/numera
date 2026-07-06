@@ -20,7 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.CornerRadius as GeometryCornerRadius
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -792,7 +792,7 @@ fun DuelGameScreen(
                     fontSize = 20.sp,
                     modifier = Modifier
                         .padding(horizontal = Spacing.xs)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(CornerRadius.m))
                         .background(
                             MaterialTheme.colorScheme.surfaceVariant.copy(
                                 alpha = if (emoteCoolingDown) 0.35f else 1f
@@ -821,7 +821,7 @@ fun DuelGameScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = Spacing.s)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(CornerRadius.m))
                     .background(MilestoneGold.copy(alpha = 0.15f))
                     .padding(Spacing.m),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1094,17 +1094,17 @@ fun DuelGameScreen(
                             if (!hasAnswered) {
                                 drawRoundRect(
                                     color = depthColor,
-                                    cornerRadius = CornerRadius(16.dp.toPx(), 16.dp.toPx())
+                                    cornerRadius = GeometryCornerRadius(16.dp.toPx(), 16.dp.toPx())
                                 )
                             }
                         }
                         .padding(bottom = if (isPressed.value && !hasAnswered) 0.dp else bottomDepth)
                         .offset(y = offset)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(CornerRadius.l))
                         .background(bgColor)
                         .border(
                             BorderStroke(1.5.dp, outlineColor),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(CornerRadius.l)
                         )
                         .padding(16.dp),
                     contentAlignment = Alignment.Center

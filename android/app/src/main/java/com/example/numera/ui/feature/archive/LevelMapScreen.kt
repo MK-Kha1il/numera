@@ -40,6 +40,7 @@ import com.example.numera.theme.*
 import com.example.numera.ui.dialogs.LevelDebriefDialog
 import com.example.numera.ui.components.NumeraIcon
 import com.example.numera.ui.components.NumeraIconType
+import com.example.numera.ui.components.RewardChip
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.MathText
@@ -680,11 +681,21 @@ fun LevelMapScreen(
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = if (puzzle.solved_today == true) "Completed today! +50 XP, +30 🪙" else "Solve for +50 XP and +30 🪙",
-                                            fontSize = 12.sp,
-                                            color = if (puzzle.solved_today == true) CorrectGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+                                        ) {
+                                            Text(
+                                                text = if (puzzle.solved_today == true) "Completed today!" else "Solve for",
+                                                fontSize = 12.sp,
+                                                color = if (puzzle.solved_today == true) CorrectGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
+                                            )
+                                            RewardChip(
+                                                coins = 30,
+                                                xp = 50,
+                                                tint = if (puzzle.solved_today == true) CorrectGreen else MaterialTheme.colorScheme.tertiary
+                                            )
+                                        }
                                     }
                                     DuoButton(
                                         text = if (puzzle.solved_today == true) "Review" else "Play",

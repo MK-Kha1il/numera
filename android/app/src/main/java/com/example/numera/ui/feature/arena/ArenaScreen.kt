@@ -982,7 +982,7 @@ private fun ArenaModeTile(
     DuoCard(
         modifier = modifier
             .height(180.dp)
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(CornerRadius.l))
             .pressable { onClick() },
         borderColor = accent.copy(alpha = 0.5f)
     ) {

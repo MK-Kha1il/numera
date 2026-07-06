@@ -59,10 +59,12 @@ fun MainTabsScreen(
     onStartLegacyGame: (Int) -> Unit,
     onLogout: () -> Unit
 ) {
-    // Competition is home: the app lands on the Arena (index 1), not the training map (Phase 0,
-    // docs/BrandIdentity.md). Index→screen wiring is unchanged; only the landing + nav order shift.
-    var selectedTab by remember { mutableStateOf(1) }
-    var previousTab by remember { mutableStateOf(1) }
+    // The app opens on "what should I do now": the Quests/home tab (index 2), whose Today plan
+    // leads the default sub-tab — 0 taps from cold open to the next action. Competition stays one
+    // tap away on Arena. (Product call 2026-07-06, docs/VisualExperienceSprint-2026-07.md;
+    // supersedes the Arena-landing default from docs/BrandIdentity.md Phase 0.)
+    var selectedTab by remember { mutableStateOf(2) }
+    var previousTab by remember { mutableStateOf(2) }
     var currentUser by remember { mutableStateOf<User?>(null) }
     val scope = rememberCoroutineScope()
     var isTakingPlacementTest by remember { mutableStateOf(false) }
@@ -537,9 +539,10 @@ fun MainTabsScreen(
                             )
                         }
 
-                        // Coins count pill
+                        // Coins count pill — vector icon + tabular digits (no emoji in structural chrome)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                             modifier = Modifier
                                 .padding(end = 6.dp)
                                 .clip(RoundedCornerShape(CornerRadius.m))
@@ -547,8 +550,15 @@ fun MainTabsScreen(
                                 .border(1.dp, MedalGold, RoundedCornerShape(CornerRadius.m))
                                 .padding(horizontal = Spacing.s, vertical = Spacing.xs)
                         ) {
+                            NumeraIcon(
+                                type = NumeraIconType.Coins,
+                                modifier = Modifier.size(IconSize.s),
+                                tint = Color(0xFFC5A028),
+                                animate = false
+                            )
                             Text(
-                                text = "🪙 ${currentUser?.coins ?: 0}",
+                                text = "${currentUser?.coins ?: 0}",
+                                style = NumeralStyle,
                                 fontWeight = FontWeight.Black,
                                 fontSize = 12.sp,
                                 color = Color(0xFFC5A028)
@@ -558,6 +568,7 @@ fun MainTabsScreen(
                         // Level/XP Pill
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                             modifier = Modifier
                                 .padding(end = 6.dp)
                                 .clip(RoundedCornerShape(CornerRadius.m))
@@ -565,8 +576,15 @@ fun MainTabsScreen(
                                 .border(1.dp, Color(0xFF00C9A7), RoundedCornerShape(CornerRadius.m))
                                 .padding(horizontal = Spacing.s, vertical = Spacing.xs)
                         ) {
+                            NumeraIcon(
+                                type = NumeraIconType.XP,
+                                modifier = Modifier.size(IconSize.s),
+                                tint = Color(0xFF009B81),
+                                animate = false
+                            )
                             Text(
-                                text = "⭐ Lvl ${currentUser?.level ?: 1}",
+                                text = "Lvl ${currentUser?.level ?: 1}",
+                                style = NumeralStyle,
                                 fontWeight = FontWeight.Black,
                                 fontSize = 12.sp,
                                 color = Color(0xFF009B81)

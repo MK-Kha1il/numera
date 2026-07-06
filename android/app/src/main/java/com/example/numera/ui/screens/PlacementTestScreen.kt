@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.AdaptiveAnswerRequest
 import com.example.numera.data.network.ApiService
 import com.example.numera.sound.SoundManager
+import com.example.numera.theme.CornerRadius
 import com.example.numera.theme.CorrectGreen
 import com.example.numera.theme.WrongRed
 import com.example.numera.ui.components.GlossyProgressBar
@@ -155,7 +156,7 @@ fun PlacementTestScreen(
                 Text("You answered $correctCount of $totalQuestions correctly.", fontSize = 15.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f), textAlign = TextAlign.Center)
                 Spacer(modifier = Modifier.height(20.dp))
                 Box(
-                    modifier = Modifier.size(120.dp).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.primaryContainer),
+                    modifier = Modifier.size(120.dp).clip(RoundedCornerShape(CornerRadius.xl)).background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -174,7 +175,7 @@ fun PlacementTestScreen(
                 Button(
                     onClick = { onComplete(placedLevel, "") },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(CornerRadius.l),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Start Learning Quest", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
@@ -217,7 +218,7 @@ fun PlacementTestScreen(
                         onClick = { checkAnswer() },
                         enabled = selectedOption != null && !busy,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(CornerRadius.l)
                     ) {
                         if (busy) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(22.dp))
                         else Text("Check Answer", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onPrimary)
@@ -241,7 +242,7 @@ fun PlacementTestScreen(
                         Button(
                             onClick = { continueNext() },
                             modifier = Modifier.fillMaxWidth().height(52.dp),
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(CornerRadius.l),
                             colors = ButtonDefaults.buttonColors(containerColor = if (lastCorrect) CorrectGreen else WrongRed)
                         ) {
                             Text(
@@ -261,7 +262,7 @@ fun PlacementTestScreen(
             Spacer(modifier = Modifier.height(12.dp))
             Card(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(CornerRadius.l),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
@@ -278,7 +279,7 @@ fun PlacementTestScreen(
                         SoundManager.playClick()
                         selectedOption = option
                     },
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(CornerRadius.l),
                     colors = CardDefaults.cardColors(containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface),
                     border = BorderStroke(
                         width = if (isSelected) 2.dp else 1.dp,

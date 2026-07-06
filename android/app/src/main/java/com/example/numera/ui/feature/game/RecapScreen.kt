@@ -1,5 +1,6 @@
 package com.example.numera.ui.feature.game
 import com.example.numera.theme.Alpha
+import com.example.numera.theme.CornerRadius
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutCubic
@@ -154,9 +155,9 @@ fun RecapScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(24.dp))
+                        .clip(RoundedCornerShape(CornerRadius.xl))
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        .border(1.5.dp, cardOutlineColor, RoundedCornerShape(24.dp))
+                        .border(1.5.dp, cardOutlineColor, RoundedCornerShape(CornerRadius.xl))
                         .padding(Spacing.l),
                     verticalArrangement = Arrangement.spacedBy(Spacing.m)
                 ) {
@@ -235,7 +236,7 @@ fun RecapScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(Spacing.m)
-                            .clip(RoundedCornerShape(6.dp)),
+                            .clip(RoundedCornerShape(CornerRadius.s)),
                         color = primaryColor,
                         trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                     )
@@ -251,9 +252,9 @@ fun RecapScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(CornerRadius.l))
                         .background(primaryColor.copy(alpha = 0.05f))
-                        .border(1.dp, primaryColor.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+                        .border(1.dp, primaryColor.copy(alpha = 0.2f), RoundedCornerShape(CornerRadius.l))
                         .padding(Spacing.m),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.l)
@@ -278,7 +279,7 @@ fun RecapScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(primaryColor.copy(alpha = 0.05f))
-                        .border(1.dp, primaryColor.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                        .border(1.dp, primaryColor.copy(alpha = 0.2f), RoundedCornerShape(CornerRadius.s))
                         .padding(Spacing.s)
                 ) {
                     if (isMilestone) {

@@ -1,5 +1,6 @@
 package com.example.numera.ui.components
 
+import com.example.numera.theme.CornerRadius
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -85,9 +86,9 @@ fun NumeraPremiumLoader(
         Column(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(CornerRadius.xl))
                 .background(cardBg)
-                .border(2.dp, outlineColor, RoundedCornerShape(24.dp))
+                .border(2.dp, outlineColor, RoundedCornerShape(CornerRadius.xl))
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -205,9 +206,9 @@ fun NumeraSkeletonCard(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(CornerRadius.l))
             .background(shimmerBrush)
-            .border(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+            .border(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(CornerRadius.l))
     )
 }
 

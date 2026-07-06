@@ -30,13 +30,14 @@ import com.example.numera.data.network.UtilityBalance
 import com.example.numera.theme.*
 import com.example.numera.ui.components.GlossyProgressBar
 
-/** The Vault's top-level sections (docs/ShopOverhaul.md §4). Titles/Effects/Earnable arrive in Stage D. */
+/**
+ * The Vault's top-level sections (docs/ShopOverhaul.md §4). The former Titles/Effects/Themes tabs
+ * are folded into Cosmetics as in-body type filters (visual-experience sprint 2026-07: nine chips
+ * exceeded one comfortable scroll; one browsable grid + filters is the pattern the audit prescribed).
+ */
 enum class ShopTab(val label: String) {
     Featured("Featured"),
     Cosmetics("Cosmetics"),
-    Titles("Titles"),
-    Effects("Effects"),
-    Themes("Themes"),
     Utilities("Utilities"),
     Seasonal("Seasonal"),
     Collection("Collection"),
@@ -46,6 +47,12 @@ enum class ShopTab(val label: String) {
 enum class ShopSort(val label: String) { Rarity("Rarity"), PriceLow("Price ↑"), PriceHigh("Price ↓") }
 
 private val rarityRank = mapOf("Common" to 0, "Rare" to 1, "Epic" to 2, "Legendary" to 3, "Mythic" to 4)
+
+/** "effects" is a filter *group* (profile/victory/tap effects share one chip); the rest are raw types. */
+private fun matchesTypeFilter(item: ShopItem, type: String): Boolean = when (type) {
+    "effects" -> item.type == "effect" || item.type == "victory" || item.type == "tap"
+    else -> item.type == type
+}
 
 /** Search (name+description) → type filter → saved filter → sort. One place so every tab agrees. */
 fun List<ShopItem>.applyFilters(
@@ -58,7 +65,7 @@ fun List<ShopItem>.applyFilters(
     val q = query.trim().lowercase()
     val filtered = filter { item ->
         (q.isEmpty() || item.name.lowercase().contains(q) || (item.description ?: "").lowercase().contains(q)) &&
-            (type == null || item.type == type) &&
+            (type == null || matchesTypeFilter(item, type)) &&
             (!savedOnly || favorites.contains(item.id))
     }
     return when (sort) {
@@ -148,7 +155,10 @@ private fun ShopControlRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (showTypes) {
-            val types = listOf(null to "All", "avatar" to "Avatars", "banner" to "Banners", "badge" to "Badges")
+            val types = listOf(
+                null to "All", "avatar" to "Avatars", "banner" to "Banners", "badge" to "Badges",
+                "title" to "Titles", "effects" to "Effects", "theme" to "Themes",
+            )
             types.forEach { (value, label) ->
                 ShopChip(label = label, selected = typeFilter == value) { onType(value) }
             }
@@ -252,39 +262,6 @@ fun CosmeticsTab(
         }
         if (shown.isEmpty()) {
             fullSpan { ShopEmptyState("🔍", "Nothing matches yet. Try a different filter or search.") }
-        } else {
-            collectibleItems(shown, user, inventoryIds, favorites, onCardClick, onToggleFav)
-        }
-    }
-}
-
-/**
- * A grid tab with sort + ♡-saved controls but no type sub-filter — used by Themes, Titles, and
- * Effects (each is already a single type family, so type chips would be redundant).
- */
-@Composable
-fun FilteredGridTab(
-    base: List<ShopItem>,
-    query: String,
-    sort: ShopSort,
-    onSort: (ShopSort) -> Unit,
-    savedOnly: Boolean,
-    onSavedToggle: () -> Unit,
-    emptyEmoji: String,
-    emptyMessage: String,
-    user: User?,
-    inventoryIds: List<String>,
-    favorites: Set<String>,
-    onCardClick: (ShopItem) -> Unit,
-    onToggleFav: (String) -> Unit,
-) {
-    val shown = base.applyFilters(query, sort, null, savedOnly, favorites)
-    vaultGrid {
-        fullSpan {
-            ShopControlRow(sort, onSort, savedOnly, onSavedToggle, null, {}, showTypes = false)
-        }
-        if (shown.isEmpty()) {
-            fullSpan { ShopEmptyState(emptyEmoji, emptyMessage) }
         } else {
             collectibleItems(shown, user, inventoryIds, favorites, onCardClick, onToggleFav)
         }

@@ -1,5 +1,6 @@
 package com.example.numera.ui.dialogs
 import com.example.numera.theme.Alpha
+import com.example.numera.theme.CornerRadius
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -88,7 +89,7 @@ fun SaveProgressDialog(
                     onValueChange = { username = it },
                     label = { Text("Username") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(CornerRadius.m),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -98,7 +99,7 @@ fun SaveProgressDialog(
                     label = { Text("Date of birth (YYYY-MM-DD)") },
                     placeholder = { Text("2008-04-15") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(CornerRadius.m),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     supportingText = { Text("You must be at least 13 to use Numera.") },
                     modifier = Modifier.fillMaxWidth()
@@ -109,7 +110,7 @@ fun SaveProgressDialog(
                     onValueChange = { password = it },
                     label = { Text("Password") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(CornerRadius.m),
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     modifier = Modifier.fillMaxWidth()
@@ -143,7 +144,7 @@ fun SaveProgressDialog(
                     onValueChange = { confirmPassword = it },
                     label = { Text("Confirm Password") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(CornerRadius.m),
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     modifier = Modifier.fillMaxWidth()

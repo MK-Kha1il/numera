@@ -358,7 +358,7 @@ fun CommitmentStatusDialog(
                                 )
                                 Spacer(modifier = Modifier.height(Spacing.s))
                                 DuoButton(
-                                    text = "Repair streak — ${offer.cost} 🪙",
+                                    text = "Repair streak — ${offer.cost} coins",
                                     onClick = {
                                         com.example.numera.sound.SoundManager.playClick()
                                         handleStreakRepair()

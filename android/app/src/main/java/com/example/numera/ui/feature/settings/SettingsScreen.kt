@@ -659,7 +659,7 @@ fun SettingsScreen(
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(CornerRadius.m),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
@@ -1150,7 +1150,7 @@ fun SettingsScreen(
                                 }
                             },
                             enabled = !exportLoading,
-                            shape = RoundedCornerShape(10.dp)
+                            shape = RoundedCornerShape(CornerRadius.m)
                         ) {
                             if (exportLoading) {
                                 CircularProgressIndicator(modifier = Modifier.size(IconSize.s), color = Color.White, strokeWidth = 2.dp)
@@ -1184,7 +1184,7 @@ fun SettingsScreen(
                         Button(
                             onClick = { showDeleteDialog = true },
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                            shape = RoundedCornerShape(10.dp)
+                            shape = RoundedCornerShape(CornerRadius.m)
                         ) {
                             Text("Delete", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
@@ -1436,7 +1436,7 @@ fun SettingsScreen(
                     Text("Cancel")
                 }
             },
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(CornerRadius.l)
         )
     }
 
@@ -1558,7 +1558,7 @@ fun SettingsScreen(
                     Text("Cancel")
                 }
             },
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(CornerRadius.l)
         )
     }
 
@@ -1612,7 +1612,7 @@ fun SettingsScreen(
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                                    shape = RoundedCornerShape(10.dp)
+                                    shape = RoundedCornerShape(CornerRadius.m)
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth().padding(10.dp),
@@ -1670,7 +1670,7 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(onClick = { showSessionsDialog = false }) { Text("Close") }
             },
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(CornerRadius.l)
         )
     }
 
@@ -1751,7 +1751,7 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(onClick = { showLogsDialog = false }) { Text("Close") }
             },
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(CornerRadius.l)
         )
     }
 
@@ -1802,7 +1802,7 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }, enabled = !deleteIsLoading) { Text("Keep Account") }
             },
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(CornerRadius.l)
         )
     }
 

@@ -383,17 +383,17 @@ fun ProfileScreen(
                 Text(user?.rank ?: "Bronze III", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             IdentityChip {
-                Text("🔥", fontSize = 12.sp)
+                NumeraIcon(type = NumeraIconType.Streak, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.tertiary, animate = false)
                 Text("${user?.streak ?: 0}-day streak", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             IdentityChip {
-                Text("🪙", fontSize = 12.sp)
+                NumeraIcon(type = NumeraIconType.Coins, modifier = Modifier.size(IconSize.s), tint = MedalGold, animate = false)
                 Text("${user?.coins ?: 0}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             val earnedCount = achievementsList.count { it.progress >= it.target_value }
             if (earnedCount > 0) {
                 IdentityChip {
-                    Text("🏅", fontSize = 12.sp)
+                    NumeraIcon(type = NumeraIconType.Trophy, modifier = Modifier.size(IconSize.s), tint = MedalGold, animate = false)
                     Text("$earnedCount earned", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
@@ -507,7 +507,10 @@ fun ProfileScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("✨ Climb Run", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                        NumeraIcon(type = NumeraIconType.Streak, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.secondary, animate = false)
+                        Text("Climb Run", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                    }
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     Text("${user?.streak ?: 0} Days", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     Text("Max climb: ${user?.max_streak ?: 0}d", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontWeight = FontWeight.Medium)
@@ -519,7 +522,10 @@ fun ProfileScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🪙 Coins & Habits", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                        NumeraIcon(type = NumeraIconType.Coins, modifier = Modifier.size(IconSize.s), tint = MaterialTheme.colorScheme.secondary, animate = false)
+                        Text("Coins & Habits", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                    }
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     Text("${user?.coins ?: 0}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     Text("Consistency: ${((user?.consistency_index ?: 0f) * 100).toInt()}%", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontWeight = FontWeight.Medium)
@@ -1138,11 +1144,11 @@ fun ProfileScreen(
                             val isSelected = selectedCategoryTab.lowercase() == cat.lowercase()
                             Card(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(20.dp))
+                                    .clip(RoundedCornerShape(CornerRadius.l))
                                     .border(
                                         1.5.dp,
                                         if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                                        RoundedCornerShape(20.dp)
+                                        RoundedCornerShape(CornerRadius.l)
                                     )
                                     .pressable {
                                         selectedCategoryTab = cat
@@ -1455,11 +1461,11 @@ fun ProfileScreen(
                         // "All" chip
                         Card(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
+                                .clip(RoundedCornerShape(CornerRadius.l))
                                 .border(
                                     1.5.dp,
                                     if (selectedCollectionFilterId == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                                    RoundedCornerShape(20.dp)
+                                    RoundedCornerShape(CornerRadius.l)
                                 )
                                 .pressable {
                                     selectedCollectionFilterId = null
@@ -1481,11 +1487,11 @@ fun ProfileScreen(
                             val count = favoritesList.count { it.collection_id == col.id }
                             Card(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(20.dp))
+                                    .clip(RoundedCornerShape(CornerRadius.l))
                                     .border(
                                         1.5.dp,
                                         if (selectedCollectionFilterId == col.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                                        RoundedCornerShape(20.dp)
+                                        RoundedCornerShape(CornerRadius.l)
                                     )
                                     .pressable {
                                         selectedCollectionFilterId = col.id

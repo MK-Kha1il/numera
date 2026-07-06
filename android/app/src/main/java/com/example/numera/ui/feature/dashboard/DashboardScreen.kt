@@ -29,6 +29,7 @@ import com.example.numera.ui.components.pressable
 import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.ClaimButton
 import com.example.numera.ui.components.GlossyProgressBar
+import com.example.numera.ui.components.RewardChip
 import com.example.numera.ui.components.NumeraPremiumLoader
 import com.example.numera.ui.components.NumeraEmptyState
 import com.example.numera.ui.components.EmptyIllustration
@@ -476,11 +477,9 @@ fun DashboardScreen(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                                         ) {
-                                            Text(
-                                                text = "🪙 ${quest.rewardCoins}  ⭐ ${quest.rewardXp} XP",
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.primary
+                                            RewardChip(
+                                                coins = quest.rewardCoins,
+                                                xp = quest.rewardXp
                                             )
 
                                             if (quest.claimed == 1) {

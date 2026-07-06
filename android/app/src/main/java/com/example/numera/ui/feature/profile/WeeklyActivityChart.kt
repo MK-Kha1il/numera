@@ -75,7 +75,7 @@ fun WeeklyActivityChart(activityDays: List<ActivityDay>) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.l, vertical = Spacing.s),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(CornerRadius.l),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {

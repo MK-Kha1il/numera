@@ -234,9 +234,9 @@ class GameplayScreenTest {
     compose.waitForIdle()
     compose.onNodeWithText("Review Solution").performClick()
     compose.waitUntil(timeoutMillis = 5_000) {
-      compose.onAllNodesWithText("💡 Solution breakdown").fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithText("Solution breakdown").fetchSemanticsNodes().isNotEmpty()
     }
-    compose.onNodeWithText("💡 Solution breakdown").assertIsDisplayed()
+    compose.onNodeWithText("Solution breakdown").assertIsDisplayed()
     // The worked solution still reveals the correct answer — just one tap away, not up front.
     compose.onNodeWithText("Correct Answer:").assertIsDisplayed()
   }

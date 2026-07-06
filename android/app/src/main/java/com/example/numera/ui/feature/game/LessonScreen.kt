@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.pointerInput
@@ -174,9 +173,9 @@ fun LessonScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(CornerRadius.l))
                             .background(cardBgColor)
-                            .border(1.5.dp, borderColor, RoundedCornerShape(16.dp))
+                            .border(1.5.dp, borderColor, RoundedCornerShape(CornerRadius.l))
                             .padding(Spacing.l),
                         contentAlignment = Alignment.Center
                     ) {
@@ -218,9 +217,9 @@ fun LessonScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(CornerRadius.l))
                                 .background(MaterialTheme.colorScheme.surface)
-                                .border(1.5.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                                .border(1.5.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(CornerRadius.l))
                                 .padding(Spacing.l),
                             verticalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
@@ -270,9 +269,9 @@ fun LessonScreen(
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
+                                    .clip(RoundedCornerShape(CornerRadius.l))
                                     .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.22f))
-                                    .border(1.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                                    .border(1.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f), RoundedCornerShape(CornerRadius.l))
                                     .padding(Spacing.l),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
@@ -297,9 +296,9 @@ fun LessonScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(CornerRadius.l))
                                 .background(MaterialTheme.colorScheme.surface)
-                                .border(1.5.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                                .border(1.5.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(CornerRadius.l))
                                 .padding(Spacing.l),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
@@ -329,9 +328,9 @@ fun LessonScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(CornerRadius.l))
                                 .background(primaryColor.copy(alpha = 0.06f))
-                                .border(1.5.dp, primaryColor.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                                .border(1.5.dp, primaryColor.copy(alpha = 0.4f), RoundedCornerShape(CornerRadius.l))
                                 .padding(Spacing.l),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {

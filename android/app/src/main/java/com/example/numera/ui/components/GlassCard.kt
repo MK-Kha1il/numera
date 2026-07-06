@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ripple
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
@@ -23,6 +24,7 @@ import androidx.compose.ui.geometry.CornerRadius as GeometryCornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -190,7 +192,7 @@ fun DuoButton(
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(20.dp),
+    shape: Shape = RoundedCornerShape(CornerRadius.l),
     borderWidth: Dp = 2.dp,
     borderColor: Color = MaterialTheme.colorScheme.outline,
     content: @Composable BoxScope.() -> Unit
@@ -350,32 +352,38 @@ fun ClaimButton(
         ).value
     }
 
+    // Shimmer highlight derived from the semantic token (no hand-picked hex): CorrectGreen
+    // lightened toward white, so re-theming the reward green re-themes the shimmer too.
+    val shimmerHighlight = lerp(CorrectGreen, Color.White, 0.35f)
     Box(
+        // The visual chip stays compact; minimumInteractiveComponentSize extends the *touch*
+        // target to the 48dp a11y minimum without inflating the layout.
         modifier = modifier
+            .minimumInteractiveComponentSize()
             .graphicsLayer(scaleX = scale, scaleY = scale)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(CornerRadius.m))
             .background(
                 Brush.horizontalGradient(
-                    colors = listOf(Color(0xFF58CC02), Color(0xFF86E800), Color(0xFF58CC02)),
+                    colors = listOf(CorrectGreen, shimmerHighlight, CorrectGreen),
                     startX = shimmerX * 200f,
                     endX = shimmerX * 200f + 200f
                 )
             )
-            .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(CornerRadius.m))
             .clickable {
                 SoundManager.playTapMedium()
                 com.example.numera.haptic.HapticManager.playMedium()
                 onClick()
             }
-            .padding(horizontal = 12.dp, vertical = 7.dp),
+            .padding(horizontal = Spacing.m, vertical = Spacing.s),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "CLAIM",
+            text = "Claim",
             color = Color.White,
-            fontWeight = FontWeight.Black,
-            fontSize = 11.sp,
-            letterSpacing = 0.8.sp,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+            letterSpacing = 0.3.sp,
             maxLines = 1,
             softWrap = false
         )

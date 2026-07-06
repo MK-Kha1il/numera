@@ -1,5 +1,6 @@
 package com.example.numera.ui.dialogs
 import com.example.numera.theme.Alpha
+import com.example.numera.theme.CornerRadius
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -135,7 +136,7 @@ fun ClassesDialog(onDismiss: () -> Unit) {
                         d.teaching.forEach { c ->
                             Row(
                                 modifier = Modifier.fillMaxWidth()
-                                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), RoundedCornerShape(CornerRadius.m))
                                     .pressable {
                                         scope.launch {
                                             roster = runCatching { withContext(Dispatchers.IO) { RetrofitClient.apiService.getClassRoster(token, c.id) } }.getOrNull()

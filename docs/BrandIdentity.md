@@ -351,6 +351,11 @@ and verifiable (`gradlew assembleDebug` + Robolectric; `npm test` + lint).
 - Make the Arena / ranked ladder the app's home and primary nav, with your **rank crest + current
   rating** on the dashboard. Training (solo / lessons / the engine) becomes the clearly-labeled "back
   room" that feeds it. This is structure, not tokens — but it's what makes the app *feel* competitive.
+- > **Launch-tab amendment (2026-07-06):** the app now *opens* on the home/Today tab so "what should
+  > I do now" is answered in 0 taps (learning-habit priority — see
+  > docs/VisualExperienceSprint-2026-07.md); the Arena remains the primary competitive stage, one tap
+  > away, and keeps its nav prominence. Competition-first identity is expressed by the Arena's depth
+  > and the rank/rating surfaces, not by the cold-open destination.
 
 **Phase 1 — Signature (highest impact / lowest risk).**
 - Add the typeface pairing: a `numeric`/`mono` figure style + a grotesk UI family in `Type.kt`. Set

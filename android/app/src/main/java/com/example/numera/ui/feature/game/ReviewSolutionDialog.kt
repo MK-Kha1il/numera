@@ -1,5 +1,6 @@
 package com.example.numera.ui.feature.game
 import com.example.numera.theme.Alpha
+import com.example.numera.theme.CornerRadius
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,11 +23,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Alignment
 import com.example.numera.data.network.MathProblem
 import com.example.numera.theme.CorrectGreen
+import com.example.numera.theme.IconSize
 import com.example.numera.theme.Spacing
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.MathText
+import com.example.numera.ui.components.NumeraIcon
+import com.example.numera.ui.components.NumeraIconType
 
 /**
  * "Solution breakdown" dialog shown when the learner taps Review Solution after a wrong answer.
@@ -45,12 +51,23 @@ fun ReviewSolutionDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(
-                text = "💡 Solution breakdown",
-                fontWeight = FontWeight.Black,
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+            ) {
+                NumeraIcon(
+                    type = NumeraIconType.Tip,
+                    tint = MaterialTheme.colorScheme.primary,
+                    animate = false,
+                    modifier = Modifier.size(IconSize.m)
+                )
+                Text(
+                    text = "Solution breakdown",
+                    fontWeight = FontWeight.Black,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         },
         text = {
             Column(
@@ -63,7 +80,7 @@ fun ReviewSolutionDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.05f))
-                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), RoundedCornerShape(CornerRadius.m))
                         .padding(Spacing.m)
                 ) {
                     Column {
