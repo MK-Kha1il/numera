@@ -77,6 +77,13 @@ function deriveWorkedExample(conceptId) {
   // a worked example states the task, it does not also quiz the learner.
   const problem = ex.question.replace(/\s*(why|how|what|which)\b[^.?!$]*\?\s*$/i, '').trim();
 
+  // The final step closes the predict-then-reveal arc; when it has no authored `why`, anchor it
+  // to the concept's governing principle so the reveal ends on the REASON, not just the value.
+  const last = steps[steps.length - 1];
+  if (!last.why) {
+    last.why = firstSentence(lesson.whyItWorks) || firstSentence(lesson.oneLineSummary) || '';
+  }
+
   return { problem, steps, derived: true };
 }
 
@@ -86,16 +93,26 @@ function deriveWorkedExample(conceptId) {
 // Gated on numeric answer + applied (non-symbolic) framing so we never mislabel a bare symbolic
 // drill as "transfer" (transfer = the SAME concept in an unfamiliar context).
 // ---------------------------------------------------------------------------------------------
-function canDeriveTransfer(conceptId) {
+// The applied instance for a concept: the authored APPLIED_EXAMPLES entry wins (added for
+// the 85 concepts whose lesson examples are symbolic or have non-numeric answers), else the
+// first lesson example that is applied AND numeric.
+function appliedExampleFor(conceptId) {
+  const { APPLIED_EXAMPLES } = require('./appliedExamples'); // lazy: keeps module load-order flat
+  if (APPLIED_EXAMPLES[conceptId]) return APPLIED_EXAMPLES[conceptId];
   const lesson = CONCEPT_LESSONS[conceptId];
-  const ex = lesson && Array.isArray(lesson.examples) ? lesson.examples[0] : null;
-  if (!ex) return false;
-  return NUMERIC.test(String(ex.answer || '').trim()) && isApplied(ex.question);
+  const list = lesson && Array.isArray(lesson.examples) ? lesson.examples : [];
+  return list.find(
+    (ex) => ex && NUMERIC.test(String(ex.answer == null ? '' : ex.answer).trim()) && isApplied(ex.question)
+  ) || null;
+}
+
+function canDeriveTransfer(conceptId) {
+  return !!appliedExampleFor(conceptId);
 }
 
 function deriveTransfer(conceptId) {
-  if (!canDeriveTransfer(conceptId)) return null;
-  const ex = CONCEPT_LESSONS[conceptId].examples[0];
+  const ex = appliedExampleFor(conceptId);
+  if (!ex) return null;
   const correct = String(ex.answer).trim();
 
   const dList = generateDistractors(correct, conceptId, {});
@@ -141,27 +158,72 @@ function firstSentence(s) {
   return (m ? m[0] : String(s)).replace(/\s+/g, ' ').trim();
 }
 
+// Deterministic per-concept hash so each concept gets a stable but DIFFERENT phrasing from
+// each archetype pool. A single fixed phrasing per archetype was trivially meta-gameable
+// ("pick the option that isn't the template sentence") once a learner saw a few prompts.
+function conceptHash(conceptId) {
+  let h = 0;
+  const s = String(conceptId || '');
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+const QUESTION_STEMS = [
+  'Which statement is the real reason this approach works?',
+  'Why does this method actually give the right answer?',
+  'What makes this approach mathematically sound?',
+  'Which of these is the genuine principle behind the method you used?',
+];
+
+// Wrong-rationale archetype pools. rote = memorised-rule circularity; surface = superficial
+// pattern-matching; lucky = coincidence. `${topic}` is substituted with the lesson title.
+const ROTE_POOL = [
+  'Because it is just the memorised rule for ${topic}, with no deeper reason.',
+  'Because that is the procedure the lesson on ${topic} says to follow.',
+  'Because with ${topic} you simply do the steps in the taught order.',
+  'Because the rule for ${topic} is a convention you have to memorise.',
+];
+const SURFACE_POOL = [
+  'Because problems that look like this always use the same operation.',
+  'Because you apply the most obvious operation to the numbers you see.',
+  'Because the numbers in the problem tell you which operation to pick.',
+  'Because this kind of question always follows the same visual pattern.',
+];
+const LUCKY_POOL = [
+  'Because it happens to produce a tidy answer in problems like this.',
+  'Because the answer comes out clean, which shows the method was right.',
+  'Because any method that gives a whole-number result must be correct.',
+  'Because checking one example is enough to prove the method always works.',
+];
+
+function pickFrom(pool, h, salt) {
+  return pool[(h + salt) % pool.length];
+}
+
 function deriveSelfExplain(conceptId) {
   const lesson = CONCEPT_LESSONS[conceptId];
   if (!lesson) return null;
   const principle = firstSentence(lesson.oneLineSummary) || firstSentence(lesson.whyItWorks);
   if (!principle || principle.length < 12) return null;
   const topic = (lesson.title || 'this kind of problem').toLowerCase();
+  const h = conceptHash(conceptId);
 
-  // One concept-specific wrong rationale from a real misconception, if we can phrase it as a claim.
+  // Concept-specific wrong rationales from REAL misconceptions (up to two), phrased as claims.
   const misc = (concepts[conceptId] && concepts[conceptId].misconceptions) || [];
-  const specific = misc.length
-    ? `Because the natural move is what leads to "${misc[0].label.toLowerCase()}".`
-    : `Because you apply the most obvious operation to the numbers you see.`;
+  const fromMisc = misc
+    .slice(0, 2)
+    .map((m) => `Because the natural move is what leads to "${m.label.toLowerCase()}".`);
 
-  const distractors = [
-    specific,
-    `Because it is just the memorised rule for ${topic}, with no deeper reason.`,
-    `Because it happens to produce a tidy answer in problems like this.`,
+  // Fill the remaining slots from distinct archetype pools, phrasing varied per concept.
+  const generic = [
+    pickFrom(ROTE_POOL, h, 0).replace('${topic}', topic),
+    pickFrom(SURFACE_POOL, h, 1),
+    pickFrom(LUCKY_POOL, h, 2),
   ];
+  const distractors = fromMisc.concat(generic).slice(0, 3);
 
   return {
-    question: `Which statement is the real reason this approach works?`,
+    question: pickFrom(QUESTION_STEMS, h, 3),
     correct: principle,
     distractors,
     explanation: principle,

@@ -73,3 +73,41 @@ test('every concept the orchestrator can offer transfer for actually builds one'
     assert.ok(TE.buildTransferProblem(id, 1, 0), `${id} hasTransfer implies buildable`);
   }
 });
+
+test('derived self-explain phrasing varies across concepts (not one meta-gameable template)', () => {
+  const D = require('../mathEngine/deriveActiveLearning');
+  // Collect the distractor sets of many derived concepts; the archetype phrasings must not
+  // be identical everywhere, or learners learn "pick the non-template option" instead of math.
+  const ids = Object.keys(concepts).filter((id) => D.deriveSelfExplain(id)).slice(0, 40);
+  const questions = new Set();
+  const genericDistractors = new Set();
+  for (const id of ids) {
+    const e = D.deriveSelfExplain(id);
+    questions.add(e.question);
+    for (const d of e.distractors) {
+      if (!d.startsWith('Because the natural move')) genericDistractors.add(d.replace(/for [a-z0-9 &()-]+,/, 'for X,'));
+    }
+  }
+  assert.ok(questions.size >= 3, `question stems vary (got ${questions.size})`);
+  assert.ok(genericDistractors.size >= 6, `generic distractor phrasings vary (got ${genericDistractors.size})`);
+});
+
+test('derived self-explain uses a real misconception as a distractor when one exists', () => {
+  const D = require('../mathEngine/deriveActiveLearning');
+  const e = D.deriveSelfExplain('stat_median');
+  assert.ok(e.distractors.some((d) => /unsorted|smallest and largest/i.test(d)),
+    'a stat_median distractor is built from its graph misconceptions');
+});
+
+test('derived worked examples end on a why line anchored to the principle', () => {
+  const D = require('../mathEngine/deriveActiveLearning');
+  let checked = 0;
+  for (const id of Object.keys(concepts).slice(0, 60)) {
+    const we = D.deriveWorkedExample(id);
+    if (!we) continue;
+    const last = we.steps[we.steps.length - 1];
+    assert.ok(last.why && last.why.length > 0, `${id} final step carries a why`);
+    checked++;
+  }
+  assert.ok(checked >= 30, `checked a meaningful sample (got ${checked})`);
+});

@@ -128,7 +128,8 @@ const concepts = {
     prereqs: ["permutations"],
     baseElo: 1250,
     misconceptions: [
-      { id: "perm_instead_comb", label: "Forgot to divide by k! (ordered permutations)", rule: (ans) => ans * 2 }
+      { id: "perm_instead_comb", label: "Forgot to divide by k! (ordered permutations)", rule: (ans) => ans * 2 },
+      { id: "chose_product", label: "Multiplied n × k instead of counting selections", rule: (ans, p) => p.n * p.k }
     ]
   },
   "binomial": {
@@ -136,7 +137,8 @@ const concepts = {
     prereqs: ["combinations"],
     baseElo: 1400,
     misconceptions: [
-      { id: "exponent_slip", label: "Off by one coefficient degree index", rule: (ans, p) => ans + p.n }
+      { id: "exponent_slip", label: "Off by one coefficient degree index", rule: (ans, p) => ans + p.n },
+      { id: "dropped_coefficient", label: "Dropped the binomial coefficient (treated it as 1)", rule: () => NaN }
     ]
   },
 
@@ -146,7 +148,8 @@ const concepts = {
     prereqs: ["linear_two_step"],
     baseElo: 1400,
     misconceptions: [
-      { id: "exponent_multiply", label: "Multiplied instead of subtracting exponent", rule: (ans, p) => ans + 2 }
+      { id: "exponent_multiply", label: "Multiplied instead of subtracting exponent", rule: (ans, p) => ans + 2 },
+      { id: "forgot_old_exponent", label: "Forgot to multiply by the old exponent", rule: () => NaN }
     ]
   },
   "integral": {
@@ -154,7 +157,8 @@ const concepts = {
     prereqs: ["derivative"],
     baseElo: 1500,
     misconceptions: [
-      { id: "derivative_instead_integral", label: "Differentiated instead of integrating", rule: (ans, p) => Math.round(ans / 4) }
+      { id: "derivative_instead_integral", label: "Differentiated instead of integrating", rule: (ans, p) => Math.round(ans / 4) },
+      { id: "forgot_divide_new_exp", label: "Raised the power but forgot to divide by the new exponent", rule: () => NaN }
     ]
   },
 
@@ -182,7 +186,8 @@ const concepts = {
     prereqs: ["modular_arithmetic"],
     baseElo: 1450,
     misconceptions: [
-      { id: "prime_totient_slip", label: "Treated composite as prime (N-1)", rule: (ans, p) => p.n - 1 }
+      { id: "prime_totient_slip", label: "Treated composite as prime (N-1)", rule: (ans, p) => p.n - 1 },
+      { id: "halved_n", label: "Assumed half the numbers below N are coprime", rule: (ans, p) => p.n / 2 }
     ]
   },
 
@@ -192,7 +197,8 @@ const concepts = {
     prereqs: ["arithmetic_sub"],
     baseElo: 600,
     misconceptions: [
-      { id: "kept_sign", label: "Kept the negative sign instead of the distance", rule: (ans) => -ans }
+      { id: "kept_sign", label: "Kept the negative sign instead of the distance", rule: (ans) => -ans },
+      { id: "sum_inside", label: "Added inside the bars instead of finding the distance", rule: () => NaN }
     ]
   },
   "integer_add": {
@@ -200,7 +206,8 @@ const concepts = {
     prereqs: ["absolute_value"],
     baseElo: 700,
     misconceptions: [
-      { id: "dropped_sign", label: "Added magnitudes and dropped the sign", rule: (ans) => Math.abs(ans) }
+      { id: "dropped_sign", label: "Added magnitudes and dropped the sign", rule: (ans) => Math.abs(ans) },
+      { id: "subtracted_magnitudes", label: "Subtracted the sizes instead of adding them", rule: (ans, p) => Math.abs(p.a) - Math.abs(p.b) }
     ]
   },
   "integer_sub": {
@@ -208,7 +215,8 @@ const concepts = {
     prereqs: ["integer_add"],
     baseElo: 780,
     misconceptions: [
-      { id: "subtract_reversed", label: "Subtracted in the wrong order", rule: (ans) => -ans }
+      { id: "subtract_reversed", label: "Subtracted in the wrong order", rule: (ans) => -ans },
+      { id: "ignored_double_negative", label: "Ignored the double negative and subtracted anyway", rule: (ans, p) => p.a - Math.abs(p.b) }
     ]
   },
   "integer_mult": {
@@ -216,7 +224,8 @@ const concepts = {
     prereqs: ["integer_add", "arithmetic_mult"],
     baseElo: 820,
     misconceptions: [
-      { id: "sign_rule_slip", label: "Got the sign of the product wrong", rule: (ans) => -ans }
+      { id: "sign_rule_slip", label: "Got the sign of the product wrong", rule: (ans) => -ans },
+      { id: "added_not_multiplied", label: "Added the integers instead of multiplying", rule: (ans, p) => p.a + p.b }
     ]
   },
 
@@ -226,7 +235,8 @@ const concepts = {
     prereqs: ["arithmetic_add"],
     baseElo: 560,
     misconceptions: [
-      { id: "carry_slip", label: "Forgot to carry into the ones place", rule: (ans) => ans - 1 }
+      { id: "carry_slip", label: "Forgot to carry into the ones place", rule: (ans) => ans - 1 },
+      { id: "misaligned_points", label: "Lined up the digits instead of the decimal points", rule: () => NaN }
     ]
   },
   "decimal_sub": {
@@ -234,7 +244,8 @@ const concepts = {
     prereqs: ["decimal_add", "arithmetic_sub"],
     baseElo: 640,
     misconceptions: [
-      { id: "borrow_slip", label: "Forgot to borrow across the decimal point", rule: (ans) => ans + 1 }
+      { id: "borrow_slip", label: "Forgot to borrow across the decimal point", rule: (ans) => ans + 1 },
+      { id: "column_reversal", label: "Subtracted the smaller digit from the larger in every column", rule: () => NaN }
     ]
   },
   "decimal_mult": {
@@ -242,7 +253,8 @@ const concepts = {
     prereqs: ["decimal_add", "arithmetic_mult"],
     baseElo: 720,
     misconceptions: [
-      { id: "place_count_slip", label: "Miscounted the decimal places in the product", rule: (ans) => ans * 10 }
+      { id: "place_count_slip", label: "Miscounted the decimal places in the product", rule: (ans) => ans * 10 },
+      { id: "ignored_decimal", label: "Dropped the decimal point entirely", rule: (ans) => ans * 100 }
     ]
   },
   "decimal_round": {
@@ -250,7 +262,8 @@ const concepts = {
     prereqs: ["decimal_add"],
     baseElo: 600,
     misconceptions: [
-      { id: "round_direction", label: "Rounded the wrong direction", rule: (ans) => ans + 0.1 }
+      { id: "round_direction", label: "Rounded the wrong direction", rule: (ans) => ans + 0.1 },
+      { id: "truncated", label: "Cut the extra digits off instead of rounding", rule: () => NaN }
     ]
   },
   "decimal_div": {
@@ -258,7 +271,8 @@ const concepts = {
     prereqs: ["decimal_mult"],
     baseElo: 760,
     misconceptions: [
-      { id: "unshifted_divisor", label: "Divided without shifting the divisor to a whole number", rule: (ans) => ans / 10 }
+      { id: "unshifted_divisor", label: "Divided without shifting the divisor to a whole number", rule: (ans) => ans / 10 },
+      { id: "quotient_shift", label: "Shifted the quotient's decimal point the wrong way", rule: (ans) => ans * 10 }
     ]
   },
 
@@ -268,7 +282,8 @@ const concepts = {
     prereqs: ["arithmetic_div"],
     baseElo: 540,
     misconceptions: [
-      { id: "partial_reduce", label: "Divided only the top or only the bottom", rule: (ans) => ans }
+      { id: "partial_reduce", label: "Divided only the top or only the bottom", rule: (ans) => ans },
+      { id: "stopped_early", label: "Stopped before the simplest form", rule: () => NaN }
     ]
   },
   "fraction_add": {
@@ -276,7 +291,8 @@ const concepts = {
     prereqs: ["fraction_simplify", "arithmetic_add"],
     baseElo: 680,
     misconceptions: [
-      { id: "add_across", label: "Added numerators and denominators straight across", rule: (ans) => ans }
+      { id: "add_across", label: "Added numerators and denominators straight across", rule: (ans) => ans },
+      { id: "unscaled_numerators", label: "Changed the denominators but forgot to scale the numerators", rule: () => NaN }
     ]
   },
   "fraction_sub": {
@@ -284,7 +300,8 @@ const concepts = {
     prereqs: ["fraction_add"],
     baseElo: 700,
     misconceptions: [
-      { id: "sub_across", label: "Subtracted numerators and denominators straight across", rule: (ans) => ans }
+      { id: "sub_across", label: "Subtracted numerators and denominators straight across", rule: (ans) => ans },
+      { id: "unscaled_numerators", label: "Changed the denominators but forgot to scale the numerators", rule: () => NaN }
     ]
   },
   "fraction_mult": {
@@ -292,7 +309,8 @@ const concepts = {
     prereqs: ["fraction_simplify", "arithmetic_mult"],
     baseElo: 640,
     misconceptions: [
-      { id: "cross_multiply", label: "Cross-multiplied instead of multiplying across", rule: (ans) => ans }
+      { id: "cross_multiply", label: "Cross-multiplied instead of multiplying across", rule: (ans) => ans },
+      { id: "added_instead", label: "Added the fractions instead of multiplying them", rule: () => NaN }
     ]
   },
   "fraction_div": {
@@ -300,7 +318,8 @@ const concepts = {
     prereqs: ["fraction_mult"],
     baseElo: 720,
     misconceptions: [
-      { id: "forgot_to_flip", label: "Multiplied across without flipping the second fraction", rule: (ans) => ans }
+      { id: "forgot_to_flip", label: "Multiplied across without flipping the second fraction", rule: (ans) => ans },
+      { id: "flipped_first", label: "Flipped the first fraction instead of the second", rule: (ans) => (ans !== 0 ? 1 / ans : NaN) }
     ]
   },
 
@@ -310,7 +329,8 @@ const concepts = {
     prereqs: ["arithmetic_add"],
     baseElo: 550,
     misconceptions: [
-      { id: "forgot_double", label: "Added length + width without doubling", rule: (ans) => Math.round(ans / 2) }
+      { id: "forgot_double", label: "Added length + width without doubling", rule: (ans) => Math.round(ans / 2) },
+      { id: "area_instead", label: "Found the area (length × width) instead of the distance around", rule: (ans, p) => p.l * p.w }
     ]
   },
   "geo_area_rect": {
@@ -318,7 +338,8 @@ const concepts = {
     prereqs: ["arithmetic_mult"],
     baseElo: 650,
     misconceptions: [
-      { id: "area_slip", label: "Multiplication slip computing length × width", rule: (ans) => ans + 1 }
+      { id: "area_slip", label: "Multiplication slip computing length × width", rule: (ans) => ans + 1 },
+      { id: "perimeter_instead", label: "Found the perimeter instead of the area", rule: (ans, p) => 2 * (p.l + p.w) }
     ]
   },
   "geo_area_triangle": {
@@ -326,7 +347,8 @@ const concepts = {
     prereqs: ["geo_area_rect"],
     baseElo: 800,
     misconceptions: [
-      { id: "forgot_half", label: "Forgot the one-half factor (base × height)", rule: (ans) => ans * 2 }
+      { id: "forgot_half", label: "Forgot the one-half factor (base × height)", rule: (ans) => ans * 2 },
+      { id: "added_dimensions", label: "Added base and height instead of multiplying them", rule: (ans, p) => p.b + p.h }
     ]
   },
   "geo_angles_triangle": {
@@ -343,7 +365,8 @@ const concepts = {
     prereqs: ["geo_area_rect"],
     baseElo: 950,
     misconceptions: [
-      { id: "circumference_instead", label: "Used circumference (2πr) instead of area (πr²)", rule: (ans) => ans }
+      { id: "circumference_instead", label: "Used circumference (2πr) instead of area (πr²)", rule: (ans) => ans },
+      { id: "diameter_as_radius", label: "Used the diameter as if it were the radius", rule: (ans) => ans * 4 }
     ]
   },
 
@@ -353,7 +376,8 @@ const concepts = {
     prereqs: ["arithmetic_mult"],
     baseElo: 700,
     misconceptions: [
-      { id: "decimal_place", label: "Decimal-place slip (off by 10×)", rule: (ans) => ans * 10 }
+      { id: "decimal_place", label: "Decimal-place slip (off by 10×)", rule: (ans) => ans * 10 },
+      { id: "divided_by_percent", label: "Divided by the percent instead of multiplying by it", rule: () => NaN }
     ]
   },
   "fraction_of": {
@@ -361,7 +385,8 @@ const concepts = {
     prereqs: ["arithmetic_div"],
     baseElo: 720,
     misconceptions: [
-      { id: "took_complement", label: "Computed the remaining part instead", rule: (ans) => ans }
+      { id: "took_complement", label: "Computed the remaining part instead", rule: (ans) => ans },
+      { id: "flipped_fraction", label: "Multiplied by the flipped fraction (divided instead of taking a part)", rule: () => NaN }
     ]
   },
   "ratio_solve": {
@@ -369,7 +394,8 @@ const concepts = {
     prereqs: ["arithmetic_mult"],
     baseElo: 780,
     misconceptions: [
-      { id: "added_difference", label: "Added the ratio difference instead of scaling", rule: (ans) => ans + 1 }
+      { id: "added_difference", label: "Added the ratio difference instead of scaling", rule: (ans) => ans + 1 },
+      { id: "swapped_order", label: "Set the proportion up with the quantities in the wrong order", rule: () => NaN }
     ]
   },
   "percent_change": {
@@ -386,7 +412,8 @@ const concepts = {
     prereqs: ["arithmetic_mult"],
     baseElo: 760,
     misconceptions: [
-      { id: "multiplied_base_exp", label: "Multiplied base × exponent instead of powering", rule: (ans) => ans }
+      { id: "multiplied_base_exp", label: "Multiplied base × exponent instead of powering", rule: (ans) => ans },
+      { id: "added_base_exp", label: "Added the base and the exponent", rule: (ans, p) => p.base + p.exp }
     ]
   },
 
@@ -396,7 +423,8 @@ const concepts = {
     prereqs: ["arithmetic_add"],
     baseElo: 620,
     misconceptions: [
-      { id: "picked_max", label: "Chose the largest value instead of the most frequent", rule: (ans) => ans + 1 }
+      { id: "picked_max", label: "Chose the largest value instead of the most frequent", rule: (ans) => ans + 1 },
+      { id: "computed_mean", label: "Averaged the values instead of finding the most frequent", rule: () => NaN }
     ]
   },
   "stat_mean": {
@@ -404,7 +432,8 @@ const concepts = {
     prereqs: ["arithmetic_div"],
     baseElo: 700,
     misconceptions: [
-      { id: "forgot_divide", label: "Reported the total instead of dividing by the count", rule: (ans, p) => p.sum }
+      { id: "forgot_divide", label: "Reported the total instead of dividing by the count", rule: (ans, p) => p.sum },
+      { id: "total_slip", label: "Slipped while adding up the total before dividing", rule: (ans) => ans + 2 }
     ]
   },
   "stat_median": {
@@ -412,7 +441,8 @@ const concepts = {
     prereqs: ["arithmetic_add"],
     baseElo: 740,
     misconceptions: [
-      { id: "unsorted_middle", label: "Took the middle of the unsorted list", rule: (ans, p) => p.unsortedMid }
+      { id: "unsorted_middle", label: "Took the middle of the unsorted list", rule: (ans, p) => p.unsortedMid },
+      { id: "midrange_instead", label: "Averaged the smallest and largest instead of taking the middle", rule: (ans, p) => (p.max + p.min) / 2 }
     ]
   },
   "stat_range": {
@@ -429,7 +459,8 @@ const concepts = {
     prereqs: ["fraction_of"],
     baseElo: 820,
     misconceptions: [
-      { id: "used_complement", label: "Computed the complement (probability of the other outcome)", rule: (ans) => 100 - ans }
+      { id: "used_complement", label: "Computed the complement (probability of the other outcome)", rule: (ans) => 100 - ans },
+      { id: "count_not_ratio", label: "Reported the count of favourable outcomes instead of the ratio", rule: (ans, p) => p.favorable }
     ]
   },
 
@@ -439,7 +470,8 @@ const concepts = {
     prereqs: ["pemdas"],
     baseElo: 900,
     misconceptions: [
-      { id: "added_all", label: "Added every number instead of substituting", rule: (ans) => ans + 1 }
+      { id: "added_all", label: "Added every number instead of substituting", rule: (ans) => ans + 1 },
+      { id: "digit_concatenation", label: "Joined the coefficient and value as digits instead of multiplying", rule: () => NaN }
     ]
   },
   "eval_two_var": {
@@ -447,7 +479,8 @@ const concepts = {
     prereqs: ["eval_expression"],
     baseElo: 980,
     misconceptions: [
-      { id: "swapped_values", label: "Substituted the values into the wrong variables", rule: (ans) => ans + 1 }
+      { id: "swapped_values", label: "Substituted the values into the wrong variables", rule: (ans) => ans + 1 },
+      { id: "dropped_negative_input", label: "Dropped the negative sign when substituting a negative value", rule: () => NaN }
     ]
   },
   "combine_like_terms": {
@@ -455,7 +488,8 @@ const concepts = {
     prereqs: ["arithmetic_add"],
     baseElo: 940,
     misconceptions: [
-      { id: "multiplied_coeffs", label: "Multiplied the coefficients instead of adding them", rule: (ans) => ans }
+      { id: "multiplied_coeffs", label: "Multiplied the coefficients instead of adding them", rule: (ans) => ans },
+      { id: "combined_unlike", label: "Folded the constant into the x-term (combined unlike terms)", rule: () => NaN }
     ]
   },
   "distribute": {
@@ -463,7 +497,8 @@ const concepts = {
     prereqs: ["arithmetic_mult"],
     baseElo: 1000,
     misconceptions: [
-      { id: "partial_distribute", label: "Distributed to only the first term inside the parentheses", rule: (ans) => ans }
+      { id: "partial_distribute", label: "Distributed to only the first term inside the parentheses", rule: (ans) => ans },
+      { id: "sign_not_distributed", label: "Lost the sign when distributing a negative factor", rule: () => NaN }
     ]
   },
 
@@ -482,7 +517,8 @@ const concepts = {
     prereqs: ["exponent_power"],
     baseElo: 920,
     misconceptions: [
-      { id: "multiplied_exponents", label: "Multiplied the exponents instead of adding them", rule: (ans) => ans }
+      { id: "multiplied_exponents", label: "Multiplied the exponents instead of adding them", rule: (ans) => ans },
+      { id: "multiplied_bases", label: "Multiplied the bases as well as the exponents", rule: () => NaN }
     ]
   },
   "exponent_quotient_rule": {

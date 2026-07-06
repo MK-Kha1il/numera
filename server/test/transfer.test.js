@@ -33,7 +33,10 @@ test('pythagorean transfer uses a clean triple (integer hypotenuse answer)', () 
 });
 
 test('unknown concepts have no transfer framing', () => {
-  assert.strictEqual(T.buildTransferProblem('totient', 1, 0), null);
-  assert.strictEqual(T.hasTransfer('totient'), false);
+  // Every REAL catalog concept now has transfer (appliedExamples.js closed the gap to 100%,
+  // including totient) — only ids outside the catalog have none.
+  assert.strictEqual(T.buildTransferProblem('no_such_concept', 1, 0), null);
+  assert.strictEqual(T.hasTransfer('no_such_concept'), false);
+  assert.strictEqual(T.hasTransfer('totient'), true);
   assert.strictEqual(T.hasTransfer('arithmetic_add'), true);
 });

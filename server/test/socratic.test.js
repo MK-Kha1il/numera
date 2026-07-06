@@ -36,6 +36,27 @@ test('falls back to a concept-generic probe for unclassified wrong options', () 
   assert.ok(entry.probe.length > 0 && entry.hint.length > 0);
 });
 
+test('a classified misconception with no authored template gets a DERIVED probe, not the generic one', () => {
+  // decimal_mult's place_count_slip (ans × 10) has no authored Socratic template; the derived
+  // path must name the slip and pull the lesson's authored fix for the hint.
+  const json = buildSocraticJson('decimal_mult', '1.2', ['1.2', '12'], {});
+  const entry = JSON.parse(json).byOption['12'];
+  assert.ok(entry);
+  assert.strictEqual(entry.misconception, 'place_count_slip');
+  assert.match(entry.probe, /decimal places/i, 'probe names the actual slip');
+  assert.ok(!/walk back through your steps/i.test(entry.probe), 'not the generic fallback probe');
+});
+
+test('a derived hint that would leak the live answer is swapped for the generic one', () => {
+  // The decimal_mult lesson fix text contains the worked value 0.12 — when the LIVE answer
+  // is 0.12 that hint must not be served.
+  const json = buildSocraticJson('decimal_mult', '0.12', ['0.12', '1.2'], {});
+  const entry = JSON.parse(json).byOption['1.2'];
+  assert.ok(entry);
+  assert.ok(!entry.hint.includes('0.12'), 'leaking hint replaced');
+  assert.ok(!entry.probe.includes('0.12'), 'probe clean too');
+});
+
 test('no probe or hint leaks the correct answer', () => {
   // Exercise several concepts and assert the answer string is absent from every probe/hint.
   const cases = [

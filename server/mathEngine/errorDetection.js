@@ -107,6 +107,10 @@ function buildErrorDetectionProblem(conceptId, rng = Math.random) {
     category: 'Spot the Mistake',
     conceptId,
     conceptName,
+    // Lets the serving route attach the concept's derived hint ladder. NOTE: the route must
+    // NOT attach this concept's workedExampleJson — the flawed working shown IS that worked
+    // example, so serving the correct version would reveal the broken line instantly.
+    templateType: conceptId,
     errorLine: k, // test/diagnostic aid; harmless if served
   };
 }

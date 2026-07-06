@@ -1201,14 +1201,20 @@ templates.number_theory = {
     };
   },
   47: (diffFactor, idx) => {
-    // Number of positive divisors
-    const primes = [
-      { p: 2, q: 3, n: 12, ans: 6, exp: "12 = 2^2 \\times 3. \\text{Divisors} = (2+1)(1+1) = 6" },
-      { p: 3, q: 2, n: 18, ans: 6, exp: "18 = 2 \\times 3^2. \\text{Divisors} = (1+1)(2+1) = 6" },
-      { p: 2, q: 5, n: 20, ans: 6, exp: "20 = 2^2 \\times 5. \\text{Divisors} = (2+1)(1+1) = 6" },
-      { p: 2, q: 7, n: 28, ans: 6, exp: "28 = 2^2 \\times 7. \\text{Divisors} = (2+1)(1+1) = 6" }
+    // Number of positive divisors. The pool intentionally mixes divisor COUNTS (4/6/8/9/12)
+    // so the answer varies — an all-6 pool let learners answer "6" without factoring
+    // (caught by the content quality gate's variety check).
+    const pool = [
+      { n: 12, ans: 6,  exp: "12 = 2^2 \\times 3. \\text{Divisors} = (2+1)(1+1) = 6" },
+      { n: 15, ans: 4,  exp: "15 = 3 \\times 5. \\text{Divisors} = (1+1)(1+1) = 4" },
+      { n: 24, ans: 8,  exp: "24 = 2^3 \\times 3. \\text{Divisors} = (3+1)(1+1) = 8" },
+      { n: 36, ans: 9,  exp: "36 = 2^2 \\times 3^2. \\text{Divisors} = (2+1)(2+1) = 9" },
+      { n: 28, ans: 6,  exp: "28 = 2^2 \\times 7. \\text{Divisors} = (2+1)(1+1) = 6" },
+      { n: 60, ans: 12, exp: "60 = 2^2 \\times 3 \\times 5. \\text{Divisors} = (2+1)(1+1)(1+1) = 12" },
+      { n: 40, ans: 8,  exp: "40 = 2^3 \\times 5. \\text{Divisors} = (3+1)(1+1) = 8" },
+      { n: 21, ans: 4,  exp: "21 = 3 \\times 7. \\text{Divisors} = (1+1)(1+1) = 4" }
     ];
-    const choice = primes[idx % primes.length];
+    const choice = pool[idx % pool.length];
     return {
       question: `Determine the total number of positive divisors of the integer $${choice.n}$:`,
       answer: choice.ans,
@@ -1267,19 +1273,23 @@ templates.number_theory = {
     }
   },
   60: (diffFactor, idx) => {
-    // Euler's Identity Milestone
+    // Euler's Identity Milestone. The identity itself is one fact (e^{iπ} = −1), so variety
+    // comes from the surrounding arithmetic: vary the constant so the ANSWER varies too
+    // (two fixed instances let learners memorise "4 or 0" — caught by the quality gate).
     if (idx % 2 === 0) {
+      const c = [5, 3, 7, 9, 2, 6][Math.floor(idx / 2) % 6];
       return {
-        question: `Evaluate the complex expression derived from Euler's Identity: $$e^{i\\pi} + 5$$`,
-        answer: 4,
-        explanation: `By Euler's Identity, $e^{i\\pi} = -1$. Substituting this value into the expression yields:\n$$-1 + 5 = 4$$`,
+        question: `Evaluate the complex expression derived from Euler's Identity: $$e^{i\\pi} + ${c}$$`,
+        answer: c - 1,
+        explanation: `By Euler's Identity, $e^{i\\pi} = -1$. Substituting this value into the expression yields:\n$$-1 + ${c} = ${c - 1}$$`,
         type: "euler_identity"
       };
     } else {
+      const k = [1, 2, 4, 3, 5][Math.floor(idx / 2) % 5];
       return {
-        question: `Simplify the complex value: $$e^{2i\\pi} - 1$$`,
-        answer: 0,
-        explanation: `Using Euler's formula, $e^{i\\theta} = \\cos(\\theta) + i\\sin(\\theta)$. For $\\theta = 2\\pi$:\n$$e^{2i\\pi} = \\cos(2\\pi) + i\\sin(2\\pi) = 1 + 0 = 1$$\nSubtracting yields $1 - 1 = 0$.`,
+        question: `Simplify the complex value: $$e^{2i\\pi} - ${k}$$`,
+        answer: 1 - k,
+        explanation: `Using Euler's formula, $e^{i\\theta} = \\cos(\\theta) + i\\sin(\\theta)$. For $\\theta = 2\\pi$:\n$$e^{2i\\pi} = \\cos(2\\pi) + i\\sin(2\\pi) = 1 + 0 = 1$$\nSubtracting yields $1 - ${k} = ${1 - k}$.`,
         type: "euler_identity"
       };
     }
@@ -1680,7 +1690,7 @@ templates.geometry = {
   },
   // Volume of a sphere: V = (4/3) pi r^3. r is a multiple of 3 so the pi-coefficient stays integer.
   17: (_diffFactor, idx) => {
-    const r = 3 * (1 + (idx % 2));        // 3 or 6 → r^3 divisible by 3
+    const r = 3 * (1 + (idx % 4));        // 3, 6, 9 or 12 → r^3 divisible by 3
     const coef = (4 * r * r * r) / 3;
     return {
       question: `What is the volume of a sphere with radius $${r}$? Give your answer in terms of $\\pi$.`,

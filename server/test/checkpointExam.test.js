@@ -21,6 +21,9 @@ test('a fresh user gets the foundational fallback exam, well-formed', async () =
     assert.ok(Array.isArray(p.options) && p.options.length >= 2, 'has options');
     assert.ok(p.options.includes(p.correctAnswer), 'the correct answer is among the options');
     assert.ok(p.category, 'carries its strand');
+    // 2026-07: exam problems keep the active-learning surface instead of stripping it.
+    assert.ok(Array.isArray(p.hintLadder) && p.hintLadder.length >= 1, 'carries a hint ladder');
+    assert.ok(typeof p.selfExplainJson === 'string', 'carries selfExplainJson (may be empty)');
   }
   // Fallback uses the foundational core → more than one strand represented.
   assert.ok(new Set(r.body.problems.map((p) => p.category)).size >= 2, 'mixed strands');

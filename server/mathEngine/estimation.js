@@ -96,6 +96,58 @@ const TEMPLATES = [
     },
   },
   {
+    // Magnitude of an area: decimals × decimals is where place-value sense pays off most.
+    skill: 'estimate_area',
+    minLevel: 2,
+    gen(rng) {
+      const a = randint(rng, 3, 9) + randint(rng, 1, 9) / 10;   // e.g. 4.8
+      const b = randint(rng, 3, 9) + randint(rng, 1, 9) / 10;   // e.g. 7.2
+      const ra = Math.round(a), rb = Math.round(b);
+      const est = ra * rb;
+      const actual = a * b;
+      return {
+        question: `A room measures ${a} m by ${b} m. About how many square metres of carpet does it need?`,
+        answer: String(est),
+        distractors: [
+          String(est * 10),
+          String(Math.max(1, Math.round(est / 10))),
+          String(ra + rb), // added the sides instead of multiplying (perimeter-ish thinking)
+        ],
+        explanation: `Round each side: ${a} ≈ ${ra} and ${b} ≈ ${rb}, so the area is about ${ra} × ${rb} = ${est} m².`,
+        actual,
+      };
+    },
+  },
+  {
+    // Unit conversion magnitude: is the converted number 10×, 100×, 1000× — or unchanged?
+    skill: 'estimate_conversion',
+    minLevel: 3,
+    gen(rng) {
+      const units = [
+        { from: 'metres', to: 'kilometres', f: 1000, ctx: 'A hiking trail is' },
+        { from: 'centimetres', to: 'metres', f: 100, ctx: 'A roll of ribbon is' },
+        { from: 'grams', to: 'kilograms', f: 1000, ctx: 'A parcel weighs' },
+        { from: 'minutes', to: 'hours', f: 60, ctx: 'A film festival runs for' },
+      ];
+      const u = units[randint(rng, 0, units.length - 1)];
+      const k = randint(rng, 2, 9);
+      const value = k * u.f + randint(rng, -Math.floor(u.f / 12), Math.floor(u.f / 12));
+      const est = Math.round(value / u.f);
+      const actual = value / u.f;
+      return {
+        question: `${u.ctx} ${value} ${u.from}. About how many ${u.to} is that?`,
+        answer: String(est),
+        distractors: [
+          String(est * 10),
+          String(Math.max(1, Math.round(est / 10))),
+          String(value), // forgot to convert — kept the raw number
+        ],
+        explanation: `There are ${u.f} ${u.from} in one of the larger unit, so ${value} ÷ ${u.f} ≈ ${est} ${u.to}.`,
+        actual,
+      };
+    },
+  },
+  {
     skill: 'estimate_percent',
     minLevel: 3,
     gen(rng) {
@@ -158,6 +210,9 @@ function generateEstimationProblem(seed, level = 1) {
     options,
     explanation: p.explanation,
     skill: tpl.skill,
+    // Legacy tips.js has an authored 'estimation' entry, so the serving route can attach a
+    // real hint ladder (round to friendly numbers / magnitude checks).
+    templateType: 'estimation',
     category: 'Estimation',
     _actual: p.actual, // test-only: lets a test confirm the stated answer is the closest option
   };

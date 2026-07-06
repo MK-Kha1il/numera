@@ -149,6 +149,81 @@ const TEMPLATES = [
     },
   },
   {
+    // Sports stats → mean. Deviations sum to zero by construction, so the average is whole.
+    skill: 'average',
+    minLevel: 3,
+    gen(rng) {
+      const name = pick(rng, NAMES);
+      const mean = randint(rng, 6, 14);
+      const d = randint(rng, 1, 4);
+      const scores = [mean - d, mean + d, mean]; // three games, mean by construction
+      const total = scores[0] + scores[1] + scores[2];
+      return {
+        question: `${name} scored ${scores[0]}, ${scores[1]} and ${scores[2]} points in three basketball games. What was their average points per game?`,
+        answer: `${mean} points`,
+        // Classic slips: reported the total (forgot to divide); took the best game; divided by 2.
+        distractors: [`${total} points`, `${mean + d} points`, `${Math.round(total / 2)} points`],
+        explanation: `Average = total ÷ games: (${scores[0]} + ${scores[1]} + ${scores[2]}) ÷ 3 = ${total} ÷ 3 = ${mean} points.`,
+      };
+    },
+  },
+  {
+    // Cooking scale-up → proportion. The additive-strategy distractor is the classic ratio slip.
+    skill: 'proportion',
+    minLevel: 3,
+    gen(rng) {
+      const base = pick(rng, [2, 3, 4]);
+      const cups = randint(rng, 2, 6);
+      const k = pick(rng, [2, 3]);
+      const target = base * k;
+      const need = cups * k;
+      return {
+        question: `A soup recipe for ${base} people uses ${cups} cups of stock. How many cups are needed to make it for ${target} people?`,
+        answer: `${need} cups`,
+        // Classic slips: added the extra people (additive strategy); added the scale factor; kept the recipe amount.
+        distractors: [`${cups + (target - base)} cups`, `${cups + k} cups`, `${cups} cups`],
+        explanation: `The recipe scales by ${target} ÷ ${base} = ${k}, so the stock scales too: ${cups} × ${k} = ${need} cups — ratios grow by multiplying, not adding.`,
+      };
+    },
+  },
+  {
+    // Travel planning → time from distance and speed (the inverse of rate_distance).
+    skill: 'rate_time',
+    minLevel: 4,
+    gen(rng) {
+      const vehicle = pick(rng, VEHICLES);
+      const speed = pick(rng, [30, 40, 50, 60]);
+      const hours = randint(rng, 2, 5);
+      const dist = speed * hours;
+      return {
+        question: `A ${vehicle} needs to cover ${dist} miles at a steady ${speed} mph. How many hours will the trip take?`,
+        answer: `${hours} hours`,
+        // Classic slips: subtracted; added; picked the speed itself.
+        distractors: [`${dist - speed} hours`, `${hours + 2} hours`, `${speed} hours`],
+        explanation: `Time = distance ÷ speed = ${dist} ÷ ${speed} = ${hours} hours.`,
+      };
+    },
+  },
+  {
+    // Savings goal → two-step: subtract what's saved, then divide by the rate.
+    skill: 'multi_step',
+    minLevel: 4,
+    gen(rng) {
+      const name = pick(rng, NAMES);
+      const rate = pick(rng, [10, 15, 20, 25]);
+      const have = pick(rng, [20, 30, 40]);
+      const weeks = randint(rng, 3, 7);
+      const cost = have + rate * weeks;
+      return {
+        question: `${name} is saving ${money(rate)} a week for a bike that costs ${money(cost)}. They already have ${money(have)}. How many weeks until they can buy it?`,
+        answer: `${weeks} weeks`,
+        // Classic slips: ignored the head start; added the head start instead; off by one.
+        distractors: [`${Math.ceil(cost / rate)} weeks`, `${Math.ceil((cost + have) / rate)} weeks`, `${weeks + 1} weeks`],
+        explanation: `Still needed: ${money(cost)} − ${money(have)} = ${money(cost - have)}. At ${money(rate)} a week that's ${cost - have} ÷ ${rate} = ${weeks} weeks.`,
+      };
+    },
+  },
+  {
     skill: 'percent_tip',
     minLevel: 4,
     gen(rng) {
@@ -211,9 +286,28 @@ function generateWordProblem(seed, level = 1) {
     options,
     explanation: p.explanation,
     skill: tpl.skill,
+    // The knowledge-graph concept each skill exercises — lets the serving route attach the
+    // concept's hint ladder / self-explanation / worked example (the applied modes carried
+    // NO hints at all before 2026-07).
+    templateType: SKILL_CONCEPT[tpl.skill] || null,
     category: 'Word Problems',
   };
 }
+
+// skill → knowledge-graph concept id (all have lessons, so ladders derive catalog-wide).
+const SKILL_CONCEPT = {
+  multiplication: 'arithmetic_mult',
+  subtraction: 'arithmetic_sub',
+  unit_rate: 'unit_rate',
+  sharing_division: 'arithmetic_div',
+  rate_distance: 'speed_dist_time',
+  percent_discount: 'percent_discount',
+  percent_tip: 'percent_markup',
+  average: 'stat_mean',
+  proportion: 'proportion_solve',
+  rate_time: 'speed_dist_time',
+  multi_step: 'multi_step_word',
+};
 
 // Assemble a set of `count` word problems for a session (deduped by question text).
 function buildWordProblemSet(count, level = 1, seed = Date.now()) {

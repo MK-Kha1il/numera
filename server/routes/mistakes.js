@@ -6,6 +6,7 @@ const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { normalizeLevelForGenerator } = require('../lib/progression');
 const { generateProblem } = require('../mathGenerator');
+const { attachTipToProblem } = require('../services/tipService');
 
 const router = express.Router();
 
@@ -30,13 +31,20 @@ router.get('/api/mistakes', authenticateToken, (req, res) => {
           const cat = r.category || 'Arithmetic';
           const normLevel = normalizeLevelForGenerator(cat, userLevel);
           const fresh = generateProblem(cat, normLevel, index, userElo, analyticsMap);
-          return {
+          // Re-attempting a missed concept is the remediation moment — keep the full
+          // active-learning surface (ladder/tip via templateType, socratic probe for a
+          // repeat slip, self-explain for a redeemed one, worked example as the scaffold).
+          return attachTipToProblem({
             ...r,
             question: fresh.question,
             correct_answer: fresh.correctAnswer,
             options: fresh.options,
             explanation: fresh.explanation,
-          };
+            templateType: fresh.templateType,
+            socraticJson: fresh.socraticJson || '',
+            selfExplainJson: fresh.selfExplainJson || '',
+            workedExampleJson: fresh.workedExampleJson || '',
+          }, false);
         });
         res.json(parsed);
       });

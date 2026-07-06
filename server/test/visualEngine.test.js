@@ -338,3 +338,62 @@ test('context: competitive gets no visual; lessons keep it for experts, exercise
   assert.ok(buildVisualSpec(q, 'fraction_compare', expert, { context: 'lesson' }), 'lesson keeps the tool');
   assert.equal(buildVisualSpec(q, 'fraction_compare', expert, { context: 'exercise' }), null, 'exercise withholds from experts');
 });
+
+// ---- 2026-07 number-line modes: distance / compare / inequality --------------------------
+// Cross-stack contract: each mode here has a renderer branch in the Android asset
+// interactive_visuals.html (number_line module) — keep them in lockstep.
+
+test('absolute value builds the distance mode without stating the distance', () => {
+  const spec = buildVisualSpec({ question: 'Evaluate: $|{-7}|$' }, 'absolute_value', NOVICE);
+  assert.ok(spec, 'expected a spec');
+  assert.equal(spec.type, 'number_line');
+  assert.equal(spec.mode, 'distance');
+  assert.equal(spec.params.value, -7);
+  assert.ok(!/\b7\b/.test(visibleText(spec)), 'visible text must not state the distance 7');
+});
+
+test('decimal comparison builds the predict-first compare mode', () => {
+  const spec = buildVisualSpec(
+    { question: 'Which of these decimals is the largest? $0.35, \\;\\; 0.3, \\;\\; 0.299, \\;\\; 0.28$' },
+    'decimal_compare', NOVICE
+  );
+  assert.ok(spec, 'expected a spec');
+  assert.equal(spec.mode, 'compare');
+  assert.deepEqual(spec.params.values, [0.35, 0.3, 0.299, 0.28]);
+  assert.equal(spec.params.goal, 'largest');
+  assert.match(spec.prompt, /predict/i, 'prompt demands a prediction before the plot');
+});
+
+test('integer comparison (smallest) builds compare with the right goal', () => {
+  const spec = buildVisualSpec(
+    { question: 'Which of these integers is the smallest? $-8, \\;\\; 4, \\;\\; -3, \\;\\; 8$' },
+    'integer_compare', NOVICE
+  );
+  assert.ok(spec, 'expected a spec');
+  assert.equal(spec.params.goal, 'smallest');
+  assert.deepEqual(spec.params.values, [-8, 4, -3, 8]);
+});
+
+test('inequalities build the test-a-value mode with ASCII op tokens', () => {
+  const cases = [
+    { q: 'Solve: $x + 2 > 4$', c: 'inequality_one_step_add', want: { a: 1, b: 2, c: 4, op: 'gt' } },
+    { q: 'Solve: $2x < 6$', c: 'inequality_one_step_mult', want: { a: 2, b: 0, c: 6, op: 'lt' } },
+    { q: 'Solve: $-2x < 4$', c: 'inequality_flip_negative', want: { a: -2, b: 0, c: 4, op: 'lt' } },
+    { q: 'Solve: $3x + 2 \\le 11$', c: 'inequality_two_step', want: { a: 3, b: 2, c: 11, op: 'le' } },
+  ];
+  for (const t of cases) {
+    const spec = buildVisualSpec({ question: t.q }, t.c, NOVICE);
+    assert.ok(spec, `${t.c} builds a spec`);
+    assert.equal(spec.mode, 'inequality');
+    assert.deepEqual(
+      { a: spec.params.a, b: spec.params.b, c: spec.params.c, op: spec.params.op }, t.want, t.c
+    );
+    // The solution set (e.g. "x > -2") must never be in the visible text.
+    assert.ok(!/x\s*[<>≤≥]/.test(visibleText(spec)), `${t.c} must not print the solution set`);
+  }
+});
+
+test('a non-integer inequality boundary yields no spec (renderer needs integer snapping)', () => {
+  const spec = buildVisualSpec({ question: 'Solve: $2x < 7$' }, 'inequality_one_step_mult', NOVICE);
+  assert.equal(spec, null);
+});

@@ -672,25 +672,53 @@ MODULES.dice_sim = (function(){
 })();
 
 // =================== NUMBER LINE ===========================================
+// Modes: jump (arithmetic hops), modulo (remainder jumps), distance (absolute value as
+// measured steps from zero), compare (predict-first ordering), inequality (test-a-value
+// then shade the solution set). Each mode mirrors a server spec builder in
+// visualEngine.buildNumberLine — ship server mode + this renderer branch together.
 MODULES.number_line = (function(){
   var mode,val,mod,start,delta,pos,target,hops,markX,arc;
+  // distance mode state
+  var handle,handleS,measured;
+  // compare mode state
+  var values,goalKind,picked,placeS,resolved;
+  // inequality mode state
+  var ia,ib,ic,iop,bound,testPos,testS,dots,shaded,shadeDir,dragT,wrongFlash;
   function init(s){ mode=s.mode; val=s.params.value; mod=s.params.modulus; start=s.params.start; delta=s.params.delta;
-    pos=(mode==="modulo")?0:start; target=pos; hops=0; markX=new Spring(0,0.18); arc=0; }
+    pos=(mode==="modulo")?0:start; target=pos; hops=0; markX=new Spring(0,0.18); arc=0;
+    handle=0; handleS=new Spring(0,0.2); measured=false;
+    values=s.params.values||[]; goalKind=s.params.goal||"largest"; picked=null; placeS=new Spring(0,0.06); resolved=false;
+    ia=s.params.a; ib=s.params.b||0; ic=s.params.c; iop=s.params.op;
+    bound=(iop!==undefined&&ia)?(ic-ib)/ia:0; testPos=null; testS=new Spring(0,0.2); dots={}; shaded=false; shadeDir=0; dragT=false; wrongFlash=0; }
   var x0,x1,y,lo,hi,scale;
   function layout(){ x0=26; x1=W-26; y=H*0.52;
-    if(mode==="modulo"){ lo=0; hi=Math.max(val,mod)+1; } else { lo=Math.min(start,start+delta)-2; hi=Math.max(start,start+delta)+2; }
-    scale=(x1-x0)/(hi-lo); markX.set(X(pos)); }
+    if(mode==="modulo"){ lo=0; hi=Math.max(val,mod)+1; }
+    else if(mode==="distance"){ lo=Math.min(val,0)-2; hi=Math.max(val,0)+2; y=H*0.5; }
+    else if(mode==="compare"){ var mn=Math.min.apply(null,values), mx2=Math.max.apply(null,values);
+      var pad=Math.max((mx2-mn)*0.18, 0.0001); lo=mn-pad; hi=mx2+pad; y=H*0.5; }
+    else if(mode==="inequality"){ lo=bound-6; hi=bound+6; y=H*0.46; }
+    else { lo=Math.min(start,start+delta)-2; hi=Math.max(start,start+delta)+2; }
+    scale=(x1-x0)/(hi-lo); markX.set(X(pos)); handleS.set(X(0));
+    if(mode==="inequality") testS.set(X(bound+2>hi-1?bound-2:bound+2)); }
   function X(v){ return x0+(v-lo)*scale; }
-  function update(dt){ markX.to(X(pos)).step(); arc=Math.max(0,arc-dt*2.2); }
-  function animating(){ return markX.moving()||arc>0; }
-  function draw(){
-    if(!scale) layout();
-    // baseline
+  function V(px){ return lo+(px-x0)/scale; }
+  function update(dt){ markX.to(X(pos)).step(); arc=Math.max(0,arc-dt*2.2);
+    handleS.to(X(handle)).step(); if(mode==="compare"&&picked!==null&&placeS.cur<1) placeS.to(1).step();
+    if(testPos!==null) testS.to(X(testPos)).step(); wrongFlash=Math.max(0,wrongFlash-dt*2); }
+  function animating(){ return markX.moving()||arc>0||handleS.moving()||testS.moving()||wrongFlash>0||(mode==="compare"&&picked!==null&&placeS.cur<0.999); }
+  function fmtV(v){ return (Math.round(v*1000)/1000).toString(); }
+  function baseline(withTicks){
     ctx.strokeStyle=rgba(THEME.subtext,0.35); ctx.lineWidth=3; ctx.lineCap="round";
     ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x1,y); ctx.stroke();
-    for(var v=Math.ceil(lo);v<=Math.floor(hi);v++){ var px=X(v);
+    if(withTicks){ for(var v=Math.ceil(lo);v<=Math.floor(hi);v++){ var px=X(v);
       ctx.strokeStyle=rgba(THEME.subtext,0.3); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(px,y-7); ctx.lineTo(px,y+7); ctx.stroke();
-      text(""+v, px, y+22, 10.5, THEME.subtext,"center","600"); }
+      text(""+v, px, y+22, 10.5, THEME.subtext,"center","600"); } } }
+  function draw(){
+    if(!scale) layout();
+    if(mode==="distance"){ drawDistance(); return; }
+    if(mode==="compare"){ drawCompare(); return; }
+    if(mode==="inequality"){ drawInequality(); return; }
+    baseline(true);
     // completed hops as arcs (modulo)
     if(mode==="modulo"){ var done=0; for(var k=0;k+mod<=pos+0.01;k+=mod){ drawHop(X(k),X(k+mod),0.5); } }
     // moving marker
@@ -716,6 +744,132 @@ MODULES.number_line = (function(){
       button("hop", W/2-115, H-48, 230, 40, done3?"Where did you land?":(delta<0?"Hop left":"Hop right"), done3?THEME.correct:THEME.primary, done3, hop);
     }
   }
+  // ---- distance (absolute value): measure |val| by dragging from zero ----
+  function drawDistance(){
+    baseline(true);
+    text("distance from 0 to "+val+" = ?", W/2, H*0.16, 15, THEME.onSurface,"center","800");
+    // swept span from 0 to the handle
+    var zx=X(0), hx=handleS.cur;
+    if(Math.abs(hx-zx)>2){ ctx.strokeStyle=rgba(THEME.tertiary,0.55); ctx.lineWidth=6; ctx.lineCap="round";
+      ctx.beginPath(); ctx.moveTo(zx,y); ctx.lineTo(hx,y); ctx.stroke();
+      text(Math.abs(handle)+" step"+(Math.abs(handle)===1?"":"s"), (zx+hx)/2, y-20, 12, THEME.tertiary,"center","800"); }
+    // target pin at val
+    var tx2=X(val); ctx.setLineDash([4,4]); ctx.strokeStyle=rgba(THEME.secondary,0.8); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(tx2,y-26); ctx.lineTo(tx2,y+8); ctx.stroke(); ctx.setLineDash([]);
+    text(""+val, tx2, y-34, 12, THEME.secondary,"center","800");
+    // zero home
+    ctx.fillStyle=rgba(THEME.subtext,0.7); ctx.beginPath(); ctx.arc(zx,y,4,0,TAU); ctx.fill();
+    // measuring handle
+    glow(hx,y,15,THEME.primary,0.4);
+    shadowOn(8,rgba(THEME.primary,0.5),3); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(hx,y,11,0,TAU); ctx.fill(); shadowOff();
+    ctx.fillStyle=THEME.primary; ctx.beginPath(); ctx.arc(hx,y,6.5,0,TAU); ctx.fill();
+    var done=handle===val;
+    if(done&&!measured){ measured=true; postEvent({event:"solve",detail:"distance:"+Math.abs(val)}); celebrate(tx2,y-10); }
+    if(!done) measured=false;
+    text(done ? "you measured it — the count of steps IS the absolute value (direction doesn't matter)"
+              : (guided() ? "drag the handle from 0 to the marked number, counting steps" : "drag to the mark, counting steps"),
+      W/2, H-24, 11.5, done?THEME.correct:THEME.subtext,"center","700");
+  }
+  // ---- compare (predict-first ordering) ----
+  function drawCompare(){
+    text("which is the "+goalKind+"?", W/2, H*0.12, 14.5, THEME.onSurface,"center","800");
+    // prediction chips
+    var n=values.length, cw=Math.min(86,(W-40-(n-1)*10)/n), totw=n*cw+(n-1)*10, cx0=(W-totw)/2, cy=H*0.2;
+    for(var i=0;i<n;i++){ (function(i){
+      var bx=cx0+i*(cw+10);
+      var col=(picked===i)?THEME.tertiary:THEME.surface;
+      fillRR(bx,cy,cw,34,10,col===THEME.surface?rgba(THEME.subtext,0.12):rgba(THEME.tertiary,0.25));
+      strokeRR(bx,cy,cw,34,10,(picked===i)?THEME.tertiary:rgba(THEME.subtext,0.25),(picked===i)?2.5:1.5);
+      text(fmtV(values[i]), bx+cw/2, cy+22, 12.5, (picked===i)?THEME.tertiary:THEME.onSurface,"center","800");
+      chipGeo[i]={x:bx,y:cy,w:cw,h:34};
+    })(i); }
+    baseline(false);
+    text(fmtV(lo), x0, y+22, 10, THEME.subtext,"center","600");
+    text(fmtV(hi), x1, y+22, 10, THEME.subtext,"center","600");
+    if(picked===null){
+      text(guided() ? "commit a prediction first — tap the value you think is the "+goalKind : "tap your pick first",
+        W/2, H-24, 11.5, THEME.tertiary,"center","700");
+      return;
+    }
+    // after prediction: values drop onto the line (verification, not the answer machine)
+    var t=placeS.cur;
+    var best=0; for(var j=1;j<n;j++){ if(goalKind==="largest" ? values[j]>values[best] : values[j]<values[best]) best=j; }
+    for(var k2=0;k2<n;k2++){ var px=X(values[k2]), py=y-(1-t)*40;
+      var isPick=(k2===picked), isBest=(k2===best);
+      var col2=isPick?THEME.tertiary:THEME.primary;
+      glow(px,py,12,col2,0.32);
+      ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(px,py,9,0,TAU); ctx.fill();
+      ctx.fillStyle=col2; ctx.beginPath(); ctx.arc(px,py,5.5,0,TAU); ctx.fill();
+      text(fmtV(values[k2]), px, py-16, 10, col2,"center","700");
+      if(t>0.98&&isBest){ ctx.setLineDash([3,3]); strokeRR(px-14,py-14,28,28,14,rgba(THEME.correct,0.8),2); ctx.setLineDash([]); } }
+    if(t>0.98&&!resolved){ resolved=true;
+      var ok=(picked===best);
+      postEvent({event: ok?"solve":"discover", detail:"compare_pick:"+fmtV(values[picked])+":"+(ok?"right":"line_disagrees")});
+      if(ok) celebrate(X(values[best]),y-20); }
+    if(t>0.98){ var okNow=(picked===best);
+      text(okNow ? "the line agrees — "+(goalKind==="largest"?"furthest right wins":"furthest left wins")
+                 : "the line disagrees with your pick — position decides size, not digit count",
+        W/2, H-24, 11.5, okNow?THEME.correct:THEME.wrong,"center","700"); }
+  }
+  // ---- inequality (test a value, then shade the solution side) ----
+  function opSym(){ return iop==="lt"?"<":iop==="gt"?">":iop==="le"?"≤":"≥"; }
+  function holds(t){ var l=ia*t+ib;
+    return iop==="lt"?l<ic: iop==="gt"?l>ic: iop==="le"?l<=ic: l>=ic; }
+  function ineqStr(){ var co=ia===1?"":(ia===-1?"−":(ia<0?"−"+(-ia):""+ia));
+    var bs=ib===0?"":(ib>0?" + "+ib:" − "+(-ib)); return co+"x"+bs+" "+opSym()+" "+ic; }
+  function drawInequality(){
+    text(ineqStr(), W/2, H*0.13, 16, THEME.onSurface,"center","800");
+    // solution shading once earned
+    if(shaded){ var trueLeft=holds(bound-1);
+      var sx=trueLeft?x0:X(bound), sw=trueLeft?X(bound)-x0:x1-X(bound);
+      var g=ctx.createLinearGradient(0,y-26,0,y+16); g.addColorStop(0,rgba(THEME.correct,0.20)); g.addColorStop(1,rgba(THEME.correct,0.05));
+      ctx.fillStyle=g; ctx.fillRect(sx,y-26,sw,42); }
+    baseline(true);
+    // tested dots
+    for(var key in dots){ if(!dots.hasOwnProperty(key)) continue; var tv=parseInt(key,10);
+      var dx2=X(tv), col=dots[key]?THEME.correct:THEME.wrong;
+      glow(dx2,y,10,col,0.3); ctx.fillStyle=col; ctx.beginPath(); ctx.arc(dx2,y,5.5,0,TAU); ctx.fill();
+      ctx.strokeStyle="#FFF"; ctx.lineWidth=1.5; ctx.stroke(); }
+    // boundary circle after shading (open = strict, closed = or-equal)
+    if(shaded){ var bx2=X(bound);
+      ctx.lineWidth=2.5; ctx.strokeStyle=THEME.correct;
+      ctx.fillStyle=(iop==="le"||iop==="ge")?THEME.correct:THEME.surface;
+      ctx.beginPath(); ctx.arc(bx2,y,7,0,TAU); ctx.fill(); ctx.stroke(); }
+    // draggable test point
+    if(testPos!==null){ var tx3=testS.cur;
+      var ok=holds(testPos), pc=ok?THEME.correct:THEME.wrong;
+      glow(tx3,y-30,14,pc,0.35);
+      shadowOn(8,rgba(pc,0.5),3); ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(tx3,y-30,12,0,TAU); ctx.fill(); shadowOff();
+      ctx.fillStyle=pc; ctx.beginPath(); ctx.arc(tx3,y-30,7,0,TAU); ctx.fill();
+      ctx.strokeStyle=rgba(pc,0.5); ctx.lineWidth=1.5; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(tx3,y-18); ctx.lineTo(tx3,y-8); ctx.stroke(); ctx.setLineDash([]);
+      text("x = "+testPos+" → "+(ia===1?"":(ia===-1?"−":ia))+"("+testPos+")"+(ib===0?"":(ib>0?" + "+ib:" − "+(-ib)))+" = "+(ia*testPos+ib)+"  "+(ok?"✓":"✗"),
+        W/2, y-56, 11.5, pc,"center","700");
+    } else {
+      text(guided() ? "drag along the line to test values of x" : "drag to test values", W/2, y-44, 11.5, THEME.subtext,"center","700");
+    }
+    // shading commit — enabled once tests span both outcomes (one green + one red)
+    var greens=0,reds=0; for(var k3 in dots){ if(dots.hasOwnProperty(k3)){ if(dots[k3])greens++; else reds++; } }
+    var ready=greens>0&&reds>0&&!shaded;
+    if(shaded){
+      text("that's the solution set — every value in the shade makes it true", W/2, H-24, 11.5, THEME.correct,"center","700");
+    } else {
+      if(wrongFlash>0) text("some red dots live on that side — test more values", W/2, H-70, 11.5, THEME.wrong,"center","700");
+      else text(ready ? "now shade the side where the greens live" : "collect a green AND a red dot first",
+        W/2, H-70, 11.5, ready?THEME.tertiary:THEME.subtext,"center","700");
+      var bw2=(W-64)/2;
+      button("shL", 26, H-52, bw2, 38, "◀ shade left", THEME.primary, !ready, function(){ commitShade(-1); });
+      button("shR", 38+bw2, H-52, bw2, 38, "shade right ▶", THEME.primary, !ready, function(){ commitShade(1); });
+    }
+  }
+  function commitShade(dir){ if(shaded) return;
+    var trueLeft=holds(bound-1);
+    if((dir<0)===trueLeft){ shaded=true; shadeDir=dir;
+      postEvent({event:"solve",detail:"shade:"+(dir<0?"left":"right")+" boundary:"+bound});
+      celebrate(X(bound),y-20);
+    } else { wrongFlash=1; postEvent({event:"manipulate",detail:"wrong_shade"}); }
+    requestRender(); }
+  var chipGeo={};
   function drawHop(xa,xb,alpha){ var r=(xb-xa)/2, cx=(xa+xb)/2;
     ctx.strokeStyle=rgba(THEME.tertiary,alpha); ctx.lineWidth=2.5;
     ctx.beginPath(); ctx.arc(cx,y,r,Math.PI,TAU); ctx.stroke(); }
@@ -723,8 +877,22 @@ MODULES.number_line = (function(){
     if(pos+mod>val){ postEvent({event:"solve",detail:"remainder:"+pos}); celebrate(W/2,H*0.4); } requestRender(); } }
   function hop(){ if(hops<Math.abs(delta)){ pos+=(delta<0?-1:1); hops++; arc=1; requestRender();
     if(hops>=Math.abs(delta)){ postEvent({event:"solve",detail:"result:"+pos}); celebrate(W/2,H*0.4); } } }
-  function down(x,y){ for(var i=0;i<buttons.length;i++) if(hit(buttons[i],x,y)){ pressBtn(buttons[i]); buttons[i].onTap(); return; } }
-  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down };
+  var dragH=false;
+  function down(x,yy){
+    if(mode==="distance"){ if(Math.abs(yy-y)<40){ dragH=true; setHandle(x); return; } }
+    if(mode==="compare"&&picked===null){ for(var i=0;i<values.length;i++){ var g2=chipGeo[i];
+      if(g2&&x>=g2.x-6&&x<=g2.x+g2.w+6&&yy>=g2.y-6&&yy<=g2.y+g2.h+6){ picked=i; placeS.set(0);
+        postEvent({event:"predict",detail:"pick:"+fmtV(values[i])}); requestRender(); return; } } }
+    if(mode==="inequality"){ if(yy>y-60&&yy<y+30){ dragT=true; setTest(x); return; } }
+    for(var j=0;j<buttons.length;j++) if(hit(buttons[j],x,yy)){ pressBtn(buttons[j]); buttons[j].onTap(); return; } }
+  function move(x){ if(dragH) setHandle(x); if(dragT) setTest(x); }
+  function up(){
+    if(dragH){ dragH=false; postEvent({event:"manipulate",detail:"measure:"+handle}); }
+    if(dragT&&testPos!==null){ dragT=false; dots[""+testPos]=holds(testPos);
+      postEvent({event:"manipulate",detail:"test:"+testPos+":"+(dots[""+testPos]?"true":"false")}); requestRender(); } }
+  function setHandle(x){ handle=Math.round(clamp(V(x),lo,hi)); requestRender(); }
+  function setTest(x){ testPos=Math.round(clamp(V(x),lo+0.5,hi-0.5)); requestRender(); }
+  return { init:init, layout:layout, update:update, animating:animating, draw:draw, down:down, move:move, up:up };
 })();
 
 // =================== PERCENT BAR ===========================================

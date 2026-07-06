@@ -207,14 +207,16 @@ const MODEL_META = {
     ]
   },
   number_line: {
-    representations: ['linear'],
-    primitives: ['simulate', 'snap'],
-    benefit: 0.58,
-    learningGoal: 'Operations are movements along the line; a remainder is the leftover distance.',
-    reflectionPrompt: 'Where you landed — how does its position answer the question?',
-    loop: ['observe', 'manipulate', 'verify', 'explain'],
+    representations: ['linear', 'symbolic'],
+    primitives: ['simulate', 'snap', 'drag', 'compare'],
+    benefit: 0.62,
+    learningGoal: 'The line makes size and movement visible: operations are hops, absolute value is distance from zero, order is position, and a solution set is the region where tested values come true.',
+    reflectionPrompt: 'What did the POSITION on the line tell you that the symbols alone did not?',
+    loop: ['observe', 'predict', 'manipulate', 'verify', 'explain'],
     feedbackRules: [
-      { trigger: 'overshoot', effect: 'block', message: 'No full jump fits — read the leftover distance.' }
+      { trigger: 'overshoot', effect: 'block', message: 'No full jump fits — read the leftover distance.' },
+      { trigger: 'predict_before_verify', effect: 'gate_reveal', message: 'Commit a prediction first — then the line checks your call.' },
+      { trigger: 'wrong_shade', effect: 'reject', message: 'Some red dots live in that shading — the solution side holds only greens.' }
     ]
   }
 };
@@ -235,7 +237,9 @@ const MODEL_CONCEPTS = {
   fraction_bar: ['fraction_simplify', 'fraction_add', 'fraction_sub', 'fraction_mult', 'fraction_div', 'fraction_compare', 'mixed_number', 'fraction_of', 'fraction_negative', 'fraction_decimal_convert'],
   dice_sim: ['compound_probability', 'prob_without_replacement', 'expected_value'],
   probability: ['stat_probability', 'probability_complement', 'stat_theoretical_prob', 'stat_experimental_prob'],
-  number_line: ['arithmetic_add', 'arithmetic_sub', 'modular_arithmetic', 'integer_add', 'integer_sub', 'integer_compare'],
+  number_line: ['arithmetic_add', 'arithmetic_sub', 'modular_arithmetic', 'integer_add', 'integer_sub', 'integer_compare',
+    'absolute_value', 'decimal_compare',
+    'inequality_one_step_add', 'inequality_one_step_mult', 'inequality_flip_negative', 'inequality_two_step'],
   dot_plot: ['stat_mean', 'mean_missing_value', 'stat_range', 'stat_median', 'stat_mode', 'stat_mad', 'stat_quartile', 'stat_iqr'],
   calculus: ['derivative', 'integral', 'limit'],
   area_model: ['arithmetic_mult', 'distribute', 'foil_binomials', 'square_binomial', 'factor_trinomial'],

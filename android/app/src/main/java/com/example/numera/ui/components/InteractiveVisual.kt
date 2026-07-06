@@ -143,7 +143,9 @@ private fun playHapticFor(json: String) {
 }
 
 private fun heightForSpec(specJson: String): Dp {
-    val type = try { JSONObject(specJson).optString("type") } catch (e: Exception) { "" }
+    val spec = try { JSONObject(specJson) } catch (e: Exception) { null }
+    val type = spec?.optString("type") ?: ""
+    val mode = spec?.optString("mode") ?: ""
     return when (type) {
         "balance_scale" -> 340.dp
         "fraction_bar" -> 300.dp
@@ -154,7 +156,14 @@ private fun heightForSpec(specJson: String): Dp {
         "calculus" -> 340.dp
         "dice_sim" -> 320.dp
         "probability" -> 320.dp
-        "number_line" -> 230.dp
+        // inequality (test dots + shade buttons) and compare (prediction chips) need
+        // more vertical room than the hop modes.
+        "number_line" -> when (mode) {
+            "inequality" -> 300.dp
+            "compare" -> 290.dp
+            "distance" -> 250.dp
+            else -> 230.dp
+        }
         "dot_plot" -> 300.dp
         "percent_bar" -> 250.dp
         "ratio_line" -> 270.dp

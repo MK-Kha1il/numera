@@ -13,7 +13,13 @@
 //                       part of the ladder, so no rung can hand over the answer.
 //
 // Every rung is run through an answer-leak guard; any rung that would reveal the answer is
-// dropped and the ladder re-numbered. Pure module (tipsMap + normalizeAnswer only).
+// dropped and the ladder re-numbered. Pure module (tipsMap + normalizeAnswer + lessons only).
+//
+// Coverage: authored tips (tipsMap) win when present. For the ~157 template types that
+// post-date tips.js, the ladder is DERIVED from the concept's authored lesson (title /
+// oneLineSummary / formula / whyItWorks / commonMistakes) — same re-shape-authored-content
+// pattern as deriveActiveLearning.js, so no un-vetted prose is ever surfaced. Types with
+// neither a tip nor a lesson keep the single generic nudge.
 
 const { tipsMap } = require('./tips');
 const { normalizeAnswer } = require('./exerciseMemory');
@@ -38,12 +44,81 @@ function leaksAnswer(text, answer) {
   return t.includes(a) || t.replace(/\s+/g, '').includes(a);
 }
 
+function firstSentence(s) {
+  if (!s) return '';
+  const m = String(s).match(/^.*?[.!?](\s|$)/);
+  return (m ? m[0] : String(s)).replace(/\s+/g, ' ').trim();
+}
+
+// Derive the four rungs from the concept's authored lesson. Template types share ids with
+// knowledge-graph concepts, so CONCEPT_LESSONS[templateType] is the same concept's lesson.
+// Required lazily to avoid a load-order cycle (conceptLessons is a large leaf module).
+function deriveRungsFromLesson(templateType) {
+  const { CONCEPT_LESSONS } = require('./conceptLessons');
+  const lesson = templateType ? CONCEPT_LESSONS[templateType] : null;
+  if (!lesson) return null;
+
+  const rungs = [];
+  rungs.push({
+    level: 'nudge',
+    label: 'Nudge',
+    text: `This problem is about ${lesson.title}. Start by identifying what you're asked to find and which quantities you're given — don't compute yet.`,
+  });
+  if (lesson.oneLineSummary) {
+    rungs.push({ level: 'concept', label: 'Concept', text: firstSentence(lesson.oneLineSummary) || lesson.oneLineSummary });
+  }
+  if (lesson.formula) {
+    rungs.push({
+      level: 'method',
+      label: 'Method',
+      text: `Set up the governing relationship $${lesson.formula}$ — match each quantity in your problem to its role, then solve for the one you need.`,
+    });
+  } else if (lesson.whyItWorks) {
+    rungs.push({ level: 'method', label: 'Method', text: firstSentence(lesson.whyItWorks) });
+  }
+  const cm = Array.isArray(lesson.commonMistakes) ? lesson.commonMistakes[0] : null;
+  if (cm && cm.label) {
+    const fix = cm.fix ? ` ${firstSentence(cm.fix)}` : '';
+    rungs.push({
+      level: 'guided',
+      label: 'Guided',
+      text: `Now work your own numbers one step at a time. The classic slip here is "${cm.label.toLowerCase()}" — check your work against it.${fix}`,
+    });
+  }
+  return rungs;
+}
+
 // Build the staged ladder for a template type. `correctAnswer` is used only to filter
 // answer-leaking rungs.
 function buildHintLadder(templateType, correctAnswer) {
   const t = templateType ? tipsMap[templateType] : null;
 
-  if (!t) {
+  let rungs = null;
+  if (t) {
+    rungs = [];
+    rungs.push({
+      level: 'nudge',
+      label: 'Nudge',
+      text: `This is a ${t.subskill} problem. Start by identifying what you're asked to find and which quantities you're given — don't compute yet.`,
+    });
+    if (t.conceptualReminder) {
+      rungs.push({ level: 'concept', label: 'Concept', text: t.conceptualReminder });
+    }
+    if (t.tip) {
+      rungs.push({ level: 'method', label: 'Method', text: t.tip });
+    }
+    if (t.commonMistakes) {
+      rungs.push({
+        level: 'guided',
+        label: 'Guided',
+        text: `Now apply that method to your specific numbers, one step at a time. A common slip to avoid here: ${t.commonMistakes}`,
+      });
+    }
+  } else {
+    rungs = deriveRungsFromLesson(templateType);
+  }
+
+  if (!rungs || rungs.length === 0) {
     return [
       {
         stage: 1,
@@ -54,30 +129,21 @@ function buildHintLadder(templateType, correctAnswer) {
     ];
   }
 
-  const rungs = [];
-  rungs.push({
-    level: 'nudge',
-    label: 'Nudge',
-    text: `This is a ${t.subskill} problem. Start by identifying what you're asked to find and which quantities you're given — don't compute yet.`,
-  });
-  if (t.conceptualReminder) {
-    rungs.push({ level: 'concept', label: 'Concept', text: t.conceptualReminder });
-  }
-  if (t.tip) {
-    rungs.push({ level: 'method', label: 'Method', text: t.tip });
-  }
-  if (t.commonMistakes) {
-    rungs.push({
-      level: 'guided',
-      label: 'Guided',
-      text: `Now apply that method to your specific numbers, one step at a time. A common slip to avoid here: ${t.commonMistakes}`,
-    });
-  }
-
   // Drop any rung that would leak the answer, then re-number sequentially.
-  return rungs
+  const safe = rungs
     .filter((r) => !leaksAnswer(r.text, correctAnswer))
     .map((r, i) => ({ stage: i + 1, ...r }));
+  if (safe.length === 0) {
+    return [
+      {
+        stage: 1,
+        level: 'nudge',
+        label: 'Nudge',
+        text: 'Re-read the question and pin down exactly what you need to find and what you are given.',
+      },
+    ];
+  }
+  return safe;
 }
 
 module.exports = { buildHintLadder, leaksAnswer };

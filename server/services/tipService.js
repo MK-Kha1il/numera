@@ -72,7 +72,11 @@ function attachTipToProblem(problem, isArchive) {
   problem.hintLadder = buildHintLadder(templateType, correctAnswer);
 
   if (!tipData) {
-    problem.tip = 'Focus on the core concepts shown in the lesson.';
+    // No authored tip — surface the derived ladder's method (or concept) rung as the legacy
+    // single `tip` so pre-ladder clients still get a real hint instead of boilerplate.
+    const method = problem.hintLadder.find((r) => r.level === 'method')
+      || problem.hintLadder.find((r) => r.level === 'concept');
+    problem.tip = method ? method.text : 'Focus on the core concepts shown in the lesson.';
     return problem;
   }
 

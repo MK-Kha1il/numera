@@ -57,7 +57,197 @@ const SELF_EXPLAIN = {
     ],
   },
 
+  // ---- Integers & absolute value ----
+  absolute_value: {
+    question: 'Why is the absolute value of a negative number positive?',
+    correct: 'Absolute value measures distance from zero, and a distance is never negative.',
+    distractors: [
+      'Because the bars always flip the sign of whatever is inside them.',
+      'Because negative numbers become positive whenever you simplify.',
+      'Because the minus sign is only decoration and can be ignored.',
+    ],
+  },
+  integer_add: {
+    question: 'When you add two integers with different signs, why do you subtract their sizes?',
+    correct: 'Opposite signs pull in opposite directions, so part of each cancels and only the difference remains.',
+    distractors: [
+      'Because subtraction is just easier than adding signed numbers.',
+      'Because the negative number always removes the whole positive number.',
+      'Because you always subtract when any negative sign appears anywhere.',
+    ],
+  },
+  integer_mult: {
+    question: 'Why is a negative times a negative positive?',
+    correct: 'Multiplying by a negative reverses direction, and reversing a reversal points you positive again.',
+    distractors: [
+      'Because two minus signs simply erase each other by convention.',
+      'Because the product of big numbers has to come out positive.',
+      'Because negatives only matter in addition, not multiplication.',
+    ],
+  },
+
+  // ---- Decimals ----
+  decimal_add: {
+    question: 'Why must the decimal points line up before you add?',
+    correct: 'Lining up the points aligns tenths with tenths and ones with ones, so you only combine like place values.',
+    distractors: [
+      'Because the answer must always have two decimal places.',
+      'Because right-aligning the digits works for whole numbers, so it works here.',
+      'Because the decimal point moves to the end once you start adding.',
+    ],
+  },
+  decimal_sub: {
+    question: 'Why can you write extra zeros after the last decimal digit before subtracting?',
+    correct: 'Trailing zeros add empty place values without changing the number, so both numbers get the same number of columns.',
+    distractors: [
+      'Because longer decimals are always more precise and therefore more correct.',
+      'Because you must make the two numbers look identical before subtracting.',
+      'Because zeros at the end round the number to the nearest tenth.',
+    ],
+  },
+  decimal_mult: {
+    question: 'Why do you count decimal places to position the point in the product?',
+    correct: 'Each factor is a whole number divided by a power of ten, so the product is divided by ten once for every decimal place.',
+    distractors: [
+      'Because the product keeps the decimal places of the longer factor.',
+      'Because the decimal point always moves one place to the left in a product.',
+      'Because counting places is a shortcut with no mathematical reason behind it.',
+    ],
+  },
+  decimal_round: {
+    question: 'Why do you look at the digit just after the rounding place?',
+    correct: 'That next digit tells you which of the two neighbouring values your number is closer to.',
+    distractors: [
+      'Because the digit after the rounding place is always dropped and ignored.',
+      'Because rounding means cutting the number off at the chosen place.',
+      'Because the last digit of a number decides whether it is big or small.',
+    ],
+  },
+  decimal_div: {
+    question: 'Why can you shift both decimal points before dividing?',
+    correct: 'Multiplying dividend and divisor by the same power of ten keeps their quotient unchanged.',
+    distractors: [
+      'Because division only works when both numbers are whole.',
+      'Because shifting the points makes the answer ten times more accurate.',
+      'Because the divisor must always be larger than the dividend.',
+    ],
+  },
+
   // ---- Fractions, integers, percents ----
+  fraction_simplify: {
+    question: 'Why does dividing the top and bottom by the same number keep the fraction equal?',
+    correct: 'You are removing the same shared factor from both counts, so the proportion between part and whole is unchanged.',
+    distractors: [
+      'Because smaller numbers are always mathematically preferred.',
+      'Because dividing the top makes the fraction smaller and dividing the bottom balances it back by luck.',
+      'Because the fraction bar means the two numbers are independent of each other.',
+    ],
+  },
+  fraction_sub: {
+    question: 'Why do the denominators have to match before you subtract fractions?',
+    correct: 'Subtraction removes pieces from a count, and the count only makes sense when the pieces are the same size.',
+    distractors: [
+      'Because the answer must keep the smaller of the two denominators.',
+      'Because subtraction works top-minus-top and bottom-minus-bottom.',
+      'Because matching denominators makes the numerators equal too.',
+    ],
+  },
+  fraction_div: {
+    question: 'Why does dividing by a fraction become multiplying by its reciprocal?',
+    correct: 'Dividing asks how many of that piece fit inside, and smaller pieces fit in more times — the reciprocal counts that.',
+    distractors: [
+      'Because flipping the second fraction is a rule invented to avoid division.',
+      'Because division and multiplication are the same operation for fractions.',
+      'Because you flip whichever fraction is smaller before multiplying.',
+    ],
+  },
+  fraction_of: {
+    question: 'Why does "a fraction OF a number" mean multiplication?',
+    correct: 'Taking a part of an amount scales it: the denominator splits the amount into equal shares and the numerator counts the shares you take.',
+    distractors: [
+      'Because "of" always signals division by the denominator only.',
+      'Because a fraction of a number must be smaller, and multiplying shrinks things.',
+      'Because you add the fraction to the number and then simplify.',
+    ],
+  },
+  ratio_solve: {
+    question: 'Why do you multiply both parts of a ratio by the same factor to scale it?',
+    correct: 'A ratio is a fixed relationship, so both quantities must grow in the same proportion for the relationship to survive.',
+    distractors: [
+      'Because adding the same amount to both parts keeps them in step.',
+      'Because only the larger quantity actually needs to be scaled.',
+      'Because the two parts of a ratio are unrelated, so anything works.',
+    ],
+  },
+  exponent_power: {
+    question: 'Why is $2^4$ equal to $2 \\times 2 \\times 2 \\times 2$ and not $2 \\times 4$?',
+    correct: 'The exponent counts how many copies of the base are multiplied together, not what the base is multiplied by.',
+    distractors: [
+      'Because the exponent is just another factor written higher up.',
+      'Because powers are a shorthand for adding the base to itself.',
+      'Because the base and exponent can be swapped without changing the value.',
+    ],
+  },
+
+  // ---- Geometry ----
+  geo_perimeter_rect: {
+    question: 'Why does the perimeter of a rectangle double the sum of length and width?',
+    correct: 'Walking the boundary crosses two lengths and two widths, so each dimension is travelled twice.',
+    distractors: [
+      'Because doubling makes the answer bigger, and perimeters are big.',
+      'Because area is length times width, so perimeter must be double it.',
+      'Because a rectangle has four sides, so you multiply everything by four.',
+    ],
+  },
+  geo_area_rect: {
+    question: 'Why does length × width give the area of a rectangle?',
+    correct: 'The rectangle tiles into rows of unit squares — width squares per row, one row per unit of length — and multiplying counts them all.',
+    distractors: [
+      'Because multiplying the sides is the definition, with nothing behind it.',
+      'Because the two sides added together and doubled give the same value.',
+      'Because area always uses the two largest measurements available.',
+    ],
+  },
+  geo_area_triangle: {
+    question: 'Why does the area of a triangle include a factor of one half?',
+    correct: 'A triangle with a given base and height is exactly half of the rectangle built on that base and height.',
+    distractors: [
+      'Because triangles have three sides, and three is half of six.',
+      'Because the half compensates for the slanted side being shorter.',
+      'Because all area formulas for pointed shapes include a half.',
+    ],
+  },
+  geo_circle_area: {
+    question: 'Why does the area of a circle use the radius squared?',
+    correct: 'Area is two-dimensional, so it scales with a length times a length — about three of the r-by-r squares cover the circle.',
+    distractors: [
+      'Because squaring makes up for the circle having no corners.',
+      'Because the radius is used twice: once for across and once for around.',
+      'Because pi only works when it multiplies a squared number.',
+    ],
+  },
+
+  // ---- Statistics ----
+  stat_mode: {
+    question: 'Why is the mode found by counting repetitions rather than computing?',
+    correct: 'The mode reports the most typical value — the one that occurs most often — so frequency is the only thing that matters.',
+    distractors: [
+      'Because the mode is the largest value and needs no calculation.',
+      'Because counting is a faster approximation of averaging.',
+      'Because every data set has exactly one value that repeats.',
+    ],
+  },
+  stat_mean: {
+    question: 'Why does dividing the total by the count give a fair "typical" value?',
+    correct: 'Dividing shares the whole total out equally, showing what each data point would be if they were all the same.',
+    distractors: [
+      'Because dividing always produces a value near the middle of any list.',
+      'Because the count is the largest number involved, so you divide by it.',
+      'Because the mean must be one of the values in the data set.',
+    ],
+  },
+
+  // ---- Fractions, integers, percents (original set) ----
   fraction_add: {
     question: 'Why must the fractions share a common denominator before you add them?',
     correct: 'The denominator sets the size of each piece, and only equal-sized pieces can be counted together.',

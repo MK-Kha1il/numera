@@ -91,6 +91,10 @@ sound/, haptic/                  Feedback managers.
   `WHERE coins >= ?` deductions; a DB trigger also blocks negative coins.
 - **Schema changes go in `migrations.js`** (append a new version; never edit a shipped one).
   `db.js` is the idempotent baseline only.
+- **New lessons/exercises must pass the Content Quality Gate** (`mathEngine/contentQualityGate.js`,
+  enforced on every `npm test` by `test/contentQualityGate.test.js`). Checklist + authoring
+  workflow: [docs/ContentQualityGate.md](docs/ContentQualityGate.md). Never weaken a check or
+  grow an allowlist to ship content — fix the content instead.
 - **Secrets** (`server/.env`, `numera.db`, backups) are gitignored — never commit them.
 - **LaTeX in JS strings needs double backslashes** (`"\\frac"`). A single `\f`/`\p` is a
   silent control-char/escape bug (fixed a batch of these in db.js seed data).

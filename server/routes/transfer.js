@@ -9,6 +9,7 @@ const TransferEngine = require('../mathEngine/transferEngine');
 const MasteryEngine = require('../mathEngine/masteryEngine');
 const LearnerModel = require('../mathEngine/learnerModel');
 const { concepts } = require('../mathEngine/knowledgeGraph');
+const { attachTipToProblem } = require('../services/tipService');
 const logger = require('../logger');
 
 const router = express.Router();
@@ -56,17 +57,23 @@ router.get('/api/math/transfer/challenge', authenticateToken, async (req, res) =
     const problem = TransferEngine.buildTransferProblem(conceptId, diffFactor, idx);
     if (!problem) return res.status(404).json({ error: 'No transfer challenge available for this concept' });
 
+    // Attach the concept's hint ladder (guidance-on-request never solves the problem, and
+    // the independence mastery dimension already accounts for hint usage). Transfer problems
+    // previously served completely bare.
+    const served = attachTipToProblem({
+      question: problem.question,
+      correctAnswer: problem.correctAnswer,
+      options: problem.options,
+      explanation: problem.explanation,
+      isTransfer: true,
+      templateType: conceptId,
+    }, false);
+
     res.json({
       conceptId,
       conceptName: (concepts[conceptId] && concepts[conceptId].name) || conceptId,
       transferContext: problem.transferContext,
-      problem: {
-        question: problem.question,
-        correctAnswer: problem.correctAnswer,
-        options: problem.options,
-        explanation: problem.explanation,
-        isTransfer: true,
-      },
+      problem: served,
     });
   } catch (err) {
     logger.error('[Transfer/challenge]', err);

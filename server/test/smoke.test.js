@@ -156,6 +156,10 @@ test('transfer challenge serves a novel-context problem and records the out-of-c
   assert.ok(challenge.body.problem && challenge.body.problem.question, 'challenge has a problem');
   assert.ok(Array.isArray(challenge.body.problem.options), 'problem has options');
   assert.strictEqual(challenge.body.problem.isTransfer, true);
+  // 2026-07: transfer challenges carry the concept's hint ladder (they served bare before);
+  // the independence mastery dimension already accounts for hint usage.
+  assert.ok(Array.isArray(challenge.body.problem.hintLadder) && challenge.body.problem.hintLadder.length >= 1,
+    'transfer problem carries a hint ladder');
 
   // Recording a transfer result activates the transfer dimension in the mastery breakdown.
   const result = await api(ctx.base, 'POST', '/api/math/transfer/result', {

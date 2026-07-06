@@ -185,9 +185,78 @@ function buildDiceSim(question) {
   };
 }
 
-// Arithmetic / modular → number line hops.
+// Arithmetic / modular → number line hops; plus the 2026-07 modes: distance (absolute
+// value), compare (predict-first ordering), inequality (test-a-value + shade). Each mode
+// has a matching renderer branch in the client's interactive_visuals.html number_line
+// module — a mode added here WITHOUT its renderer shows nothing, so ship both together.
 function buildNumberLine(question, conceptId) {
   const q = normalize(question);
+
+  // absolute value → distance-from-zero measurement. Parses  |−7|  /  |{-7}|.
+  if (conceptId === 'absolute_value') {
+    const m = q.match(/\|\s*\{?\s*(-?\d+)\s*\}?\s*\|/);
+    if (m) {
+      const v = parseInt(m[1], 10);
+      if (Number.isFinite(v) && Math.abs(v) >= 1 && Math.abs(v) <= 15) {
+        return {
+          type: 'number_line',
+          mode: 'distance',
+          params: { value: v },
+          prompt: 'Drag the measuring handle from zero to the marked number, counting the steps as you go.',
+          goal: 'Feel absolute value as a distance — steps from zero, never a direction.'
+        };
+      }
+    }
+    return null;
+  }
+
+  // ordering → predict-first compare. The values plot onto the line ONLY after the learner
+  // commits a pick (same predict-then-verify stance as the fraction-bar compare mode), so
+  // the visual verifies their call instead of answering the question for them.
+  if (conceptId === 'decimal_compare' || conceptId === 'integer_compare') {
+    const goal = /smallest/i.test(q) ? 'smallest' : 'largest';
+    const nums = Array.from(q.matchAll(/-?\d+(?:\.\d+)?/g)).map((x) => parseFloat(x[0]));
+    const values = nums.slice(0, 4);
+    const distinct = new Set(values.map(String));
+    if (values.length >= 3 && distinct.size === values.length &&
+        values.every((v) => Number.isFinite(v) && Math.abs(v) <= 100)) {
+      return {
+        type: 'number_line',
+        mode: 'compare',
+        params: { values, goal },
+        prompt: `Predict which value is the ${goal} FIRST — then place them on the line to check your call.`,
+        goal: 'Position on the line decides size — not digit count, not how long the number looks.'
+      };
+    }
+    return null;
+  }
+
+  // inequalities → test-a-value + shade the solution set. Parses  ax + b (< > ≤ ≥) c  with
+  // an integer boundary; op travels as lt/gt/le/ge so the JSON stays ASCII. The learner
+  // tests values (green/true, red/false dots), then commits a shading direction — the
+  // canonical inequality manipulative; the solution is never printed.
+  if (conceptId && conceptId.indexOf('inequality_') === 0) {
+    const iq = q.replace(/\\le(?![a-z])/g, '≤').replace(/\\ge(?![a-z])/g, '≥');
+    const m = iq.match(/(-?\d*)\s*x\s*(?:([+-])\s*(\d+))?\s*(<|>|≤|≥)\s*(-?\d+)/);
+    if (m) {
+      const a = m[1] === '' || m[1] === undefined ? 1 : (m[1] === '-' ? -1 : parseInt(m[1], 10));
+      const b = m[2] ? (m[2] === '-' ? -1 : 1) * parseInt(m[3], 10) : 0;
+      const op = { '<': 'lt', '>': 'gt', '≤': 'le', '≥': 'ge' }[m[4]];
+      const c = parseInt(m[5], 10);
+      const boundary = a !== 0 ? (c - b) / a : NaN;
+      if (a !== 0 && op && Number.isInteger(boundary) && Math.abs(boundary) <= 10) {
+        return {
+          type: 'number_line',
+          mode: 'inequality',
+          params: { a, b, c, op },
+          prompt: 'Drag the test point and try values — greens satisfy the inequality, reds don\'t. Then shade the side where the greens live.',
+          goal: 'A solution set is every value that makes the statement true — find it by testing, and notice what a negative coefficient does to the direction.'
+        };
+      }
+    }
+    return null;
+  }
+
   // modular: a mod m  /  a \pmod m
   const mod = q.match(/(\d+)\s*(?:mod|\\pmod)\s*(\d+)/i) || q.match(/(\d+)\s*%\s*(\d+)/);
   if (mod && (conceptId === 'modular_arithmetic' || /mod/i.test(q))) {

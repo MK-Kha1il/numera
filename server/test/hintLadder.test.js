@@ -42,6 +42,29 @@ test('unknown template type falls back to a single nudge', () => {
   assert.strictEqual(ladder[0].level, 'nudge');
 });
 
+test('a type with no authored tip derives a full ladder from its concept lesson', () => {
+  // fraction_add / geo_circle_area post-date tips.js; before the derivation they collapsed
+  // to the single generic nudge (the 81%-of-types hint regression found in the 2026-07 audit).
+  for (const type of ['fraction_add', 'geo_circle_area', 'inequality_flip_negative']) {
+    const ladder = buildHintLadder(type, ' no-collision ');
+    assert.ok(ladder.length >= 3, `${type} gets a real ladder, not the generic nudge`);
+    const levels = ladder.map((r) => r.level);
+    assert.strictEqual(levels[0], 'nudge');
+    assert.ok(levels.includes('concept'), `${type} has a concept rung`);
+    assert.ok(levels.includes('method'), `${type} has a method rung`);
+  }
+});
+
+test('derived rungs pass the answer-leak guard too', () => {
+  // The fraction_add lesson formula/mistake text mentions specific fractions; a colliding
+  // answer must drop that rung, and the ladder must stay contiguous.
+  const ladder = buildHintLadder('fraction_add', '5/6');
+  for (const rung of ladder) {
+    assert.ok(!leaksAnswer(rung.text, '5/6'), `rung "${rung.level}" must not leak 5/6`);
+  }
+  assert.deepStrictEqual(ladder.map((r) => r.stage), ladder.map((_, i) => i + 1));
+});
+
 test('leaksAnswer respects word boundaries for single-character answers', () => {
   assert.strictEqual(leaksAnswer('the value 1 is the result', '1'), true);
   assert.strictEqual(leaksAnswer('multiply by 100 then divide', '1'), false, 'the 1 inside 100 is not a leak');

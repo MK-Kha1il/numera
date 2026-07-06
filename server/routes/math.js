@@ -27,10 +27,31 @@ const { applyRemediation } = require('../mathEngine/remediationEngine');
 const { buildWordProblemSet } = require('../mathEngine/wordProblems');
 const { buildEstimationSet } = require('../mathEngine/estimation');
 const { buildErrorDetectionSet } = require('../mathEngine/errorDetection');
+const { buildSelfExplainJson } = require('../mathEngine/selfExplainEngine');
+const { buildWorkedExampleJson } = require('../mathEngine/workedExampleEngine');
 const { feedEngineOutcome } = require('../services/engineFeed');
 const logger = require('../logger');
 
 const router = express.Router();
+
+// Enrich an applied-mode problem (word problems / estimation / spot-the-mistake) with the
+// same active-learning surface the main problem route serves: the escalating hint ladder +
+// single tip (via templateType), a self-explanation prompt for after a CORRECT answer, and —
+// except for spot-the-mistake — a worked example for after a WRONG one. Spot-the-mistake
+// problems ARE the concept's worked example with one corrupted line, so attaching the clean
+// version would hand over the answer (see errorDetection.js). Before 2026-07 these modes
+// carried no hints at all.
+function enrichAppliedProblem(p) {
+  attachTipToProblem(p, false);
+  const conceptId = p.conceptId || p.templateType || null;
+  if (conceptId) {
+    p.selfExplainJson = buildSelfExplainJson(conceptId);
+    if (p.category !== 'Spot the Mistake') {
+      p.workedExampleJson = buildWorkedExampleJson(conceptId);
+    }
+  }
+  return p;
+}
 
 // Lifetime-correct counts at which a category earns a celebrated "mastery-up" (ultra-review #20).
 // Crossing one of these on a level-complete returns a `masteryMilestone` the client celebrates.
@@ -575,14 +596,22 @@ router.get('/api/math/checkpoint-exam', authenticateToken, (req, res) => {
         const seed = (Date.now() % 100000) + i * 13 + problems.length * 7;
         const p = generateProblem(strand.category, lvl, seed, 1000);
         if (p && p.question && Array.isArray(p.options) && p.options.length) {
-          problems.push({
+          // Keep the generator's active-learning surface (it was being stripped): the hint
+          // ladder guides mid-exam thinking; self-explain / worked example fire only AFTER
+          // an answer, so they teach without compromising the cumulative test.
+          const slim = {
             question: p.question,
             correctAnswer: p.correctAnswer,
             options: p.options,
             explanation: p.explanation || '',
             category: strand.category,
             level: lvl,
-          });
+            templateType: p.templateType,
+            socraticJson: p.socraticJson || '',
+            selfExplainJson: p.selfExplainJson || '',
+            workedExampleJson: p.workedExampleJson || '',
+          };
+          problems.push(attachTipToProblem(slim, false));
         }
         i++;
       }
@@ -603,7 +632,7 @@ router.get('/api/math/word-problems', authenticateToken, (req, res) => {
   db.get('SELECT level FROM users WHERE id = ?', [userId], (uErr, user) => {
     if (uErr) return res.status(500).json({ error: uErr.message });
     const level = user ? user.level || 1 : 1;
-    const problems = buildWordProblemSet(count, level);
+    const problems = buildWordProblemSet(count, level).map(enrichAppliedProblem);
     res.json({ count: problems.length, level, problems });
   });
 });
@@ -618,7 +647,7 @@ router.get('/api/math/estimation', authenticateToken, (req, res) => {
   db.get('SELECT level FROM users WHERE id = ?', [userId], (uErr, user) => {
     if (uErr) return res.status(500).json({ error: uErr.message });
     const level = user ? user.level || 1 : 1;
-    const problems = buildEstimationSet(count, level);
+    const problems = buildEstimationSet(count, level).map(enrichAppliedProblem);
     res.json({ count: problems.length, level, problems });
   });
 });
@@ -633,7 +662,7 @@ router.get('/api/math/error-detection', authenticateToken, (req, res) => {
   db.get('SELECT level FROM users WHERE id = ?', [userId], (uErr, user) => {
     if (uErr) return res.status(500).json({ error: uErr.message });
     const level = user ? user.level || 1 : 1;
-    const problems = buildErrorDetectionSet(count, level);
+    const problems = buildErrorDetectionSet(count, level).map(enrichAppliedProblem);
     res.json({ count: problems.length, level, problems });
   });
 });
