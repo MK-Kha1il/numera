@@ -65,6 +65,11 @@
    now opens on the home/Today tab (index 2) instead of Arena: the Today plan answers "what should
    I do now" in 0 taps. Arena keeps its nav prominence one tap away. BrandIdentity.md Phase 0
    amended in place to record the supersession.
+9. **Profile Stats-tab rhythm (backlog #3, first slice).** The seven co-equal blocks now read as
+   three groups: the learning story (stats grid → Skill Mastery → Growth Insights → weekly activity
+   chart, with the chart moved up from between the collections), then a quiet "Customize" label +
+   Inventory, then "Milestones" + Commitment Archive + Rank Rewards. Remaining for #3: the bespoke
+   competitive-card token sweep (Competitive sub-tab), which is per-card judgment work.
 
 ---
 

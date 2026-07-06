@@ -546,6 +546,24 @@ fun ProfileScreen(
             onPracticeMistakes = onPracticeMistakes
         )
 
+        // Weekly activity lives with the rest of the learning story (stats → mastery → insights →
+        // activity), not between the collection cards it used to interrupt.
+        if (activityLoading) {
+            NumeraPremiumLoader(cardPadding = Spacing.l)
+        } else {
+            WeeklyActivityChart(activityDays)
+        }
+
+        // Rhythm: the stack above answers "how am I doing"; everything below is a different mode
+        // ("make it mine" / "what I've earned"), so each group gets a quiet label + breathing room.
+        Spacer(modifier = Modifier.height(Spacing.l))
+        Text(
+            text = "Customize",
+            style = AppText.sectionTitle,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
+            modifier = Modifier.padding(horizontal = Spacing.xl)
+        )
+
         // ── INVENTORY CUSTOMIZER ──
         Card(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
@@ -757,6 +775,14 @@ fun ProfileScreen(
 
         var selectedRelicDetail by remember { mutableStateOf<Pair<String, String>?>(null) }
 
+        Spacer(modifier = Modifier.height(Spacing.l))
+        Text(
+            text = "Milestones",
+            style = AppText.sectionTitle,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
+            modifier = Modifier.padding(horizontal = Spacing.xl)
+        )
+
         // Commitment Archive Card
         Card(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = 6.dp),
@@ -841,12 +867,6 @@ fun ProfileScreen(
                     }
                 }
             )
-        }
-
-        if (activityLoading) {
-            NumeraPremiumLoader(cardPadding = Spacing.l)
-        } else {
-            WeeklyActivityChart(activityDays)
         }
 
         Spacer(modifier = Modifier.height(Spacing.s))
