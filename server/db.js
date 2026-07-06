@@ -115,12 +115,17 @@ function initDb() {
 
       // 3. Shop items table
       db.run(`DROP TABLE IF EXISTS shop_items`);
+      // NB the type CHECK must list every cosmetic family. It predated Stage D of the shop
+      // overhaul, so the title/effect/victory/tap/frame seed rows violated it — and because the
+      // seed uses INSERT OR IGNORE, every one of those rows was *silently dropped*: the live
+      // cosmetics catalog never existed in any running DB. Found by the 2026-07 visual QA pass
+      // (an empty "Effects" filter with a fully seeded-looking db.js). Guarded by a test now.
       db.run(`
         CREATE TABLE shop_items (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           cost INTEGER NOT NULL,
-          type TEXT CHECK(type IN ('avatar', 'theme', 'badge', 'banner', 'utility')),
+          type TEXT CHECK(type IN ('avatar', 'theme', 'badge', 'banner', 'utility', 'title', 'effect', 'victory', 'tap', 'frame')),
           value TEXT NOT NULL,
           rarity TEXT DEFAULT 'Common' CHECK(rarity IN ('Common', 'Rare', 'Epic', 'Legendary', 'Mythic')),
           description TEXT DEFAULT '',
