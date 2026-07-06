@@ -21,7 +21,7 @@ const ALLOWED_EVENTS = new Set([
   'word_problems_start', 'estimation_start', 'error_detection_start',
   'daily_puzzle_open', 'mistakes_practice_open',
   'shop_purchase', 'quest_claim', 'lesson_open', 'discussion_open', 'problem_reported',
-  'command_palette_open', 'skill_tree_open', 'weekly_recap_open',
+  'command_palette_open', 'skill_tree_open', 'weekly_recap_open', 'mastery_profile_open',
   // Interactive-visual discovery signals: a learner reached an insight by manipulating
   // ('visual_discover') or answered the post-verify "why?" reflection ('visual_reflect').
   'visual_discover', 'visual_reflect',

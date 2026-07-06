@@ -88,6 +88,7 @@ app.use(require('./routes/clubWars'));
 app.use(require('./routes/achievements'));
 const logger = require('./logger');
 app.use(require('./routes/engine'));
+app.use(require('./routes/masteryMap'));
 app.use(require('./routes/assessment'));
 app.use(require('./routes/onboarding'));
 app.use(require('./routes/archive'));

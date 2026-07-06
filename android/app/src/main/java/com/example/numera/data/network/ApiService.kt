@@ -93,6 +93,12 @@ interface ApiService {
         @Header("Authorization") token: String
     ): GrowthProfileResponse
 
+    // Mathematical Mastery Profile: domains × competencies, growth, records, milestones, titles.
+    @GET("api/mastery/profile")
+    suspend fun getMasteryMap(
+        @Header("Authorization") token: String
+    ): MasteryMapResponse
+
     // School channel: create/join a class and read my classes / a class roster.
     @POST("api/classes")
     suspend fun createClass(

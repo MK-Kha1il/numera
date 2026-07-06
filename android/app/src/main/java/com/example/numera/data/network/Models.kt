@@ -163,8 +163,23 @@ data class PublicProfile(
     val arena_wins: Int,
     val competitive_rank: String? = null,
     val active_title: String? = null,
-    val mastery: CategoryMastery
+    val mastery: CategoryMastery,
+    // Mathematical Mastery Profile identity line (may be absent on older servers).
+    val masteryIdentity: PublicMasteryIdentity? = null
 )
+
+// Compact mastery identity shown on another player's profile: who they are as a
+// mathematician (headline), their strongest domain, and how many mastery titles they hold.
+@Serializable
+data class PublicMasteryIdentity(
+    val headline: String = "",
+    val stage: String = "",
+    val topDomain: PublicTopDomain? = null,
+    val earnedTitles: Int = 0
+)
+
+@Serializable
+data class PublicTopDomain(val name: String = "", val stage: String = "")
 
 @Serializable
 data class Friend(
@@ -2182,4 +2197,115 @@ data class CasSolveResponse(
     val source: String? = null,
     val error: String? = null,
     val detail: String? = null
+)
+
+// ---- Mathematical Mastery Profile (GET /api/mastery/profile) ----
+// Two-layer long-term profile: 8 mathematical domains × 10 thinking competencies, plus
+// growth trends, records, milestones, computed identity titles and playable recommendations.
+// Server: mathEngine/masteryMap.js via services/masteryMapService.js.
+
+@Serializable
+data class MasteryIdentity(
+    val headline: String = "",
+    val subline: String = "",
+    val stage: String = "",
+    val overall: Float = 0f
+)
+
+@Serializable
+data class MasteryDomain(
+    val key: String,
+    val name: String,
+    val blurb: String = "",
+    val comingSoon: Boolean = false,
+    val total: Int = 0,
+    val started: Int = 0,
+    val proficient: Int = 0,
+    val depth: Float = 0f,
+    val breadth: Float = 0f,
+    val score: Float = 0f,
+    val stage: String = "",
+    val topConcept: MasteryTopConcept? = null
+)
+
+@Serializable
+data class MasteryTopConcept(val name: String = "", val overall: Float = 0f)
+
+@Serializable
+data class MasteryCompetency(
+    val key: String,
+    val name: String,
+    val blurb: String = "",
+    val value: Float = 0f,
+    val unlocked: Boolean = false,
+    val evidence: Int = 0,
+    val minEvidence: Int = 0
+)
+
+@Serializable
+data class MasteryMover(val name: String = "", val delta: Float = 0f)
+
+@Serializable
+data class MasteryGrowth(
+    val overallDelta7d: Float? = null,
+    val overallDelta30d: Float? = null,
+    val movers: List<MasteryMover> = emptyList()
+)
+
+@Serializable
+data class MasteryRecord(
+    val key: String = "",
+    val label: String = "",
+    val value: Int = 0,
+    val unit: String? = null,
+    val detail: String? = null
+)
+
+@Serializable
+data class MasteryMilestoneEvent(val date: String = "", val text: String = "")
+
+@Serializable
+data class MasteryNextMilestone(
+    val domain: String = "",
+    val domainKey: String = "",
+    val from: String = "",
+    val to: String = "",
+    val progress: Float = 0f
+)
+
+@Serializable
+data class MasteryMilestones(
+    val recent: List<MasteryMilestoneEvent> = emptyList(),
+    val next: MasteryNextMilestone? = null
+)
+
+@Serializable
+data class MasteryTitle(
+    val id: String,
+    val name: String,
+    val desc: String = "",
+    val earned: Boolean = false
+)
+
+@Serializable
+data class MasteryRecommendation(
+    val kind: String = "",
+    val target: String = "",
+    val gameMode: String = "level",
+    val category: String = "General",
+    val level: Int = 0,
+    val title: String = "",
+    val reason: String = ""
+)
+
+@Serializable
+data class MasteryMapResponse(
+    val identity: MasteryIdentity = MasteryIdentity(),
+    val domains: List<MasteryDomain> = emptyList(),
+    val competencies: List<MasteryCompetency> = emptyList(),
+    val growth: MasteryGrowth = MasteryGrowth(),
+    val records: List<MasteryRecord> = emptyList(),
+    val milestones: MasteryMilestones = MasteryMilestones(),
+    val titles: List<MasteryTitle> = emptyList(),
+    val recommendations: List<MasteryRecommendation> = emptyList()
 )

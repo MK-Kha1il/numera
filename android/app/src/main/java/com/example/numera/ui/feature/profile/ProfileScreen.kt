@@ -28,6 +28,7 @@ import com.example.numera.data.network.*
 import com.example.numera.theme.*
 import com.example.numera.ui.components.ProfileBanner
 import com.example.numera.ui.components.pressable
+import com.example.numera.ui.components.PressFeedback
 import com.example.numera.ui.components.MathAvatar
 import com.example.numera.ui.components.CosmeticAvatar
 import com.example.numera.ui.components.RankBadge
@@ -58,7 +59,8 @@ fun ProfileScreen(
     onRefreshProfile: () -> Unit,
     onShowUserProfile: (Int) -> Unit,
     unlockedRelicIds: Set<String>,
-    onPracticeMistakes: (() -> Unit)? = null
+    onPracticeMistakes: (() -> Unit)? = null,
+    onOpenMasteryMap: (() -> Unit)? = null
 ) {
     val scope = rememberCoroutineScope()
     val toast = LocalToast.current
@@ -529,6 +531,38 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     Text("${user?.coins ?: 0}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     Text("Consistency: ${((user?.consistency_index ?: 0f) * 100).toInt()}%", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontWeight = FontWeight.Medium)
+                }
+            }
+        }
+
+        // ── MASTERY PROFILE (flagship entry: domains × competencies identity page) ──
+        onOpenMasteryMap?.let { open ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.l, vertical = 6.dp)
+                    .pressable(feedback = PressFeedback.Medium, onClickLabel = "Open Mastery Profile") { open() },
+                shape = RoundedCornerShape(CornerRadius.l),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(Spacing.l),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Mastery Profile",
+                            style = AppText.rowTitle,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            "Your mathematical identity — 8 domains, 10 thinking skills, long-term growth",
+                            style = AppText.caption,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = Alpha.secondary)
+                        )
+                    }
+                    Text("→", fontSize = 20.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
             }
         }

@@ -72,6 +72,7 @@ const USER_SCOPED_TABLES = [
   'tournament_entries',
   'club_war_entries',
   'class_members',
+  'mastery_snapshots',
 ];
 
 const router = express.Router();

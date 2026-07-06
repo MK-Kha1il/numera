@@ -1444,6 +1444,26 @@ const migrations = [
       `);
     },
   },
+  {
+    version: 64,
+    name: 'mastery_snapshots',
+    // Mathematical Mastery Profile: one compact JSON snapshot per user per UTC day
+    // (overall + per-domain score/stage + unlocked competency values), written lazily the
+    // first time the profile is fetched that day. Powers the 7/30-day growth deltas and
+    // the "domain reached <stage>" milestone feed without recomputing history.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS mastery_snapshots (
+          user_id    INTEGER NOT NULL,
+          snap_date  TEXT NOT NULL,
+          payload    TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          UNIQUE (user_id, snap_date)
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_mastery_snapshots_user ON mastery_snapshots(user_id, snap_date)');
+    },
+  },
 ];
 
 /**

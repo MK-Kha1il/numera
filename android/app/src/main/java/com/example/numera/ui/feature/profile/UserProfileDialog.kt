@@ -119,6 +119,30 @@ fun UserProfileDialog(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
+                        // Mathematical identity (Mastery Profile): who they are as a mathematician,
+                        // their territory, and how many mastery titles they've earned.
+                        profile.masteryIdentity?.let { mi ->
+                            if (mi.headline.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(Spacing.xs))
+                                Text(
+                                    text = mi.headline,
+                                    style = AppText.rowSubtitle,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
+                                )
+                                val detail = buildList {
+                                    mi.topDomain?.let { add("${it.name} · ${it.stage}") }
+                                    if (mi.earnedTitles > 0) add("${mi.earnedTitles} mastery ${if (mi.earnedTitles == 1) "title" else "titles"}")
+                                }
+                                if (detail.isNotEmpty()) {
+                                    Text(
+                                        text = detail.joinToString("  ·  "),
+                                        style = AppText.caption,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                    )
+                                }
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(Spacing.l))
 

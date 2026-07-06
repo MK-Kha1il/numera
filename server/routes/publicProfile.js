@@ -7,6 +7,8 @@ const express = require('express');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { titleName } = require('../lib/titles');
+const MasteryMap = require('../mathEngine/masteryMap');
+const MasteryMapService = require('../services/masteryMapService');
 
 const router = express.Router();
 
@@ -32,7 +34,26 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
         return res.status(403).json({ error: 'This profile is private.', private: true });
       }
 
-      db.get(`SELECT * FROM user_mastery WHERE user_id = ?`, [targetId], (errM, mastery) => {
+      db.get(`SELECT * FROM user_mastery WHERE user_id = ?`, [targetId], async (errM, mastery) => {
+        // Mastery identity (Mathematical Mastery Profile): the one-line "who they are as a
+        // mathematician" + their strongest domain, so competitive profiles read as identities,
+        // not just Elo. Best-effort — a failure here never blocks the profile.
+        let masteryIdentity = null;
+        try {
+          const internal = await MasteryMapService.getInternalMasteryMap(db, targetId);
+          const identity = MasteryMap.buildIdentity(internal.domains, internal.competencies, internal.overall);
+          const titles = MasteryMap.buildTitles(internal.domains, internal.competencies);
+          const active = internal.domains.filter((d) => d.started > 0);
+          const top = active.length > 0 ? active.reduce((a, b) => (b.score > a.score ? b : a)) : null;
+          masteryIdentity = {
+            headline: identity.headline,
+            stage: identity.stage,
+            topDomain: top ? { name: top.name, stage: top.stage } : null,
+            earnedTitles: titles.filter((t) => t.earned).length,
+          };
+        } catch {
+          masteryIdentity = null;
+        }
         const mast = mastery || {
           arithmetic_correct: 0,
           mental_correct: 0,
@@ -77,6 +98,7 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
           competitive_matches: user.competitive_matches,
           competitive_rank: user.competitive_rank || 'Unranked (Placement: 0/5)',
           active_title: titleName(user.active_title),
+          masteryIdentity,
           mastery: {
             arithmetic_correct: mast.arithmetic_correct || 0,
             mental_correct: mast.mental_correct || 0,

@@ -80,6 +80,7 @@ fun MainTabsScreen(
     var notificationsList by remember { mutableStateOf<List<NotificationItemDto>>(emptyList()) }
     var showNotificationsDialog by remember { mutableStateOf(false) }
     var showSkillTree by remember { mutableStateOf(false) }
+    var showMasteryMap by remember { mutableStateOf(false) }
     var showLearningPlan by remember { mutableStateOf(false) }
     var showWeeklyRecap by remember { mutableStateOf(false) }
     var showGoal by remember { mutableStateOf(false) }
@@ -209,6 +210,19 @@ fun MainTabsScreen(
                 onDiscuss = { node ->
                     discussConceptName = node.name
                     discussConceptId = node.conceptId
+                }
+            )
+        }
+        return
+    }
+
+    if (showMasteryMap) {
+        NumeraTheme {
+            com.example.numera.ui.feature.profile.MasteryMapScreen(
+                onBack = { showMasteryMap = false },
+                onPractice = { gameMode, category, level ->
+                    showMasteryMap = false
+                    onStartSoloGame(SoloGame(category = category, level = level, gameMode = gameMode))
                 }
             )
         }
@@ -357,6 +371,10 @@ fun MainTabsScreen(
             },
             CommandItem("Skill Tree", CommandCategory.QuickAction, NumeraIconType.Learn, "Your mastery map across every concept", "mastery skills tree progress map dimensions accuracy fluency") {
                 showSkillTree = true
+            },
+            CommandItem("Mastery Profile", CommandCategory.QuickAction, NumeraIconType.Profile, "Your mathematical identity: domains, thinking skills, growth", "mastery profile identity domains competencies growth records milestones titles strengths") {
+                com.example.numera.analytics.Analytics.log("mastery_profile_open")
+                showMasteryMap = true
             },
             CommandItem("Your Week", CommandCategory.QuickAction, NumeraIconType.Streak, "A shareable recap of your week", "recap wrapped weekly summary share stats progress") {
                 showWeeklyRecap = true
@@ -742,6 +760,9 @@ fun MainTabsScreen(
                     4 -> ProfileScreen(currentUser, onLogout, onRefreshProfile = { refreshProfile() }, onShowUserProfile = { activeProfileDialogUserId = it }, unlockedRelicIds = unlockedRelicIds, onPracticeMistakes = {
                         com.example.numera.analytics.Analytics.log("growth_practice_mistakes")
                         onStartSoloGame(SoloGame(category = "General", level = 0, gameMode = "mistakes_practice"))
+                    }, onOpenMasteryMap = {
+                        com.example.numera.analytics.Analytics.log("mastery_profile_open")
+                        showMasteryMap = true
                     })
                     5 -> SettingsScreen(
                         currentUser,
