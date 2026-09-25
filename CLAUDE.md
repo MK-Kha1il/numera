@@ -4,8 +4,9 @@ Numera is a full-stack, gamified math-learning app: a **Jetpack Compose Android 
 talking to a **Node.js/Express + SQLite server** that owns all game logic and progression.
 The server is authoritative; the client never computes rewards or touches the DB directly.
 
-> New here? Read [docs/Architecture.md](docs/Architecture.md) first, then the domain docs
-> linked below. This file is the fast index; the `docs/` folder has the depth.
+> New here? Read [docs/Systems.md](docs/Systems.md) (every system, its files and status) and
+> [docs/Architecture.md](docs/Architecture.md) first, then the domain docs linked below. This file
+> is the fast index; the `docs/` folder has the depth.
 
 ## Repository layout
 
@@ -17,17 +18,23 @@ docs/         Subsystem documentation (start with Architecture.md)
 
 ### Server (`server/`)
 ```
-server.js            Bootstrap only: middleware wiring + 20 router mounts + DB init + the
-                     Socket.IO matchmaking/duel logic. Exports { app, server, io, db, ready };
-                     listens only when run directly. (~1.1k lines, was a 5k God file.)
+server.js            Bootstrap: middleware wiring + router mounts + DB init + the Socket.IO
+                     matchmaking/duel engine + a landing page. Exports { app, server, io, db, ready };
+                     listens only when run directly. (~1.9k lines — the duel engine + landing page
+                     are the next split; see docs/Systems.md §1.)
 config.js            Single source for env config (JWT_SECRET, PORT, CORS origins).
-routes/              One express.Router per domain (20): auth, math, shop, quests, dailyPuzzle,
-                     account, achievements, friends, leaderboard, league, library, mistakes,
-                     srs, notifications, assessment, archive, engine, rating, publicProfile,
-                     commitment. Each declares its own /api/... paths + imports its own deps.
-services/            DB-touching business logic shared across routes: userService,
-                     achievementService, commitmentService, tipService, rankRewardService.
-lib/                 Pure, unit-tested utilities (progression.js: rank/level helpers).
+routes/              One express.Router per domain (44): auth, math, dailyPuzzle, archive, mistakes,
+                     srs, transfer, assessment, onboarding, quests, today, commitment, shop,
+                     achievements, rating, league, leaderboard, puzzleRush, botDuel, asyncDuel,
+                     reasoningDuel, tournaments, challenges, liveRoom, friends, clubs, clubWars,
+                     discussion, moderation, classes, notifications, account, engine, masteryMap,
+                     learn, worksheet, publicProfile(+Page), cas, analytics, crash, feedback, health.
+                     Each declares its own paths + imports its own deps.
+services/            DB-touching business logic shared across routes (userService, streakService,
+                     soloSessionService, leagueService, economyLedger, ratingService,
+                     achievementService, commitmentService, notificationService, …).
+lib/                 Pure, unit-tested utilities (progression, streak, soloRewards, leagueWeeks,
+                     questDefs, titles, duelIntegrity, …).
 middleware/          auth.js (stateful JWT), rateLimit.js, security.js (headers/audit log).
 db.js                SQLite schema (CREATE IF NOT EXISTS baseline) + initDb().
 migrations.js        Versioned, run-once migrations layered on top of db.js.
@@ -87,6 +94,18 @@ sound/, haptic/                  Feedback managers.
 - **Server is authoritative.** All XP/coins/rating/progression is computed server-side.
 - **Reward endpoints are idempotent.** They sit behind `idempotency` middleware; the client
   stamps an `Idempotency-Key` per POST. Never double-grant.
+- **Never trust client reward fields.** Solo play is graded on the device, so `/api/math/complete`
+  must consume a serve ticket (`services/soloSessionService.js`, issued by every problem-serving
+  endpoint) and takes XP/coins only from `lib/soloRewards.js`. A new solo mode = a ticket issue at
+  its serve endpoint + a row in `SOLO_MODES`. Level progression only unlocks from the frontier.
+- **Streaks are local calendar days** (`lib/streak.js`). Anything the learner *solves* calls
+  `creditStreak(userId)` (after its transaction commits — never inside one); login/app-open only
+  `settleStreak`. Don't reintroduce elapsed-seconds streak logic.
+- **Daily/weekly clocks:** quest counters are bumped only after `ensureDailyReset(userId)` (local-day
+  reset + global league rollover). The weekly league rolls over once, globally
+  (`services/leagueService.js`) — never per player.
+- **Every coin faucet/sink calls `recordCoins(source, ±amount)`** (`services/economyLedger.js`) after
+  its transaction commits (add new sources to its allow-list).
 - **Money/balance mutations use transactions** (`dbx.withTransaction`) and conditional
   `WHERE coins >= ?` deductions; a DB trigger also blocks negative coins.
 - **Schema changes go in `migrations.js`** (append a new version; never edit a shipped one).
@@ -116,7 +135,15 @@ Building something new? Put it in the right place from the start:
 - **A file is getting big (>~600 lines)?** Stop and split it by responsibility *before* it
   becomes the next God file. Verify with the commands above after each extraction.
 
-## Architecture status (stabilization sprint, in progress)
+## Architecture status
+
+**2026-09 completion pass:** every system audited against the code and catalogued in
+[docs/Systems.md](docs/Systems.md); the game-loop integrity holes it found (client-chosen solo
+rewards, broken streak/quest clocks, the per-player weekly league, the rating pump endpoint, the
+daily puzzle, Mistakes Bank loops, logout, socket floods, the orphaned Friends screen) were fixed
+with tests. Its "Open work" section is the current backlog.
+
+### Stabilization sprint (earlier)
 
 **Done:** Phase 0 test/lint net; the **server `server.js` God file is fully split** —
 `config.js`, `middleware/`, `lib/`, 5 `services/`, and 20 `routes/*` routers (server.js
@@ -129,6 +156,7 @@ design-token migration in the split screens, plus the cross-cutting items in `do
 See the sprint plan and `docs/Architecture.md`.
 
 ## Subsystem docs
+- [Systems catalog](docs/Systems.md) — every system, its files and completion status (start here)
 - [Architecture](docs/Architecture.md) · [DataFlow](docs/DataFlow.md) · [Security](docs/Security.md)
 - [MathEngine](docs/MathEngine.md) · [MasteryProfile](docs/MasteryProfile.md) ·
   [ProgressionSystem](docs/ProgressionSystem.md) ·

@@ -133,5 +133,11 @@ ladder (review #61): the 3,500–4,000 "mythic" tier should feel like a multi-we
       faucets the top Mythic tier (≈4000) sits at ~3 weeks of median earn — appropriately
       aspirational. Intra-rarity variety across cosmetic types looks intentional and was left
       intact (cf. the color-token audit's "don't blanket-normalize intentional data" lesson).
-- [ ] Wire coin faucet/sink counters into `product_analytics` so this model can be validated
-      against real behavior instead of estimated.
+- [x] Wire coin faucet/sink counters into analytics so this model can be validated against real
+      behavior instead of estimated. **Done (2026-09)** — `services/economyLedger.js` records every
+      faucet and sink into the aggregate `economy_daily` table (migration v68, no user ids);
+      `GET /api/analytics/economy` (admin) reports faucets, sinks, net flow and the sink ratio.
+- [x] Close the solo faucet holes found in the 2026-09 completion pass (docs/Systems.md): `/complete`
+      no longer pays client-chosen XP/coins (server table `lib/soloRewards.js` + serve tickets), coins
+      taper after 15 solo sessions/day, the daily puzzle pays once (not twice), and Mistakes-Bank
+      resolves pay at most 10/day (add→resolve was an unlimited loop).

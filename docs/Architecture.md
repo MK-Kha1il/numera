@@ -29,10 +29,8 @@ without shipping a new APK.
 2. **Middleware (`middleware/`)** — `auth.js` (stateful JWT: a valid signature must also map
    to a live row in `user_sessions`), `rateLimit.js` (global + per-route + brute-force),
    `security.js` (hardening headers, audit logging, private-IP detection).
-3. **Routes (`routes/`)** — ~75 endpoints grouped into **20 domain routers** (auth, math,
-   assessment, srs, archive, mistakes, quests, dailyPuzzle, league, shop, account,
-   achievements, friends, leaderboard, library, notifications, engine, rating, publicProfile,
-   commitment), each an `express.Router()` mounted in `server.js`. DB-touching logic shared
+3. **Routes (`routes/`)** — ~220 endpoints grouped into **44 domain routers** (see
+   [Systems.md](Systems.md) for the full map), each an `express.Router()` mounted in `server.js`. DB-touching logic shared
    across routers lives in `services/`; pure helpers in `lib/`.
 4. **Math/learning engine (`mathEngine/`)** — see [MathEngine.md](MathEngine.md). Pure-ish
    modules: generation, validation, adaptivity, rating, retention, misconceptions, lessons.
@@ -61,14 +59,15 @@ from the main connection's autocommit reads/writes. Reward routes use `withTrans
   via CompositionLocals (`LocalToast`, `LocalCommandPalette`) in `MainTabsScreen`.
 - **`theme/`** — design tokens + Material3 theme. See [DesignSystem.md](DesignSystem.md).
 
-## Known architectural debt (stabilization sprint)
+## Known architectural debt
 
-- **God files:** the server `server.js` God file has been **fully decomposed** (5k → ~1.1k
-  lines: `config.js`, `middleware/`, `lib/`, `services/`, 20 `routes/*` routers; what remains
-  is bootstrap + the Socket.IO duel logic). The Android `MainTabsScreen.kt` (~9.9k) /
-  `SoloGameScreen.kt` (~2.8k) remain to be split into `ui/feature/<domain>/*` — the next major
-  refactor.
-- **No UI test net:** server has node:test coverage; the Android side relies on the compiler.
+The live list is the "Open work" section of [Systems.md](Systems.md). Structurally:
+
+- **`server.js` has regrown** to ~1.9k lines (it was decomposed from 5k to ~1.1k): the Socket.IO
+  duel engine and the HTML landing page should move to `socket/` and `routes/landing.js`.
+- **Oversized Android screens** (Settings, Profile, `Models.kt`, DuelGame, LevelMap, Gameplay,
+  SoloGame, Arena all exceed the 600-line rule). `MainTabsScreen.kt` itself was split (9.9k → a
+  thin shell) and has a Robolectric Compose test net.
 
 ## Quality gates
 
