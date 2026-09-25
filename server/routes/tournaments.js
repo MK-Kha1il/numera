@@ -1,5 +1,6 @@
-// Weekly async tournaments (audit #21 / #1.8 / #1.19). One global event runs per week: the server
-// generates a FIXED problem set everyone races on the same terms, each player gets ONE timed
+// Weekly async tournaments (audit #21 / #1.8 / #1.19). One global event runs per week on a fixed
+// recipe (concept, level, count) everyone races on the same terms — each entrant gets their own set
+// from that recipe, so answers can't circulate during the week — each player gets ONE timed
 // attempt (start records started_at server-side; play measures elapsed server-side, so the speed
 // tiebreak can't be faked), and the top 3 win coins. The event is self-perpetuating: GET current
 // lazily finalizes an ended event (ranks done entries, pays the top 3) and seeds the next week's,
@@ -191,14 +192,25 @@ router.post('/api/tournaments/:id/start', authenticateToken, (req, res) => {
     const t = await tx.get('SELECT * FROM tournaments WHERE id = ?', [id]);
     if (!t) throw httpError(404, 'Tournament not found');
     if (t.status !== 'active' || t.ends_at <= Date.now()) throw httpError(400, 'This tournament is not running');
-    const entry = await tx.get('SELECT status FROM tournament_entries WHERE tournament_id = ? AND user_id = ?', [id, req.user.id]);
+    const entry = await tx.get('SELECT status, problems_json FROM tournament_entries WHERE tournament_id = ? AND user_id = ?', [id, req.user.id]);
     if (entry && entry.status === 'done') throw httpError(400, "You've already played this tournament");
     const now = Date.now();
+    let set;
     if (!entry) {
-      await tx.run('INSERT INTO tournament_entries (tournament_id, user_id, started_at, status, created_at) VALUES (?, ?, ?, \'pending\', ?)', [id, req.user.id, now, now]);
+      // Per-entrant set from the event's recipe (same concept, level and count — the same terms for
+      // everyone) so answers can't be shared across the week-long window (ultra review #92).
+      set = buildSet(t.category, t.level, t.problem_count);
+      await tx.run(
+        "INSERT INTO tournament_entries (tournament_id, user_id, started_at, status, created_at, problems_json) VALUES (?, ?, ?, 'pending', ?, ?)",
+        [id, req.user.id, now, now, JSON.stringify(set)]
+      );
+    } else {
+      // Resuming a pending attempt returns the same set (an entry from before per-entrant sets
+      // keeps the shared one).
+      set = JSON.parse(entry.problems_json || t.problems_json);
     }
-    const problems = JSON.parse(t.problems_json).map((p) => ({ question: p.question, options: p.options }));
-    return { tournamentId: id, problemCount: t.problem_count, problems };
+    const problems = set.map((p) => ({ question: p.question, options: p.options }));
+    return { tournamentId: id, problemCount: problems.length, problems };
   })
     .then((payload) => res.json(payload))
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));
@@ -213,12 +225,13 @@ router.post('/api/tournaments/:id/play', authenticateToken, (req, res) => {
   withTransaction(async (tx) => {
     const t = await tx.get('SELECT * FROM tournaments WHERE id = ?', [id]);
     if (!t) throw httpError(404, 'Tournament not found');
-    const entry = await tx.get('SELECT id, started_at, status FROM tournament_entries WHERE tournament_id = ? AND user_id = ?', [id, req.user.id]);
+    const entry = await tx.get('SELECT id, started_at, status, problems_json FROM tournament_entries WHERE tournament_id = ? AND user_id = ?', [id, req.user.id]);
     if (!entry) throw httpError(400, 'Start the tournament before submitting');
     if (entry.status === 'done') throw httpError(400, "You've already played this tournament");
     if (t.ends_at <= Date.now()) throw httpError(400, 'This tournament has ended');
 
-    const problems = JSON.parse(t.problems_json);
+    // Grade against THIS entrant's set (the shared set only for pre-migration entries).
+    const problems = JSON.parse(entry.problems_json || t.problems_json);
     let score = 0;
     for (let i = 0; i < problems.length; i++) {
       if (areEquivalent(answers[i], problems[i].answer)) score += 1;

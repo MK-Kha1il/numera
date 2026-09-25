@@ -1576,6 +1576,21 @@ const migrations = [
       await run('INSERT OR IGNORE INTO league_rollovers (week, rolled_at) VALUES (?, ?)', [weekIndex(now), now]);
     },
   },
+  {
+    version: 70,
+    name: 'tournament_entry_sets',
+    // Per-entrant tournament problem sets (ultra review #92): the week-long async window let the
+    // shared set's answers circulate out of band. Each entry now stores its own set, generated from
+    // the tournament's recipe (same concept, level and count) when the attempt starts. NULL = an
+    // entry started before this migration, which keeps grading against the shared set.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE tournament_entries ADD COLUMN problems_json TEXT');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+    },
+  },
 ];
 
 /**

@@ -8,7 +8,7 @@ linked subsystem docs hold the depth.
 (see [§ Completion pass](#completion-pass-2026-09)) · 🟡 works, with a known gap listed ·
 ⛔ blocked on an external dependency.
 
-**Snapshot (2026-09-25):** server 45 routers / 221 endpoints, 69 migrations, 88 tables,
+**Snapshot (2026-09-25):** server 45 routers / 221 endpoints, 70 migrations, 88 tables,
 1,316 passing `node:test` tests, ESLint 0 errors · content 181 concepts, 182 concept-first lessons,
 117 achievements, 114 shop items, 14 titles, 6 daily quests, 16 interactive visual models ·
 Android 129 Kotlin source files (~40k lines), 50 Robolectric test files.
@@ -54,7 +54,7 @@ Android 129 Kotlin source files (~40k lines), 50 Robolectric test files.
 | 30 | Compete | Async (correspondence) duels | `routes/asyncDuel.js` | `arena/AsyncDuelScreen.kt` | 🔧 |
 | 31 | Compete | Reasoning Arena | `routes/reasoningDuel.js` | `arena/ReasoningArenaScreen.kt` | 🔧 |
 | 32 | Compete | Puzzle Rush | `routes/puzzleRush.js` | `arena/PuzzleRushScreen.kt` | ✅ |
-| 33 | Compete | Weekly tournaments | `routes/tournaments.js` | `arena/TournamentScreen.kt` | 🟡 |
+| 33 | Compete | Weekly tournaments | `routes/tournaments.js` | `arena/TournamentScreen.kt` | 🔧 |
 | 34 | Compete | Custom challenges | `routes/challenges.js` | `arena/ChallengesScreen.kt` | ✅ |
 | 35 | Compete | Live rooms (class play) | `routes/liveRoom.js` | `arena/LiveRoomScreen.kt` | ✅ |
 | 36 | Compete | Weekly league | `lib/leagueWeeks.js`, `services/leagueService.js`, `routes/league.js` | `DashboardScreen.kt` | 🔧 |
@@ -286,8 +286,8 @@ banks with the right reason; per-domain ranked focus, daily rated cap, replays);
 time-attack with integrity-filtered boards; weekly tournaments; user-authored challenges with a
 server-side clock; Kahoot-style live rooms with socket liveness.
 **Fixed this pass:** all of them credit the streak; bot/async/reasoning rounds count toward the Arena
-quest. **Gap (33):** tournament problem sets are shared across entrants over an async window
-(out-of-band answer sharing) — per-entrant sets from the same recipe would close it.
+quest; tournaments now give each entrant their own set from the event's recipe (same concept, level
+and count), so answers can't circulate during the week-long window (migration v70).
 
 ### 36. Weekly league 🔧
 Five stone leagues (Quartz → Obsidian), weekly promotion/demotion.
@@ -400,6 +400,7 @@ CI's `assembleDebug` + Robolectric run is the gate).
 | Friends | Screen unreachable | Re-mounted |
 | Economy | Faucets/sinks unmeasured | Aggregate ledger + admin rollup |
 | Ops | No health endpoint | `GET /healthz` |
+| Tournaments | One shared set for a week-long async window | Per-entrant sets from the event recipe |
 | Structure | `server.js` regrown to ~1.9k lines | Duel engine → `socket/duels.js`, landing → `routes/landing.js` |
 
 ## Open work (honest backlog)
@@ -409,8 +410,8 @@ CI's `assembleDebug` + Robolectric run is the gate).
    with a server round-trip (§18); a product decision about feedback latency.
 3. **Split the oversized Android screens** before they grow further (§47).
 4. **Push notifications** — FCM credential + client token registration (§44).
-5. **Club seasons** with promotion/relegation (§40); **per-entrant tournament sets** (§33);
-   **device/multi-account integrity** heuristics (§38).
+5. **Club seasons** with promotion/relegation (§40); **device/multi-account integrity**
+   heuristics (§38).
 6. **Accessibility, i18n, tablet layouts; DPIA** ([ComplianceAudit.md](ComplianceAudit.md)).
 7. Decide the fate of `practice_schedule` (wire it into reminders, or drop it) (§45).
 8. Offsite, encrypted backups (§2).

@@ -12,10 +12,19 @@ const dbGet = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.get(sql, p, 
 const dbRun = (sql, p = []) => new Promise((res, rej) => ctx.mod.db.run(sql, p, (e) => (e ? rej(e) : res())));
 const idOf = (username) => new Promise((res, rej) => ctx.mod.db.get('SELECT id FROM users WHERE username = ?', [username], (e, r) => (e ? rej(e) : res(r.id))));
 
+// The answer key of THIS player's per-entrant set (stored on their entry at /start).
+async function entryAnswers(user, tournamentId) {
+  const row = await dbGet(
+    'SELECT e.problems_json FROM tournament_entries e JOIN users u ON u.id = e.user_id WHERE e.tournament_id = ? AND u.username = ?',
+    [tournamentId, user.username]
+  );
+  return JSON.parse(row.problems_json).map((p) => p.answer);
+}
+
 async function playPerfect(user, tournamentId) {
-  const start = await api(ctx.base, 'POST', `/api/tournaments/${tournamentId}/start`, { token: user.token, body: {} });
-  const stored = JSON.parse((await dbGet('SELECT problems_json FROM tournaments WHERE id = ?', [tournamentId])).problems_json);
-  return api(ctx.base, 'POST', `/api/tournaments/${tournamentId}/play`, { token: user.token, body: { answers: stored.map((p) => p.answer) } });
+  await api(ctx.base, 'POST', `/api/tournaments/${tournamentId}/start`, { token: user.token, body: {} });
+  const answers = await entryAnswers(user, tournamentId);
+  return api(ctx.base, 'POST', `/api/tournaments/${tournamentId}/play`, { token: user.token, body: { answers } });
 }
 
 test('GET current self-seeds an active weekly event', async () => {
@@ -80,9 +89,6 @@ test('play before start is rejected', async () => {
 test('the leaderboard ranks by score then speed', async () => {
   const u = await registerUser(ctx.base);
   const tid = (await api(ctx.base, 'GET', '/api/tournaments/current', { token: u.token })).body.tournament.id;
-  const stored = JSON.parse((await dbGet('SELECT problems_json FROM tournaments WHERE id = ?', [tid])).problems_json);
-  const allRight = stored.map((p) => p.answer);
-
   // Two perfect scorers; force different server-measured times via started_at, then submit.
   const slow = await registerUser(ctx.base);
   const fast = await registerUser(ctx.base);
@@ -90,8 +96,8 @@ test('the leaderboard ranks by score then speed', async () => {
   await api(ctx.base, 'POST', `/api/tournaments/${tid}/start`, { token: fast.token, body: {} });
   // The slow player "started" long ago → larger elapsed; the fast one just started.
   await dbRun('UPDATE tournament_entries SET started_at = started_at - 60000 WHERE user_id = ? AND tournament_id = ?', [await idOf(slow.username), tid]);
-  await api(ctx.base, 'POST', `/api/tournaments/${tid}/play`, { token: slow.token, body: { answers: allRight } });
-  const res = await api(ctx.base, 'POST', `/api/tournaments/${tid}/play`, { token: fast.token, body: { answers: allRight } });
+  await api(ctx.base, 'POST', `/api/tournaments/${tid}/play`, { token: slow.token, body: { answers: await entryAnswers(slow, tid) } });
+  const res = await api(ctx.base, 'POST', `/api/tournaments/${tid}/play`, { token: fast.token, body: { answers: await entryAnswers(fast, tid) } });
 
   const board = res.body.leaderboard;
   const fastPos = board.find((r) => r.username === fast.username).position;
@@ -132,4 +138,28 @@ test('an ended event finalizes once, pays the top 3, and seeds the next week', a
   // Finalize is idempotent — calling current again does not pay twice.
   await api(ctx.base, 'GET', '/api/tournaments/current', { token: champ.token });
   assert.equal((await dbGet('SELECT coins FROM users WHERE id = ?', [champId])).coins, coinsAfter, 'no double payout');
+});
+
+test('each entrant gets their own set from the event recipe, and resuming keeps it', async () => {
+  const a = await registerUser(ctx.base);
+  const b = await registerUser(ctx.base);
+  const tid = (await api(ctx.base, 'GET', '/api/tournaments/current', { token: a.token })).body.tournament.id;
+  const sa = await api(ctx.base, 'POST', `/api/tournaments/${tid}/start`, { token: a.token, body: {} });
+  const sb = await api(ctx.base, 'POST', `/api/tournaments/${tid}/start`, { token: b.token, body: {} });
+  assert.equal(sa.body.problems.length, sb.body.problems.length, 'same number of problems for everyone');
+  const qa = sa.body.problems.map((p) => p.question).join('|');
+  const qb = sb.body.problems.map((p) => p.question).join('|');
+  assert.notEqual(qa, qb, 'different concrete problems per entrant');
+
+  const resumed = await api(ctx.base, 'POST', `/api/tournaments/${tid}/start`, { token: a.token, body: {} });
+  assert.equal(resumed.body.problems.map((p) => p.question).join('|'), qa, 'resuming returns the same set');
+
+  // A's answer key does not score on B's set (unless the two keys happen to coincide outright,
+  // possible only for a concept with a tiny answer space).
+  const keyA = await entryAnswers(a, tid);
+  const keyB = await entryAnswers(b, tid);
+  const playB = await api(ctx.base, 'POST', `/api/tournaments/${tid}/play`, { token: b.token, body: { answers: keyA } });
+  if (keyA.join('|') !== keyB.join('|')) {
+    assert.ok(playB.body.score < playB.body.total, 'a shared answer key does not work');
+  }
 });
