@@ -21,6 +21,7 @@ const { enqueueMissedTopic } = require('../services/srsService');
 
 const { creditStreak } = require('../services/streakService');
 
+const { bumpArenaQuest } = require('../services/userService');
 const router = express.Router();
 
 const PROBLEM_COUNT = 5;
@@ -190,6 +191,7 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
   })
     .then(async (r) => {
       if (r.answerCorrectCount > 0) await creditStreak(req.user.id); // any solve keeps today's streak alive
+      await bumpArenaQuest(req.user.id);
       // Feed the learning engine (answer correctness), awaited + sequential so the engine is fed
       // before we respond (no detached writes racing teardown; mastery/retention stay attributed).
       for (const f of feeds) {

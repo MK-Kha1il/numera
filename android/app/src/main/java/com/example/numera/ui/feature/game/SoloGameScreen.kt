@@ -101,6 +101,10 @@ fun SoloGameScreen(
     
     var xpReward by remember { mutableIntStateOf(0) }
     var coinReward by remember { mutableIntStateOf(0) }
+    // Mistakes practice is paid per resolve by the server (with a daily cap), so the recap shows
+    // what the server actually granted rather than a local estimate.
+    var mistakeXpEarned by remember { mutableIntStateOf(0) }
+    var mistakeCoinsEarned by remember { mutableIntStateOf(0) }
     var levelUpOccurred by remember { mutableStateOf(false) }
     var isSavingSession by remember { mutableStateOf(false) }
 
@@ -670,10 +674,19 @@ fun SoloGameScreen(
                 val mId = mistakeIdsList[currentProblemIdx]
                 scope.launch(Dispatchers.IO) {
                     try {
-                        RetrofitClient.apiService.resolveMistake(
+                        val res = RetrofitClient.apiService.resolveMistake(
                             token = RetrofitClient.authToken ?: "",
                             request = ResolveMistakeRequest(mId)
                         )
+                        withContext(Dispatchers.Main) {
+                            mistakeXpEarned += res.xpGained
+                            mistakeCoinsEarned += res.coinsGained
+                            // A resolve that lands after the recap opened still updates it.
+                            if (isGameOver) {
+                                xpReward = mistakeXpEarned
+                                coinReward = mistakeCoinsEarned
+                            }
+                        }
                     } catch (e: Exception) {
                         Log.e("SoloGame", "Failed to resolve mistake: ${e.message}")
                     }
@@ -774,8 +787,8 @@ fun SoloGameScreen(
                 xpReward = solvedCount * 12
                 coinReward = solvedCount * 6
             } else if (gameMode == "mistakes_practice") {
-                xpReward = solvedCount * 15
-                coinReward = solvedCount * 10
+                xpReward = mistakeXpEarned
+                coinReward = mistakeCoinsEarned
             } else {
                 xpReward = baseXP
                 coinReward = baseCoins

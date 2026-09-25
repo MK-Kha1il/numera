@@ -29,7 +29,7 @@ const { updateAchievements } = require('./services/achievementService');
 const { grantRankRewards } = require('./services/rankRewardService');
 const { creditStreak } = require('./services/streakService');
 const { recordCoins } = require('./services/economyLedger');
-const { ensureDailyReset } = require('./services/userService');
+const { bumpArenaQuest } = require('./services/userService');
 const { flagAnswer, resolveDuel, rankedMatchmakingError } = require('./lib/duelIntegrity');
 
 const app = express();
@@ -1732,10 +1732,8 @@ function endDuel(roomId, done) {
 function finalizeDuel(roomId, room, winner, p2IsBot, done) {
   // Increment duels_today in user_quests for human players — after the daily reset check, so a duel
   // finished just past local midnight counts toward today's quest instead of being wiped.
-  const bumpDuelQuest = (id) =>
-    ensureDailyReset(id).then(() => db.run("UPDATE user_quests SET duels_today = duels_today + 1 WHERE user_id = ?", [id]));
-  if (room.p1.id && typeof room.p1.id === 'number') bumpDuelQuest(room.p1.id);
-  if (room.p2.id && typeof room.p2.id === 'number' && room.p2.id !== 9999) bumpDuelQuest(room.p2.id);
+  if (room.p1.id && typeof room.p1.id === 'number') bumpArenaQuest(room.p1.id);
+  if (room.p2.id && typeof room.p2.id === 'number' && room.p2.id !== 9999) bumpArenaQuest(room.p2.id);
 
   const p1IsHuman = typeof room.p1.id === 'number' && room.p1.id !== 9999;
   const p2IsHuman = typeof room.p2.id === 'number' && !p2IsBot;

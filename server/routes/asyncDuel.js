@@ -15,6 +15,7 @@ const { notify } = require('../services/notificationService');
 const { creditStreak } = require('../services/streakService');
 
 const { recordCoins } = require('../services/economyLedger');
+const { bumpArenaQuest } = require('../services/userService');
 const router = express.Router();
 
 const PROBLEM_COUNT = 5;
@@ -215,6 +216,7 @@ router.post('/api/duel/async/:id/play', authenticateToken, idempotency, (req, re
   })
     .then(async (payload) => {
       if (payload.score > 0) await creditStreak(uid); // any solve keeps today's streak alive
+      await bumpArenaQuest(uid);
       if (payload.resolved) recordCoins('async_duel', payload.result.reward);
       // Feed this player's graded answers into the engine — sequential, fire-and-forget (so one
       // playthrough's answers don't race each other on shared analytics tables).

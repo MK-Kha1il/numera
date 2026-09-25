@@ -13,6 +13,7 @@ const { generateProblem } = require('../mathGenerator');
 const { creditStreak } = require('../services/streakService');
 
 const { recordCoins } = require('../services/economyLedger');
+const { bumpArenaQuest } = require('../services/userService');
 const router = express.Router();
 
 const PROBLEM_COUNT = 5;
@@ -140,6 +141,7 @@ router.post('/api/duel/bot/:id/play', authenticateToken, idempotency, (req, res)
   })
     .then(async (payload) => {
       if (payload.userScore > 0) await creditStreak(uid); // any solve keeps today's streak alive
+      await bumpArenaQuest(uid);
       recordCoins('bot_duel', payload.reward);
       // Feed each graded answer into the engine — fire-and-forget overall, but SEQUENTIAL so the
       // duel's own answers (which can share a template type) don't race each other on the shared

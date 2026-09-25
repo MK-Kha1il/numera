@@ -98,6 +98,14 @@ function checkAndResetQuestsAndLeagues(userId, callback) {
 // midnight lands on today's row instead of being wiped by a later lazy reset.
 const ensureDailyReset = (userId) => new Promise((resolve) => checkAndResetQuestsAndLeagues(userId, resolve));
 
+// Credit one Arena round toward the "Arena Duelist" daily quest ("play 2 arena rounds"). Every Arena
+// mode counts — live, bot, async and reasoning duels — not just live socket matches, which at low
+// population made the quest nearly impossible. Reset first, so a round after midnight counts today.
+const bumpArenaQuest = (userId) =>
+  ensureDailyReset(userId).then(
+    () => new Promise((resolve) => db.run('UPDATE user_quests SET duels_today = duels_today + 1 WHERE user_id = ?', [userId], () => resolve()))
+  );
+
 function runResets(userId, tz, callback) {
   const now = Math.floor(Date.now() / 1000);
 
@@ -164,4 +172,4 @@ function runResets(userId, tz, callback) {
   });
 }
 
-module.exports = { getUserWithMastery, checkAndResetQuestsAndLeagues, ensureDailyReset };
+module.exports = { getUserWithMastery, checkAndResetQuestsAndLeagues, ensureDailyReset, bumpArenaQuest };
