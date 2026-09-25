@@ -57,7 +57,7 @@ async function buildPuzzle(userId, day) {
   const puzzle = picked.problem;
 
   const baseLesson = getLessonForArchive(puzzle.title, puzzle.category, puzzle.stars);
-  // Phase 8: the lesson teaches the concept — it must not contain a worked example that
+  // The lesson teaches the concept — it must not contain a worked example that
   // solves (or merely restates) today's puzzle.
   const { lesson } = LessonSafety.sanitizeLesson(baseLesson, puzzle);
   const parsedOptions = typeof puzzle.options === 'string' ? JSON.parse(puzzle.options) : puzzle.options;

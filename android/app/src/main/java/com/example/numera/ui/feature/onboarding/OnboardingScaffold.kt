@@ -35,8 +35,8 @@ import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.GlossyProgressBar
 
 /**
- * Shared premium chrome for every onboarding step. Gives the whole flow one consistent skin
- * (Phase 13) and keeps it feeling short (Phase 10): a progress spine ("Step N of total"), a title +
+ * Shared chrome for every onboarding step. Gives the whole flow one consistent skin
+ * and keeps it feeling short: a progress spine ("Step N of total"), a title +
  * optional subtitle, a scrollable body, and a pinned CTA with an optional "what's next" preview and
  * Back/Skip affordances. Steps only supply their own content + the CTA wiring.
  */

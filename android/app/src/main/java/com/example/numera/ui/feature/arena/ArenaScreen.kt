@@ -65,7 +65,7 @@ fun ArenaScreen(
     // Ranked requires fair-play (telemetry) consent so the server's anti-cheat scorer may run.
     var showRankedConsent by remember { mutableStateOf(false) }
     var consentGrantedThisSession by remember { mutableStateOf(false) }
-    // One-time placement rank-reveal ceremony (audit #20): fires once when a player finishes placement.
+    // One-time placement rank-reveal ceremony: fires once when a player finishes placement.
     var showRankReveal by remember(user?.competitive_matches, user?.rank_revealed) {
         mutableStateOf((user?.competitive_matches ?: 0) >= 5 && (user?.rank_revealed ?: 0) == 0)
     }
@@ -581,7 +581,7 @@ fun ArenaScreen(
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 } else {
-                                    // Placement narrative (audit #20): make the path to a rank explicit.
+                                    // Placement narrative: make the path to a rank explicit.
                                     Text(
                                         text = "Placement: $cMatches/5",
                                         fontSize = 15.sp,
@@ -937,7 +937,7 @@ fun ArenaScreen(
         )
     }
 
-    // Placement rank-reveal ceremony (audit #20): a designed moment, fired exactly once.
+    // Placement rank-reveal ceremony: a designed moment, fired exactly once.
     if (showRankReveal) {
         val cRank = user?.competitive_rank ?: "Unranked"
         val dismiss: () -> Unit = {
@@ -965,7 +965,7 @@ fun ArenaScreen(
 }
 
 /**
- * Premium tappable mode tile for the arena grid. The whole card is the touch target.
+ * Tappable mode tile for the arena grid. The whole card is the touch target.
  * Each mode owns a colored identity: an accent gradient wash, a glowing emoji medallion,
  * a real description, and an accent CTA — alive, not a flat gray box.
  */

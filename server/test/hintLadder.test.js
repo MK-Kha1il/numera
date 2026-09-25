@@ -44,7 +44,7 @@ test('unknown template type falls back to a single nudge', () => {
 
 test('a type with no authored tip derives a full ladder from its concept lesson', () => {
   // fraction_add / geo_circle_area post-date tips.js; before the derivation they collapsed
-  // to the single generic nudge (the 81%-of-types hint regression found in the 2026-07 audit).
+  // to the single generic nudge.
   for (const type of ['fraction_add', 'geo_circle_area', 'inequality_flip_negative']) {
     const ladder = buildHintLadder(type, ' no-collision ');
     assert.ok(ladder.length >= 3, `${type} gets a real ladder, not the generic nudge`);

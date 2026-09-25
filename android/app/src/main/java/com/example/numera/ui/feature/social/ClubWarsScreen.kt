@@ -21,7 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// Club wars (audit #1.7 — team competition). Your club's wars + (for the owner) a way to declare
+// Club wars (team competition). Your club's wars + (for the owner) a way to declare
 // one on a rival club. Both clubs' members race the same set once; the higher combined score wins.
 // Server-authoritative (routes/clubWars.js): answers never leave the server, one attempt each.
 @Composable
@@ -151,7 +151,7 @@ fun ClubWarsScreen(onBack: () -> Unit) {
 
             "war" -> {
                 val w = war
-                if (w == null) { com.example.numera.ui.components.NumeraPremiumLoader(modifier = Modifier.fillMaxWidth()) } else {
+                if (w == null) { com.example.numera.ui.components.NumeraLoader(modifier = Modifier.fillMaxWidth()) } else {
                     WarStandings(w)
                     val amInThisWar = w.myClubId == w.challenger.clubId || w.myClubId == w.opponent.clubId
                     when {

@@ -1,4 +1,4 @@
-// Expanded daily quest pool (ultra review #63): new quests over Puzzle Rush and SRS, wired to
+// Expanded daily quest pool: new quests over Puzzle Rush and SRS, wired to
 // real progress increments, claimable, and zeroed by the daily reset.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');

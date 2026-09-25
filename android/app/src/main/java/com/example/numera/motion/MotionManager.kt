@@ -4,7 +4,7 @@ import android.content.Context
 import android.provider.Settings
 
 /**
- * Accessibility: a single source of truth for "reduce motion" (ultra review #76). It's ON when
+ * Accessibility: a single source of truth for "reduce motion". It's ON when
  * EITHER the user flips the in-app toggle OR the OS has animations disabled
  * (ANIMATOR_DURATION_SCALE == 0, i.e. Settings > Accessibility > Remove animations). Heavy,
  * non-essential effects (confetti, the looping math-symbol background) read [reduceMotion] and

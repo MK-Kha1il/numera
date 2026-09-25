@@ -22,7 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// Custom Challenges (audit #10 — UGC community gravity + content treadmill). Author a named
+// Custom Challenges (UGC community gravity + content treadmill). Author a named
 // challenge over one concept (server generates a FIXED problem set), share the code, and friends
 // race for the top of its leaderboard. One scored attempt each. Server-authoritative
 // (routes/challenges.js): the client never sees answers, glory-only (no coins).
@@ -241,7 +241,7 @@ fun ChallengesScreen(onBack: () -> Unit) {
             "detail" -> {
                 val d = detail
                 if (d == null) {
-                    com.example.numera.ui.components.NumeraPremiumLoader(modifier = Modifier.fillMaxWidth())
+                    com.example.numera.ui.components.NumeraLoader(modifier = Modifier.fillMaxWidth())
                 } else {
                     DuoCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {

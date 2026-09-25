@@ -24,7 +24,7 @@ import com.example.numera.theme.CornerRadius
 import com.example.numera.theme.Spacing
 
 /**
- * Reusable premium bottom-sheet system for filters, sorting, collection management, lesson
+ * Reusable bottom-sheet system for filters, sorting, collection management, lesson
  * references, exercise options, friend actions and other contextual tools.
  *
  * Built on Material3 [ModalBottomSheet] so drag-to-close, the scrim, predictive-back and

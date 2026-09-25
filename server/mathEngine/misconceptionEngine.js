@@ -178,7 +178,7 @@ function getConceptMisconceptions(db, userId, conceptId) {
 
 // Learner-facing remediation guidance, keyed by misconception type. The label NAMES the error
 // ("Sign error"); this is the FIX — a short, kid-friendly correction the learner can act on. Used
-// by the Growth Insights "habits to watch" (ultra review edu#44/opp#21) to turn a diagnosis into a
+// by the Growth Insights "habits to watch" to turn a diagnosis into a
 // next step. Unknown types fall back to a sensible generic nudge.
 const REMEDIATION_TIPS = {
   // Global structural patterns

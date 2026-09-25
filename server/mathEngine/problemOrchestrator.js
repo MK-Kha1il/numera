@@ -1,4 +1,4 @@
-// Problem Orchestrator — the core intelligence engine
+// Problem orchestrator: picks the next concept and enriches the served problem.
 // Answers: "What is the best next mathematical experience for this learner right now?"
 //
 // Priority hierarchy:
@@ -328,7 +328,7 @@ async function selectNextConcept(db, userId, currentCategory, currentLevel) {
 
   // 4c. Transfer practice — the concept is solid in-context (accurate + independent) but has never
   //     been applied out-of-context. Recommend a transfer challenge to prove real understanding,
-  //     not just procedural recall (Sprint 4). Served via /api/math/transfer/challenge.
+  //     not just procedural recall. Served via /api/math/transfer/challenge.
   for (const conceptId of categoryConceptIds) {
     if (!hasTransfer(conceptId)) continue;
     const profile = await getProfile(db, userId, conceptId);
@@ -385,7 +385,7 @@ function getCategoryConceptIds(category, level) {
     number_theory: ['gcd_lcm', 'modular_arithmetic', 'totient', 'divisor_count'],
     mental:        ['arithmetic_add', 'arithmetic_sub', 'arithmetic_mult'],
     milestone:     ['pythagorean', 'binomial', 'integral', 'totient'],
-    // Curriculum strands (audit #1.1). Must stay in sync with CONCEPT_TO_LEVEL in
+    // Curriculum strands. Must stay in sync with CONCEPT_TO_LEVEL in
     // mathGenerator.js — strandCoherence.test.js enforces it. Without these entries the
     // category falls back to arithmetic and the orchestrator's misconception/SRS/weak-concept
     // targeting silently stops working for the strand.
@@ -451,7 +451,7 @@ async function enrichProblem(db, userId, problem, orchestrationMeta) {
   const styleProfile = await getLearningStyle(db, userId);
   const adaptedExplanation = adaptExplanation(structuredExplanation, styleProfile);
 
-  // 5. Adaptive Visual Intelligence — attach an interactive manipulative when
+  // 5. Interactive visual — attach a manipulative when
   //    (and only when) this concept becomes easier to understand by touching it.
   let interactiveVisualJson = null;
   try {

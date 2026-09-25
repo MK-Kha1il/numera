@@ -38,7 +38,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Phase 6 — the "aha" moment. ONE deliberately achievable problem (a couple levels below placement),
+ * The "aha" moment. ONE deliberately achievable problem (a couple levels below placement),
  * graded server-side. A miss just lets you retry; this moment is designed to end in success.
  */
 @Composable

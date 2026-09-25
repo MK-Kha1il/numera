@@ -1,4 +1,4 @@
-// Weekly async tournaments (audit #21 / #1.8 / #1.19). One global event runs per week on a fixed
+// Weekly async tournaments. One global event runs per week on a fixed
 // recipe (concept, level, count) everyone races on the same terms — each entrant gets their own set
 // from that recipe, so answers can't circulate during the week — each player gets ONE timed
 // attempt (start records started_at server-side; play measures elapsed server-side, so the speed
@@ -83,7 +83,7 @@ async function ensureCurrent(tx, now) {
 }
 
 // Calibrated "pace-setter" bots so the board is never an empty room at low population
-// (ultra-review #3 / #19 / #46: seed with labeled entries; design for tiny population). These are
+// (seed with labeled entries; design for tiny population). These are
 // benchmark racers, not real users: deterministic per event (seeded by tournament id, so the board
 // is stable across refreshes), always labeled `isBot`, never stored, and NEVER eligible for the
 // coin rewards — finalizeIfEnded only ever touches real `tournament_entries`. They are beatable:
@@ -198,7 +198,7 @@ router.post('/api/tournaments/:id/start', authenticateToken, (req, res) => {
     let set;
     if (!entry) {
       // Per-entrant set from the event's recipe (same concept, level and count — the same terms for
-      // everyone) so answers can't be shared across the week-long window (ultra review #92).
+      // everyone) so answers can't be shared across the week-long window.
       set = buildSet(t.category, t.level, t.problem_count);
       await tx.run(
         "INSERT INTO tournament_entries (tournament_id, user_id, started_at, status, created_at, problems_json) VALUES (?, ?, ?, 'pending', ?, ?)",

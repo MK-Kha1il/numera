@@ -15,7 +15,7 @@ router.get('/api/leaderboard', authenticateToken, (req, res) => {
   );
 });
 
-// Friends leaderboard (audit #1.7 — make "social" more than a global number): the caller and their
+// Friends leaderboard (make "social" more than a global number): the caller and their
 // accepted friends, ranked by level then XP, with each row's position and an isMe flag so the
 // learner sees exactly where they stand among people they know. Blocked users are already not
 // friends (a block severs the friendship), so no extra filtering is needed.

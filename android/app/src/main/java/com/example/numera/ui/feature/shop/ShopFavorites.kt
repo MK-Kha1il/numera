@@ -10,8 +10,8 @@ import androidx.compose.runtime.setValue
  * singleton backed by SharedPreferences — mirrors MotionManager/ThemeManager. Reading [ids] in a
  * composable subscribes it to changes, so the heart toggles update everywhere at once.
  *
- * Stage B keeps this client-local (no schema); Stage D migrates it to a server `user_wishlist` table
- * so saves follow the account across devices and can power "you're X coins away" nudges.
+ * Client-local for now (no schema). Moving it to a server table would let saves follow the account
+ * across devices.
  */
 object ShopFavorites {
     private const val PREF = "numera_prefs"

@@ -95,7 +95,7 @@ someone has trained. They appear as:
 
 - the app icon / wordmark accent (an *N* whose strokes resolve into a few connected nodes),
 - rank crests on every competitive surface (dashboard, profile, match, leaderboard, share card),
-- a restrained ambient texture (replacing the busy `CinematicMathBackground`) that subtly *reflects
+- a restrained ambient texture (`MathBackground`) that subtly *reflects
   real progress*,
 - section dividers, empty states, loading states.
 

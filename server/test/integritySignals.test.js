@@ -1,4 +1,4 @@
-// Pure unit tests for the rating-pump / collusion detector (lib/integritySignals.js, audit #18).
+// Pure unit tests for the rating-pump / collusion detector (lib/integritySignals.js).
 const { test } = require('node:test');
 const assert = require('node:assert');
 const { detectRatingPump } = require('../lib/integritySignals');

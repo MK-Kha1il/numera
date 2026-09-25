@@ -173,7 +173,7 @@ test('when the owner leaves, ownership passes to the top-ranked remaining member
   assert.equal(mine.body.club.isOwner, true, 'the remaining member inherited ownership');
 });
 
-test('the SKILL leaderboard ranks clubs by avg competitive rating, not summed XP (audit #17/#76)', async () => {
+test('the SKILL leaderboard ranks clubs by avg competitive rating, not summed XP', async () => {
   // Two clubs: A = one strong placed mathematician; B = two low-level grinders, no rated members.
   const strong = await registerUser(ctx.base);
   const a = await api(ctx.base, 'POST', '/api/clubs', { token: strong.token, body: { name: `Elite ${Math.random().toString(36).slice(2, 7)}` } });

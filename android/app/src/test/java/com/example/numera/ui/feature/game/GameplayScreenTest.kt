@@ -131,7 +131,7 @@ class GameplayScreenTest {
   }
 
   /**
-   * Sprint 2: a wrong answer no longer reveals "Correct: bravo" up front. Instead it shows the
+   * A wrong answer no longer reveals "Correct: bravo" up front. Instead it shows the
    * Socratic "NOT QUITE" banner with the misconception-targeted probe, and the answer must
    * NOT be on screen yet (it stays behind Review Solution — see the next test).
    */
@@ -276,7 +276,7 @@ class GameplayScreenTest {
    * prompt. Drives that deterministically WITHOUT the TIMED problem's countdown: stay on the MCQ
    * (idx 0), answer wrong, reset via Review Solution -> Retry Exercise, repeat. The third wrong
    * pushes errorsCount to 3 and the dialog appears. This guards the KeepGoingDialog carve
-   * (ultra-review #15: errors must not paywall/fail a learner in a learning mode).
+   * (errors must not paywall/fail a learner in a learning mode).
    */
   @Test
   fun threeMistakes_inLevelMode_showsKeepGoingDialog() {

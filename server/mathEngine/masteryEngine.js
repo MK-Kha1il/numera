@@ -9,7 +9,7 @@
 // Pure & deterministic (no DB / IO) — unit-tested in test/mastery.test.js. The raw metrics it
 // reads are persisted by learnerModel; dimensions are computed on read.
 //
-// TRANSFER (Sprint 4): the fifth dimension — applying a concept in a novel framing — is only
+// TRANSFER: the fifth dimension — applying a concept in a novel framing — is only
 // EARNED out-of-context (transfer_exposure/transfer_success), and only counts toward the overall
 // score once the learner has actually attempted a transfer problem. A learner is never penalised
 // for a dimension they've had no chance to try.

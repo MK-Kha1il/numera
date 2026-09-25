@@ -1,4 +1,4 @@
-// Word-problem generator (ultra review #9/edu#5). Guards the invariants that make an applied
+// Word-problem generator. Guards the invariants that make an applied
 // problem usable: a real question, the correct answer present among unique MCQ options, an
 // explanation, no LaTeX-corruption control chars, and deterministic output for a given seed.
 // Also exercises the authenticated endpoint end-to-end.

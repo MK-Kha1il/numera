@@ -1,4 +1,4 @@
-// Live group/class competitive rooms (competitive audit #19 — Kahoot-style live play). A host opens a
+// Live group/class competitive rooms (Kahoot-style live play). A host opens a
 // room, players join by a short code (the class-code pattern), the host starts it, and everyone races
 // the SAME server-generated set. Grading is server-authoritative — the answer key is kept server-side
 // and stripped from every payload, like the duel/reasoning modes — and scores feed a live podium.

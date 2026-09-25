@@ -1,4 +1,4 @@
-// Printable worksheets (ultra review opp#40): a public, no-auth printable practice sheet for the
+// Printable worksheets: a public, no-auth printable practice sheet for the
 // parent/teacher persona. Guards that the page renders problems + an answer key, validates inputs,
 // and never requires a login.
 const { test, before, after } = require('node:test');

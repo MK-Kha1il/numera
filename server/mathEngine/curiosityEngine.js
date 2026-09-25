@@ -2,7 +2,7 @@
 // learning app that never shows the wonder trains compliance, not love. This module attaches one
 // genuine aha-moment to a concept: a surprising pattern, an elegant shortcut, a counter-intuitive
 // result, or a glimpse of where the idea connects to something bigger. Surfaced at the end of a
-// lesson (the "✨ surprising bit") and reusable as a standalone delight.
+// lesson (the "Did you know" card) and usable on its own.
 //
 // Curiosity is SELECTIVE by design (quality over coverage): a concept gets a spark only when there
 // is a real, accurate, memorable hook — never a manufactured one. Each entry is authored.

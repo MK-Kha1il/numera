@@ -1,4 +1,4 @@
-// Content-correctness sweep (audit #25). The generator already shipped wrong math once — a
+// Content-correctness sweep. The generator already shipped wrong math once — a
 // LaTeX-corruption bug where single-backslash sequences in JS strings ("\frac", "\nu", "\beta")
 // silently became control characters, producing garbage questions/answer choices. This locks the
 // whole playable curriculum: for every concept, generate many instances and assert each is

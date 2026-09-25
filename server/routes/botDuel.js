@@ -1,4 +1,4 @@
-// Calibrated bot duels (audit #1.8 / top-50 #30). Practice competition on demand against an AI
+// Calibrated bot duels. Practice competition on demand against an AI
 // opponent whose per-problem accuracy is fixed by tier — no matchmaking wait, no second human.
 // Server-authoritative: the bot's score is rolled at /start and stored (never revealed), the
 // player's problem set is stored with answers, and the match resolves the instant they submit.
@@ -118,7 +118,7 @@ router.post('/api/duel/bot/:id/play', authenticateToken, idempotency, (req, res)
     // Anti-farm: only the first DAILY_REWARD_CAP bot wins each UTC day pay out, AND the payout
     // decays as the day's wins pile up. Bots are infinite and always available, so a flat reward
     // made them the app's biggest coin faucet (~280/day) and an inflation driver
-    // (docs/EconomyModel.md / ultra-review #28). The first wins pay full; later ones taper toward
+    // (docs/EconomyModel.md). The first wins pay full; later ones taper toward
     // a floor, so casual play stays rewarding but grinding bots for coins does not pay.
     let reward = 0;
     if (winner === 'user') {

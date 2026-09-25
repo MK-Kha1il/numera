@@ -23,7 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// Clubs/teams (audit #1.7 — community beyond a friend list). In a club → your team + ranked
+// Clubs/teams (community beyond a friend list). In a club → your team + ranked
 // members + leave. Not in one → create a club or browse and join. One club at a time; the club is
 // deleted server-side when its last member leaves. Server-authoritative (routes/clubs.js).
 @Composable
@@ -87,7 +87,7 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
         }
 
         if (loading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.example.numera.ui.components.NumeraPremiumLoader() }
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.example.numera.ui.components.NumeraLoader() }
             return@Column
         }
 
@@ -170,7 +170,7 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
             }
 
             // Top Clubs — two ladders: Activity (combined level/XP) and Skill (avg competitive rating,
-            // audit #17 — so a tight crew of strong mathematicians can out-rank a horde of grinders).
+            // so a tight crew of strong mathematicians can out-rank a horde of grinders).
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth().padding(top = Spacing.s)) {
                 Text("Top clubs", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {

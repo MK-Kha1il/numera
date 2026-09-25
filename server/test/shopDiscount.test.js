@@ -1,6 +1,6 @@
 // The shop's only discount is a gentle affordability help for low-coin, engaged players.
 // The old "hoarder discount" (cheaper the richer you are) was removed — it accelerated coin
-// inflation and was a dark pattern (ultra-review #10/#32 + docs/EconomyModel.md).
+// inflation and was a dark pattern.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const { bootServer, shutdown, api, registerUser } = require('./helpers');

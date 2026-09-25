@@ -140,7 +140,7 @@ fun AsyncDuelScreen(user: User?, onExit: () -> Unit) {
         } else {
             // LIST
             if (loading) {
-                com.example.numera.ui.components.NumeraPremiumLoader(modifier = Modifier.fillMaxWidth())
+                com.example.numera.ui.components.NumeraLoader(modifier = Modifier.fillMaxWidth())
             } else {
                 // Challenge a friend
                 DuoCard(modifier = Modifier.fillMaxWidth()) {

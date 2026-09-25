@@ -191,7 +191,7 @@ const concepts = {
     ]
   },
 
-  // Integers (audit #1.1 — signed-number arithmetic, the negatives band)
+  // Integers (signed-number arithmetic, the negatives band)
   "absolute_value": {
     name: "Absolute Value",
     prereqs: ["arithmetic_sub"],
@@ -229,7 +229,7 @@ const concepts = {
     ]
   },
 
-  // Decimals (audit #1.1 — decimal place value & the four operations to hundredths)
+  // Decimals (decimal place value & the four operations to hundredths)
   "decimal_add": {
     name: "Adding Decimals",
     prereqs: ["arithmetic_add"],
@@ -276,7 +276,7 @@ const concepts = {
     ]
   },
 
-  // Fractions (audit #1.1 — fraction operations, the core middle-school topic)
+  // Fractions (fraction operations, the core middle-school topic)
   "fraction_simplify": {
     name: "Simplifying Fractions",
     prereqs: ["arithmetic_div"],
@@ -323,7 +323,7 @@ const concepts = {
     ]
   },
 
-  // Geometry (audit #1.1 — a parallel strand broadening the catalog beyond the single number ladder)
+  // Geometry (a parallel strand broadening the catalog beyond the single number ladder)
   "geo_perimeter_rect": {
     name: "Perimeter of a Rectangle",
     prereqs: ["arithmetic_add"],
@@ -370,7 +370,7 @@ const concepts = {
     ]
   },
 
-  // Number sense / pre-algebra (audit #1.1 — the band the curriculum used to skip)
+  // Number sense / pre-algebra (the band the curriculum used to skip)
   "percentage_of": {
     name: "Percent of a Number",
     prereqs: ["arithmetic_mult"],
@@ -417,7 +417,7 @@ const concepts = {
     ]
   },
 
-  // Statistics & probability (audit #1.1 — descriptive statistics strand)
+  // Statistics & probability (descriptive statistics strand)
   "stat_mode": {
     name: "Mode of a Data Set",
     prereqs: ["arithmetic_add"],
@@ -464,7 +464,7 @@ const concepts = {
     ]
   },
 
-  // Algebraic expressions (audit #1.1 — the bridge from arithmetic into algebra)
+  // Algebraic expressions (the bridge from arithmetic into algebra)
   "eval_expression": {
     name: "Evaluating Expressions",
     prereqs: ["pemdas"],
@@ -1781,7 +1781,7 @@ const concepts = {
   }
 };
 
-// Standards alignment (audit #1.1 — the school-market unlock). Common Core codes where they apply;
+// Standards alignment (the school-market unlock). Common Core codes where they apply;
 // a descriptive label for beyond-K-12 topics. Applied uniformly onto every concept so the catalog
 // is fully tagged (enforced by test/curriculumCoverage.test.js — every concept must carry one).
 const STANDARDS = {

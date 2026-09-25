@@ -20,7 +20,7 @@ import com.example.numera.ui.components.DuoButton
 /**
  * Home-screen "what should I do next?" nudge, driven by the orchestrator's `/api/engine/next`
  * recommendation (mathEngine/problemOrchestrator.js `selectNextConcept`). It makes the engine's
- * reasoning visible and actionable — most importantly the Sprint-3/4 reasons `dimension_building`
+ * reasoning visible and actionable — most importantly the reasons `dimension_building`
  * (sharpen a weak edge) and `transfer_practice` (apply a mastered concept in a new context).
  *
  * Renders nothing for low-signal reasons (exploration/challenge/mastery_building/fallback) — those

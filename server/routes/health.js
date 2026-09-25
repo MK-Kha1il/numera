@@ -1,5 +1,5 @@
-// Liveness/readiness probe for uptime monitors and reverse proxies (ultra review #93: "no
-// observability — even a /healthz + cron ping"). Unauthenticated by design and deliberately
+// Liveness/readiness probe for uptime monitors and reverse proxies. Unauthenticated by design and
+// deliberately
 // boring: it proves the process is serving and the database answers, and reports the schema
 // version + uptime. Nothing user-related, no config, no versions of dependencies.
 const express = require('express');

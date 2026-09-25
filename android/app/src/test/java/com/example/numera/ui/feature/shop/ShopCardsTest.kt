@@ -14,7 +14,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Guards the seasonal-sink shop surfaces (ultra-review #66/#75): the token wallet shows the
+ * Guards the seasonal-sink shop surfaces: the token wallet shows the
  * balance + converts, and a prestige card shows its token price + claims. Action labels
  * render in sentence case.
  */

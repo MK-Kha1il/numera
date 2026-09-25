@@ -82,7 +82,7 @@ private fun EmptyArt(kind: EmptyIllustration) {
     val primary = MaterialTheme.colorScheme.primary
     val secondary = MaterialTheme.colorScheme.secondary
     val faint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-    // Gentle breathing so the empty state feels alive, never dead (Phase 6); still under reduce-motion.
+    // Gentle breathing so the empty state feels alive, never dead; still under reduce-motion.
     val breathe: Float = if (MotionManager.reduceMotion) 1f else {
         val transition = rememberInfiniteTransition(label = "emptyBreathe")
         transition.animateFloat(

@@ -1,4 +1,4 @@
-// Curriculum coverage (audit #1.1 — content as a first-class product). Every playable concept must
+// Curriculum coverage (content as a first-class product). Every playable concept must
 // be a fully-authored catalog entry: a knowledge-graph node with a human-readable name, valid
 // prerequisites that themselves exist, and a standards-alignment tag (the school-market unlock).
 // This is the QA gate the authoring pipeline writes against — adding a concept to CONCEPT_TO_LEVEL

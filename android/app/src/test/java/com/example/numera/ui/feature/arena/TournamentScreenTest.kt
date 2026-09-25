@@ -22,7 +22,7 @@ import org.robolectric.annotation.GraphicsMode
 /**
  * Screen-level test over the data boundary: a mocked [ApiService] feeds the weekly tournament,
  * and we assert the leaderboard renders a real player AND labels a pace-setter bot as a bot
- * (ultra-review #46/#19 — the seeded bots that keep the board from being an empty room).
+ * (the seeded bots that keep the board from being an empty room).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], qualifiers = "w411dp-h891dp")

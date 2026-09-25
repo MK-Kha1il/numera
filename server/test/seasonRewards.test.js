@@ -1,4 +1,4 @@
-// Ranked seasons with rewards (audit #4): a visible season leaderboard + automatic rollover that
+// Ranked seasons with rewards: a visible season leaderboard + automatic rollover that
 // pays the top finishers when a season expires (idempotent), then opens the next season.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
@@ -155,7 +155,7 @@ test('claiming a reached tier grants tokens+coins; double-claim and unreached ar
   assert.equal(tooHigh.status, 400, 'cannot claim an unreached tier');
 });
 
-test('reaching Diamond on the season track grants the season-exclusive Champion banner (audit #14)', async () => {
+test('reaching Diamond on the season track grants the season-exclusive Champion banner', async () => {
   const u = await registerUser(ctx.base);
   const seasonId = await isolatedSeason();
   const uid = await idOf(u.username);

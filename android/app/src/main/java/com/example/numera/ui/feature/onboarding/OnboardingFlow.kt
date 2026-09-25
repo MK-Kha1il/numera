@@ -45,7 +45,7 @@ import com.example.numera.theme.IconSize
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.NumeraIcon
 import com.example.numera.ui.components.NumeraIconType
-import com.example.numera.ui.screens.CinematicMathBackground
+import com.example.numera.ui.screens.MathBackground
 import com.example.numera.ui.screens.PlacementTestScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -62,7 +62,7 @@ private enum class OnbStep { Welcome, Aha, Diagnostic, Goals, Celebrate }
 
 /**
  * The onboarding orchestrator: a step state-machine hosting the phases between signup and the app,
- * with one shared premium skin, animated transitions, funnel analytics, and server-owned completion.
+ * with one shared look, animated transitions, funnel analytics, and server-owned completion.
  * Reuses the existing adaptive diagnostic ([PlacementTestScreen]) verbatim as the placement step.
  */
 @Composable
@@ -76,7 +76,7 @@ fun OnboardingFlow(onComplete: () -> Unit) {
     var catalogs by remember { mutableStateOf(OnboardingCatalogs()) }
     var displayName by remember { mutableStateOf("") }
 
-    // Fire-and-forget funnel analytics (Phase 14).
+    // Fire-and-forget funnel analytics.
     fun logEvent(s: OnbStep, event: String) {
         scope.launch(Dispatchers.IO) {
             runCatching { api.logOnboardingEvent(token, OnboardingEventRequest(s.name.lowercase(), event, null)) }
@@ -152,7 +152,7 @@ fun OnboardingFlow(onComplete: () -> Unit) {
     }
 }
 
-/** Phase 1 — warm identity intro. Sets the tone (premium, welcoming) and previews the value. */
+/** Welcome step: greets the learner and says what the app does. */
 @Composable
 private fun WelcomeStep(stepIndex: Int, totalSteps: Int, name: String, onStart: () -> Unit) {
     OnboardingScaffold(
@@ -184,7 +184,7 @@ private fun ValueProp(icon: NumeraIconType, title: String, body: String) {
     }
 }
 
-/** Phase 7 — a restrained, meaningful celebration of the first solved problem. Momentum, not noise. */
+/** A restrained, meaningful celebration of the first solved problem. Momentum, not noise. */
 @Composable
 private fun CelebrateStep(onContinue: () -> Unit) {
     val scale = remember { Animatable(0.6f) }
@@ -201,7 +201,7 @@ private fun CelebrateStep(onContinue: () -> Unit) {
             .systemBarsPadding()
             .padding(Spacing.xl),
     ) {
-        CinematicMathBackground()
+        MathBackground()
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,

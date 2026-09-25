@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
 @Composable
-fun NumeraPremiumLoader(
+fun NumeraLoader(
     modifier: Modifier = Modifier,
     cardPadding: Dp = 24.dp
 ) {

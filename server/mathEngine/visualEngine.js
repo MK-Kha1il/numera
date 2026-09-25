@@ -7,14 +7,14 @@
 //
 // Core principle (mirrors the product mission): only attach interaction when a
 // concept becomes easier to understand through manipulation. No decorative
-// interactivity. Adaptive Visual Intelligence gates *whether* and *how much*
+// interactivity. The benefit/complexity gate decides *whether* and *how much*
 // guidance is offered based on the learner's mastery of the concept.
 //
 // The spec is intentionally schema-light on the client: the client forwards the
 // raw JSON to a canvas renderer, so adding a new visual type requires no client
 // model changes.
 //
-// As of the 2026-06 redesign the "when / how much" decision is delegated to the
+// The "when / how much" decision is delegated to the
 // Visualization Benefit Engine (visualBenefit.js), and every spec is enriched from
 // the Concept Visualization Metadata registry (visualMetadata.js): learning goal,
 // reflection prompt, interaction primitives, feedback rules, and the concept's real
@@ -26,7 +26,7 @@ const {
 } = require('./visualMetadata');
 
 // ----------------------------------------------------------------------------
-// Adaptive Visual Intelligence — progressive complexity gating
+// Progressive complexity gating
 // ----------------------------------------------------------------------------
 // Returns one of: 'guided' | 'explore' | 'ondemand' | null
 //   guided   — beginner: interactive, full scaffolding, opens automatically
@@ -185,7 +185,7 @@ function buildDiceSim(question) {
   };
 }
 
-// Arithmetic / modular → number line hops; plus the 2026-07 modes: distance (absolute
+// Arithmetic / modular → number line hops, plus distance (absolute
 // value), compare (predict-first ordering), inequality (test-a-value + shade). Each mode
 // has a matching renderer branch in the client's interactive_visuals.html number_line
 // module — a mode added here WITHOUT its renderer shows nothing, so ship both together.

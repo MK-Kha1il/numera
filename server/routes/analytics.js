@@ -1,4 +1,4 @@
-// Self-hosted, privacy-first product analytics (ultra review #39). The app previously flew blind on
+// Self-hosted, privacy-first product analytics. The app previously flew blind on
 // what's actually used. This records AGGREGATE daily counts per event only — no user id, device id,
 // session, IP, or timestamp beyond the day bucket — so the data is not personal data and cannot be
 // attributed to anyone. That's a deliberate design: it answers "what features get used?" while
@@ -25,7 +25,7 @@ const ALLOWED_EVENTS = new Set([
   // Interactive-visual discovery signals: a learner reached an insight by manipulating
   // ('visual_discover') or answered the post-verify "why?" reflection ('visual_reflect').
   'visual_discover', 'visual_reflect',
-  // Multiplayer friction funnel (multiplayer overhaul, Phase 14): queue → match → finish,
+  // Multiplayer friction funnel: queue → match → finish,
   // plus the leak points — cancels, forfeits, reconnects, draws, bot-offer conversions.
   'arena_queue_start', 'arena_queue_cancel', 'duel_match_found', 'duel_finish',
   'duel_forfeit', 'duel_draw', 'duel_reconnected', 'bot_offer_accepted', 'duel_rematch',
@@ -93,7 +93,7 @@ router.get('/api/analytics/summary', authenticateToken, requireAdmin, (req, res)
   );
 });
 
-// Activation funnel (ultra review #23): of real (non-guest, non-system) accounts in the cohort,
+// Activation funnel: of real (non-guest, non-system) accounts in the cohort,
 // how many cleared the activation bar (N solves within the signup window), and how fast. Admin-only.
 router.get('/api/analytics/activation', authenticateToken, requireAdmin, (req, res) => {
   // Cohort = real signups with a known creation time. Exclude guests and the password-less system

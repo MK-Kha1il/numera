@@ -32,8 +32,7 @@ import com.example.numera.ui.components.GlossyProgressBar
 
 /**
  * The Vault's top-level sections. The former Titles/Effects/Themes tabs
- * are folded into Cosmetics as in-body type filters (visual-experience sprint 2026-07: nine chips
- * exceeded one comfortable scroll; one browsable grid + filters is the pattern the audit prescribed).
+ * are folded into Cosmetics as in-body type filters (nine chips didn't fit in one scroll).
  */
 enum class ShopTab(val label: String) {
     Featured("Featured"),

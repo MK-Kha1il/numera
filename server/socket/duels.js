@@ -122,7 +122,7 @@ function playerKeyForSocket(room, socket) {
   return null;
 }
 
-// Positive-only emotes for live duels (Phase 8: presence without toxicity). A fixed allowlist —
+// Positive-only emotes for live duels (presence without toxicity). A fixed allowlist —
 // no free text, nothing to moderate — rate-limited per player server-side.
 const DUEL_EMOTES = new Set(['👏', '🔥', '🤝', '😅', '🤯']);
 const EMOTE_MIN_INTERVAL_MS = 2500;
@@ -302,7 +302,7 @@ function matchmake(queueArray, isRanked) {
 
       const elapsed2 = (Date.now() - p2.joinTime) / 1000;
 
-      // Hidden-MMR pairing (audit Top-25 #11): pair on the (μ, σ) belief via the win-probability
+      // Hidden-MMR pairing: pair on the (μ, σ) belief via the win-probability
       // match-quality gate, not a raw rating-point window. The acceptance floor relaxes with wait time
       // (the longer-waiting of the two drives it) so a fair match forms fast and a looser one still
       // forms before the 10s bot fallback. `elo` is the unified mirror = round(global μ); `sigma` is
@@ -376,7 +376,7 @@ function startDuelSweeper() {
   }, 1500).unref();
 }
 
-// Per-socket event budget (ultra review #90). Every inbound event spends a token from a small
+// Per-socket event budget. Every inbound event spends a token from a small
 // bucket that refills continuously; a flood — answer spam, queue join/leave flapping, ack-probe
 // loops — is dropped before any handler runs (no DB work, no matchmaking churn). Generous for real
 // play: a whole duel is a handful of events.
@@ -992,7 +992,7 @@ function simulateBot(roomId) {
 // users.rank — that stays the level/progression rank; competitive rank lives in competitive_rank,
 // refreshed by the mirror. (docs/Rating.md)
 // The duel's dominant math domain, from its concept mix — so a ranked duel credits the contested
-// per-domain rating (audit #16/#45), not just global. Returns null for an unattributable set (e.g.
+// per-domain rating, not just global. Returns null for an unattributable set (e.g.
 // CAS-generated rungs carry no concept key).
 function duelDomain(templateTypes) {
   if (!Array.isArray(templateTypes)) return null;

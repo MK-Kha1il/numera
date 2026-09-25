@@ -1,5 +1,4 @@
-// User-created Custom Challenges (audit #10 / top-50 #23 / missing-system #6 — community gravity
-// + a content treadmill). A learner AUTHORS a named challenge over one curriculum concept; the
+// User-created Custom Challenges. A learner AUTHORS a named challenge over one curriculum concept; the
 // server generates the fixed problem set ONCE at creation and stores it, so everyone who plays a
 // given code gets the SAME problems and the per-challenge leaderboard is fair. A short share code
 // lets friends play it; each user gets one scored attempt (replays return the existing result, so

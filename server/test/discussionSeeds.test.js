@@ -1,4 +1,4 @@
-// Authored "common question" seed threads (ultra review #5): a learner opening a seeded concept's
+// Authored "common question" seed threads: a learner opening a seeded concept's
 // discussion for the first time finds a useful starter thread instead of an empty room.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');

@@ -1,4 +1,4 @@
-// Competitive onboarding (audit #20): the user object carries placement state (competitive_matches)
+// Competitive onboarding: the user object carries placement state (competitive_matches)
 // + competitive_rank + a one-time rank_revealed flag, and POST /api/rating/reveal-seen flips it so the
 // placement rank-reveal ceremony fires exactly once.
 const { test, before, after } = require('node:test');

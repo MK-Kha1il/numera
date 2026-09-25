@@ -20,7 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// Weekly tournament (audit #21 — recurring re-engagement + an endless competitive ladder). One
+// Weekly tournament (recurring re-engagement + an endless competitive ladder). One
 // global event per week: everyone races the same server-generated set, one timed attempt each,
 // top 3 win coins on close. Server-authoritative (routes/tournaments.js): the client never sees
 // answers and timing is measured server-side, so the speed tiebreak can't be faked.
@@ -107,7 +107,7 @@ fun TournamentScreen(user: User?, onExit: () -> Unit) {
 
         val cur = current
         if (cur == null) {
-            com.example.numera.ui.components.NumeraPremiumLoader(modifier = Modifier.fillMaxWidth())
+            com.example.numera.ui.components.NumeraLoader(modifier = Modifier.fillMaxWidth())
             return@Column
         }
 

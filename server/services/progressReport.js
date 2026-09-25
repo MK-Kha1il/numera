@@ -1,4 +1,4 @@
-// Plain-language learner progress report (ultra review #51/#78/#40). Built from data we already
+// Plain-language learner progress report. Built from data we already
 // have (the user row + strand mastery counters), framed in concept language a parent can read —
 // "what I can do now", not XP jargon. Reused by the parent progress email today and intended to
 // back a teacher/class view later, so it returns a structured object plus a renderer.

@@ -15,7 +15,7 @@ import com.example.numera.data.network.RatingHistoryEntry
 import com.example.numera.theme.*
 
 /**
- * Competitive history (Phase 2 identity / competitive-audit #69): the player's rating timeline — the
+ * Competitive history: the player's rating timeline — the
  * last handful of rated results, each showing the mode, the delta, and the rating it left them at.
  * This is the Chess.com "rating over time" surface. Fed by GET /api/rating/history (global domain);
  * renders nothing until the player has rated results.

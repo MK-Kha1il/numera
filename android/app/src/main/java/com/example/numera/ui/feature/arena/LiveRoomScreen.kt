@@ -24,7 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// Live group/class competitive rooms (audit #19 — Kahoot-style). Host opens a room → others join by
+// Live group/class competitive rooms (Kahoot-style). Host opens a room → others join by
 // code → host starts → everyone races the same server-graded set → live podium. Server-authoritative
 // (routes/liveRoom.js). Socket push (join_live_room channel + live_room_update ping) gives instant
 // liveness, with a slower REST poll as the graceful fallback.

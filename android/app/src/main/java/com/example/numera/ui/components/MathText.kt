@@ -45,7 +45,7 @@ fun MathText(
         buildMathHtml(text, hexColor, fontSizePx)
     }
     // Accessibility: the KaTeX WebView is opaque to TalkBack, so carry a spoken description on the
-    // Compose node and silence the WebView's own (empty/CDN) a11y subtree (audit #1.12 / #45).
+    // Compose node and silence the WebView's own (empty/CDN) a11y subtree.
     val spoken = remember(text) { latexToSpeech(text) }
 
     AndroidView(

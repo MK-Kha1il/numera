@@ -66,7 +66,7 @@ fun InteractiveVisual(
     val height: Dp = remember(specJson) { heightForSpec(specJson) }
 
     // Interaction events are NOT dropped: the host turns them into haptic feedback
-    // (premium feel) and forwards them to the caller for telemetry. Haptics respect
+    // and forwards them to the caller for telemetry. Haptics respect
     // HapticManager.isEnabled; the renderer itself reads reduce-motion for visuals.
     val sink: (String) -> Unit = remember(onEvent) {
         { json ->

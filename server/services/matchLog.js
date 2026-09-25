@@ -1,4 +1,4 @@
-// Competitive match history writer (Phase 2 identity). One best-effort row per competitive result
+// Competitive match history writer. One best-effort row per competitive result
 // from a player's point of view — written by the duel socket (server.js) and the Reasoning Arena
 // (routes/reasoningDuel.js). Fire-and-forget: a match record must never block or fail a result.
 'use strict';

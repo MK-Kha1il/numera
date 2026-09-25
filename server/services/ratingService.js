@@ -5,8 +5,8 @@
 // solo sessions and ranked duels move ONE number per domain (CLAUDE.md: DB logic shared by ≥2
 // routes → services/). `user_ratings` is the source of truth; the denormalised users.elo /
 // competitive_matches / competitive_rank columns are a DERIVED MIRROR written ONLY by
-// syncCompetitiveMirror — never independently by feature code (that independent double-write was the
-// competitive-audit "smoking gun").
+// syncCompetitiveMirror — never independently by feature code (two writers in two scales is how
+// users.elo drifted before). See docs/Rating.md.
 'use strict';
 
 const { db } = require('../db');
@@ -126,8 +126,8 @@ const capitalizeDomain = (d) => String(d || '').replace('_', ' ').replace(/^\w/,
 
 // Apply one head-to-head competitive result (duel or reasoning round) to a player's rating.
 // ALWAYS updates the GLOBAL rating (which drives the users.* mirror + the rank-up moment) and, when a
-// contested `domain` is given, ALSO credits that domain so the per-domain ranks become real ladders
-// (audit #16/#45). `outcome` ∈ {1 win, 0.5 draw, 0 loss}. Returns the GLOBAL `after` so the caller can
+// contested `domain` is given, ALSO credits that domain so the per-domain ranks become real ladders.
+// `outcome` ∈ {1 win, 0.5 draw, 0 loss}. Returns the GLOBAL `after` so the caller can
 // surface the rating delta / new rank / promotion in the debrief.
 function applyDuelResultToRatings({ userId, opponentMu, opponentSigma, outcome, gameMode = 'duel', domain = null, category = null, level = null }, callback) {
   const cb = callback || (() => {});
@@ -162,7 +162,7 @@ function applyDuelResultToRatings({ userId, opponentMu, opponentSigma, outcome, 
   updateDomain('global', globalExplanation, (err, after, before) => {
     if (err) return cb(err);
 
-    // Rank-up detection for the debrief "you ranked up!" moment (audit Top-25 #7): completing
+    // Rank-up detection for the debrief "you ranked up!" moment: completing
     // placement, or crossing UP into a new division. Soft divisions — no best-of-N promo series.
     const previousRank = NRS.displayRatingToRank(before.display_rating, before.sessions_count);
     const newRank = NRS.displayRatingToRank(after.displayRating, after.sessionsCount);
@@ -232,7 +232,7 @@ function nrsUpdateTilt(userId, performanceScore, sessionData) {
 // per domain" owner decision — docs/Rating.md). Called by POST
 // /api/math/complete for a level session that consumed a serve ticket, so every input is already
 // server-anchored: solves capped at problems served, the level lock-checked. The bounds and the
-// internal-consistency rules (audit #29/#95) are still enforced here as defense in depth.
+// internal-consistency rules are still enforced here as defense in depth.
 // callback(err, { domain: {...}, global: {...} }).
 function applySoloSessionToRatings(userId, raw, callback) {
   const { category, usedCalculator, gameMode } = raw;

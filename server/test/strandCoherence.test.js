@@ -1,4 +1,4 @@
-// Strand-coherence tripwires. The curriculum strands (audit #1.1) once shipped with three
+// Strand-coherence tripwires. The curriculum strands once shipped with three
 // silent gaps: the orchestrator's category→concept map didn't know them (so misconception/
 // SRS/weak-concept targeting fell back to arithmetic), user_mastery had no counters for them
 // (so solves were dropped), and the achievement catalog had no chains for them. These tests

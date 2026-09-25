@@ -25,8 +25,8 @@ import com.example.numera.theme.CornerRadius
 import com.example.numera.theme.Spacing
 
 /**
- * A compact math-symbol pad shown above the stock keyboard for TYPED-answer modes
- * (ultra-review #16). The stock keyboard handles digits and the minus sign fine; what it makes
+ * A compact math-symbol pad shown above the stock keyboard for TYPED-answer modes.
+ * The stock keyboard handles digits and the minus sign fine; what it makes
  * painful are the *math* tokens — fractions, exponents, π, grouping — so this pad supplies only
  * those, appending to the answer string.
  *

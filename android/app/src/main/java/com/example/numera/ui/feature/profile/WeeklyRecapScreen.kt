@@ -24,7 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
-// "Your Week" — an in-app, shareable recap (audit #20, Wrapped-style). Reuses the engine's
+// "Your Week" — an in-app, shareable recap. Reuses the engine's
 // last-7-days activity (real figures from user_commitment_history) + the mastery aggregate, and
 // hands the learner a one-tap share. Retention + organic reach, honestly framed (weekly = activity;
 // standing = current totals). Read-only; loads /api/engine/weekly-recap.
@@ -57,7 +57,7 @@ fun WeeklyRecapScreen(onBack: () -> Unit) {
         }
 
         when {
-            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.example.numera.ui.components.NumeraPremiumLoader() }
+            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.example.numera.ui.components.NumeraLoader() }
             error != null -> Box(Modifier.fillMaxSize().padding(Spacing.xl), contentAlignment = Alignment.Center) {
                 Text(error!!, color = MaterialTheme.colorScheme.error)
             }

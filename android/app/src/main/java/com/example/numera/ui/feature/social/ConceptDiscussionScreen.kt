@@ -20,7 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// Per-concept discussion (audit #1.7/#1.18 — community). A flat message thread attached to a
+// Per-concept discussion (community). A flat message thread attached to a
 // curriculum concept: ask/answer "how does this work" right where you study it. Posts are
 // content-filtered + block-aware server-side; you can delete your own.
 @Composable
@@ -63,7 +63,7 @@ fun ConceptDiscussionScreen(conceptId: String, conceptName: String, onBack: () -
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when {
-                loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.example.numera.ui.components.NumeraPremiumLoader() }
+                loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.example.numera.ui.components.NumeraLoader() }
                 posts.isEmpty() -> com.example.numera.ui.components.NumeraEmptyState(
                     illustration = com.example.numera.ui.components.EmptyIllustration.Friends,
                     title = "No posts yet",

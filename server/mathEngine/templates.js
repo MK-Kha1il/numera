@@ -1467,7 +1467,7 @@ templates.mental = {
 };
 
 // -------------------------------------------------------------
-// GEOMETRY TEMPLATES — a parallel strand (audit #1.1 curriculum breadth). Routed by the
+// GEOMETRY TEMPLATES — a parallel strand. Routed by the
 // 'geometry' category, NOT the level band, so it broadens the catalog without renumbering the
 // existing 1–60 ladder. Answers are integer (or "N\pi") so the distractor + correctness layers
 // stay robust. Distractors encode the classic confusions (perimeter vs. area, forgetting the ½,
@@ -2037,7 +2037,7 @@ templates.number_sense = {
 };
 
 // -------------------------------------------------------------
-// STATISTICS TEMPLATES — descriptive statistics & basic probability (audit #1.1 Phase 3). Data
+// STATISTICS TEMPLATES — descriptive statistics & basic probability. Data
 // sets are plain text with numeric answers (no LaTeX), and the setups are constructed so the
 // statistic is a whole number; distractors encode the classic errors (forgot to divide for the
 // mean, took the middle of the UNSORTED list for the median, reported a count instead of the
@@ -2299,8 +2299,8 @@ templates.statistics = {
 };
 
 // -------------------------------------------------------------
-// ALGEBRAIC EXPRESSIONS TEMPLATES — the bridge from arithmetic to equation-solving (audit #1.1
-// Phase 5): evaluating expressions, combining like terms, and distributing. Numeric answers stay
+// ALGEBRAIC EXPRESSIONS TEMPLATES — the bridge from arithmetic to equation-solving:
+// evaluating expressions, combining like terms, and distributing. Numeric answers stay
 // positive; the simplify/expand items use symbolic STRING answers with custom string distractors
 // (the distractor engine passes those through untouched). Routed by the 'expressions' category.
 // -------------------------------------------------------------
@@ -2484,7 +2484,7 @@ templates.expressions = {
 };
 
 // -------------------------------------------------------------
-// INTEGERS TEMPLATES — signed-number arithmetic & absolute value (audit #1.1): the negative-number
+// INTEGERS TEMPLATES — signed-number arithmetic & absolute value: the negative-number
 // band the curriculum lacked entirely. Answers may be NEGATIVE; the distractor engine now passes
 // author-supplied signed distractors through (see distractors.js), so the wrong options encode the
 // real sign errors (dropped the minus, added magnitudes, kept the sign through an absolute value).
@@ -2605,7 +2605,7 @@ templates.integers = {
 };
 
 // -------------------------------------------------------------
-// DECIMALS TEMPLATES (audit #1.1 — decimal place value & operations).
+// DECIMALS TEMPLATES (decimal place value & operations).
 // Every arithmetic step is done in scaled INTEGERS (tenths / hundredths) and only
 // formatted with toFixed at the very end, so binary-float noise (the classic
 // 0.1 + 0.2 = 0.30000000000000004 bug) can never reach a question, answer, or
@@ -2770,7 +2770,7 @@ templates.decimals = {
 };
 
 // -------------------------------------------------------------
-// FRACTIONS TEMPLATES (audit #1.1 — fraction operations, the core middle-school topic).
+// FRACTIONS TEMPLATES (fraction operations, the core middle-school topic).
 // All work is exact integer arithmetic on numerators/denominators; reduceFrac() returns the
 // fully-reduced fraction as a STRING ("3/4", or a whole number "2" when it reduces to an integer).
 // fracDistractors() turns a pool of (num,den) misconception candidates into up to 3 DISTINCT

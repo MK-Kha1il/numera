@@ -15,7 +15,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Guards the Sprint-3 multi-dimensional mastery card: it must render the four named dimensions,
+ * Guards the multi-dimensional mastery card: it must render the four named dimensions,
  * the stage, and a focus tip targeted at the single weakest dimension — and render nothing at all
  * when there's no mastery data yet (fresh learner).
  */
@@ -38,7 +38,7 @@ class MasteryProfileCardTest {
 
     compose.onNodeWithText("Skill Mastery").assertIsDisplayed()
     compose.onNodeWithText("Proficient").assertIsDisplayed()
-    // All five dimensions are labelled (incl. the Sprint-4 transfer dimension).
+    // All five dimensions are labelled (incl. the transfer dimension).
     for (label in listOf("Accuracy", "Fluency", "Retention", "Independence", "Transfer")) {
       compose.onNodeWithText(label).assertIsDisplayed()
     }

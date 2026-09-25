@@ -1,4 +1,4 @@
-// Competitive titles (Phase 2 identity): an earned-on-the-fly title set (from rank/duels/reasoning/
+// Competitive titles: an earned-on-the-fly title set (from rank/duels/reasoning/
 // head-to-head); the player may select any earned title, and unearned ones are rejected server-side.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');

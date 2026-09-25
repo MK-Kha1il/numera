@@ -1,4 +1,4 @@
-// Public web competitive profile (competitive audit #75 / opp — the reach/SEO lever). A no-auth,
+// Public web competitive profile. A no-auth,
 // crawlable page at /u/:username showing a player's competitive identity: rank, career peak, title,
 // domain specialties, honor, and season medals — the shareable face of the ladder. Honors the
 // profile_private setting. Pure read; follows the public-page pattern of routes/learn.js.
@@ -67,7 +67,7 @@ const TIER_COLOR = {
 };
 
 // ── GET /u/:username/card.svg ──────────────────────────────────────────────────
-// A shareable SVG rank card — the visual half of the share loop (audit #22). Used as the profile
+// A shareable SVG rank card — the visual half of the share loop. Used as the profile
 // page's social/OG image and embeddable anywhere. Private profiles get a generic card (no rank).
 router.get('/u/:username/card.svg', async (req, res) => {
   res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');

@@ -436,7 +436,7 @@ fun ArenaStadiumTheme(content: @Composable () -> Unit) {
 }
 
 /**
- * The Shop "Vault" surface. The shop is a premium, museum-case dark
+ * The Shop "Vault" surface. The shop is a museum-case dark
  * surface — its rarity frames, glows, and light-on-dark text depend on a dark ground — but unlike
  * the Arena it **tints to the player's equipped theme** (Studio → graphite-indigo + amber, Ocean →
  * navy + cyan, …) rather than always Studio, so the Vault feels like *their* collection. Wrap the

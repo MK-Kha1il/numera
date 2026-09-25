@@ -1,4 +1,4 @@
-// Self-Auditing Engine (Phase 15)
+// Self-Auditing Engine
 // ------------------------------------------------------------------------------------
 // Continuously turns the telemetry the app already collects into an actionable content
 // health report, so weak/confusing/repetitive content surfaces automatically instead of

@@ -38,7 +38,7 @@ import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.MathIconSpinner
 import com.example.numera.ui.components.MathText
-import com.example.numera.ui.components.NumeraPremiumLoader
+import com.example.numera.ui.components.NumeraLoader
 import com.example.numera.ui.components.RankBadge
 import com.example.numera.ui.components.VictoryEffectOverlay
 import com.example.numera.ui.components.VictoryParticles
@@ -66,7 +66,7 @@ fun DuelGameScreen(
     opponentRank: String? = null,
     myUserIdHint: Int = 0,
     onFinishGame: () -> Unit,
-    // Closes the compete→learn loop (ultra-review #17): jump straight from the result screen
+    // Closes the compete→learn loop: jump straight from the result screen
     // into a Growth Practice session over the misses this duel just banked.
     onReviewMisses: () -> Unit = {},
     // Rematch agreed: swap this screen for a fresh one on the new room (same socket, handed off).
@@ -137,7 +137,7 @@ fun DuelGameScreen(
     // Rematch handshake state: null (offer open) / "waiting" / "incoming" / "unavailable".
     var rematchState by remember { mutableStateOf<String?>(null) }
 
-    // Positive-only emotes (Phase 8): the opponent's latest emote (transient chip by their name)
+    // Positive-only emotes: the opponent's latest emote (transient chip by their name)
     // and our own send cooldown (mirrors the server's rate limit so taps aren't silently eaten).
     var oppEmote by remember { mutableStateOf<String?>(null) }
     var oppEmoteKey by remember { mutableIntStateOf(0) }
@@ -548,7 +548,7 @@ fun DuelGameScreen(
     if (problemsList.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.l)) {
-                NumeraPremiumLoader()
+                NumeraLoader()
                 Text("Entering the arena…", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
             }
         }

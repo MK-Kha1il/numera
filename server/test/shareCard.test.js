@@ -1,4 +1,4 @@
-// Shareable rank card (competitive audit #22 — the viral loop / reach gap). The server composes the
+// Shareable rank card (the viral loop / reach gap). The server composes the
 // boast text so the rank can't be spoofed client-side and the copy stays consistent.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');

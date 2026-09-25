@@ -18,7 +18,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Screen-level test over the data boundary (review #81): a mocked [ApiService] feeds the skill
+ * Screen-level test over the data boundary: a mocked [ApiService] feeds the skill
  * tree, and we assert a fetched concept node renders under its strand heading.
  */
 @RunWith(RobolectricTestRunner::class)

@@ -12,7 +12,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Guards the typed-answer math pad (ultra-review #16): each key appends its grader-understood
+ * Guards the typed-answer math pad: each key appends its grader-understood
  * token to the answer, and backspace trims the last character. The pad is stateless, so we assert
  * on the value handed back through onValueChange.
  */

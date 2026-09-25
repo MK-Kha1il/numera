@@ -1,4 +1,4 @@
-// Word-Problem Generator — the missing "applied math" capability (ultra review #9 / edu#5).
+// Word-Problem Generator — the missing "applied math" capability.
 //
 // The catalog was entirely symbolic: "compute 0.2 × 80", never "a $80 jacket is 20% off — what's
 // the sale price?". Word problems are the single most-tested real-world skill, and the hardest part

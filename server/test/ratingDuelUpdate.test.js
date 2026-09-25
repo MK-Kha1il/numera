@@ -1,4 +1,4 @@
-// Pure unit tests for the rating-unification keystone: applyDuelOutcomeToRating +
+// Pure unit tests for the duel rating update: applyDuelOutcomeToRating +
 // winProbability (mathEngine/ratingEngine.js). A ranked duel is evidence about the same
 // latent skill as a solo session, so it updates the SAME (mu, sigma) belief via an
 // outcome-vs-expected (head-to-head) update. See docs/Rating.md.
@@ -114,7 +114,7 @@ test('rankProgress stays consistent with displayRatingToRank across the ladder',
   }
 });
 
-// ─── computePerformanceScore weighting (understanding > speed, audit #28) ───────
+// ─── computePerformanceScore weighting (understanding > speed) ───────
 
 test('accuracy dominates speed: a careful accurate solver outranks a fast guesser', () => {
   const careful = NRS.computePerformanceScore({ solvedCount: 5, totalProblems: 5, errorsCount: 0, speedBonus: 0, comboBonus: 0, level: 10 });

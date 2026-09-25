@@ -1,5 +1,5 @@
 // Parent channel: a learner-set guardian email + a plain-language progress report they can preview
-// and send (ultra review #51/#78). The mailer's log transport records would-be sends for assertion.
+// and send. The mailer's log transport records would-be sends for assertion.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const { bootServer, shutdown, api, registerUser } = require('./helpers');

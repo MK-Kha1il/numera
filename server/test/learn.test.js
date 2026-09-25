@@ -1,4 +1,4 @@
-// Public concept ("learn") SEO pages (ultra review #54/opp#10). Guards that the lesson index and
+// Public concept ("learn") SEO pages. Guards that the lesson index and
 // every concept page render with the SEO essentials (title, meta description, canonical, h1),
 // the lesson content, internal links, and the app/worksheet CTAs — all with no auth.
 const { test, before, after } = require('node:test');

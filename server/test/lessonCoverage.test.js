@@ -1,4 +1,4 @@
-// Lesson coverage (audit #1.1 — content as a product, lesson depth). The generated-practice strands
+// Lesson coverage (content as a product, lesson depth). The generated-practice strands
 // must also carry VETTED, concept-first lessons, not the generic legacy fallback. This locks that:
 // every concept in the foundational strands (geometry / number sense / statistics) resolves to a
 // rich 5-part lesson (intuition → what → why → representations → mistakes → connections + worked

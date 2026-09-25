@@ -1,4 +1,4 @@
-// Printable practice worksheets (ultra review opp#40). The generator already produces unlimited,
+// Printable practice worksheets. The generator already produces unlimited,
 // vetted problems — this exposes them as a clean, printable HTML page (problems + an answer key)
 // for the parent/teacher persona the product otherwise under-serves. Public + rate-limited: a
 // teacher can bookmark a URL and print a fresh sheet, no account needed (no user data is touched).

@@ -60,7 +60,7 @@ function enrichAppliedProblem(p) {
   return p;
 }
 
-// Lifetime-correct counts at which a category earns a celebrated "mastery-up" (ultra-review #20).
+// Lifetime-correct counts at which a category earns a celebrated "mastery-up".
 // Crossing one of these on a level-complete returns a `masteryMilestone` the client celebrates.
 const MASTERY_MILESTONES = [
   { count: 10, label: 'Apprentice' },
@@ -143,13 +143,13 @@ router.get('/api/math/problems', authenticateToken, async (req, res) => {
       );
       rawProblems.push(picked.problem);
       const enriched = await Orchestrator.enrichProblem(db, userId, picked.problem, orchestration);
-      // Phase 10: never let an interactive visual carry the literal answer.
+      // Never let an interactive visual carry the literal answer.
       if (enriched.interactiveVisualJson) {
         enriched.interactiveVisualJson = LessonSafety.sanitizeVisualJson(enriched.interactiveVisualJson);
       }
       enriched.diversityScore = Number((picked.diversity || 0).toFixed(3));
       const withTip = attachTipToProblem(enriched, false);
-      // Phase 13: when this round is targeted remediation, confront the specific error —
+      // When this round is targeted remediation, confront the specific error —
       // surface the learner's own mistaken answer as a distractor + lead the hint ladder
       // with a focused coaching rung.
       if (orchestration.reason === 'misconception_remediation' && orchestration.meta && orchestration.meta.misconception) {
@@ -158,7 +158,7 @@ router.get('/api/math/problems', authenticateToken, async (req, res) => {
       problems.push(withTip);
     }
 
-    // Phase 12: strip any worked example from the lesson that would hand over an answer to
+    // Strip any worked example from the lesson that would hand over an answer to
     // (or merely restate) one of the problems being served this round.
     const { lesson: safeLesson } = LessonSafety.sanitizeLesson(
       { examples: lessonData.examples || [] },
@@ -206,7 +206,7 @@ router.post('/api/math/telemetry', authenticateToken, (req, res) => {
   const hesitationVal = parseFloat(hesitation) || 0;
   const retriesVal = parseInt(retries, 10) || 0;
 
-  // 1. Feed the learning-intelligence engine (concept analytics + retention + learner model +
+  // 1. Feed the learning engine (concept analytics + retention + learner model +
   //    teaching style + misconceptions) via the shared recorder — fire-and-forget, never blocks the
   //    response, and identical to the path every other mode now uses (services/engineFeed).
   feedEngineOutcome(db, userId, concept, {
@@ -541,7 +541,7 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
   }
 
   const now = Math.floor(Date.now() / 1000);
-  // Activation marker (ultra review #23): stamp activated_at the first time the learner clears
+  // Activation marker: stamp activated_at the first time the learner clears
   // the bar (N solves) inside the signup window. Conditional UPDATE so it fires at most once.
   db.run(
     'UPDATE users SET activated_at = ? WHERE id = ? AND activated_at = 0 AND created_at > 0 AND solved_count >= ? AND (? - created_at) <= ?',
@@ -589,7 +589,7 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
 
   updateCommitmentAndBurnout(userId, solved, (commitment) => {
     // Set when this session's solves push the category's lifetime-correct count across a mastery
-    // milestone — the client turns it into the signature "mastery-up" moment (ultra-review #20).
+    // milestone — the client turns it into the signature "mastery-up" moment.
     let masteryMilestone = null;
     const normCat = String(category).toLowerCase();
     const masteryCol = solved > 0 ? MASTERY_COL_BY_CAT[normCat] || null : null;
@@ -675,7 +675,7 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
 });
 
 // ── Checkpoint exam ───────────────────────────────────────────────────────────────────────────
-// A mixed-strand cumulative test for exam readiness (ultra review #16 / edu #46). It draws one
+// A mixed-strand cumulative test for exam readiness. It draws one
 // problem from each of several strands the learner has practiced, cycling strands so concepts are
 // INTERLEAVED (proven better for retention than blocked practice). Client-graded like other learn
 // modes; finishing grants a flat reward via /complete with category "mixed" (no single strand gets
@@ -742,7 +742,7 @@ router.get('/api/math/checkpoint-exam', authenticateToken, (req, res) => {
   });
 });
 
-// ── Word problems (ultra review #9 / edu#5) ───────────────────────────────────────────────────
+// ── Word problems ───────────────────────────────────────────────────
 // Applied, real-world contexts (shopping, change, discounts, rates, tips) — the catalog was
 // entirely symbolic. The hard part is choosing the operation, so distractors are operation-choice
 // slips. Difficulty (which contexts appear) scales with the learner's level; problems are MCQ and
@@ -760,7 +760,7 @@ router.get('/api/math/word-problems', authenticateToken, (req, res) => {
   });
 });
 
-// ── Estimation / number sense (ultra review edu#16) ───────────────────────────────────────────
+// ── Estimation / number sense ───────────────────────────────────────────
 // "About how big should this be?" — the foundational skill the symbolic catalog never trained.
 // MCQ, graded by the existing gameplay; difficulty (which estimation skills appear) scales with
 // the learner's level.
@@ -795,7 +795,7 @@ router.get('/api/math/error-detection', authenticateToken, (req, res) => {
 });
 
 // ── Content-quality reports ───────────────────────────────────────────────────────────────────
-// The catalog is generated and only ever checked at generation time (ultra review #17): this is the
+// The catalog is generated and only ever checked at generation time: this is the
 // human-in-the-loop signal it was missing. A learner flags a specific exercise; we store the problem
 // text + context for a later expert audit. Rate-limited so it can't be used to spam-write the table.
 const REPORT_REASONS = new Set(['wrong_answer', 'typo', 'confusing', 'renders_wrong', 'too_easy', 'too_hard', 'other']);

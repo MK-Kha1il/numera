@@ -19,7 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// Learning plan (audit #19 — goal actuation). Turns the learner's goal into an ordered,
+// Learning plan (goal actuation). Turns the learner's goal into an ordered,
 // prerequisite-correct path with one clear "next step", derived server-side from the same mastery
 // the engine computes (routes/engine.js GET /api/engine/learning-plan). Tapping a reachable step
 // launches practice for that concept; locked steps wait on their prerequisites.
@@ -54,7 +54,7 @@ fun LearningPlanScreen(onBack: () -> Unit, onPractice: (String, Int) -> Unit) {
 
         val p = plan
         when {
-            loading -> com.example.numera.ui.components.NumeraPremiumLoader(modifier = Modifier.fillMaxWidth())
+            loading -> com.example.numera.ui.components.NumeraLoader(modifier = Modifier.fillMaxWidth())
             p == null -> Text("Couldn't load your plan.", color = WrongRed, fontSize = 13.sp)
             else -> {
                 // Progress summary

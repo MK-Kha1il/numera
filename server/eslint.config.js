@@ -32,7 +32,7 @@ module.exports = [
     },
     rules: {
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      'no-console': 'off', // server intentionally logs to stdout; structured logger lands in Phase 5
+      'no-console': 'off', // CLI scripts print to stdout; the server itself uses logger.js
       'no-empty': ['warn', { allowEmptyCatch: true }],
       'prefer-const': 'warn',
       eqeqeq: ['warn', 'smart'],

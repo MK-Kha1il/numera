@@ -107,7 +107,7 @@ function levelToExpectedBaseline(level) {
 /**
  * Converts a session's raw metrics into a single performance score [0, 1].
  *
- * Weights (rebalanced to reward UNDERSTANDING over speed — competitive audit #28: a fast guesser must
+ * Weights (rebalanced to reward UNDERSTANDING over speed — a fast guesser must
  * not outrate a careful solver; the ceiling is unchanged at 0.85, weight just shifted from speed to
  * accuracy):
  *   Accuracy    65%  — primary; correctness is the dominant signal
@@ -266,7 +266,7 @@ function applySessionToRating(ratingRow, sessionData) {
 /**
  * Applies one head-to-head duel result to a (mu, sigma) rating pair.
  *
- * This is the unification keystone (docs/Rating.md): a ranked
+ * This is how duels feed the same rating as solo play (docs/Rating.md): a ranked
  * duel is evidence about the SAME latent skill as a solo session, so it updates the
  * SAME (mu, sigma) belief — just scored by OUTCOME-vs-EXPECTED instead of
  * performance-vs-baseline. Solo and duels therefore move ONE number per domain.
@@ -357,7 +357,7 @@ function displayRatingToRank(displayRating, sessionsCount) {
 }
 
 /**
- * Progression detail for the divisions/pips UI (competitive audit Top-25 #7): where the player sits
+ * Progression detail for the divisions/pips UI: where the player sits
  * WITHIN their current division and how far to the next one. Pure; derived from RANK_LADDER so it
  * always matches displayRatingToRank.
  *
@@ -536,7 +536,7 @@ function computeMatchQuality(ratingA, ratingB) {
 }
 
 // σ below which a rating is "established" — above it the player is still in calibration and the
-// display rating (μ−2σ) is wide of the true skill. Surfaced as a provisional `?` marker (audit opp #9)
+// display rating (μ−2σ) is wide of the true skill. Surfaced as a provisional `?` marker
 // and used to loosen matchmaking for not-yet-calibrated players. SIGMA_INIT 350 → established ~150.
 const SIGMA_ESTABLISHED = 150;
 
@@ -546,7 +546,7 @@ function isProvisional(sigma) {
 }
 
 /**
- * Hidden-MMR pairing gate (audit Top-25 #11 / opp #7,#8): accept a ranked pairing when the
+ * Hidden-MMR pairing gate: accept a ranked pairing when the
  * win-probability-based match quality clears a floor that *relaxes with wait time*, so a fair match
  * forms quickly and a looser one still forms eventually (the 10s bot fallback is the final backstop).
  * Pairs on (μ, σ) — the real belief — not a raw rating-point window, so high-σ provisional players,

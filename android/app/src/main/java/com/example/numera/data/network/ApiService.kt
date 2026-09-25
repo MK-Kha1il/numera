@@ -91,7 +91,7 @@ interface ApiService {
         @Body request: CalculatorLogRequest
     ): CalculatorLogResponse
 
-    // Per-answer cognitive telemetry — fire-and-forget; feeds the learning-intelligence engine.
+    // Per-answer cognitive telemetry — fire-and-forget; feeds the learning engine.
     @POST("api/math/telemetry")
     suspend fun logTelemetry(
         @Header("Authorization") token: String,
@@ -328,7 +328,7 @@ interface ApiService {
         @Header("Authorization") token: String
     ): List<ClubLeaderboardEntry>
 
-    // Club SKILL ladder — ranked by avg competitive rating, not XP (audit #17).
+    // Club SKILL ladder — ranked by avg competitive rating, not XP.
     @GET("api/clubs/leaderboard/skill")
     suspend fun clubsSkillLeaderboard(
         @Header("Authorization") token: String
@@ -536,7 +536,7 @@ interface ApiService {
         @Body request: OnboardingEventRequest
     ): SimpleResponse
 
-    // ---- Progressive disclosure (Phase 11) ----
+    // ---- Progressive disclosure ----
     @GET("api/onboarding/spotlights")
     suspend fun getSpotlights(
         @Header("Authorization") token: String
@@ -771,11 +771,11 @@ interface ApiService {
     @GET("api/rating/profile")
     suspend fun getRatingProfile(@Header("Authorization") token: String): RatingProfileResponse
 
-    // ---- Shareable rank card (viral loop, audit #22) ----
+    // ---- Shareable rank card (viral loop) ----
     @GET("api/rating/share-card")
     suspend fun getShareCard(@Header("Authorization") token: String): ShareCardResponse
 
-    // ---- Live group/class competitive rooms (audit #19) ----
+    // ---- Live group/class competitive rooms ----
     @POST("api/live-rooms")
     suspend fun createLiveRoom(@Header("Authorization") token: String, @Body req: CreateLiveRoomRequest = CreateLiveRoomRequest()): LiveRoomResponse
 
@@ -816,7 +816,7 @@ interface ApiService {
         @Query("limit") limit: Int
     ): List<MatchHistoryEntry>
 
-    // ---- Honor / commendation system (audit #24) ----
+    // ---- Honor / commendation system ----
     @POST("api/rating/commend")
     suspend fun commendOpponent(
         @Header("Authorization") token: String,
@@ -826,7 +826,7 @@ interface ApiService {
     @GET("api/rating/honor")
     suspend fun getHonor(@Header("Authorization") token: String): HonorResponse
 
-    // ---- Competitive onboarding: mark the one-time placement rank-reveal as seen (audit #20) ----
+    // ---- Competitive onboarding: mark the one-time placement rank-reveal as seen ----
     @POST("api/rating/reveal-seen")
     suspend fun markRankRevealSeen(@Header("Authorization") token: String): SimpleResponse
 

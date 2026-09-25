@@ -1,6 +1,6 @@
 // Concept-First Lesson Library
 // ----------------------------------------------------------------------------
-// Each lesson teaches a concept the way an elite tutor would: intuition BEFORE
+// Each lesson teaches a concept the way a good tutor would: intuition BEFORE
 // the rule, the idea from MULTIPLE representations, an honest account of WHY it
 // works, WHEN to reach for it, the mistakes learners actually make (sourced from
 // the misconception rules in knowledgeGraph.js so teaching and remediation
@@ -4952,8 +4952,8 @@ const CONCEPT_LESSONS = {
   },
 
   // ===========================================================================
-  // ADVANCED CONCEPTS (audit #1.1 — upgrading the original legacy lessons to the
-  // rich concept-first shape, for concepts whose canonical-level template matches).
+  // ADVANCED CONCEPTS: the original legacy lessons upgraded to the rich concept-first
+  // shape, for concepts whose canonical-level template matches.
   // ===========================================================================
   quadratic: {
     title: "Solving Quadratic Equations",
@@ -5337,7 +5337,7 @@ function levelToConceptId(category, level) {
     if (lvl <= 4) return 'percentage';
     return null; // squaring / probability — legacy
   }
-  // Strand-based curriculum (audit #1.1): each new strand maps its levels to a rich concept lesson.
+  // Strand-based curriculum: each new strand maps its levels to a rich concept lesson.
   if (cat === 'integers') {
     if (lvl <= 4) return 'absolute_value';
     if (lvl <= 5) return 'integer_add';

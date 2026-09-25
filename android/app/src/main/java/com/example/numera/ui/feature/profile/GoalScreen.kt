@@ -25,7 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// "My Goal" — an explicit, learner-CHOSEN target (audit #2/#19). The engine measured everything but
+// "My Goal" — an explicit, learner-CHOSEN target. The engine measured everything but
 // let the learner aim at nothing; this closes the loop with a Duolingo-style goal + live progress.
 // Loads/saves /api/account/goal. Progress is computed server-side from existing stats.
 @Composable

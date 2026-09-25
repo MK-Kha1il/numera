@@ -1,4 +1,4 @@
-// Mathematical Learning Intelligence Engine API: records answer events and exposes the
+// Learning engine API: records answer events and exposes the
 // learner model, misconceptions, spaced-retention, analytics recommendations, and the
 // skill-based competitive profile. Thin HTTP layer over the mathEngine/* modules.
 const express = require('express');
@@ -20,7 +20,7 @@ const logger = require('../logger');
 
 const router = express.Router();
 
-// Phase 15 — self-auditing engine. Admin-only content health report that fuses pedagogical
+// Self-auditing engine. Admin-only content health report that fuses pedagogical
 // feedback, lesson analytics, and the anti-repetition exposure memory to auto-flag weak and
 // repetitive content (the latter pinpoints which slots still need more representations).
 router.get('/api/engine/content-audit', authenticateToken, requireAdmin, async (req, res) => {
@@ -216,9 +216,8 @@ router.get('/api/engine/skill-tree', authenticateToken, async (req, res) => {
 });
 
 // GET /api/engine/learning-plan
-// Goal actuation (audit #19): turn the learner's goal into an ORDERED, prerequisite-correct path of
-// concepts with a single clear "next step" — the audit's "measures like a pro, acts like a beginner"
-// gap. Unlike the skill tree (the whole map), this is a focused sequence toward a target: an explicit
+// Goal actuation: turn the learner's goal into an ORDERED, prerequisite-correct path of
+// concepts with a single clear "next step". Unlike the skill tree (the whole map), this is a focused sequence toward a target: an explicit
 // reach_level goal if set, else a near-term horizon from where the learner is now. Each step's status
 // is derived from the SAME mastery the rest of the engine computes, so the path stays honest.
 const PLAN_PROFICIENT = 0.6; // "you've learned this" bar — both marks a step done and gates prereqs
@@ -360,7 +359,7 @@ router.get('/api/engine/misconceptions', authenticateToken, async (req, res) => 
 });
 
 // GET /api/engine/growth-profile
-// Learner-facing "Growth Insights" (ultra review edu#44): turns the engine's per-concept
+// Learner-facing "Growth Insights": turns the engine's per-concept
 // analytics + misconception tracking into a kid-friendly view — what you're strong at, and the
 // error *habits* worth watching — so the learner finally sees what the engine already knows.
 router.get('/api/engine/growth-profile', authenticateToken, (req, res) => {
@@ -396,7 +395,7 @@ router.get('/api/engine/growth-profile', authenticateToken, (req, res) => {
           label: m.misconception_label,
           severity: m.severity,
           frequency: m.frequency,
-          // The fix, not just the diagnosis (ultra review opp#21) — actionable corrective guidance.
+          // The fix, not just the diagnosis — actionable corrective guidance.
           tip: MisconceptionEngine.tipForMisconception(m.misconception_type),
         }));
       } catch (_) {

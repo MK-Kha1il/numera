@@ -21,7 +21,7 @@ import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.MathText
 import kotlinx.coroutines.launch
 
-// Reasoning Arena (Phase 3 — understanding is the win condition). Each problem is answered, THEN you
+// Reasoning Arena (understanding is the win condition). Each problem is answered, THEN you
 // must pick the correct REASON it's right; a point banks only if BOTH are correct. Ranked: it moves
 // the unified NRS rating with no speed signal. Server-authoritative (routes/reasoningDuel.js).
 @Composable
@@ -32,7 +32,7 @@ fun ReasoningArenaScreen(onExit: () -> Unit) {
     var phase by remember { mutableStateOf("intro") } // intro | playing | done
     var busy by remember { mutableStateOf(false) }
 
-    // Per-domain focus (audit #15): pick a ladder to climb, or "Any" (null) for a mixed round.
+    // Per-domain focus: pick a ladder to climb, or "Any" (null) for a mixed round.
     var focusDomains by remember { mutableStateOf(listOf<String>()) }
     var selectedDomain by remember { mutableStateOf<String?>(null) }
     var roundDomain by remember { mutableStateOf<String?>(null) }

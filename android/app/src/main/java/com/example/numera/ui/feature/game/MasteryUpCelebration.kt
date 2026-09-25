@@ -35,11 +35,9 @@ import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.VictoryParticles
 
 /**
- * The signature "mastery-up" moment (ultra-review #20). Mastery is Numera's crown jewel, yet
- * until now only *activity* events (level-up, streak) got a celebration while *learning* events
- * passed silently. This is the biggest, most deliberate celebration in the learning loop: a
- * full-screen takeover with a confetti burst and a spring-scaled crown, fired when the server
- * reports a category crossed a mastery milestone.
+ * The "mastery-up" moment: a full-screen overlay with a confetti burst and a spring-scaled trophy,
+ * shown when the server reports that a category crossed a mastery milestone. Level-ups and streaks
+ * already had a moment; this gives learning progress one too.
  *
  * Reduced-motion is respected by [VictoryParticles] / the shared MotionManager downstream.
  */

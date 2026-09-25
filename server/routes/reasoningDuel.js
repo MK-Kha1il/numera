@@ -1,4 +1,4 @@
-// Reasoning Arena (competitive audit Phase 3 — "make understanding the win condition"). A ranked
+// Reasoning Arena: understanding is the win condition. A ranked
 // mode where a correct ANSWER only banks a point if you ALSO pick the correct REASON it's right
 // (reusing the authored self-explanation reason-sets). Scored purely on understanding — ZERO speed
 // signal — and it moves the SAME unified NRS rating as duels/solo, via the head-to-head update vs a
@@ -30,7 +30,7 @@ const DAILY_RATED_CAP = 10; // rating-moving rounds per UTC day (anti-farm; play
 const dayStart = () => Math.floor(Date.now() / 86400000) * 86400000;
 
 // The eligible concepts = those with an authored reason-set AND a generatable problem. Each carries
-// its competitive domain so a player can choose to climb a specific ladder (audit #15).
+// its competitive domain so a player can choose to climb a specific ladder.
 const REASONING_POOL = Object.keys(SELF_EXPLAIN)
   .filter((id) => CONCEPT_TO_LEVEL[id])
   .map((id) => ({ id, category: CONCEPT_TO_LEVEL[id].category, level: CONCEPT_TO_LEVEL[id].level, domain: NRS.categoryToDomain(CONCEPT_TO_LEVEL[id].category) }));
@@ -74,7 +74,7 @@ function pickReasoningConcepts(playerLevel, count, focusDomain = null) {
 // correct-reason index are stored server-side; only the questions + options are returned.
 // ── GET /api/reasoning-duel/domains ───────────────────────────────────────────
 // The domains a player can choose to focus a round on (each has enough reason-sets to fill one).
-// Drives the Arena's "climb a specific ladder" chooser (audit #15).
+// Drives the Arena's "climb a specific ladder" chooser.
 router.get('/api/reasoning-duel/domains', authenticateToken, (req, res) => {
   res.json({ domains: FOCUS_DOMAINS });
 });
@@ -165,7 +165,7 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
       if (answerCorrect) answerCorrectCount++;
       if (bankedThis) banked++;
       // Not banked = the answer OR the reason was wrong → didn't fully understand it. Queue the
-      // concept for spaced review (audit #25: a ranked loss becomes learning).
+      // concept for spaced review (a ranked loss becomes learning).
       else if (problems[i].conceptId && !missedConcepts.includes(problems[i].conceptId)) missedConcepts.push(problems[i].conceptId);
       perProblem.push({
         answerCorrect,
@@ -200,7 +200,7 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
         } catch { /* engine feed is best-effort; never block the result on it */ }
       }
 
-      // Queue every not-fully-understood concept for spaced review, due now (audit #25). Best-effort,
+      // Queue every not-fully-understood concept for spaced review, due now. Best-effort,
       // awaited so the review queue is populated before the client navigates to it.
       for (const topic of r.missedConcepts) {
         try { await new Promise((resolve) => enqueueMissedTopic(db, req.user.id, topic, resolve)); } catch { /* never block the result */ }
@@ -234,7 +234,7 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
           newRank: after ? NRS.displayRatingToRank(after.displayRating, after.sessionsCount) : null,
           promoted: after ? !!after.promoted : false,
           perProblem: r.perProblem,
-          reviewQueued: r.missedConcepts.length, // concepts pushed into SRS for spaced review (audit #25)
+          reviewQueued: r.missedConcepts.length, // concepts pushed into SRS for spaced review
         });
       };
 
@@ -253,7 +253,7 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
 
 // ── GET /api/reasoning-duel/:id/review ────────────────────────────────────────
 // Replay a FINISHED round problem-by-problem: the question, your answer vs the correct one, and the
-// reason you picked vs the correct reason (audit #70 — turn a competitive result into learning).
+// reason you picked vs the correct reason (turn a competitive result into learning).
 router.get('/api/reasoning-duel/:id/review', authenticateToken, (req, res) => {
   const id = parseInt(req.params.id, 10);
   db.get('SELECT * FROM reasoning_rounds WHERE id = ? AND user_id = ?', [id, req.user.id], (err, round) => {

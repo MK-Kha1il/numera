@@ -1,4 +1,4 @@
-// Authored "common question" threads seeded into per-concept discussion (ultra review #5/#55).
+// Authored "common question" threads seeded into per-concept discussion.
 // At zero population a blank discussion tab erodes trust; these give every seeded concept a useful
 // starter thread (a real beginner question + a friendly, correct answer), attributed to the system
 // "NumeraGuide" account. Seeding is lazy and one-time per concept (see routes/discussion.js):

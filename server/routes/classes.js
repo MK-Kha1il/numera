@@ -1,4 +1,4 @@
-// School channel — the class-code join flow (ultra review #52/#86): "one teacher, 30 kids, zero
+// School channel — the class-code join flow: "one teacher, 30 kids, zero
 // infra beyond a group." Any user can create a class (becoming its teacher) and share the join
 // code; students join with the code and the teacher sees a roster of plain-language progress
 // (reusing services/progressReport). Students consent by joining; a teacher only ever sees the

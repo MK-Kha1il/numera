@@ -54,7 +54,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
 import com.example.numera.ui.components.RankBadge
-import com.example.numera.ui.components.NumeraPremiumLoader
+import com.example.numera.ui.components.NumeraLoader
 import com.example.numera.ui.components.NumeraSlideOver
 import com.example.numera.ui.components.NumeraIcon
 import com.example.numera.ui.components.NumeraIconType
@@ -231,7 +231,7 @@ fun GameplayScreen(
     // Productive struggle: in MCQ we withhold *which* option is correct until the learner either
     // answered correctly or chose to see the worked solution. Flipped by "Review Solution".
     var answerRevealed by remember(currentProblemIdx) { mutableStateOf(false) }
-    // Content-quality report dialog for the current exercise (ultra review #17/#90).
+    // Content-quality report dialog for the current exercise.
     var showReport by remember { mutableStateOf(false) }
     val reportContext = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(hasAnswered) {
@@ -894,7 +894,7 @@ fun GameplayScreen(
                         )
 
                         // Math-symbol pad: the tokens the stock keyboard makes painful
-                        // (fraction / exponent / π / parens) — all grader-understood (#16).
+                        // (fraction / exponent / π / parens) — all grader-understood.
                         if (!hasAnswered) {
                             MathKeyboard(
                                 value = typedInput,

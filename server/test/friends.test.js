@@ -1,5 +1,5 @@
-// Friends: a pending request is now DECLINABLE by its recipient (audit top-50 #19 — requests used
-// to be un-declinable, only acceptable). Also locks the `incoming` direction flag the client uses
+// Friends: a pending request is now DECLINABLE by its recipient (requests used to
+// be un-declinable, only acceptable). Also locks the `incoming` direction flag the client uses
 // to decide whether to show accept/decline vs. an outgoing "Requested" label.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');

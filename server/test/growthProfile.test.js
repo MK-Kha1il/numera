@@ -1,4 +1,4 @@
-// Growth Insights (ultra review edu#44): per-answer telemetry now revives the dormant
+// Growth Insights: per-answer telemetry now revives the dormant
 // misconception engine, and /api/engine/growth-profile turns that data into a learner-facing
 // view — strengths (well-practiced concepts) + error "habits to watch". This guards the new
 // data path end-to-end: a wrong answer becomes a named misconception; a correct answer becomes

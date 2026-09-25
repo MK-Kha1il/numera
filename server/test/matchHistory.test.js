@@ -1,4 +1,4 @@
-// Competitive match history (Phase 2 identity): every duel and reasoning round is recorded from the
+// Competitive match history: every duel and reasoning round is recorded from the
 // player's POV (opponent, scoreline, result, rating delta), exposed via GET /api/rating/matches.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');

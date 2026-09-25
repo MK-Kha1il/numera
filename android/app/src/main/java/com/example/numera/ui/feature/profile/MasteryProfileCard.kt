@@ -24,7 +24,7 @@ import com.example.numera.ui.components.NumeraIcon
 import com.example.numera.ui.components.NumeraIconType
 
 /**
- * Multi-dimensional mastery breakdown (Sprint 3). Shows the four learner-model dimensions —
+ * Multi-dimensional mastery breakdown. Shows the four learner-model dimensions —
  * accuracy, fluency, retention, independence — as labelled bars, the overall stage, and a
  * targeted focus tip for the single weakest dimension. Fed by GET /api/engine/learner's
  * `masteryProfile` aggregate; renders nothing until the learner has practiced enough to have one.

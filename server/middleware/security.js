@@ -18,7 +18,7 @@ function securityHeaders(req, res, next) {
   next();
 }
 
-// Single point of control for server-error leakage (ultra review #71): hundreds of routes do
+// Single point of control for server-error leakage: hundreds of routes do
 // `res.status(500).json({ error: err.message })`, which leaks DB/internal details and shows the
 // user unhelpful copy. Rather than hand-editing every call site, we wrap res.json once: any 5xx
 // response carrying an `error` string is logged in full server-side and replaced with a generic,

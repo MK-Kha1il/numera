@@ -1,5 +1,5 @@
-// Advanced-concept lesson coverage (audit #1.1 — upgrading the ORIGINAL advanced concepts from the
-// generic legacy lessons to the rich, concept-first shape). Unlike the foundational strands, the
+// Advanced-concept lesson coverage: the ORIGINAL advanced concepts upgraded from the generic
+// legacy lessons to the rich, concept-first shape. Unlike the foundational strands, the
 // advanced catalog is only PARTLY concept-first: a concept earns a rich lesson only when its
 // canonical-level template actually generates that concept. (matrix_trace/matrix_determinant/
 // combinations were repointed to their matching template levels — 17/18/25 — so they now qualify.)

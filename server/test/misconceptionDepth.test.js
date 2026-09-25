@@ -1,8 +1,8 @@
 // Tripwire for misconception-DIAGNOSIS depth (mission: "diagnose misunderstanding, not merely
 // detect wrong answers"). A misconception rule earns its keep only if, given a real problem's
 // (correctAnswer, params), it predicts a DISTINCT wrong value — otherwise it can never match a
-// learner's wrong answer and is a dead placeholder. The audit found a large population of
-// `(ans) => ans` identity placeholders; these CORE foundational concepts have been revived with a
+// learner's wrong answer and is a dead placeholder. There used to be many `(ans) => ans`
+// identity placeholders; these CORE foundational concepts have been revived with a
 // second, competing, param-aware misconception so the engine can triangulate "misconception vs.
 // slip." This test pins that and fails if any core rule regresses to a placeholder or collides.
 const { test } = require('node:test');

@@ -1,5 +1,5 @@
 // End-to-end smoke tests over the real route stack. These are the safety net that guards
-// the server.js -> routers refactor (Phase 1a): if a route stops being reachable or its
+// the server.js -> routers refactor: if a route stops being reachable or its
 // auth/response contract changes, one of these fails.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
@@ -52,9 +52,9 @@ test('served problems carry the anti-repetition + hint-ladder pipeline end-to-en
   assert.strictEqual(res.status, 200);
   assert.ok(Array.isArray(res.body.problems) && res.body.problems.length > 0, 'problems present');
   for (const p of res.body.problems) {
-    // Diversity engine ran (Phase 3).
+    // Diversity engine ran.
     assert.strictEqual(typeof p.diversityScore, 'number', 'diversityScore attached');
-    // Hint ladder reached the API and escalates from a small nudge (Phase 11).
+    // Hint ladder reached the API and escalates from a small nudge.
     assert.ok(Array.isArray(p.hintLadder) && p.hintLadder.length >= 1, 'hintLadder present');
     assert.strictEqual(p.hintLadder[0].stage, 1, 'ladder starts at stage 1');
     // No rung leaks the correct answer.

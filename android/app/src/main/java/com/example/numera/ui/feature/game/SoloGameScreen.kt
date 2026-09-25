@@ -48,7 +48,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
 import com.example.numera.ui.components.RankBadge
-import com.example.numera.ui.components.NumeraPremiumLoader
+import com.example.numera.ui.components.NumeraLoader
 import com.example.numera.ui.components.NumeraSlideOver
 import com.example.numera.ui.components.NumeraIcon
 import com.example.numera.ui.components.NumeraIconType
@@ -130,7 +130,7 @@ fun SoloGameScreen(
     var errorsCount by remember { mutableIntStateOf(0) }
     var heartsLeft by remember { mutableIntStateOf(3) }
     // Set from the /complete response when a category crosses a mastery milestone; shows the
-    // signature mastery-up celebration over the recap, then clears to reveal the recap (#20).
+    // signature mastery-up celebration over the recap, then clears to reveal the recap.
     var masteryMilestone by remember { mutableStateOf<MasteryMilestone?>(null) }
     var retryTokensLeft by remember { mutableIntStateOf(0) }
     var showRetryDialogPrompt by remember { mutableStateOf(false) }
@@ -439,7 +439,7 @@ fun SoloGameScreen(
                         }
                     }
                     "checkpoint_exam" -> {
-                        // A mixed-strand cumulative exam (ultra review #16): play a server-assembled
+                        // A mixed-strand cumulative exam: play a server-assembled
                         // interleaved set straight through, no lesson — this is a self-assessment.
                         val exam = RetrofitClient.apiService.getCheckpointExam(token, count = 8)
                         withContext(Dispatchers.Main) {
@@ -447,7 +447,7 @@ fun SoloGameScreen(
                         }
                     }
                     "word_problems" -> {
-                        // Applied, real-world contexts (ultra review #9): a server-assembled MCQ set,
+                        // Applied, real-world contexts: a server-assembled MCQ set,
                         // played straight through with no lesson — the skill is choosing the operation.
                         val set = RetrofitClient.apiService.getWordProblems(token, count = 5)
                         withContext(Dispatchers.Main) {
@@ -455,7 +455,7 @@ fun SoloGameScreen(
                         }
                     }
                     "estimation" -> {
-                        // Number sense (ultra review edu#16): "about how big?" — a server-assembled MCQ
+                        // Number sense: "about how big?" — a server-assembled MCQ
                         // set, no lesson; the skill is judging magnitude by rounding to friendly numbers.
                         val set = RetrofitClient.apiService.getEstimation(token, count = 5)
                         withContext(Dispatchers.Main) {
@@ -471,7 +471,7 @@ fun SoloGameScreen(
                         }
                     }
                     "transfer_challenge" -> {
-                        // A single novel-context problem (Sprint 4). Deliberately no lesson — the
+                        // A single novel-context problem. Deliberately no lesson — the
                         // point is to recognise the concept in an unfamiliar framing on your own.
                         val challenge = RetrofitClient.apiService.getTransferChallenge(token)
                         withContext(Dispatchers.Main) {
@@ -562,7 +562,7 @@ fun SoloGameScreen(
 
     if (isLoading) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
-            NumeraPremiumLoader()
+            NumeraLoader()
         }
         return
     }
@@ -628,8 +628,8 @@ fun SoloGameScreen(
 
     fun handleAnswer(isCorrect: Boolean) {
         // Per-answer cognitive telemetry — fire-and-forget. This single call revives the server's
-        // learning-intelligence engine (mastery, retention, teaching-style) and, by reporting the
-        // chosen wrong answer, the misconception tracking that powers Growth Insights (edu#44).
+        // learning engine (mastery, retention, teaching-style) and, by reporting the
+        // chosen wrong answer, the misconception tracking that powers Growth Insights.
         // Sent for every solo answer; never blocks the feedback UI.
         run {
             val conceptKey = currentProblem.templateType ?: category.ifEmpty { "General" }
@@ -779,8 +779,8 @@ fun SoloGameScreen(
     }
 
     // Single source of truth for "did the learner answer the current problem correctly?" — this
-    // exact branch was previously inlined three times (card border, feedback banner, typed-submit),
-    // see AUDIT #3. TYPED compares the trimmed typed value case-insensitively; MCQ/TIMED compare the
+    // exact branch was previously inlined three times (card border, feedback banner, typed-submit).
+    // TYPED compares the trimmed typed value case-insensitively; MCQ/TIMED compare the
     // tapped option to the answer.
     fun isCurrentAnswerCorrect(): Boolean = if (currentExerciseType == ExerciseType.TYPED) {
         typedInput.trim().equals(currentProblem.correctAnswer.trim(), ignoreCase = true)
@@ -991,7 +991,7 @@ fun SoloGameScreen(
 
     if (isGameOver) {
         // The mastery-up moment takes over the screen before the recap — the learning event is
-        // celebrated first and biggest, then dismissing it reveals the normal reward recap (#20).
+        // celebrated first and biggest, then dismissing it reveals the normal reward recap.
         masteryMilestone?.let { milestone ->
             MasteryUpCelebration(
                 category = milestone.category,
@@ -1090,7 +1090,7 @@ fun SoloGameScreen(
         KeepGoingDialog(
             retryTokensLeft = retryTokensLeft,
             // Free, primary path: errors never tax a learner in a learning mode. Restore the
-            // hearts and continue with no progress lost, no resource spent (ultra-review #15).
+            // hearts and continue with no progress lost, no resource spent.
             onKeepGoing = {
                 errorsCount = 0
                 heartsLeft = 3

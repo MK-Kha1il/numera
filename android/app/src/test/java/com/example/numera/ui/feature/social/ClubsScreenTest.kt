@@ -18,7 +18,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Screen-level test over the data boundary (review #81): when the player is in no club, a mocked
+ * Screen-level test over the data boundary: when the player is in no club, a mocked
  * [ApiService] returns a browsable club and we assert it renders in the browse list.
  */
 @RunWith(RobolectricTestRunner::class)

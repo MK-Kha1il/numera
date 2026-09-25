@@ -47,7 +47,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
 import com.example.numera.ui.components.RankBadge
-import com.example.numera.ui.components.NumeraPremiumLoader
+import com.example.numera.ui.components.NumeraLoader
 import com.example.numera.ui.components.NumeraSlideOver
 import com.example.numera.ui.components.NumeraIcon
 import com.example.numera.ui.components.NumeraIconType

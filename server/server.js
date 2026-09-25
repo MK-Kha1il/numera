@@ -41,7 +41,7 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 // Defense-in-depth HTTP security headers (see middleware/security.js).
 app.use(securityHeaders);
 
-// Sanitize any 5xx error body so internal/DB details never reach the client (ultra review #71).
+// Sanitize any 5xx error body so internal/DB details never reach the client.
 app.use(sanitizeServerErrors);
 
 // Global per-IP API rate limiting (100 requests / minute). Loopback/LAN exempt.

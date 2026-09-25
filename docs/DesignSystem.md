@@ -49,7 +49,7 @@ color scheme. Prefer `MaterialTheme.colorScheme.*` / named tokens over raw `Colo
 theming (multiple selectable themes) stays consistent.
 
 ## Component library — `ui/components/`
-- **Primitives:** `DuoButton`, `GlassCard`/`DuoCard`, `NumeraIcon` (+ `PremiumIcons` Canvas
+- **Primitives:** `DuoButton`, `GlassCard`/`DuoCard`, `NumeraIcon` (+ `NumeraIcons.kt` Canvas
   glyphs), inputs.
 - **Feedback & perceived performance:** `Feedback` (global toasts via `LocalToast` +
   `NumeraToastHost`, mounted once in `MainTabsScreen`), `Skeletons` (typed shimmer

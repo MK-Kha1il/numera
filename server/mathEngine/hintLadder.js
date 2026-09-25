@@ -1,4 +1,4 @@
-// Multi-stage Hint Ladder (Phase 11)
+// Multi-stage Hint Ladder
 // ------------------------------------------------------------------------------------
 // A single "here's the tip" reveal either gives too much or too little. This builds an
 // ordered ladder of escalating hints so the learner can ask for exactly as much help as

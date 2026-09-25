@@ -1,6 +1,6 @@
 package com.example.numera.ui.components
 
-// Accessibility (audit #1.12 / #45 — the math WebView is opaque to screen readers). This pure
+// Accessibility (the math WebView is opaque to screen readers). This pure
 // converter turns the LaTeX/markup a MathText renders into a spoken-readable string that we attach
 // as the composable's contentDescription, so TalkBack announces "3 over 4" instead of nothing.
 // It is intentionally a *spoken approximation*, not a MathML tree: structure (fractions, powers,

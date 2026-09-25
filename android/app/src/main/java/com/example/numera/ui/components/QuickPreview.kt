@@ -52,7 +52,7 @@ fun NumeraQuickPreview(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        // Animate in on first composition for a premium spring entrance.
+        // Spring in on first composition.
         var shown by remember { mutableStateOf(false) }
         LaunchedEffect(Unit) { shown = true }
 

@@ -23,7 +23,7 @@ class CrashReporterTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private fun pendingFile() = File(context.filesDir, "pending_crash.txt")
 
-    /** Phase 1: an uncaught exception is persisted locally (truncated), nothing else. */
+    /** An uncaught exception is persisted locally (truncated), nothing else. */
     @Test
     fun writePendingPersistsTruncatedStack() {
         pendingFile().delete()
@@ -34,7 +34,7 @@ class CrashReporterTest {
         assertTrue("stack must be truncated", text.length <= 8000)
     }
 
-    /** Phase 2: the next launch uploads the pending crash and clears the file. */
+    /** The next launch uploads the pending crash and clears the file. */
     @Test
     fun flushPendingUploadsAndDeletes() {
         pendingFile().writeText("java.lang.IllegalStateException: kaboom\n\tat numera.Test(Test.kt:1)")

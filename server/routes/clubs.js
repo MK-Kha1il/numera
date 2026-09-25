@@ -1,7 +1,7 @@
-// Clubs/teams (audit #1.7 community). A learner belongs to at most one club at a time. Create a
+// Clubs/teams. A learner belongs to at most one club at a time. Create a
 // club (name content-filtered + unique, creator auto-joins), browse open clubs with member counts,
 // join/leave (the club is deleted when its last member leaves), and view your club's member
-// ranking. Owner governance (audit #1.7 — kick/owner powers): the owner can remove a member,
+// ranking. Owner governance (kick/owner powers): the owner can remove a member,
 // transfer ownership, or disband the club; when an owner leaves a club that still has members,
 // ownership auto-transfers to the top-ranked remaining member (no dangling owner_id). ACID
 // throughout via withTransaction.
@@ -122,7 +122,7 @@ router.get('/api/clubs/leaderboard', authenticateToken, (req, res) => {
   );
 });
 
-// Club SKILL ladder (competitive audit #17/#76/#77): rank clubs by the AVERAGE competitive rating of
+// Club SKILL ladder: rank clubs by the AVERAGE competitive rating of
 // their placed members, not summed level/XP — so a tight crew of strong mathematicians outranks a
 // horde of grinders, and recruiting weak accounts doesn't inflate a club. Average over members with
 // an established rating (≥5 rated games); clubs with none are "Unrated". The club's rank label is

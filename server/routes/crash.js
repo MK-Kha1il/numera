@@ -1,4 +1,4 @@
-// Self-hosted crash reporting (ultra review #12). The app was blind to field crashes, and a
+// Self-hosted crash reporting. The app was blind to field crashes, and a
 // third-party SDK would break the no-tracking privacy posture — so the client posts crashes
 // here. Privacy contract: ANONYMOUS by design. No auth, no user id, no device id — a report
 // is a stack trace + app version + Android API level. Hard-capped, rate-limited, and grouped

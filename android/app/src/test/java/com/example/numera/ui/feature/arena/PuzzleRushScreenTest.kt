@@ -19,7 +19,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Screen-level test over the data boundary (review #81): a mocked [ApiService] feeds the Puzzle
+ * Screen-level test over the data boundary: a mocked [ApiService] feeds the Puzzle
  * Rush idle view, and we assert the fetched leaderboard renders.
  */
 @RunWith(RobolectricTestRunner::class)

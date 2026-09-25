@@ -1,6 +1,6 @@
 // Exercise Memory + Diversity Engine
 // ------------------------------------------------------------------------------------
-// The keystone of the anti-repetition system. Two responsibilities:
+// The core of the anti-repetition system. Two responsibilities:
 //
 //   1. MEMORY   — remember what each learner has recently experienced (per-user
 //                 fingerprints of served problems) so the engine never generates blind.

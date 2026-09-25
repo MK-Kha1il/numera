@@ -23,7 +23,7 @@ import com.example.numera.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-// Skill Tree — the hero mastery view (audit #6). Surfaces the per-concept, multi-dimensional
+// Skill Tree — the hero mastery view. Surfaces the per-concept, multi-dimensional
 // mastery the engine already computes (accuracy/fluency/retention/independence/transfer) across
 // the whole curriculum, so it's visible instead of buried in one profile card. Tapping a concept
 // launches practice for it, turning the view into a learning driver (not just a read-only report).
@@ -60,7 +60,7 @@ fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit, onD
         }
 
         when {
-            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.example.numera.ui.components.NumeraPremiumLoader() }
+            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.example.numera.ui.components.NumeraLoader() }
             error != null -> Box(Modifier.fillMaxSize().padding(Spacing.xl), contentAlignment = Alignment.Center) {
                 Text(error!!, color = MaterialTheme.colorScheme.error)
             }

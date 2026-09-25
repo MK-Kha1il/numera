@@ -21,7 +21,7 @@ import com.example.numera.theme.*
 import com.example.numera.ui.components.MathText
 
 /**
- * Replay a finished Reasoning round (audit #70 — learn from competition): step through each problem
+ * Replay a finished Reasoning round (learn from competition): step through each problem
  * with the answer you gave vs the correct one, and the reason you picked vs the correct reason.
  */
 @Composable

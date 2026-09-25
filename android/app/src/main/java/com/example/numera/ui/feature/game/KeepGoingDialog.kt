@@ -15,7 +15,7 @@ import com.example.numera.theme.Spacing
 import com.example.numera.ui.components.DuoButton
 
 /**
- * Shown when a learner runs the 3 hearts down in a LEARNING level (ultra-review #15 / UX-10).
+ * Shown when a learner runs the 3 hearts down in a LEARNING level.
  *
  * This replaces the old "💔 OUT OF HEARTS — you failed the level" paywall, which taxed the
  * learners who fail most by gating continuation behind a purchasable Retry Token. Errors are

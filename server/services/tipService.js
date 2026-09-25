@@ -67,7 +67,7 @@ function attachTipToProblem(problem, isArchive) {
   const tipData = tipsMap[templateType];
   const correctAnswer = problem.correctAnswer || problem.correct_answer || '';
 
-  // Phase 11: every problem carries the escalating hint ladder (single `tip` kept for
+  // Every problem carries the escalating hint ladder (single `tip` kept for
   // backward compatibility = the "method" rung). The full solution is never in the ladder.
   problem.hintLadder = buildHintLadder(templateType, correctAnswer);
 

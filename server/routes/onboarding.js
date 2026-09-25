@@ -61,7 +61,7 @@ const AVATARS = [
   { key: 'avatar_dolphin', emoji: '🐬' }, { key: 'avatar_unicorn', emoji: '🦄' },
 ];
 
-// Phase 11 — progressive disclosure. One-time intros for major surfaces, revealed the first time a
+// Progressive disclosure. One-time intros for major surfaces, revealed the first time a
 // learner reaches each (not all dumped at signup). The client shows these by key; the server only
 // records which have been seen.
 // Keyed 1:1 with the app's main tabs, shown the first time the learner opens each.
@@ -177,7 +177,7 @@ router.get('/api/onboarding/state', authenticateToken, (req, res) => {
   });
 });
 
-// Phase 2 — multi-select motivational goals.
+// Multi-select motivational goals.
 router.post('/api/onboarding/motivations', authenticateToken, (req, res) => {
   const keys = Array.isArray(req.body && req.body.keys) ? req.body.keys : [];
   replaceRows('user_motivations', 'motivation_key', req.user.id, keys, VALID_MOTIVATIONS, (err) => {
@@ -186,7 +186,7 @@ router.post('/api/onboarding/motivations', authenticateToken, (req, res) => {
   });
 });
 
-// Phase 3 — learner profile (display name, style, avatar, interests). Each field is optional;
+// Learner profile (display name, style, avatar, interests). Each field is optional;
 // only provided + valid fields are written.
 router.post('/api/onboarding/profile', authenticateToken, (req, res) => {
   const { displayName, profileStyle, avatar, interests } = req.body || {};
@@ -215,7 +215,7 @@ router.post('/api/onboarding/profile', authenticateToken, (req, res) => {
   });
 });
 
-// Phase 5 — personalized roadmap from the latest completed diagnostic + placed level.
+// Personalized roadmap from the latest completed diagnostic + placed level.
 router.get('/api/onboarding/roadmap', authenticateToken, (req, res) => {
   db.get('SELECT level FROM users WHERE id = ?', [req.user.id], (err, u) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -234,7 +234,7 @@ router.get('/api/onboarding/roadmap', authenticateToken, (req, res) => {
   });
 });
 
-// Phase 6 — serve ONE deliberately achievable problem (a couple levels below placement). The
+// Serve ONE deliberately achievable problem (a couple levels below placement). The
 // answer is held server-side; the client only gets the question + options.
 router.post('/api/onboarding/aha/start', authenticateToken, (req, res) => {
   db.get('SELECT level FROM users WHERE id = ?', [req.user.id], (err, u) => {
@@ -259,7 +259,7 @@ router.post('/api/onboarding/aha/answer', authenticateToken, (req, res) => {
   res.json({ correct });
 });
 
-// Phase 8 — practice-schedule commitment.
+// Practice-schedule commitment.
 router.post('/api/onboarding/commitment', authenticateToken, (req, res) => {
   const { frequency, days } = req.body || {};
   const freq = ['daily', 'weekdays', 'weekends', 'custom'].includes(frequency) ? frequency : 'daily';
@@ -273,7 +273,7 @@ router.post('/api/onboarding/commitment', authenticateToken, (req, res) => {
   });
 });
 
-// Phase 9 — record the value-first notification opt-in (the OS permission itself is handled
+// Record the value-first notification opt-in (the OS permission itself is handled
 // client-side). Opting in ALSO enables push delivery: the lifecycle funnel gates on
 // notification_preferences.push_enabled, which defaults OFF — so without this the granted OS
 // permission would never actually deliver. "Maybe later" only records the coarse flag and never
@@ -311,7 +311,7 @@ router.post('/api/onboarding/complete', authenticateToken, (req, res) => {
   });
 });
 
-// Phase 14 — lightweight funnel analytics (fire-and-forget from the client).
+// Lightweight funnel analytics (fire-and-forget from the client).
 router.post('/api/onboarding/event', authenticateToken, (req, res) => {
   const { step, event, ms } = req.body || {};
   if (!step || !event) return res.status(400).json({ error: 'step and event are required' });
@@ -326,7 +326,7 @@ router.post('/api/onboarding/event', authenticateToken, (req, res) => {
   );
 });
 
-// Phase 11 — which feature intros the learner has already seen (+ the catalog to render them).
+// Which feature intros the learner has already seen (+ the catalog to render them).
 router.get('/api/onboarding/spotlights', authenticateToken, (req, res) => {
   db.all('SELECT feature_key FROM user_feature_spotlights WHERE user_id = ?', [req.user.id], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -348,7 +348,7 @@ router.post('/api/onboarding/spotlights/seen', authenticateToken, (req, res) => 
   );
 });
 
-// Phase 14 — onboarding funnel analytics (admin only). Aggregates onboarding_events into a per-step
+// Onboarding funnel analytics (admin only). Aggregates onboarding_events into a per-step
 // funnel: how many entered/completed each step, where people drop off, and median time per step
 // (derived from the gap between consecutive step-enter timestamps).
 // Mirrors the client's streamlined 5-step flow (OnboardingFlow.OnbStep): Welcome → Aha (solve

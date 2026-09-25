@@ -38,7 +38,7 @@ import com.example.numera.ui.components.NumeraIcon
 import com.example.numera.ui.components.NumeraIconType
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.ClaimButton
-import com.example.numera.ui.components.NumeraPremiumLoader
+import com.example.numera.ui.components.NumeraLoader
 import com.example.numera.ui.components.MathText
 import com.example.numera.ui.components.CommitmentRelicIcon
 import com.example.numera.ui.components.LocalToast
@@ -87,7 +87,7 @@ fun ProfileScreen(
     var activityDays by remember { mutableStateOf<List<ActivityDay>>(emptyList()) }
     var activityLoading by remember { mutableStateOf(false) }
 
-    // Multi-dimensional mastery (Sprint 3): learner-wide accuracy/fluency/retention/independence.
+    // Multi-dimensional mastery: learner-wide accuracy/fluency/retention/independence.
     var masteryProfile by remember { mutableStateOf<MasteryProfile?>(null) }
     LaunchedEffect(Unit) {
         try {
@@ -97,7 +97,7 @@ fun ProfileScreen(
         }
     }
 
-    // Growth Insights (edu#44): strengths + error habits the engine has observed.
+    // Growth Insights: strengths + error habits the engine has observed.
     var growthProfile by remember { mutableStateOf<com.example.numera.data.network.GrowthProfileResponse?>(null) }
     LaunchedEffect(Unit) {
         try {
@@ -177,7 +177,7 @@ fun ProfileScreen(
         }
     }
 
-    // Share your competitive rank (audit #22): fetch the server-composed boast, fire a share sheet.
+    // Share your competitive rank: fetch the server-composed boast, fire a share sheet.
     val context = androidx.compose.ui.platform.LocalContext.current
     val shareRank: () -> Unit = {
         scope.launch(Dispatchers.IO) {
@@ -196,7 +196,7 @@ fun ProfileScreen(
         }
     }
 
-    // Honor (audit #24): commend a past opponent, then refresh the match list + honor tally.
+    // Honor: commend a past opponent, then refresh the match list + honor tally.
     val commend: (Int) -> Unit = { matchId ->
         scope.launch(Dispatchers.IO) {
             try {
@@ -586,7 +586,7 @@ fun ProfileScreen(
         // Weekly activity lives with the rest of the learning story (stats → mastery → insights →
         // activity), not between the collection cards it used to interrupt.
         if (activityLoading) {
-            NumeraPremiumLoader(cardPadding = Spacing.l)
+            NumeraLoader(cardPadding = Spacing.l)
         } else {
             WeeklyActivityChart(activityDays)
         }

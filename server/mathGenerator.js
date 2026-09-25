@@ -1,5 +1,5 @@
-// Procedural Mathematics Challenge Generator for Numera
-// Integrated with the Modular Adaptive Mathematical Intelligence Engine
+// Problem generation: picks a template for (category, level), sets difficulty from the learner's
+// rating, and builds distractors. The templates themselves live in mathEngine/templates.js.
 
 const { calculateDifficultyProfile, calculateAdaptiveDifficulty } = require('./mathEngine/adaptive');
 const { generateDistractors } = require('./mathEngine/distractors');
@@ -49,7 +49,7 @@ const CONCEPT_TO_LEVEL = {
   arithmetic_div:       { category: 'arithmetic',    level: 8  },
   pemdas:               { category: 'arithmetic',    level: 9  },
   pythagorean:          { category: 'arithmetic',    level: 10 },
-  // Geometry strand (audit #1.1 — parallel curriculum, routed by category not level band).
+  // Geometry strand (parallel curriculum, routed by category not level band).
   geo_perimeter_rect:   { category: 'geometry',      level: 2  },
   geo_area_rect:        { category: 'geometry',      level: 3  },
   geo_area_triangle:    { category: 'geometry',      level: 4  },
@@ -72,7 +72,7 @@ const CONCEPT_TO_LEVEL = {
   geo_surface_cylinder: { category: 'geometry',      level: 19 },
   geo_surface_sphere:   { category: 'geometry',      level: 21 },
   geo_surface_cone:     { category: 'geometry',      level: 22 },
-  // Integers strand (audit #1.1 — signed-number arithmetic; the negatives band).
+  // Integers strand (signed-number arithmetic; the negatives band).
   absolute_value:       { category: 'integers',      level: 4  },
   integer_add:          { category: 'integers',      level: 5  },
   integer_sub:          { category: 'integers',      level: 6  },
@@ -80,7 +80,7 @@ const CONCEPT_TO_LEVEL = {
   integer_mult:         { category: 'integers',      level: 8  },
   integer_div:          { category: 'integers',      level: 9  },
   integer_ops:          { category: 'integers',      level: 11 },
-  // Decimals strand (audit #1.1 — decimal place value & operations; all math in scaled ints).
+  // Decimals strand (decimal place value & operations; all math in scaled ints).
   decimal_add:          { category: 'decimals',      level: 3  },
   percent_decimal_convert: { category: 'decimals',   level: 4  },
   decimal_sub:          { category: 'decimals',      level: 5  },
@@ -89,7 +89,7 @@ const CONCEPT_TO_LEVEL = {
   fraction_decimal_convert: { category: 'decimals',  level: 8  },
   decimal_round:        { category: 'decimals',      level: 9  },
   decimal_div:          { category: 'decimals',      level: 11 },
-  // Fractions strand (audit #1.1 — fraction operations, the core middle-school topic).
+  // Fractions strand (fraction operations, the core middle-school topic).
   fraction_simplify:    { category: 'fractions',     level: 3  },
   fraction_add:         { category: 'fractions',     level: 4  },
   mixed_number:         { category: 'fractions',     level: 5  },
@@ -98,7 +98,7 @@ const CONCEPT_TO_LEVEL = {
   fraction_mult:        { category: 'fractions',     level: 8  },
   fraction_div:         { category: 'fractions',     level: 9  },
   fraction_negative:    { category: 'fractions',     level: 11 },
-  // Number-sense / pre-algebra strand (audit #1.1 — the band the ladder used to skip).
+  // Number-sense / pre-algebra strand (the band the ladder used to skip).
   percentage_of:        { category: 'number_sense',  level: 6  },
   fraction_of:          { category: 'number_sense',  level: 7  },
   ratio_solve:          { category: 'number_sense',  level: 8  },
@@ -114,7 +114,7 @@ const CONCEPT_TO_LEVEL = {
   multi_step_word:      { category: 'number_sense',  level: 18 },
   percent_markup:       { category: 'number_sense',  level: 19 },
   percent_error:        { category: 'number_sense',  level: 21 },
-  // Statistics strand (audit #1.1 — descriptive stats & basic probability).
+  // Statistics strand (descriptive stats & basic probability).
   stat_mode:            { category: 'statistics',    level: 7  },
   stat_mean:            { category: 'statistics',    level: 8  },
   stat_median:          { category: 'statistics',    level: 9  },
@@ -132,7 +132,7 @@ const CONCEPT_TO_LEVEL = {
   stat_theoretical_prob:  { category: 'statistics',  level: 21 },
   stat_experimental_prob: { category: 'statistics',  level: 22 },
   stat_sample_space:      { category: 'statistics',  level: 23 },
-  // Algebraic-expressions strand (audit #1.1 — the bridge into algebra).
+  // Algebraic-expressions strand (the bridge into algebra).
   eval_expression:      { category: 'expressions',   level: 11 },
   eval_two_var:         { category: 'expressions',   level: 12 },
   combine_like_terms:   { category: 'expressions',   level: 13 },

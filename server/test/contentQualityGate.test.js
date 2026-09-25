@@ -111,7 +111,7 @@ test('applied-mode generators (word / estimation / spot-the-mistake) pass the ex
 });
 
 test('applied modes are served WITH hint ladders and active-learning attachments', () => {
-  // Guards the 2026-07 fix: these endpoints used to serve bare problems with no hints.
+  // These endpoints used to serve bare problems with no hints.
   const { buildWordProblemSet } = require('../mathEngine/wordProblems');
   const { buildErrorDetectionSet } = require('../mathEngine/errorDetection');
   const { attachTipToProblem } = require('../services/tipService');

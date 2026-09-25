@@ -1,4 +1,4 @@
-// Public concept ("learn") pages — the SEO / web-presence lever (ultra review #54 / opp#10).
+// Public concept ("learn") pages — the SEO / web-presence lever.
 // The app already holds 151 rich, concept-first lessons; this renders them as crawlable web pages
 // ("how addition works, with examples") that can rank in search and funnel readers into the app and
 // the printable worksheets. Public, no auth, no user data — pure content + internal linking.

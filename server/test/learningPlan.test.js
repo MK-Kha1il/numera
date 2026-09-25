@@ -1,5 +1,5 @@
 // Learning plan: turns the learner's goal into an ordered, prerequisite-correct concept path with
-// a single clear "next step" (audit #19 — goal actuation over the existing mastery model).
+// a single clear "next step" (goal actuation over the existing mastery model).
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const { bootServer, shutdown, api, registerUser } = require('./helpers');

@@ -18,7 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// Ranked season standings (audit #4 — "daily ranked seasons with rewards"). Shows the current
+// Ranked season standings ("daily ranked seasons with rewards"). Shows the current
 // season, time left, and the leaderboard by peak rating with your row highlighted. Seasons
 // auto-roll over server-side and pay the top 3 (500 / 300 / 150 coins) when they end.
 @Composable
@@ -57,7 +57,7 @@ fun SeasonScreen(user: User?, onExit: () -> Unit) {
 
         val d = data
         when {
-            loading -> com.example.numera.ui.components.NumeraPremiumLoader(modifier = Modifier.fillMaxWidth())
+            loading -> com.example.numera.ui.components.NumeraLoader(modifier = Modifier.fillMaxWidth())
             d == null -> Text("Couldn't load the season.", color = WrongRed, fontSize = 13.sp)
             else -> {
                 DuoCard(modifier = Modifier.fillMaxWidth()) {

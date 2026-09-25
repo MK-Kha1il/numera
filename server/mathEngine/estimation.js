@@ -1,4 +1,4 @@
-// Estimation / number-sense generator (ultra review edu#16). The catalog trains exact computation
+// Estimation / number-sense generator. The catalog trains exact computation
 // but never ESTIMATION — yet judging "about how big should this be?" is the foundation that catches
 // every place-value and operation blunder before it happens. Each problem shows a computation and
 // asks for the BEST estimate; the strategy is to round each part to a friendly number, so the

@@ -70,7 +70,7 @@ router.get('/api/today', authenticateToken, (req, res) => {
             // alive — read straight from the streak engine's credited day (lib/streak.js).
             const streakSafeToday = (user.streak || 0) > 0 && user.streak_day === today;
 
-            // Comeback framing (ultra review #22): a learner returning after a week away
+            // Comeback framing: a learner returning after a week away
             // should be welcomed back with an achievable re-entry, not greeted by the same
             // home screen (and the review cap above already shrinks any decay mountain).
             const daysAway = user.last_active

@@ -311,7 +311,7 @@ fun MainTabsScreen(
     val toastController = rememberToastController()
     val commandPalette = rememberCommandPaletteController()
 
-    // Progressive disclosure (Phase 11): one-time feature intros, revealed as each surface is opened.
+    // Progressive disclosure: one-time feature intros, revealed as each surface is opened.
     val spotlight = com.example.numera.ui.components.rememberSpotlightController()
     LaunchedEffect(selectedTab, spotlight.loaded) {
         val key = when (selectedTab) {

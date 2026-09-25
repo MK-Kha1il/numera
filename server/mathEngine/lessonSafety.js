@@ -9,7 +9,7 @@
 //     (a near-identical restatement that removes the productive struggle).
 //
 // It also strips any explicit answer field accidentally embedded in an interactive
-// visual spec (Phase 10: visuals reveal structure, never the answer).
+// visual spec (visuals reveal structure, never the answer).
 //
 // Pure module — reuses the fingerprinting helpers from exerciseMemory.
 

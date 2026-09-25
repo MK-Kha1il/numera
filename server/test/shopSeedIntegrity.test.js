@@ -1,8 +1,7 @@
 // The shop_items type CHECK constraint silently ate an entire cosmetic generation once:
-// Stage D added title/effect/victory/tap/frame items to the db.js seed, but the CHECK still
-// listed only the original five types — and because the seed uses INSERT OR IGNORE, every
-// new-type row was dropped without an error. No running DB ever contained the live-cosmetics
-// catalog (found by the 2026-07 visual QA pass). This test pins every seeded cosmetic family
+// title/effect/victory/tap/frame items were added to the db.js seed, but the CHECK still listed
+// only the original five types — and because the seed uses INSERT OR IGNORE, every new-type row
+// was dropped without an error. This test pins every seeded cosmetic family
 // to the actual table so a CHECK/seed mismatch fails loudly instead of silently.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');

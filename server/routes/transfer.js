@@ -1,4 +1,4 @@
-// Transfer exercises (Sprint 4): serve "apply it in a new context" challenges and record their
+// Transfer exercises: serve "apply it in a new context" challenges and record their
 // out-of-context outcome into the `transfer` mastery dimension. Thin HTTP layer over
 // mathEngine/transferEngine.js + learnerModel/masteryEngine.
 const express = require('express');

@@ -6,8 +6,7 @@ const { notify } = require('./notificationService');
 const { unlockRelic } = require('./relicService');
 const { creditStreak } = require('./streakService');
 
-// Celebrate the moment a learner crosses their self-set daily-problems goal (audit #2/#19 — the
-// positive-reinforcement half of the goal loop). Fires only when THIS session is the one that
+// Celebrate the moment a learner crosses their self-set daily-problems goal. Fires only when THIS session is the one that
 // pushed today's total across the target (so it doesn't re-congratulate on every later session),
 // and the date-stamped dedupKey makes it at-most-once-per-day regardless. Fire-and-forget.
 function maybeCelebrateDailyGoal(user, todaySolved, solvedThisSession) {

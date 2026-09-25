@@ -1,4 +1,4 @@
-// Reasoning Arena (competitive audit Phase 3): a ranked round where a point is BANKED only if BOTH
+// Reasoning Arena: a ranked round where a point is BANKED only if BOTH
 // the answer AND the chosen reason are correct — understanding is the win condition, with no speed
 // signal, feeding the unified NRS rating. These tests read the server-side answer key directly to
 // construct correct/incorrect submissions (the client never receives it).
@@ -98,7 +98,7 @@ test('a rated reasoning round credits the contested per-domain rating, not only 
   assert.ok(domains.some((d) => d !== 'global'), 'the contested domain rating was created too — per-domain ladders climb from ranked play');
 });
 
-test('missed concepts are queued into SRS, due now — a ranked loss becomes learning (audit #25)', async () => {
+test('missed concepts are queued into SRS, due now — a ranked loss becomes learning', async () => {
   const u = await registerUser(ctx.base);
   const uid = await idOf(u.username);
   const start = await api(ctx.base, 'POST', '/api/reasoning-duel/start', { token: u.token });
@@ -137,7 +137,7 @@ test('a fully-understood round queues nothing for review', async () => {
   assert.equal(due.length, 0, 'no SRS rows created from a perfect round');
 });
 
-test('focus domains are offered, and a focused round is dominated by that domain (audit #15)', async () => {
+test('focus domains are offered, and a focused round is dominated by that domain', async () => {
   const u = await registerUser(ctx.base);
   const doms = await api(ctx.base, 'GET', '/api/reasoning-duel/domains', { token: u.token });
   assert.equal(doms.status, 200);

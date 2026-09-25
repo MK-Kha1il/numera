@@ -19,13 +19,13 @@ import com.example.numera.data.network.GrowthWatchArea
 import com.example.numera.theme.*
 
 /**
- * Growth Insights (ultra review edu#44): the learning-intelligence engine has always tracked which
+ * Growth Insights: the learning engine has always tracked which
  * concepts a learner is strong at and which error *habits* keep recurring — but the learner never
  * saw it. This card surfaces that: a short list of strengths, and the recurring slip-ups framed as
  * "habits to watch" (kindly, never as failures). Fed by GET /api/engine/growth-profile.
  *
  * Renders nothing until there's something to show, so a brand-new account isn't greeted by an empty
- * box. Every state signal carries text + an icon (not colour alone) for accessibility (#75).
+ * box. Every state signal carries text + an icon (not colour alone) for accessibility.
  */
 @Composable
 fun GrowthInsightsCard(

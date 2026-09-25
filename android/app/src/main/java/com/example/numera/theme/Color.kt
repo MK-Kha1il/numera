@@ -142,7 +142,7 @@ val SeasonGold         = Color(0xFFFFD54A)
 val MedalSilver        = Color(0xFFC0C0C0)
 val MedalBronze        = Color(0xFFCD7F32)
 
-// Transfer / "depth" accent (Sprint 4) — the violet of the transfer mastery dimension, distinct
+// Transfer / "depth" accent — the violet of the transfer mastery dimension, distinct
 // from the green/blue/orange/gold used by the other four dimensions.
 val TransferViolet     = Color(0xFF8B5CF6)
 

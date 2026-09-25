@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Progressive disclosure (Phase 11). Reveals a one-time intro card the first time a learner reaches
+ * Progressive disclosure. Reveals a one-time intro card the first time a learner reaches
  * a feature surface — never all at once. "Seen" state is server-owned (survives reinstall) and
  * loaded once; each reveal is recorded so it never repeats.
  */

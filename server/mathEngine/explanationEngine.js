@@ -1,4 +1,5 @@
-// Elite Tutoring & Dynamic Explanation Engine
+// Explanation engine: per-concept tips, simplified explanations and solution paths, adjusted to
+// the learner's recent accuracy.
 const { concepts } = require('./knowledgeGraph');
 
 // Per-concept tutor insights keyed by conceptId

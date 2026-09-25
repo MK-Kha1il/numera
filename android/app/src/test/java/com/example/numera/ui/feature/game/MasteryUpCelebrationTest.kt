@@ -13,7 +13,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Guards the signature mastery-up moment (ultra-review #20): it names the strand and tier reached
+ * Guards the signature mastery-up moment: it names the strand and tier reached
  * (text carries the meaning, never colour alone) and the continue button dismisses it.
  */
 @RunWith(RobolectricTestRunner::class)

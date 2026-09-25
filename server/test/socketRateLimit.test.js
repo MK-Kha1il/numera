@@ -1,4 +1,4 @@
-// Per-socket event budget (ultra review #90): a flood of socket events is dropped before any
+// Per-socket event budget: a flood of socket events is dropped before any
 // handler runs, while normal play (a handful of events) is untouched, and the budget refills.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');

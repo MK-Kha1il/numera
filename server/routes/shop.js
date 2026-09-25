@@ -15,15 +15,15 @@ const router = express.Router();
 
 // Cosmetic price multiplier (1.0 = full price). The ONLY discount is a gentle affordability
 // help for engaged players who are low on coins. The old "hoarder discount" (cheaper the richer
-// you are) was removed: it accelerated coin inflation and was a dark pattern (ultra-review #32 /
-// docs/EconomyModel.md). Shared by the catalog (display) and purchase (charge) paths so the two
+// you are) was removed: it accelerated coin inflation and was a dark pattern
+// (docs/EconomyModel.md). Shared by the catalog (display) and purchase (charge) paths so the two
 // can never drift — they used to be hand-duplicated.
 function affordabilityDiscount(currentCoins, solvedCount) {
   if (currentCoins < 200 && solvedCount > 50) return 0.9;
   return 1.0;
 }
 
-// --- Seasonal sink (ultra-review #66/#75 / docs/EconomyModel.md) -----------------------------
+// --- Seasonal sink -----------------------------
 // A fixed pool of season-exclusive cosmetics rotates across ranked seasons: the slot on sale is
 // `activeSeasonId % SEASON_SLOTS`, so each season surfaces a different set and they are scarce.
 // Surplus coins also convert into Season Tokens (a deep end-game sink) that buy token-only items.

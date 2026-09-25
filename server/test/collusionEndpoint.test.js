@@ -1,4 +1,4 @@
-// Admin collusion-review endpoint (audit #18): read-only, admin-gated, surfaces pumped pairs from the
+// Admin collusion-review endpoint: read-only, admin-gated, surfaces pumped pairs from the
 // match log. Seeds a win-trade pattern and asserts it is flagged for review.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');

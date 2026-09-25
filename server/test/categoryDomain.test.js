@@ -1,6 +1,6 @@
 // categoryToDomain must spread the generator's ~20 fine-grained categories across the 8 competitive
 // domains, not collapse everything but a handful into 'arithmetic'. This is what makes the per-domain
-// rating ladders real (competitive audit #16/#45). Guards the mapping against regressing to the old
+// rating ladders real. Guards the mapping against regressing to the old
 // arithmetic-fallback behaviour.
 const { test } = require('node:test');
 const assert = require('node:assert');

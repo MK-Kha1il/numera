@@ -30,7 +30,7 @@ import com.example.numera.ui.components.DuoCard
 import com.example.numera.ui.components.ClaimButton
 import com.example.numera.ui.components.GlossyProgressBar
 import com.example.numera.ui.components.RewardChip
-import com.example.numera.ui.components.NumeraPremiumLoader
+import com.example.numera.ui.components.NumeraLoader
 import com.example.numera.ui.components.NumeraEmptyState
 import com.example.numera.ui.components.EmptyIllustration
 import com.example.numera.ui.components.SkeletonList
@@ -46,7 +46,7 @@ private enum class StandingHighlight { None, Promo, Demo }
 
 /**
  * One ranked leaderboard row, shared by the Weekly-leagues and Global standings surfaces — was
- * ~120 lines of near-identical inline `DuoCard` rows duplicated across two sub-tabs (audit #7).
+ * ~120 lines of near-identical inline `DuoCard` rows duplicated across two sub-tabs.
  * Figures (rank, score) render via [AppText.stat] (tabular) so the columns don't jitter on scroll.
  */
 @Composable
@@ -177,7 +177,7 @@ fun DashboardScreen(
     val toast = LocalToast.current
     var homeSubTab by remember { mutableStateOf(0) }
     // Within the "Standings" sub-tab: 0 = Weekly leagues, 1 = Global. The two former top-level
-    // sub-tabs collapsed into one ranked surface with a filter (audit #3/#7).
+    // sub-tabs collapsed into one ranked surface with a filter.
     var standingsFilter by remember { mutableStateOf(0) }
     var questsList by remember { mutableStateOf<List<Quest>>(emptyList()) }
     var leagueLeaderboard by remember { mutableStateOf<LeagueLeaderboardResponse?>(null) }
@@ -531,7 +531,7 @@ fun DashboardScreen(
                 }
             }
         } else {
-            // Standings — Weekly leagues / Global collapsed into one ranked surface (audit #3/#7).
+            // Standings — Weekly leagues / Global collapsed into one ranked surface.
             val currentDivision = leagueLeaderboard?.league ?: "Quartz"
             val showDemotion = currentDivision != "Quartz"
 
@@ -655,7 +655,7 @@ fun DashboardScreen(
 
                 if (globalLoading) {
                     item {
-                        NumeraPremiumLoader(cardPadding = Spacing.l)
+                        NumeraLoader(cardPadding = Spacing.l)
                     }
                 } else if (globalLeaderboard.isEmpty()) {
                     item {

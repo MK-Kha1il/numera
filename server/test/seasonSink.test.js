@@ -1,4 +1,4 @@
-// The seasonal cosmetic sink (ultra-review #66/#75 / docs/EconomyModel.md): a rotating pool of
+// The seasonal cosmetic sink: a rotating pool of
 // season-exclusive cosmetics (buyable only in their slot's active season) plus a coin->season-token
 // conversion that funds token-only prestige items. Keeps coins meaningful past the one-time catalog.
 const { test, before, after } = require('node:test');

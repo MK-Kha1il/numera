@@ -147,7 +147,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
 
     LaunchedEffect(Unit) { fetchShop() }
 
-    // The shop is "The Vault" — a focused, premium dark surface tinted to the equipped theme
+    // The shop is "The Vault" — a focused dark surface tinted to the equipped theme
     // Everything inside reads MaterialTheme.colorScheme.* and restyles.
     VaultTheme {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -354,7 +354,7 @@ private fun VaultSearchField(query: String, onQueryChange: (String) -> Unit) {
 }
 
 /**
- * Cinematic reveal — the medallion pops in with the reward spring. Epic/Legendary get a confetti
+ * Unlock reveal — the medallion pops in with the reward spring. Epic/Legendary get a confetti
  * burst; Mythic gets its own constellation-forming reveal instead (
  * "different, not more confetti") so the rarest unlocks feel singular.
  */

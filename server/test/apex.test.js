@@ -1,4 +1,4 @@
-// Apex tier (competitive audit #23): a leaderboard-only standing above the rank thresholds. Only
+// Apex tier: a leaderboard-only standing above the rank thresholds. Only
 // placed Master+ players qualify, ordered by global display rating; the requester learns their own
 // standing (null unless inside the apex). These tests seed global ratings directly.
 const { test, before, after } = require('node:test');

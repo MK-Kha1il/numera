@@ -15,7 +15,7 @@ import com.example.numera.data.network.RivalEntry
 import com.example.numera.theme.*
 
 /**
- * Rivals (Phase 2 identity, audit #71): the player's head-to-head record against each human opponent
+ * Rivals: the player's head-to-head record against each human opponent
  * they've faced, most-played first. Renders nothing until there's a repeat opponent, so it stays out
  * of the way for new/solo players. Fed by GET /api/rating/rivals.
  */

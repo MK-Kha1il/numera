@@ -53,7 +53,7 @@ data class LearnerModelResponse(
     val masteryProfile: MasteryProfile? = null
 )
 
-// Transfer challenge (Sprint 4): a novel-context framing of a concept (GET /api/math/transfer/challenge).
+// Transfer challenge: a novel-context framing of a concept (GET /api/math/transfer/challenge).
 @Serializable
 data class TransferProblem(
     val question: String,
@@ -131,7 +131,7 @@ data class User(
     val elo: Int? = null,
     val competitive_matches: Int? = null,
     val competitive_rank: String? = null, // unified competitive rank (mirror of user_ratings global)
-    val rank_revealed: Int? = 0,          // one-time placement rank-reveal ceremony fired (audit #20)
+    val rank_revealed: Int? = 0,          // one-time placement rank-reveal ceremony fired
     val total_coins_earned: Int? = null,
     val total_coins_spent: Int? = null,
     val xp_booster_uses_left: Int? = null,
@@ -210,7 +210,7 @@ data class ShopItem(
     val is_utility: Int? = 0,
     val originalCost: Int? = null,
     val discountActive: Boolean? = null,
-    // Seasonal sink (#66/#75): season_slot != null => buyable only this season; token_cost > 0 =>
+    // Seasonal sink: season_slot != null => buyable only this season; token_cost > 0 =>
     // a token-only prestige item (paid in Season Tokens, not coins).
     val season_slot: Int? = null,
     val token_cost: Int? = 0
@@ -234,7 +234,7 @@ data class MathProblem(
     val tip: String? = null,
     val tipMetadata: TipMetadata? = null,
     // Declarative interactive-visual spec (JSON string) chosen by the server's
-    // Adaptive Visual Intelligence. Forwarded verbatim to the canvas renderer.
+    // the visual engine. Forwarded verbatim to the canvas renderer.
     val interactiveVisualJson: String? = null,
     // Socratic wrong-answer feedback (JSON string) from the server's socraticEngine:
     // { byOption: { "<wrongOption>": {misconception, probe, hint} }, generic: {probe, hint} }.
@@ -249,7 +249,7 @@ data class MathProblem(
     // live problem), so it teaches the method without leaking the answer. '' / null when unauthored.
     val workedExampleJson: String? = null,
     // The generator's template/concept key for this problem. Reported back in per-answer telemetry
-    // so the server's learning-intelligence engine (mastery, retention, misconceptions) can attribute
+    // so the server's learning engine (mastery, retention, misconceptions) can attribute
     // the outcome to the right concept. Server-supplied; absent on client-built fixtures.
     val templateType: String? = null,
     // The generator's numeric params (e.g. {"a":3,"b":5}) for this problem, echoed back in telemetry
@@ -654,7 +654,7 @@ data class CheckpointExamResponse(
     val problems: List<MathProblem> = emptyList()
 )
 
-// Applied word problems (ultra review #9): a server-assembled MCQ set of real-world contexts.
+// Applied word problems: a server-assembled MCQ set of real-world contexts.
 @Serializable
 data class WordProblemResponse(
     val count: Int = 0,
@@ -662,7 +662,7 @@ data class WordProblemResponse(
     val problems: List<MathProblem> = emptyList()
 )
 
-// Estimation / number-sense (ultra review edu#16): a server-assembled "best estimate" MCQ set.
+// Estimation / number-sense: a server-assembled "best estimate" MCQ set.
 @Serializable
 data class EstimationResponse(
     val count: Int = 0,
@@ -753,7 +753,7 @@ data class ResetPasswordRequest(
 )
 
 // Per-answer cognitive telemetry. Fire-and-forget after each solved/missed problem; revives the
-// server's learning-intelligence engine (mastery, retention, teaching-style, and — when the chosen
+// server's learning engine (mastery, retention, teaching-style, and — when the chosen
 // wrong answer is included — misconception tracking that powers Growth Insights). PII-free.
 @Serializable
 data class TelemetryRequest(
@@ -773,7 +773,7 @@ data class TelemetryRequest(
 @Serializable
 data class TelemetryResponse(val success: Boolean? = null)
 
-// Learner-facing "Growth Insights" (ultra review edu#44): what you're strong at, and the error
+// Learner-facing "Growth Insights": what you're strong at, and the error
 // habits worth watching — the engine's view, made visible.
 @Serializable
 data class GrowthStrength(val name: String, val successRate: Int)
@@ -823,7 +823,7 @@ data class CompleteSessionResponse(
     val xpBoosterActive: Boolean? = null,
     val xpBoosterUsesLeft: Int? = null,
     // Present when this level's solves pushed the category across a mastery milestone — the
-    // client turns it into the signature mastery-up celebration (ultra-review #20).
+    // client turns it into the signature mastery-up celebration.
     val masteryMilestone: MasteryMilestone? = null,
     // Recap payoff (docs/Systems.md §18/§21/§22). Nullable on purpose: Gson ignores Kotlin
     // defaults, so an older server simply leaves these null and the recap hides the section.
@@ -1290,7 +1290,7 @@ data class BotPlayResponse(
     val reward: Int = 0
 )
 
-// ---- Custom Challenges (user-created problem sets — audit #10) ----
+// ---- Custom Challenges (user-created problem sets) ----
 @Serializable
 data class ChallengeConcept(val conceptId: String = "", val name: String = "", val category: String = "", val level: Int = 0)
 
@@ -1355,7 +1355,7 @@ data class PlayChallengeResponse(
     val leaderboard: List<ChallengeLeaderboardEntry> = emptyList()
 )
 
-// ---- Ranked seasons with rewards (audit #4) ----
+// ---- Ranked seasons with rewards ----
 @Serializable
 data class SeasonInfo(val id: Int = 0, val name: String = "", val endAt: Long = 0)
 
@@ -1427,11 +1427,11 @@ data class MatchHistoryEntry(
     val ratingDelta: Double = 0.0,
     val refId: Int? = null,   // replayable source (e.g. the reasoning round id)
     val createdAt: Long = 0,
-    val commended: Boolean = false,   // you have honored this opponent (audit #24)
+    val commended: Boolean = false,   // you have honored this opponent
     val commendable: Boolean = false  // a real human opponent you can still commend
 )
 
-// ---- Shareable rank card — GET /api/rating/share-card (audit #22, viral loop) ----
+// ---- Shareable rank card — GET /api/rating/share-card ----
 data class ShareCardResponse(
     val text: String = "",
     val placed: Boolean = false,
@@ -1440,7 +1440,7 @@ data class ShareCardResponse(
     val title: String? = null
 )
 
-// ---- Live group/class competitive rooms — audit #19 ----
+// ---- Live group/class competitive rooms ----
 data class CreateLiveRoomRequest(val category: String? = null, val level: Int? = null)
 data class LiveAnswerRequest(val problemIndex: Int, val answer: String)
 data class LiveRoomProblem(val question: String = "", val options: List<String> = emptyList())
@@ -1473,7 +1473,7 @@ data class LiveStartResponse(val status: String = "active", val problems: List<L
 data class LiveAnswerResponse(val correct: Boolean = false, val score: Int = 0, val answered: Int = 0, val total: Int = 0)
 data class LiveFinishResponse(val status: String = "done", val podium: List<LiveStanding> = emptyList())
 
-// ---- Honor / commendation system — audit #24 ----
+// ---- Honor / commendation system ----
 data class CommendRequest(
     val matchId: Int,
     val type: String = "good_game" // good_game | tough_opponent | good_sport
@@ -1580,7 +1580,7 @@ data class RewardTier(
     val tierName: String = "",
     val tokens: Int = 0,
     val coins: Int = 0,
-    val cosmetic: String? = null, // season-exclusive earn-only banner at the Diamond tier (audit #14)
+    val cosmetic: String? = null, // season-exclusive earn-only banner at the Diamond tier
     val reached: Boolean = false,
     val claimed: Boolean = false
 )
@@ -1662,10 +1662,10 @@ data class ReasoningSubmitResponse(
     val newRank: String? = null,
     val promoted: Boolean = false,
     val perProblem: List<ReasoningResultItem> = emptyList(),
-    val reviewQueued: Int = 0 // concepts you missed, queued into spaced review (audit #25)
+    val reviewQueued: Int = 0 // concepts you missed, queued into spaced review
 )
 
-// ---- Learning plan (goal-driven concept path — audit #19) ----
+// ---- Learning plan (goal-driven concept path) ----
 @Serializable
 data class LearningPlanStep(
     val conceptId: String = "",
@@ -1690,7 +1690,7 @@ data class LearningPlanResponse(
     val steps: List<LearningPlanStep> = emptyList()
 )
 
-// ---- Weekly tournaments (async global event — audit #21) ----
+// ---- Weekly tournaments (async global event) ----
 @Serializable
 data class TournamentMeta(
     val id: Int = 0,
@@ -1720,7 +1720,7 @@ data class TournamentLeaderboardEntry(
     val elapsedMs: Long = 0,
     val reward: Int = 0,
     // A calibrated pace-setter bot (never a real user, never paid) — labeled in the UI so a
-    // player always knows who's human (ultra-review #46).
+    // player always knows who's human.
     val isBot: Boolean = false
 )
 
@@ -1823,7 +1823,7 @@ data class CreateClubRequest(val name: String, val description: String? = null)
 @Serializable
 data class ClubMemberActionRequest(val userId: Int)
 
-// ---- Club wars (team competition — audit #1.7) ----
+// ---- Club wars (team competition) ----
 @Serializable
 data class ClubWarSide(val clubId: Int = 0, val name: String = "", val total: Int = 0, val players: Int = 0)
 
@@ -1866,7 +1866,7 @@ data class ClubLeaderboardEntry(
     val position: Int = 0
 )
 
-// Club SKILL ladder (audit #17): clubs ranked by avg competitive rating of placed members, not XP.
+// Club SKILL ladder: clubs ranked by avg competitive rating of placed members, not XP.
 data class ClubSkillEntry(
     val id: Int = 0,
     val name: String = "",
@@ -2184,7 +2184,7 @@ data class OnboardingEventRequest(
     val ms: Long? = null
 )
 
-// ---- Progressive disclosure (Phase 11) ----
+// ---- Progressive disclosure ----
 @Serializable
 data class SpotlightItem(
     val key: String,

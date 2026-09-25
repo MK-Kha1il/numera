@@ -77,7 +77,7 @@ const USER_SCOPED_TABLES = [
 
 const router = express.Router();
 
-// ── Learning goals (audit #2/#19) ───────────────────────────────────────────────
+// ── Learning goals ───────────────────────────────────────────────
 // One explicit, learner-CHOSEN goal — closing the personalization loop (the app measured plenty
 // but let the learner set nothing). One active goal per user (PRIMARY KEY user_id = upsert).
 // Progress is derived from existing stats ON READ, so there's no stored progress to keep in sync.
@@ -154,7 +154,7 @@ router.delete('/api/account/goal', authenticateToken, (req, res) => {
   });
 });
 
-// ── Parent channel: progress sharing (ultra review #51/#78) ─────────────────────────────────────
+// ── Parent channel: progress sharing ─────────────────────────────────────
 // Learner-initiated and opt-in. The learner sets a guardian/parent email; they (and only they) can
 // trigger a plain-language progress summary to it. No parent account, no covert tracking — the
 // child controls the share and can clear it at any time.

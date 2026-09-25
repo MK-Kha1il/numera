@@ -1,4 +1,4 @@
-// Checkpoint exam: a mixed-strand cumulative test (ultra review #16). Verifies it assembles a
+// Checkpoint exam: a mixed-strand cumulative test. Verifies it assembles a
 // well-formed, interleaved problem set and respects the count bounds.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');

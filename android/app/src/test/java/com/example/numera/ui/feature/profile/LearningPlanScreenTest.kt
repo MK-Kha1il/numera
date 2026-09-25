@@ -18,7 +18,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Screen-level test over the data boundary (review #81): a mocked [ApiService] feeds the learning
+ * Screen-level test over the data boundary: a mocked [ApiService] feeds the learning
  * plan, and we assert the next-up step and a path step render.
  */
 @RunWith(RobolectricTestRunner::class)

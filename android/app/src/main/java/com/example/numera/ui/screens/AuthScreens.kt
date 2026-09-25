@@ -79,8 +79,8 @@ internal fun authErrorMessage(e: Throwable, fallback: String): String = when (e)
 }
 
 @Composable
-fun CinematicMathBackground() {
-    // Accessibility (ultra review #76): when reduce-motion is on, render a still frame — the symbol
+fun MathBackground() {
+    // Accessibility: when reduce-motion is on, render a still frame — the symbol
     // field and rings stop drifting/rotating instead of looping forever.
     val reduceMotion = com.example.numera.motion.MotionManager.reduceMotion
     val infiniteTransition = rememberInfiniteTransition(label = "mathBg")
@@ -236,7 +236,7 @@ fun LoginScreen(
             ),
         contentAlignment = Alignment.Center
     ) {
-        CinematicMathBackground()
+        MathBackground()
 
 
 
@@ -487,7 +487,7 @@ fun RegisterScreen(
             ),
         contentAlignment = Alignment.Center
     ) {
-        CinematicMathBackground()
+        MathBackground()
         DuoCard(
             modifier = Modifier
                 .fillMaxWidth(0.9f)

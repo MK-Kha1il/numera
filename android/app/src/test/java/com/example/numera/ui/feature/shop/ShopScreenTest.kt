@@ -22,7 +22,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Screen-level test (review #81) that also verifies the seasonal-sink client wiring end-to-end: a
+ * Screen-level test that also verifies the seasonal-sink client wiring end-to-end: a
  * mocked shop with a season-exclusive cosmetic renders the season item + Season Tokens wallet. After
  * the Vault was tabbed, that content lives on the "Seasonal" tab, so
  * the test selects it first.

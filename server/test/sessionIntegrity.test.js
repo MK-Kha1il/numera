@@ -1,4 +1,4 @@
-// Internal-consistency validation of solo session metrics (competitive audit #29/#95 / Top-25 #8).
+// Internal-consistency validation of solo session metrics.
 // Solo sessions now reach the rating only through POST /api/math/complete (ticket-anchored), which
 // calls services/ratingService.applySoloSessionToRatings; that function still enforces, as defense
 // in depth: you can't solve more than you attempted, and the perfect-combo bonus only counts on an

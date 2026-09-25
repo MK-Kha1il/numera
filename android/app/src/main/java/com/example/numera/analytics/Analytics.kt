@@ -8,7 +8,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * Privacy-first product analytics client (ultra review #39). Fire-and-forget: never blocks the UI
+ * Privacy-first product analytics client. Fire-and-forget: never blocks the UI
  * and never throws into a caller. The server stores only aggregate per-day counts for an allowlisted
  * set of event keys — no user/device/session is ever attached, here or there. Event keys must match
  * the server allowlist in routes/analytics.js (anything else is silently dropped server-side).

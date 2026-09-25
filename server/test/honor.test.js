@@ -1,4 +1,4 @@
-// Honor / commendation system (competitive audit #24): peer sportsmanship recognition, never
+// Honor / commendation system: peer sportsmanship recognition, never
 // punitive. One commendation per (giver, match); the receiver's honor is the count they've been given.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');

@@ -1,5 +1,5 @@
 'use strict';
-// Competitive-integrity signals (audit #18, §3.9): detect the rating-pump signature shared by
+// Competitive-integrity signals: detect the rating-pump signature shared by
 // win-trading and boosting — a player drawing an outsized share of their ranked rating gains from a
 // single opponent over many matches, and/or beating one opponent almost every time. Pure + unit-tested
 // (CLAUDE.md). This produces a REVIEW signal only — the app's ethic is "flag for a human, never

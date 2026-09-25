@@ -21,7 +21,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Screen-level test over the data boundary (review #81 — the last untested network screen): a
+ * Screen-level test over the data boundary (the last untested network screen): a
  * mocked [ApiService] returns an active war for the player's club, and we assert the matchup card
  * renders (challenger vs opponent + concept).
  */

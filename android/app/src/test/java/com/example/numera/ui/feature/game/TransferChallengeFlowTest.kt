@@ -21,7 +21,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Guards the Sprint-4 in-app transfer-challenge flow end-to-end: SoloGameScreen in the
+ * Guards the in-app transfer-challenge flow end-to-end: SoloGameScreen in the
  * "transfer_challenge" game mode must fetch a transfer problem from GET /api/math/transfer/challenge,
  * render it, and POST the out-of-context outcome to /api/math/transfer/result when the learner
  * answers (that POST is what feeds the `transfer` mastery dimension).

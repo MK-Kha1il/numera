@@ -92,7 +92,7 @@ fun CompetitiveRankCard(
                             Text(text = activeTitle, fontSize = 11.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                         }
                     }
-                    // Share your rank (audit #22, the viral loop).
+                    // Share your rank.
                     if (onShare != null) {
                         Box(
                             modifier = Modifier

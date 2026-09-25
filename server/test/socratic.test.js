@@ -1,6 +1,6 @@
 // Unit tests for the Socratic feedback engine (mathEngine/socraticEngine.js).
 //
-// Guards two invariants of the Sprint-2 feedback redesign:
+// Guards two invariants of the feedback redesign:
 //  1. A wrong option whose value matches a known misconception gets a TARGETED probe
 //     (not the generic fallback) — i.e. the misconception classifier is actually wired in.
 //  2. No probe or hint EVER leaks the correct answer (productive struggle: the answer

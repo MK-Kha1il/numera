@@ -46,7 +46,7 @@ class DashboardScreenTest {
   }
 
   /**
-   * Guards the sub-tab collapse (audit #3/#7): the former "Weekly Leagues" + "Global Standings"
+   * Guards the sub-tab collapse: the former "Weekly Leagues" + "Global Standings"
    * top-level sub-tabs are now one "Standings" tab with an in-body Weekly/Global filter, both
    * rendering through the shared StandingRow. Drives that whole path so a green build proves it
    * composes (the structural rewrite isn't exercised by the default Daily-Drills render above).

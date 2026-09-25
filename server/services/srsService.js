@@ -1,4 +1,4 @@
-// Shared spaced-repetition enqueue (competitive audit #25 — "a ranked loss becomes learning").
+// Shared spaced-repetition enqueue ("a ranked loss becomes learning").
 //
 // SRS reviews (routes/srs.js) are normally seeded when the learner records a review outcome. This
 // helper lets the COMPETITIVE path push a concept the learner just missed straight into the review

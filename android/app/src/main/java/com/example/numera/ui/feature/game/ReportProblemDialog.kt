@@ -51,7 +51,7 @@ private val REPORT_REASONS = listOf(
 
 /**
  * Lets a learner flag the current generated [problem] as wrong/confusing/etc. — the content-quality
- * feedback loop (ultra review #17/#90). Self-contained: posts to /api/math/report and reports its own
+ * feedback loop. Self-contained: posts to /api/math/report and reports its own
  * success via [onSubmitted]; the catalog had no human-review signal before this.
  */
 @OptIn(ExperimentalLayoutApi::class)

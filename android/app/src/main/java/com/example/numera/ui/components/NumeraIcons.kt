@@ -25,7 +25,7 @@ enum class NumeraIconType {
     Check, ChevronRight, ChevronUp, ChevronDown
 }
 
-// Default screen-reader label per icon type (accessibility — ultra review #74). Action/nav icons
+// Default screen-reader label per icon type (accessibility). Action/nav icons
 // get a spoken name; purely decorative or text-accompanied icons (chevrons, stat glyphs sitting
 // next to their own number) return null so TalkBack isn't made noisy. Any caller can override via
 // the [NumeraIcon] contentDescription parameter (e.g. "" to silence, or a context-specific label).
@@ -62,7 +62,7 @@ fun NumeraIcon(
     // null → use the per-type default; "" → explicitly silent (decorative in this context).
     contentDescription: String? = null,
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "PremiumIconTransition")
+    val infiniteTransition = rememberInfiniteTransition(label = "NumeraIconTransition")
     
     // Streak pulse animation
     val streakScale by if (animate && type == NumeraIconType.Streak) {

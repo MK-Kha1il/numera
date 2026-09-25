@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * The school channel surface (ultra review #86): create a class to get a join code to share, join a
+ * The school channel surface: create a class to get a join code to share, join a
  * class with a code, and — for classes you teach — see a roster of each student's plain-language
  * progress. Self-contained: loads /api/classes/mine on open and drives create/join/roster directly.
  */

@@ -18,7 +18,7 @@ import com.example.numera.sound.SoundManager
 import com.example.numera.theme.Spacing
 
 /**
- * Phase 2 — multi-select motivational goals. Aspirational ("why are you here"), not the quantitative
+ * Multi-select motivational goals. Aspirational ("why are you here"), not the quantitative
  * user_goals. The selection shapes the rest of the experience, so we ask for it before teaching.
  */
 @Composable

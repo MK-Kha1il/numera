@@ -115,11 +115,9 @@ function initDb() {
 
       // 3. Shop items table
       db.run(`DROP TABLE IF EXISTS shop_items`);
-      // NB the type CHECK must list every cosmetic family. It predated Stage D of the shop
-      // overhaul, so the title/effect/victory/tap/frame seed rows violated it — and because the
-      // seed uses INSERT OR IGNORE, every one of those rows was *silently dropped*: the live
-      // cosmetics catalog never existed in any running DB. Found by the 2026-07 visual QA pass
-      // (an empty "Effects" filter with a fully seeded-looking db.js). Guarded by a test now.
+      // NB the type CHECK must list every cosmetic family. The seed uses INSERT OR IGNORE, so a
+      // row whose type isn't listed is *silently dropped* — that once hid the whole
+      // title/effect/victory/tap/frame catalog. test/shopSeedIntegrity.test.js guards it.
       db.run(`
         CREATE TABLE shop_items (
           id TEXT PRIMARY KEY,
@@ -590,9 +588,9 @@ function initDb() {
 
       // ── End NumeraRating Tables ───────────────────────────────────────────
 
-      // ── Mathematical Learning Intelligence Engine Tables ─────────────────
+      // ── Learning engine tables ────────────────────────────────────────────
 
-      // LIE-1. Per-user, per-concept learner profile (mastery, confidence, speed, etc.)
+      // 1. Per-user, per-concept learner profile (mastery, confidence, speed, etc.)
       db.run(`
         CREATE TABLE IF NOT EXISTS learner_profiles (
           user_id               INTEGER NOT NULL,
@@ -614,7 +612,7 @@ function initDb() {
         )
       `);
 
-      // LIE-2. Misconception instances — named error patterns per user per concept
+      // 2. Misconception instances — named error patterns per user per concept
       db.run(`
         CREATE TABLE IF NOT EXISTS user_misconceptions (
           id                  INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -632,7 +630,7 @@ function initDb() {
         )
       `);
 
-      // LIE-3. Retention schedule — FSRS-style spaced repetition per concept
+      // 3. Retention schedule — FSRS-style spaced repetition per concept
       db.run(`
         CREATE TABLE IF NOT EXISTS retention_schedule (
           user_id             INTEGER NOT NULL,
@@ -648,7 +646,7 @@ function initDb() {
         )
       `);
 
-      // LIE-4. Learning style signals — inferred explanation preferences
+      // 4. Learning style signals — inferred explanation preferences
       db.run(`
         CREATE TABLE IF NOT EXISTS learning_style_signals (
           user_id      INTEGER NOT NULL,
@@ -661,7 +659,7 @@ function initDb() {
         )
       `);
 
-      // LIE-5. Lesson analytics — system-level quality scores per template type
+      // 5. Lesson analytics — system-level quality scores per template type
       db.run(`
         CREATE TABLE IF NOT EXISTS lesson_analytics (
           template_type  TEXT PRIMARY KEY,
@@ -675,7 +673,7 @@ function initDb() {
         )
       `);
 
-      // LIE-6. Competitive skill profiles — per-concept ELO ratings for matchmaking
+      // 6. Competitive skill profiles — per-concept ELO ratings for matchmaking
       db.run(`
         CREATE TABLE IF NOT EXISTS competitive_profiles (
           user_id                  INTEGER NOT NULL,
@@ -690,7 +688,7 @@ function initDb() {
         )
       `);
 
-      // ── End Intelligence Engine Tables ────────────────────────────────────
+      // ── End learning engine tables ────────────────────────────────────
 
       // Create indexes to optimize foreign key lookups
       db.run("CREATE INDEX IF NOT EXISTS idx_user_mistakes_user_id ON user_mistakes(user_id)");
@@ -781,7 +779,7 @@ function initDb() {
         { id: 'item_xp_booster', name: 'XP Booster (2x)', cost: 200, type: 'utility', value: 'xp_booster', rarity: 'Rare', description: 'Doubles all XP for your next 3 sessions. Turn a good day into a great one.', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 1 },
         { id: 'item_challenge_ticket', name: 'Arena Gold Ticket', cost: 100, type: 'utility', value: 'challenge_ticket', rarity: 'Rare', description: 'Doubles the Elo stakes of your next Ranked Duel — for days when you feel sharp.', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 1 },
 
-        // Season-exclusive cosmetics (ultra-review #66 / docs/EconomyModel.md). Coin-priced, but only
+        // Season-exclusive cosmetics. Coin-priced, but only
         // buyable while their `season_slot` matches the active ranked season (slot = seasonId % 3), so
         // they rotate and are scarce — a recurring coin sink that never goes stale. Owned forever once
         // bought. Each slot pairs an avatar + a banner.
@@ -792,7 +790,7 @@ function initDb() {
         { id: 'avatar_frost', name: 'Frostfall Avatar', cost: 800, type: 'avatar', value: 'avatar_frost', rarity: 'Epic', description: 'Crystalline and exacting. The cold clarity of a season spent sharpening.', required_rank: null, is_animated: 1, particle_effect: 'star_drift', is_utility: 0, season_slot: 2 },
         { id: 'banner_meteor', name: 'Meteor Shower Banner', cost: 700, type: 'banner', value: 'banner_meteor', rarity: 'Epic', description: 'A sky full of falling light for the length of one season.', required_rank: null, is_animated: 1, particle_effect: 'fire_sparkle', is_utility: 0, season_slot: 2 },
 
-        // Season-reward banners (competitive audit #14): EARNED, never bought (cost 0 → the purchase
+        // Season-reward banners: EARNED, never bought (cost 0 → the purchase
         // guard blocks them). Granted only by reaching Diamond on this season's Rank Reward track, and
         // tied to the season's slot — so each is a scarce, season-exclusive trophy of a ranked climb.
         { id: 'banner_champion_aureate', name: 'Aureate Champion Banner', cost: 0, type: 'banner', value: 'banner_champion_aureate', rarity: 'Legendary', description: 'Earned, not bought — reach Diamond on the season track. Gold laurels for a season conquered.', required_rank: null, is_animated: 1, particle_effect: 'gold_halos', is_utility: 0, season_slot: 0 },
@@ -942,8 +940,8 @@ function initDb() {
         { id: 'mastery_mental_3', name: 'Mental Expert', description: 'Solve 50 Mental Math problems', icon: 'school', target_type: 'mastery_mental', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_mental', chain_order: 3, is_hidden: 0 },
         { id: 'mastery_mental_4', name: 'Mental Master', description: 'Solve 150 Mental Math problems', icon: 'school', target_type: 'mastery_mental', target_value: 150, reward_coins: 800, category: 'Mastery', chain_id: 'mastery_mental', chain_order: 4, is_hidden: 0 },
 
-        // Curriculum-strand mastery chains (audit #1.1 strands; counted via the
-        // strand columns added to user_mastery in migration v27).
+        // Curriculum-strand mastery chains (counted via the strand columns added to
+        // user_mastery in migration v27).
         { id: 'mastery_geometry_1', name: 'Geometry Apprentice', description: 'Solve 5 Geometry problems', icon: 'school', target_type: 'mastery_geometry', target_value: 5, reward_coins: 50, category: 'Mastery', chain_id: 'mastery_geometry', chain_order: 1, is_hidden: 0 },
         { id: 'mastery_geometry_2', name: 'Geometry Adept', description: 'Solve 20 Geometry problems', icon: 'school', target_type: 'mastery_geometry', target_value: 20, reward_coins: 150, category: 'Mastery', chain_id: 'mastery_geometry', chain_order: 2, is_hidden: 0 },
         { id: 'mastery_geometry_3', name: 'Geometry Expert', description: 'Solve 50 Geometry problems', icon: 'school', target_type: 'mastery_geometry', target_value: 50, reward_coins: 350, category: 'Mastery', chain_id: 'mastery_geometry', chain_order: 3, is_hidden: 0 },
@@ -1042,7 +1040,7 @@ function initDb() {
         { id: 'shop_3', name: 'Collector III', description: 'Acquire 10 items from the shop', icon: 'shopping_bag', target_type: 'shop_count', target_value: 10, reward_coins: 300, category: 'Collection', chain_id: 'collection_path', chain_order: 3, is_hidden: 0 },
         { id: 'shop_4', name: 'Collector IV', description: 'Acquire 20 items from the shop', icon: 'shopping_bag', target_type: 'shop_count', target_value: 20, reward_coins: 600, category: 'Collection', chain_id: 'collection_path', chain_order: 4, is_hidden: 0 },
 
-        // 9. Seasonal Chain — removed (ultra-review #59). The "Spring/Summer mode" game modes it
+        // 9. Seasonal Chain — removed. The "Spring/Summer mode" game modes it
         // depended on were never reachable from the client, so these two achievements could never
         // progress. Rather than ship 4 speculative seasonal modes (against the "fewer, deeper"
         // thesis), the unearnable chain was dropped. Real seasonal content lives in the ranked

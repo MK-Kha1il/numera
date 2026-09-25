@@ -1,4 +1,4 @@
-// Live group/class competitive rooms (competitive audit #19). Kahoot-style: host opens a room, players
+// Live group/class competitive rooms. Kahoot-style: host opens a room, players
 // join by code, the host starts it, everyone races the same server-graded set, scores feed a podium.
 // Grading is server-authoritative — the answer key is never sent — so these tests read it from the DB
 // to build correct/incorrect submissions.

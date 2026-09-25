@@ -17,7 +17,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Guards the Growth Insights card (edu#44): it surfaces the engine's strengths + error "habits to
+ * Guards the Growth Insights card: it surfaces the engine's strengths + error "habits to
  * watch", and renders nothing when there's no data yet (a fresh learner isn't shown an empty box).
  */
 @RunWith(RobolectricTestRunner::class)

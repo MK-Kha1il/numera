@@ -1,4 +1,4 @@
-// Learner-set goals (audit #2/#19): set/get/replace/clear one explicit goal, with progress
+// Learner-set goals: set/get/replace/clear one explicit goal, with progress
 // computed from existing stats on read, and input validation on type + target range.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');

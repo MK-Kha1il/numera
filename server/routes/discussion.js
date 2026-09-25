@@ -1,4 +1,4 @@
-// Per-concept discussion (audit #1.7 social / #1.18 community). A lightweight, flat message list
+// Per-concept discussion. A lightweight, flat message list
 // attached to each curriculum concept so learners can ask/answer "how does this work?" right where
 // they study it. Safety: bodies pass the first-line contentFilter blocklist, posts from users in a
 // block relationship (either direction) are hidden, moderated posts (hidden=1) drop out, and any
@@ -15,7 +15,7 @@ const router = express.Router();
 const MAX_BODY = 500;
 
 // Lazily plant the authored starter thread(s) for a concept the first time it's viewed with an
-// empty discussion (ultra review #5). One-time per concept (guarded on a zero-post count), so a
+// empty discussion. One-time per concept (guarded on a zero-post count), so a
 // real conversation later replaces the seeds rather than stacking on them. Best-effort: any failure
 // just falls through to an empty list. Posts are attributed to the reserved NumeraGuide account.
 function ensureSeeded(conceptId, done) {

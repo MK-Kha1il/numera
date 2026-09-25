@@ -1,4 +1,4 @@
-// Public web competitive profile (audit #75): a no-auth, crawlable /u/:username page showing a
+// Public web competitive profile: a no-auth, crawlable /u/:username page showing a
 // player's competitive identity — the shareable face of the ladder. Honors the private-profile flag.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');

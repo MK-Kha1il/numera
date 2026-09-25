@@ -26,9 +26,8 @@ import com.example.numera.theme.MotionTokens
 /**
  * The unified tap-feedback layer.
  *
- * The audit found 139 `.clickable {}` call sites but only a handful with any press response —
- * the "dead button" problem. [pressable] is the one drop-in replacement: it gives EVERY tap a
- * consistent, premium response — a subtle scale dip, a bounded ripple, a click sound and a
+ * Use [pressable] instead of `.clickable {}`: it gives every tap a
+ * consistent response — a subtle scale dip, a bounded ripple, a click sound and a
  * haptic — all routed through the app's motion tokens and silenced automatically when the user
  * (or the OS) has asked to reduce motion.
  *
@@ -69,7 +68,7 @@ enum class PressFeedback {
 }
 
 /**
- * Celebration hierarchy (Phase 9) — the single entry point for "something good happened", so
+ * Celebration hierarchy — the single entry point for "something good happened", so
  * every feature celebrates at a consistent, *reserved* intensity instead of hand-rolling its own
  * sound+haptic combo. Reserve the loud tiers: [Epic] is for rank promotions / legendary unlocks /
  * season completion only. Pair with the matching visual at the call site (e.g. `Motion.rewardEnter`

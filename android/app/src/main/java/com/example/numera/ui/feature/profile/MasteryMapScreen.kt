@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.*
 import com.example.numera.motion.MotionManager
 import com.example.numera.theme.*
-import com.example.numera.ui.components.NumeraPremiumLoader
+import com.example.numera.ui.components.NumeraLoader
 import com.example.numera.ui.components.PressFeedback
 import com.example.numera.ui.components.pressable
 import kotlinx.coroutines.Dispatchers
@@ -80,7 +80,7 @@ fun MasteryMapScreen(
         }
 
         when {
-            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { NumeraPremiumLoader() }
+            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { NumeraLoader() }
             error != null -> Box(Modifier.fillMaxSize().padding(Spacing.xl), contentAlignment = Alignment.Center) {
                 Text(error!!, color = MaterialTheme.colorScheme.error)
             }

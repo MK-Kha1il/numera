@@ -19,7 +19,7 @@ import com.example.numera.data.network.MatchHistoryEntry
 import com.example.numera.theme.*
 
 /**
- * Competitive match history (Phase 2 identity, audit #69/#71): the player's recent head-to-head
+ * Competitive match history: the player's recent head-to-head
  * results — opponent, scoreline, win/loss, and the rating it moved. The seed of rivalry records.
  * Fed by GET /api/rating/matches; renders nothing until the player has competed.
  */

@@ -389,7 +389,7 @@ fun UtilityShopItemCard(
 }
 
 /**
- * Season Tokens wallet + the coin→token conversion (the deep end-game sink, ultra-review #66/#75).
+ * Season Tokens wallet + the coin→token conversion (the deep end-game sink).
  * Tokens are earned by converting surplus coins and spent on token-only prestige cosmetics, so
  * coins stay meaningful long after a player owns the one-time cosmetic catalog.
  */

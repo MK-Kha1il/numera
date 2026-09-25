@@ -1,4 +1,4 @@
-// Competitive history (Phase 2 identity): GET /api/rating/history is the rating timeline that powers
+// Competitive history: GET /api/rating/history is the rating timeline that powers
 // the "rating over time" card. It must return camelCase fields, newest first. Rated sessions are
 // produced through the real solo rating path (services/ratingService.applySoloSessionToRatings,
 // what POST /api/math/complete calls for a level session).

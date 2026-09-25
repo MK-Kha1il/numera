@@ -1,4 +1,4 @@
-// Misconception-Targeted Remediation Engine (Phase 13)
+// Misconception-Targeted Remediation Engine
 // ------------------------------------------------------------------------------------
 // The misconception engine classifies *why* an answer was wrong and the orchestrator
 // already routes a critical misconception to the top of the queue (priority 1). But until

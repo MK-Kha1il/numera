@@ -1,4 +1,4 @@
-// Club wars (audit #1.7 — team competition). A club owner challenges another club to a head-to-head:
+// Club wars (team competition). A club owner challenges another club to a head-to-head:
 // both clubs' members race the SAME server-generated set once, and the club with the higher combined
 // score wins. Server-authoritative (answers never leave the server; one attempt per player). The war
 // resolves lazily — when its window has passed, the next read finalizes it: sum each side's scores,

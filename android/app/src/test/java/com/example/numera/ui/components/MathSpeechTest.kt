@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Pure-JVM guard for the LaTeX -> screen-reader-speech converter (accessibility, audit #1.12). */
+/** Pure-JVM guard for the LaTeX -> screen-reader-speech converter (accessibility). */
 class MathSpeechTest {
 
     @Test fun blankInputIsEmpty() {

@@ -18,7 +18,7 @@ import com.example.numera.data.network.TitlesResponse
 import com.example.numera.theme.*
 
 /**
- * Competitive titles (Phase 2 identity — Chess.com's prestige layer). Earned titles can be equipped
+ * Competitive titles. Earned titles can be equipped
  * to display by your name; locked ones show their requirement. `onSelect("")` clears the title. Fed
  * by GET /api/rating/titles; the parent handles selection + refetch.
  */

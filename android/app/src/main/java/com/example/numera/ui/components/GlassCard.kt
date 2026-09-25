@@ -176,7 +176,7 @@ fun DuoButton(
             .padding(vertical = Spacing.m, horizontal = Spacing.xl),
         contentAlignment = Alignment.Center
     ) {
-        // Sentence case (was .uppercase()): calmer, more premium. The satisfying 3D depth-press
+        // Sentence case (was .uppercase()): calmer. The satisfying 3D depth-press
         // above stays — that's tactile energy, not visual shouting. Label role lives in AppText.
         Text(
             text = text,

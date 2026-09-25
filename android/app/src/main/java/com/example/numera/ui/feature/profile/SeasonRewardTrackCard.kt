@@ -20,7 +20,7 @@ import com.example.numera.ui.components.RankBadge
 import com.example.numera.theme.*
 
 /**
- * Seasonal Rank Reward track (competitive audit Top-25 #4, the Rocket League pattern). For the active
+ * Seasonal Rank Reward track. For the active
  * season, each metal tier shows its reward and your status: claimable once you've REACHED it (by
  * season peak), permanently locked-in once claimed, and locked until reached. Tokens feed the
  * prestige-cosmetic economy, so the chase has a destination. Fed by GET /api/rating/reward-track.

@@ -23,7 +23,7 @@ const SEASON_DEFAULT_DAYS = 90;
 
 // Seasonal Rank Reward track: per metal tier (Bronze..Grandmaster, indices 0..6 matching
 // NRS.RANK_TIERS), the reward claimable once you REACH that tier during a season. Tokens are the
-// prestige currency (season_tokens, spent on token-only cosmetics); coins are a bonus. (Audit #4.)
+// prestige currency (season_tokens, spent on token-only cosmetics); coins are a bonus.
 const TIER_REWARDS = [
   { tokens: 1, coins: 50 },    // Bronze
   { tokens: 2, coins: 75 },    // Silver
@@ -33,7 +33,7 @@ const TIER_REWARDS = [
   { tokens: 12, coins: 400 },  // Master
   { tokens: 20, coins: 600 },  // Grandmaster
 ];
-// Season-reward cosmetic (competitive audit #14): reaching Diamond on the season track grants a
+// Season-reward cosmetic: reaching Diamond on the season track grants a
 // season-exclusive, earn-only banner — tied to the season's slot so it rotates and is scarce. Must
 // match the catalog ids + season_slot in db.js and the SEASON_SLOTS used by the shop.
 const SEASON_SLOTS = 3;
@@ -68,7 +68,7 @@ async function rolloverSeason(tx, oldSeason, { name, durationDays }) {
     // Mint each placed player's season-peak badge ("Act Rank" — a permanent record of the highest
     // rank they reached this season). The peak is their best across domains; the global session count
     // gates it (a peak only becomes a badge once they were actually placed, ≥5 rated). Idempotent via
-    // PK(user_id, season_id) + the rewards_finalized guard. (Competitive audit Top-25 #5.)
+    // PK(user_id, season_id) + the rewards_finalized guard.
     const peaks = await tx.all(
       `SELECT sr.user_id AS user_id, MAX(sr.peak_display) AS peak,
               MAX(COALESCE(ug.sessions_count, 0)) AS sessions
@@ -171,9 +171,9 @@ router.get('/api/rating/profile', authenticateToken, (req, res) => {
           sigma: +row.sigma.toFixed(1),
           displayRating: row.display_rating,
           rank: NRS.displayRatingToRank(row.display_rating, row.sessions_count),
-          // Provisional `?` while σ is still wide — the rating isn't calibrated yet (audit opp #9).
+          // Provisional `?` while σ is still wide — the rating isn't calibrated yet.
           provisional: NRS.isProvisional(row.sigma),
-          // Divisions/pips (audit Top-25 #7): where the player sits within their division.
+          // Divisions/pips: where the player sits within their division.
           progress: +prog.progress.toFixed(3),
           pointsToNext: prog.pointsToNext,
           nextRank: prog.nextRank,
@@ -254,7 +254,7 @@ router.get('/api/rating/history', authenticateToken, (req, res) => {
 });
 
 // ── GET /api/rating/matches ───────────────────────────────────────────────────
-// Competitive match history (Phase 2 identity): the caller's recent rated results — opponent,
+// Competitive match history: the caller's recent rated results — opponent,
 // scoreline, win/loss, rating delta — newest first. Optionally filtered to one opponent (head-to-head).
 router.get('/api/rating/matches', authenticateToken, (req, res) => {
   const userId = req.user.id;
@@ -274,13 +274,13 @@ router.get('/api/rating/matches', authenticateToken, (req, res) => {
     params,
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
-      // `commendable` = a real human opponent you haven't yet commended (audit #24 honor system).
+      // `commendable` = a real human opponent you haven't yet commended.
       res.json((rows || []).map((r) => ({ ...r, commended: !!r.commended, commendable: !!r.opponentId && !r.commended })));
     }
   );
 });
 
-// ── Honor / commendation system (competitive audit #24) ───────────────────────
+// ── Honor / commendation system ───────────────────────
 const COMMEND_TYPES = ['good_game', 'tough_opponent', 'good_sport'];
 const HONOR_THRESHOLDS = [3, 10, 25, 60, 120]; // total commendations → honor level (count passed)
 const honorLevel = (total) => HONOR_THRESHOLDS.filter((t) => total >= t).length;
@@ -313,7 +313,7 @@ router.post('/api/rating/commend', authenticateToken, (req, res) => {
   });
 });
 
-// Competitive onboarding (audit #20): mark that the player has seen their placement rank-reveal
+// Competitive onboarding: mark that the player has seen their placement rank-reveal
 // ceremony, so it fires exactly once. Only meaningful once they're placed (≥5 rated games).
 router.post('/api/rating/reveal-seen', authenticateToken, (req, res) => {
   db.run('UPDATE users SET rank_revealed = 1 WHERE id = ?', [req.user.id], (err) => {
@@ -338,8 +338,7 @@ router.get('/api/rating/honor', authenticateToken, (req, res) => {
 });
 
 // ── GET /api/rating/share-card ────────────────────────────────────────────────
-// A composed, shareable boast about the player's competitive standing (audit #22 — the viral loop /
-// reach gap). Server-built so the copy is consistent and the rank can't be spoofed by the client.
+// A composed, shareable line about the player's competitive standing. Server-built so the copy is consistent and the rank can't be spoofed by the client.
 // Returns a ready-to-share `text` + the structured bits so the client can render a card too.
 router.get('/api/rating/share-card', authenticateToken, (req, res) => {
   getRatingRow(req.user.id, 'global', (err, row) => {
@@ -370,7 +369,7 @@ router.get('/api/rating/share-card', authenticateToken, (req, res) => {
 });
 
 // ── GET /api/rating/rivals ────────────────────────────────────────────────────
-// Head-to-head records (Phase 2 identity, audit #71): the caller's win/loss/draw tally against each
+// Head-to-head records: the caller's win/loss/draw tally against each
 // human opponent they've faced, most-played first. Only real opponents (bots/benchmark excluded).
 router.get('/api/rating/rivals', authenticateToken, (req, res) => {
   const userId = req.user.id;
@@ -495,7 +494,7 @@ router.get('/api/rating/leaderboard', authenticateToken, (req, res) => {
 });
 
 // ── GET /api/rating/apex ──────────────────────────────────────────────────────
-// The apex tier (competitive audit #23): a leaderboard-only standing ABOVE the rank thresholds, in
+// The apex tier: a leaderboard-only standing ABOVE the rank thresholds, in
 // the spirit of LoL Challenger / VALORANT Radiant. Eligibility = placed (≥5 rated) AND at least Master
 // tier; the apex is the top `limit` of those by global display rating. Returns the leaders + the
 // requester's own standing (null unless they're inside the apex). Empty until someone reaches Master —
@@ -692,7 +691,7 @@ router.get('/api/rating/reward-track', authenticateToken, async (req, res) => {
               tierName,
               tokens: TIER_REWARDS[i].tokens,
               coins: TIER_REWARDS[i].coins,
-              // The Diamond tier also yields this season's earn-only exclusive Champion banner (#14).
+              // The Diamond tier also yields this season's earn-only exclusive Champion banner.
               cosmetic: i === DIAMOND_TIER_INDEX ? seasonRewardBanner(season.id) : null,
               reached: i <= peakTier,
               claimed: claimed.has(i),
@@ -731,7 +730,7 @@ router.post('/api/rating/reward-track/claim', authenticateToken, (req, res) => {
     await tx.run('UPDATE users SET season_tokens = season_tokens + ?, coins = coins + ? WHERE id = ?', [reward.tokens, reward.coins, userId]);
 
     // Reaching the Diamond tier this season also grants the season-exclusive Champion banner — an
-    // earned (never bought), season-scoped cosmetic trophy (audit #14). Idempotent (the per-tier claim
+    // earned (never bought), season-scoped cosmetic trophy. Idempotent (the per-tier claim
     // ledger above already gates this), and OR IGNORE guards a re-grant if they own it.
     let cosmeticAwarded = null;
     if (tier >= DIAMOND_TIER_INDEX) {
@@ -811,7 +810,7 @@ router.get('/api/rating/analytics', authenticateToken, requireAdmin, (req, res) 
 });
 
 // ── GET /api/rating/admin/collusion ───────────────────────────────────────────
-// Competitive-integrity review queue (audit #18): surfaces (player → opponent) pairs whose ranked
+// Competitive-integrity review queue: surfaces (player → opponent) pairs whose ranked
 // rating gains look pumped — most of a player's gains from one opponent over many duels, and/or an
 // ~always-win record vs them (win-trading / boosting signature). REVIEW ONLY — no auto-action, fitting
 // the "flag for a human, never silently punish" ethic. Admin-gated + read-only.

@@ -1,4 +1,4 @@
-// Guards the mastery-up signal (ultra-review #20): /api/math/complete returns a
+// Guards the mastery-up signal: /api/math/complete returns a
 // `masteryMilestone` exactly when a category's lifetime-correct count CROSSES a milestone
 // (10/25/50/...), and null otherwise. The client turns that signal into the celebration.
 const { test, before, after } = require('node:test');

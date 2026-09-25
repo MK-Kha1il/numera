@@ -1,4 +1,4 @@
-// In-app Help & Support channel (completion pass). Backs the Settings "Contact Support",
+// In-app Help & Support channel. Backs the Settings "Contact Support",
 // "Report a Bug", and "Request a Feature" dialogs, which previously faked a success toast and
 // persisted nothing. A ticket is a learner-initiated message reviewed via the admin queue —
 // the human-in-the-loop sibling of content_reports (UGC) and crash_reports (anonymous crashes).

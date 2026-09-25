@@ -1,4 +1,4 @@
-// Estimation / number-sense generator (ultra review edu#16). The defining invariant of an
+// Estimation / number-sense generator. The defining invariant of an
 // estimation MCQ is that the "best estimate" really IS the closest option to the true value —
 // otherwise the answer key is wrong. These tests assert that across many seeds, plus the usual
 // well-formed / deterministic / level-gating guards.
