@@ -203,7 +203,10 @@ fun LevelDebriefDialog(
     levelNum: Int,
     category: String,
     onDismissRequest: () -> Unit,
-    onStartLesson: () -> Unit
+    onStartLesson: () -> Unit,
+    // Best stars on an already-completed level (null = not completed yet): shown with what the
+    // next star takes, and the button becomes "Replay level".
+    bestStars: Int? = null
 ) {
     val debrief = remember(levelNum) { getLevelDebriefInfo(levelNum) }
 
@@ -292,6 +295,23 @@ fun LevelDebriefDialog(
                     letterSpacing = 1.sp
                 )
 
+                // Replay goal: the best stars so far and what the next one takes.
+                if (bestStars != null) {
+                    Spacer(modifier = Modifier.height(Spacing.s))
+                    com.example.numera.ui.components.StarRating(stars = bestStars, size = 26.dp)
+                    Text(
+                        text = when (bestStars) {
+                            3 -> "Flawless — all stars earned"
+                            2 -> "Replay with no slips for ★★★"
+                            1 -> "Solve every problem for ★★"
+                            else -> "Solve one problem for your first star"
+                        },
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        textAlign = TextAlign.Center
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(Spacing.l))
 
                 // ELO Difficulty Badge
@@ -365,7 +385,8 @@ fun LevelDebriefDialog(
 
                 // Start button
                 DuoButton(
-                    text = "Start Lesson (+20 XP)",
+                    // No fixed XP promise: the server's reward scales with the level and the run.
+                    text = if (bestStars != null) "Replay level" else "Start level",
                     onClick = {
                         onStartLesson()
                         onDismissRequest()

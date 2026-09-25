@@ -1345,7 +1345,8 @@ fun LevelMapScreen(
                         gameMode = "level"
                     )
                 )
-            }
+            },
+            bestStars = activeDebriefLevel!!.let { lvl -> if (lvl < currentMaxLevel) levelStars[lvl] ?: 0 else null }
         )
     }
 }

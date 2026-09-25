@@ -8,8 +8,8 @@ linked subsystem docs hold the depth.
 (see [§ Completion pass](#completion-pass-2026-09)) · 🟡 works, with a known gap listed ·
 ⛔ blocked on an external dependency.
 
-**Snapshot (2026-09-25):** server 45 routers / 221 endpoints, 70 migrations, 88 tables,
-1,317 passing `node:test` tests, ESLint 0 errors · content 181 concepts, 182 concept-first lessons,
+**Snapshot (2026-09-25):** server 46 routers / 222 endpoints, 71 migrations, 88 tables,
+1,321 passing `node:test` tests, ESLint 0 errors · content 181 concepts, 182 concept-first lessons,
 117 achievements, 114 shop items, 14 titles, 6 daily quests, 16 interactive visual models ·
 Android 129 Kotlin source files (~40k lines), 50 Robolectric test files.
 
@@ -40,6 +40,7 @@ Android 129 Kotlin source files (~40k lines), 50 Robolectric test files.
 | 16 | Learning | Content Quality Gate | `mathEngine/contentQualityGate.js` | — | ✅ |
 | 17 | Game loop | Level map, XP & progression | `lib/progression.js`, `routes/math.js` | `archive/LevelMapScreen.kt` | 🔧 |
 | 18 | Game loop | Solo sessions, serve tickets & rewards | `lib/soloRewards.js`, `services/soloSessionService.js`, `routes/math.js` | `game/SoloGameScreen.kt`, `RecapScreen.kt` | 🔧 |
+| 18b | Game loop | Session flow & game feel (stars, next level, combo, streak moment) | `routes/{math,levels}.js` | `game/{GameplayScreen,RecapScreen}.kt`, `components/StarRating.kt` | 🔧 |
 | 19 | Game loop | Solo game modes (10) | `routes/{math,archive,dailyPuzzle,mistakes,transfer}.js` | `game/` | 🔧 |
 | 20 | Game loop | Placement diagnostic | `routes/assessment.js` | `ui/screens/PlacementTestScreen.kt` | 🔧 |
 | 21 | Game loop | Streaks, commitment & relics | `lib/streak.js`, `services/{streakService,commitmentService,relicService}.js`, `routes/commitment.js` | `dialogs/CommitmentStatusDialog.kt` | 🔧 |
@@ -177,6 +178,10 @@ weaken a check — fix the content. See [ContentQualityGate.md](ContentQualityGa
 ### 17. Level map, XP & progression 🔧
 A level path unlocked up to `users.level`; XP levels cost `level × 100` (`lib/progression.applyXp`
 is now the single copy of that loop, which was pasted into 10 routes); learning rank labels.
+Every map level carries a **0–3 star rating** (★ cleared · ★★ every problem solved · ★★★ flawless —
+`lib/soloRewards.levelStars`, best kept in `user_level_stars`, `GET /api/levels/stars`): stars sit
+under completed nodes and each stage header shows "★ earned / possible", so the map has a replay
+goal. The level→category rule is the shared `mapLevelCategory()`.
 **Fixed this pass:** `/api/math/complete` let a client "complete" any **locked** level and jump
 progression there (`level: 150` → level 151). Only the frontier level unlocks the next one, and only
 with at least one solve.
@@ -197,6 +202,19 @@ instant feedback, and a tampered client could echo them. True server grading mea
 answer check to a server round-trip (answers withheld from the payload), a UX/latency decision.
 Until then the ticket bounds what a tampered client can claim: only served problems, at most once,
 at the learner's own level, tapered.
+
+### 18b. Session flow & game feel 🔧
+The moment-to-moment layer: sound (a "correct" pitch that rises with the run), haptics, particles,
+shake on a miss, Socratic probe → fading hint → worked example after a wrong answer, a
+self-explanation prompt after a right one, manipulatives, calculator/scratchpad, and a free
+"Keep going" when hearts run out (errors never cost a resource in learning modes).
+**Completed this pass (the game around it):** a segmented progress bar (green/red per exercise) and a
+bouncing "🔥 N in a row" combo chip (a miss now ends the run — it used to carry through); lessons are
+taught once (skipped on replay, still one tap away via "Reference"); the recap reveals the level's
+stars one by one with "NEW BEST" and a next-star hint, celebrates the streak when this session is what
+kept it alive ("🔥 N-day streak!"), shows daily-quest progress and claimable rewards, and offers
+**"Next level ▶"** instead of only returning to the map. `/api/math/complete` returns the data for all
+of it (stars, streak extension, quest snapshot).
 
 ### 19. Solo game modes 🔧
 Ten modes share the solo loop: **level**, **archive puzzle**, **legacy puzzle**, **daily puzzle**,
@@ -401,6 +419,7 @@ CI's `assembleDebug` + Robolectric run is the gate).
 | Economy | Faucets/sinks unmeasured | Aggregate ledger + admin rollup |
 | Ops | No health endpoint | `GET /healthz` |
 | Tournaments | One shared set for a week-long async window | Per-entrant sets from the event recipe |
+| Game flow | Lesson before every level; recap only returned to the map; pass/fail levels; combo invisible; stale streak on recap | Taught-once lessons, "Next level ▶", 0–3 stars on map + recap, combo chip + segmented bar, live streak moment, quest progress |
 | Structure | `server.js` regrown to ~1.9k lines | Duel engine → `socket/duels.js`, landing → `routes/landing.js` |
 
 ## Open work (honest backlog)
