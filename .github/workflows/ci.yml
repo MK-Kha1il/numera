@@ -3,10 +3,17 @@
 # Robolectric JVM Compose test net (no emulator needed).
 name: CI
 
+# Every branch push is checked, not just main — solo workflow: no PR needed to see if a branch is
+# green. workflow_dispatch allows a manual re-run from the Actions tab.
 on:
   push:
-    branches: [main]
   pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch cancels the older, now-irrelevant run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   server:
