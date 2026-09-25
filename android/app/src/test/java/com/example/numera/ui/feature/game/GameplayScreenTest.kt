@@ -125,14 +125,14 @@ class GameplayScreenTest {
     launchAndAwaitGameplay()
     compose.onNodeWithText("bravo").performClick()
     compose.waitUntil(timeoutMillis = 5_000) {
-      compose.onAllNodesWithText("✨ EXCELLENT JOB!").fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithText("CORRECT").fetchSemanticsNodes().isNotEmpty()
     }
-    compose.onNodeWithText("✨ EXCELLENT JOB!").assertIsDisplayed()
+    compose.onNodeWithText("CORRECT").assertIsDisplayed()
   }
 
   /**
    * Sprint 2: a wrong answer no longer reveals "Correct: bravo" up front. Instead it shows the
-   * Socratic "🤔 LET'S THINK" banner with the misconception-targeted probe, and the answer must
+   * Socratic "NOT QUITE" banner with the misconception-targeted probe, and the answer must
    * NOT be on screen yet (it stays behind Review Solution — see the next test).
    */
   @Test
@@ -140,9 +140,9 @@ class GameplayScreenTest {
     launchAndAwaitGameplay()
     compose.onNodeWithText("alpha").performClick()
     compose.waitUntil(timeoutMillis = 5_000) {
-      compose.onAllNodesWithText("🤔 LET'S THINK").fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithText("NOT QUITE").fetchSemanticsNodes().isNotEmpty()
     }
-    compose.onNodeWithText("🤔 LET'S THINK").assertIsDisplayed()
+    compose.onNodeWithText("NOT QUITE").assertIsDisplayed()
     // The probe targeted at the "alpha" slip renders.
     compose.onNodeWithText("What made alpha look right to you?").assertIsDisplayed()
     // The banner no longer reveals the answer up front (it stays behind Review Solution),
@@ -196,7 +196,7 @@ class GameplayScreenTest {
   }
 
   /**
-   * Worked-example scaffold: after a wrong answer a "📝 See a worked example" affordance is offered;
+   * Worked-example scaffold: after a wrong answer a "See a worked example" affordance is offered;
    * tapping it reveals the example problem and the FIRST step, with later steps faded behind
    * "Reveal next step" (predict-then-reveal). The example uses its own numbers, not the live answer.
    */
@@ -205,12 +205,12 @@ class GameplayScreenTest {
     launchAndAwaitGameplay()
     compose.onNodeWithText("alpha").performClick()
     compose.waitUntil(timeoutMillis = 5_000) {
-      compose.onAllNodesWithText("📝 See a worked example").fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithText("See a worked example").fetchSemanticsNodes().isNotEmpty()
     }
     // Steps are hidden until requested.
     compose.onAllNodesWithText("1. First do this").assertCountEquals(0)
     compose.waitForIdle()
-    compose.onNodeWithText("📝 See a worked example").performClick()
+    compose.onNodeWithText("See a worked example").performClick()
     // First step appears; the second stays faded behind "Reveal next step".
     compose.waitUntil(timeoutMillis = 5_000) {
       compose.onAllNodesWithText("1. First do this").fetchSemanticsNodes().isNotEmpty()
@@ -268,7 +268,7 @@ class GameplayScreenTest {
       compose.onAllNodesWithText("Exercise Options").fetchSemanticsNodes().isNotEmpty()
     }
     compose.onNodeWithText("Exercise Options").assertIsDisplayed()
-    compose.onNodeWithText("📁  Save Entire Level").assertIsDisplayed()
+    compose.onNodeWithText("Save whole level").assertIsDisplayed()
   }
 
   /**
@@ -305,9 +305,9 @@ class GameplayScreenTest {
     // Third mistake empties the hearts -> kind, free "keep going" dialog (no failure/paywall).
     compose.onNodeWithText("wrong").performClick()
     compose.waitUntil(timeoutMillis = 5_000) {
-      compose.onAllNodesWithText("🌱 Let's slow down").fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithText("Let's slow down").fetchSemanticsNodes().isNotEmpty()
     }
-    compose.onNodeWithText("🌱 Let's slow down").assertIsDisplayed()
+    compose.onNodeWithText("Let's slow down").assertIsDisplayed()
     // The way forward is always free — never gated behind a purchase.
     compose.onNodeWithText("Keep going").assertIsDisplayed()
   }

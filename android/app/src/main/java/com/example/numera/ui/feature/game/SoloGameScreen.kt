@@ -576,7 +576,7 @@ fun SoloGameScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(Spacing.m),
             ) {
-                Text("😕", fontSize = 48.sp)
+                NumeraIcon(type = NumeraIconType.Warning, tint = MaterialTheme.colorScheme.onBackground.copy(alpha = Alpha.secondary), animate = false, contentDescription = "", modifier = Modifier.size(IconSize.xl))
                 Text(
                     "We couldn't load this round",
                     fontSize = 18.sp,
@@ -960,7 +960,7 @@ fun SoloGameScreen(
                 SoundManager.playTimeUp()
                 com.example.numera.haptic.HapticManager.playError()
                 errorsCount++
-                activeExplanation = "Time's up! Let's review the solution."
+                activeExplanation = "Time's up — here's the solution."
                 correctStreak = 0
                 shakeTrigger++
             }

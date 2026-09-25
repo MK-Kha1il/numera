@@ -251,7 +251,7 @@ fun ShopScreen(user: User?, onPurchaseComplete: () -> Unit) {
                         inventoryIds = inventoryIds,
                         ownedUtilities = userUtilities,
                         scope = scope,
-                        eyebrow = "✦ PREVIEW ✦",
+                        eyebrow = "PREVIEW",
                         onPurchaseComplete = {
                             if (!inventoryIds.contains(item.id) && item.is_utility == 0) {
                                 purchasedItemForReveal = item
@@ -408,7 +408,7 @@ private fun PurchaseRevealDialog(
         },
         title = {
             Text(
-                text = "✧ UNLOCKED ✧",
+                text = "UNLOCKED",
                 fontWeight = FontWeight.Black,
                 fontSize = 24.sp,
                 color = rarityColor,

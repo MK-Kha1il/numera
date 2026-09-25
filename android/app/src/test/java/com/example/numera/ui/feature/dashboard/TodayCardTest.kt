@@ -41,7 +41,7 @@ class TodayCardTest {
         compose.onNodeWithText("Rescue 2 fading concepts").assertIsDisplayed()
         compose.onNodeWithText("2/5").assertIsDisplayed() // solved progress
         compose.onNodeWithText("Solve one problem to keep your 4-day streak").assertIsDisplayed()
-        compose.onNodeWithText("🎁 1 reward ready to claim below").assertIsDisplayed()
+        compose.onNodeWithText("1 reward ready to claim below").assertIsDisplayed()
     }
 
     /** Tapping a pending step routes by key; tapping a done step does nothing. */
@@ -61,6 +61,6 @@ class TodayCardTest {
         compose.setContent {
             TodayCard(today = plan.copy(streakSafeToday = true), onItemClick = {})
         }
-        compose.onNodeWithText("🔥 Streak safe for today · 4 days").assertIsDisplayed()
+        compose.onNodeWithText("Streak safe for today · 4 days").assertIsDisplayed()
     }
 }

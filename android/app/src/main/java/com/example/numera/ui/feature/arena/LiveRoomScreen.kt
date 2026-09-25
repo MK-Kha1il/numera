@@ -145,7 +145,7 @@ fun LiveRoomScreen(onExit: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(Spacing.l)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("🎉 Live Room", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary)
+            Text("Live Room", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary)
             TextButton(onClick = onExit) { Text("Exit") }
         }
         error?.let { Text(it, color = WrongRed, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
@@ -200,7 +200,7 @@ fun LiveRoomScreen(onExit: () -> Unit) {
                         }
                     }
                 } else {
-                    Text("✅ All answered — score $myScore", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = CorrectGreen)
+                    Text("All answered — score $myScore", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = CorrectGreen)
                     Text(if (isHost) "End the room when everyone's done." else "Waiting for the host to end the room…", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                     StandingsList(state?.standings ?: emptyList(), "Live standings")
                     if (isHost) DuoButton(text = if (busy) "…" else "End Room & Show Podium", onClick = { finish() }, modifier = Modifier.fillMaxWidth())
@@ -208,7 +208,7 @@ fun LiveRoomScreen(onExit: () -> Unit) {
             }
 
             else -> {
-                Text("🏆 Final Podium", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+                Text("Final standings", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
                 StandingsList(podium, "Results")
                 DuoButton(text = "Done", onClick = onExit, modifier = Modifier.fillMaxWidth())
             }

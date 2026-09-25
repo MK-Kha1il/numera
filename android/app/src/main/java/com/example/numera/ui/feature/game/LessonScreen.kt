@@ -93,7 +93,7 @@ fun LessonScreen(
                 .padding(Spacing.l)
         ) {
             Text(
-                text = if (isMilestone) "🌟 MILESTONE THEOREM" else "LESSON",
+                text = if (isMilestone) "MILESTONE LESSON" else "LESSON",
                 color = primaryColor,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 14.sp,
@@ -141,7 +141,7 @@ fun LessonScreen(
                 Reveal(1) {
                 lessonSections?.let { s ->
                     if (!s.intuitionHook.isNullOrBlank()) {
-                        LessonSectionCard("💡 Think first", s.intuitionHook!!, primaryColor, onSurfaceColor, borderColor, cardBgColor)
+                        LessonSectionCard("Think first", s.intuitionHook!!, primaryColor, onSurfaceColor, borderColor, cardBgColor)
                     }
                     if (!s.whatItIs.isNullOrBlank()) {
                         LessonSectionCard("What it is", s.whatItIs!!, primaryColor, onSurfaceColor, borderColor, MaterialTheme.colorScheme.surface)
@@ -259,7 +259,7 @@ fun LessonScreen(
                     val mistakes = s.commonMistakes ?: emptyList()
                     if (mistakes.isNotEmpty()) {
                         Text(
-                            text = "⚠️ Common mistakes",
+                            text = "Common mistakes",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.error,
@@ -278,7 +278,7 @@ fun LessonScreen(
                                 Text(text = m.label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = onSurfaceColor)
                                 if (!m.why.isNullOrBlank()) LessonProse(m.why!!, onSurfaceColor.copy(alpha = 0.75f), 26)
                                 if (!m.fix.isNullOrBlank()) {
-                                    Text(text = "✓ Fix", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CorrectGreen)
+                                    Text(text = "Fix", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CorrectGreen)
                                     LessonProse(m.fix!!, onSurfaceColor.copy(alpha = 0.85f), 26)
                                 }
                             }
@@ -287,7 +287,7 @@ fun LessonScreen(
                     val connections = s.connections ?: emptyList()
                     if (connections.isNotEmpty()) {
                         Text(
-                            text = "🔗 How this connects",
+                            text = "How this connects",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = primaryColor,
@@ -308,15 +308,15 @@ fun LessonScreen(
                         }
                     }
 
-                    // ✨ Curiosity spark — the surprising bit (server: curiosityEngine.js). The pay-off
-                    // that turns "I solved it" into "I want to know more".
+                    // Curiosity spark (server: curiosityEngine.js) — a shortcut, counterintuitive result or
+                    // bit of history attached to the concept.
                     val spark = s.spark
                     if (spark != null && spark.title.isNotBlank()) {
                         val sparkLabel = when (spark.type) {
-                            "shortcut" -> "✨ Elegant shortcut"
-                            "counterintuitive" -> "✨ Plot twist"
-                            "wonder" -> "✨ A moment of wonder"
-                            else -> "✨ The surprising bit"
+                            "shortcut" -> "Shortcut"
+                            "counterintuitive" -> "Surprise"
+                            "wonder" -> "Worth knowing"
+                            else -> "Did you know"
                         }
                         Text(
                             text = sparkLabel,

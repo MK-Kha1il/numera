@@ -53,7 +53,7 @@ fun TodayCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = if (today.comeback != null) "Welcome back 👋" else "Today",
+                text = if (today.comeback != null) "Welcome back" else "Today",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary,
@@ -72,9 +72,9 @@ fun TodayCard(
         Text(
             text = when {
                 today.comeback != null ->
-                    "It's been ${today.comeback.daysAway} days — one easy step below restarts the momentum. No catch-up needed."
-                allDone -> "All done — see you tomorrow! 🎉"
-                today.streakSafeToday -> "🔥 Streak safe for today" + if (today.streak > 1) " · ${today.streak} days" else ""
+                    "It's been ${today.comeback.daysAway} days. Start with one easy step below — nothing to catch up on."
+                allDone -> "All done for today."
+                today.streakSafeToday -> "Streak safe for today" + if (today.streak > 1) " · ${today.streak} days" else ""
                 today.streak > 0 -> "Solve one problem to keep your ${today.streak}-day streak"
                 else -> "Start your streak with any step below"
             },
@@ -146,7 +146,7 @@ fun TodayCard(
 
         if (today.claimableQuests > 0) {
             Text(
-                text = "🎁 ${today.claimableQuests} reward${if (today.claimableQuests > 1) "s" else ""} ready to claim below",
+                text = "${today.claimableQuests} reward${if (today.claimableQuests > 1) "s" else ""} ready to claim below",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,

@@ -86,7 +86,7 @@ fun AsyncDuelScreen(user: User?, onExit: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(Spacing.l)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("⚔️ Async Duels", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary)
+            Text("Async Duels", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary)
             TextButton(onClick = onExit) { Text("Exit") }
         }
 
@@ -101,7 +101,7 @@ fun AsyncDuelScreen(user: User?, onExit: () -> Unit) {
                             val won = res?.winnerId != null && res.winnerId == user?.id
                             val draw = res?.winnerId == null
                             Text(
-                                if (draw) "It's a draw!" else if (won) "You won! 🏆" else "You lost — rematch?",
+                                if (draw) "Draw" else if (won) "You won" else "You lost — rematch?",
                                 fontWeight = FontWeight.Bold, fontSize = 16.sp,
                                 color = if (won) CorrectGreen else if (draw) MaterialTheme.colorScheme.onSurface else WrongRed
                             )
@@ -174,7 +174,7 @@ fun AsyncDuelScreen(user: User?, onExit: () -> Unit) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text("vs ${m.opponentName}", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                     val sub = when {
-                                        m.status == "finished" -> if (m.won) "You won ${m.myScore}–${m.theirScore} 🏆" else if (m.winnerId == null) "Draw ${m.myScore}–${m.theirScore}" else "Lost ${m.myScore}–${m.theirScore}"
+                                        m.status == "finished" -> if (m.won) "Won ${m.myScore}–${m.theirScore}" else if (m.winnerId == null) "Draw ${m.myScore}–${m.theirScore}" else "Lost ${m.myScore}–${m.theirScore}"
                                         m.status == "expired" -> "Expired"
                                         m.yourTurn -> "Your turn — ${m.problemCount} questions"
                                         m.played -> "Waiting for opponent"

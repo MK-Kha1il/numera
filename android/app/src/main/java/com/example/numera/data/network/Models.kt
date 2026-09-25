@@ -1120,8 +1120,7 @@ data class RequestEmailChangePayload(
 @Serializable
 data class RequestEmailChangeResponse(
     val success: Boolean,
-    val message: String,
-    val code: String? = null
+    val message: String
 )
 
 @Serializable

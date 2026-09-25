@@ -55,7 +55,7 @@ fun ConceptDiscussionScreen(conceptId: String, conceptName: String, onBack: () -
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("💬 Discussion", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
+                Text("Discussion", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
                 Text(conceptName, fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = Alpha.secondary))
             }
             TextButton(onClick = onBack) { Text("Close") }

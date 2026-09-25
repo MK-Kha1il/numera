@@ -97,7 +97,7 @@ fun TournamentScreen(user: User?, onExit: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(Spacing.l)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("🏆 Weekly Tournament", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
+            Text("Weekly Tournament", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
             TextButton(onClick = { if (phase == "home") onExit() else { phase = "home"; reload() } }) {
                 Text(if (phase == "home") "Close" else "Back")
             }
@@ -138,7 +138,7 @@ fun TournamentScreen(user: User?, onExit: () -> Unit) {
             Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 Text(cur.tournament.title, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
                 Text("${cur.tournament.conceptName} · ${cur.tournament.problemCount} problems", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
-                Text("⏳ ${remaining(cur.tournament.msRemaining)} · top 3 win coins", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                Text("${remaining(cur.tournament.msRemaining)} left · top 3 win coins", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -176,10 +176,10 @@ fun TournamentScreen(user: User?, onExit: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        // Bots are always labeled so a player knows who's human (#46).
+                        // Bots are always labeled so a player knows who's human.
                         "#${row.position}  ${row.username}" + when {
                             isMe -> "  (you)"
-                            row.isBot -> "  🤖 bot"
+                            row.isBot -> "  (bot)"
                             else -> ""
                         },
                         fontWeight = if (isMe) FontWeight.ExtraBold else FontWeight.Medium,
@@ -192,7 +192,7 @@ fun TournamentScreen(user: User?, onExit: () -> Unit) {
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        "${row.score} · ${row.elapsedMs / 1000}s" + (if (row.reward > 0) "  +${row.reward}🪙" else ""),
+                        "${row.score} · ${row.elapsedMs / 1000}s" + (if (row.reward > 0) "  +${row.reward} coins" else ""),
                         fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary
                     )
                 }

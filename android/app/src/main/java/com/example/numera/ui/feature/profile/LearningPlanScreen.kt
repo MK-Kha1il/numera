@@ -48,7 +48,7 @@ fun LearningPlanScreen(onBack: () -> Unit, onPractice: (String, Int) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(Spacing.l)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("🧭 Your Learning Plan", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
+            Text("Learning Plan", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
             TextButton(onClick = onBack) { Text("Close") }
         }
 
@@ -93,7 +93,7 @@ fun LearningPlanScreen(onBack: () -> Unit, onPractice: (String, Int) -> Unit) {
                     }
                 } ?: DuoCard(modifier = Modifier.fillMaxWidth()) {
                     Box(modifier = Modifier.fillMaxWidth().padding(Spacing.xl), contentAlignment = Alignment.Center) {
-                        Text("🎉 You've learned everything on this path! Raise your goal to extend it.", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text("You've finished this path. Raise your goal to extend it.", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 

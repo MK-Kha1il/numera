@@ -40,7 +40,7 @@ fun ReasoningReplayDialog(review: ReasoningReviewResponse, onDismiss: () -> Unit
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("🧠 Round Review · ${review.banked}/${review.total} banked", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                    Text("Round review · ${review.banked}/${review.total} banked", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                     TextButton(onClick = onDismiss) { Text("Close") }
                 }
 

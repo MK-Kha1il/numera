@@ -57,7 +57,7 @@ fun MatchHistoryCard(
     ) {
         Column(modifier = Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
             Text(
-                text = "⚔️ Match History",
+                text = "Match History",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary,
@@ -108,9 +108,9 @@ fun MatchHistoryCard(
                     if (replayable) {
                         Text(text = "▶", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                     }
-                    // Honor (audit #24): commend a real opponent — positive-only, once per match.
+                    // Honor: commend a real opponent — positive-only, once per match.
                     when {
-                        m.commended -> Text(text = "🎖️", fontSize = 13.sp)
+                        m.commended -> Text(text = "Commended", fontSize = 11.sp, color = MaterialTheme.colorScheme.tertiary)
                         m.commendable -> Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(CornerRadius.full))
@@ -118,7 +118,7 @@ fun MatchHistoryCard(
                                 .clickable { onCommend(m.id) }
                                 .padding(horizontal = Spacing.s, vertical = Spacing.xs),
                         ) {
-                            Text(text = "👏", fontSize = 12.sp)
+                            Text(text = "Commend", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary)
                         }
                     }
                 }

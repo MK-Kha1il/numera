@@ -107,7 +107,7 @@ fun ClubWarsScreen(onBack: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(Spacing.l)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("⚔️ Club Wars", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
+            Text("Club Wars", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
             TextButton(onClick = { if (phase == "list") onBack() else { phase = "list"; loadList() } }) {
                 Text(if (phase == "list") "Close" else "Back")
             }
@@ -120,7 +120,7 @@ fun ClubWarsScreen(onBack: () -> Unit) {
                     Text("Join a club to take part in club wars.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                 } else {
                     if (isOwner) {
-                        DuoButton(text = "⚔️ Declare War", onClick = { openPicker() }, modifier = Modifier.fillMaxWidth())
+                        DuoButton(text = "Challenge a club", onClick = { openPicker() }, modifier = Modifier.fillMaxWidth())
                     }
                     if (wars.isEmpty()) {
                         Text("No wars yet. ${if (isOwner) "Challenge a rival club!" else "Your owner can start one."}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
@@ -157,12 +157,12 @@ fun ClubWarsScreen(onBack: () -> Unit) {
                     when {
                         w.status != "active" -> Text(
                             if (w.winnerClubId == null || w.winnerClubId == 0) "This war ended in a draw."
-                            else if (w.winnerClubId == w.myClubId) "🏆 Your club won this war!"
-                            else "Your club lost this one — next time!",
+                            else if (w.winnerClubId == w.myClubId) "Your club won this war."
+                            else "Your club lost this one.",
                             fontWeight = FontWeight.Bold, fontSize = 14.sp,
                             color = if (w.winnerClubId == w.myClubId) CorrectGreen else MaterialTheme.colorScheme.onSurface
                         )
-                        w.youPlayed -> Text("You scored ${w.yourScore}/${w.problemCount} for your club. 🎯", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                        w.youPlayed -> Text("You scored ${w.yourScore}/${w.problemCount} for your club.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         amInThisWar -> DuoButton(text = "▶ Play for your club", onClick = { answers = emptyList(); qIndex = 0; phase = "playing" }, modifier = Modifier.fillMaxWidth())
                         else -> Text("You're not in either of these clubs.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }

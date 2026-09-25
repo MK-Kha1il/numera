@@ -53,7 +53,7 @@ fun HeroShowcasePanel(
     onDismissShowcase: () -> Unit,
     // The single Featured Spotlight: the eyebrow reads "FEATURED SPOTLIGHT" for the featured item
     // (with a refresh countdown) and "PREVIEW" for anything else the player taps to inspect.
-    eyebrow: String = "✦ SHOWCASE PREVIEW ✦",
+    eyebrow: String = "PREVIEW",
     refreshSeconds: Long? = null,
 ) {
     if (item == null) return
@@ -307,7 +307,7 @@ fun HeroShowcasePanel(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(Spacing.xs)
                         ) {
-                            Text("🏅 EARNED THROUGH PLAY", fontWeight = FontWeight.Black, fontSize = 12.sp, color = MedalGold, letterSpacing = 0.8.sp)
+                            Text("EARNED THROUGH PLAY", fontWeight = FontWeight.Black, fontSize = 12.sp, color = MedalGold, letterSpacing = 0.8.sp)
                             Text(
                                 text = item.description ?: "Keep playing to unlock this.",
                                 fontSize = 12.sp,

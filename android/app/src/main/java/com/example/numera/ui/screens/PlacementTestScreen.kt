@@ -135,7 +135,7 @@ fun PlacementTestScreen(
     if (errorMsg != null && !done) {
         Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Diagnostic Error ⚠️", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                Text("Couldn't load the placement test", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(errorMsg!!, textAlign = TextAlign.Center)
                 Spacer(modifier = Modifier.height(24.dp))
@@ -151,7 +151,7 @@ fun PlacementTestScreen(
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                Text("Placement Calibrated! 🧠✨", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
+                Text("Placement done", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("You answered $correctCount of $totalQuestions correctly.", fontSize = 15.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f), textAlign = TextAlign.Center)
                 Spacer(modifier = Modifier.height(20.dp))
@@ -167,7 +167,7 @@ fun PlacementTestScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 if (placedLevel > 1) {
                     Text(
-                        "🚀 We started you at your actual proficiency — no need to grind through the basics.",
+                        "Everything below this level is unlocked, so you can skip what you already know.",
                         fontSize = 13.sp, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
                     )
                 }

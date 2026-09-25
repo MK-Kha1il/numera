@@ -216,7 +216,7 @@ fun SettingsScreen(
                     if (showHapticsTooltip) {
                         Spacer(modifier = Modifier.height(Spacing.xs))
                         Text(
-                            text = "💡 Tactical vibration confirms correct actions, achievements, and clicks. Tap 'Info ?' to dismiss.",
+                            text = "Short vibrations on answers, rewards and taps. Tap 'Info ?' to hide this.",
                             fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium,
@@ -342,7 +342,7 @@ fun SettingsScreen(
                                             RetrofitClient.apiService.sendProgressReport(RetrofitClient.authToken ?: "")
                                         }
                                     }.getOrNull()?.success == true
-                                    toast.show(if (ok) "Progress report sent ✉️" else "Couldn't send right now.")
+                                    toast.show(if (ok) "Progress report sent" else "Couldn't send right now.")
                                 }
                             },
                             modifier = Modifier.weight(1f),
@@ -832,7 +832,7 @@ fun SettingsScreen(
                                             withContext(Dispatchers.Main) {
                                                 pwIsLoading = false
                                                 if (res.success) {
-                                                    pwStatusMsg = "✅ Password updated successfully!"
+                                                    pwStatusMsg = "Password updated."
                                                     pwIsError = false
                                                     oldPassword = ""
                                                     newPassword = ""
@@ -937,8 +937,8 @@ fun SettingsScreen(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
                     // Accent theme equip blocks
-                    Text("🎨 Equipped Theme Accent", style = AppText.rowTitle)
-                    Text("Unlock and choose your math identity", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
+                    Text("Theme", style = AppText.rowTitle)
+                    Text("Unlock more in the shop", style = AppText.rowSubtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     
                     val themesList = listOf(
@@ -1162,7 +1162,7 @@ fun SettingsScreen(
                     if (exportFinished) {
                         Spacer(modifier = Modifier.height(Spacing.xs))
                         Text(
-                            text = "✅ File exported to: $exportFilePath",
+                            text = "Exported to $exportFilePath",
                             fontSize = 10.sp,
                             color = CorrectGreen,
                             fontWeight = FontWeight.Bold
@@ -1448,7 +1448,6 @@ fun SettingsScreen(
         var statusMsg by remember { mutableStateOf<String?>(null) }
         var isError by remember { mutableStateOf(false) }
         var isLoading by remember { mutableStateOf(false) }
-        var sentCode by remember { mutableStateOf("") }
 
         AlertDialog(
             onDismissRequest = { if (!isLoading) showEmailDialog = false },
@@ -1467,9 +1466,6 @@ fun SettingsScreen(
                         )
                     } else {
                         Text("Enter the 6-digit verification code sent to $emailText.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
-                        if (sentCode.isNotEmpty()) {
-                            Text("Local Sandbox Code: $sentCode", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
-                        }
                         OutlinedTextField(
                             value = codeText,
                             onValueChange = { codeText = it },
@@ -1497,9 +1493,8 @@ fun SettingsScreen(
                                     withContext(Dispatchers.Main) {
                                         isLoading = false
                                         if (res.success) {
-                                            statusMsg = "Code sent! Check console / display below."
+                                            statusMsg = "Code sent. Check your inbox."
                                             isError = false
-                                            sentCode = res.code ?: ""
                                             showVerifyInput = true
                                         } else {
                                             statusMsg = res.message
@@ -1869,7 +1864,7 @@ fun SettingsScreen(
                             Text(error!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                         }
                     } else {
-                        Text("Thank you! Your support ticket has been logged. We will review your query.", fontSize = 13.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
+                        Text("Thanks — we got your message.", fontSize = 13.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
                     }
                 }
             },
@@ -1946,7 +1941,7 @@ fun SettingsScreen(
                             Text(error!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                         }
                     } else {
-                        Text("Bug report submitted! Thank you for helping us improve Numera.", fontSize = 13.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
+                        Text("Thanks — bug report sent.", fontSize = 13.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
                     }
                 }
             },
@@ -2015,7 +2010,7 @@ fun SettingsScreen(
                             Text(error!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                         }
                     } else {
-                        Text("Thanks for the suggestion! We read every request.", fontSize = 13.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
+                        Text("Thanks — suggestion sent.", fontSize = 13.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
                     }
                 }
             },

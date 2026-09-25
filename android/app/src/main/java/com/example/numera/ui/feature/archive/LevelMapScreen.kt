@@ -388,7 +388,7 @@ fun LevelMapScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                 ) {
-                    Text("⚠️", fontSize = 20.sp)
+                    NumeraIcon(type = NumeraIconType.Warning, tint = MaterialTheme.colorScheme.error, animate = false, contentDescription = "", modifier = Modifier.size(IconSize.m))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Your climb is fading",
@@ -526,14 +526,14 @@ fun LevelMapScreen(
                 ) {
                     item {
                         Text(
-                            text = "Scientifically planned pathway",
+                            text = "Your path",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary,
                             textAlign = TextAlign.Center
                         )
                         Text(
-                            text = "Complete levels in sequence. Categories interleave automatically for scientifically proven long-term memory retention.",
+                            text = "Levels unlock in order. Topics are mixed so earlier skills keep coming back.",
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                             textAlign = TextAlign.Center,
@@ -559,16 +559,16 @@ fun LevelMapScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                                     ) {
-                                        Text("💡", fontSize = 18.sp)
+                                        NumeraIcon(type = NumeraIconType.Tip, tint = MaterialTheme.colorScheme.onSecondaryContainer, animate = false, contentDescription = "", modifier = Modifier.size(IconSize.s))
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = "Diagnostic Fast-Track",
+                                                text = "Already know the basics?",
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 13.sp,
                                                 color = MaterialTheme.colorScheme.onSecondaryContainer
                                             )
                                             Text(
-                                                text = "Starting at Level 1 is great, but taking the diagnostic test helps match your skill rating precisely and saves you time!",
+                                                text = "A short placement test finds your level and unlocks everything below it.",
                                                 fontSize = 11.sp,
                                                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                                             )
@@ -599,14 +599,14 @@ fun LevelMapScreen(
                             ) {
                                 Column(modifier = Modifier.padding(Spacing.l)) {
                                     Text(
-                                        text = "🎯 Placement Assessment",
+                                        text = "Placement Test",
                                         fontWeight = FontWeight.ExtraBold,
                                         fontSize = 18.sp,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
-                                        text = "Determine your math level instantly using our scientifically proven evaluation. Place directly into higher ranks and unlock rewards!",
+                                        text = "Seven questions that adjust to your answers. You start at the level you reach, with everything below it unlocked.",
                                         fontSize = 13.sp,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                                     )
@@ -655,7 +655,7 @@ fun LevelMapScreen(
                                             horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                                         ) {
                                             Text(
-                                                text = "🧩 Daily Puzzle",
+                                                text = "Daily Puzzle",
                                                 fontWeight = FontWeight.ExtraBold,
                                                 fontSize = 14.sp,
                                                 color = MaterialTheme.colorScheme.tertiary
@@ -663,7 +663,7 @@ fun LevelMapScreen(
                                             Row {
                                                 repeat(5) { starIndex ->
                                                     Text(
-                                                        text = if (starIndex < (puzzle.stars ?: 0)) "⭐" else "☆",
+                                                        text = if (starIndex < (puzzle.stars ?: 0)) "★" else "☆",
                                                         fontSize = 11.sp
                                                     )
                                                 }
@@ -728,21 +728,21 @@ fun LevelMapScreen(
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = "🌱 Growth Practice",
+                                            text = "Mistakes Bank",
                                             fontWeight = FontWeight.ExtraBold,
                                             fontSize = 14.sp,
                                             color = Color(0xFF6366F1)
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
-                                            text = "Focus Trainer",
+                                            text = "Try your misses again",
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 15.sp,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
-                                            text = "Review your ${mistakesList.size} unresolved mathematical mistakes",
+                                            text = "${mistakesList.size} problem${if (mistakesList.size == 1) "" else "s"} waiting",
                                             fontSize = 12.sp,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                                         )
@@ -943,7 +943,7 @@ fun LevelMapScreen(
                             NumeraEmptyState(
                                 illustration = EmptyIllustration.Mistakes,
                                 title = "You're all caught up",
-                                message = "No reviews are due right now — your memory's looking sharp. Check back later."
+                                message = "No reviews are due right now. Check back later."
                             )
                         }
                     } else {
@@ -969,9 +969,9 @@ fun LevelMapScreen(
                                             fontSize = 15.sp
                                         )
                                         Text(
-                                            text = "Review multiplier: +50% Bonus XP!",
+                                            text = "Level $srsLvl · due for review",
                                             fontSize = 12.sp,
-                                            color = WrongRed
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
                                         )
                                     }
                                     Column(
@@ -1087,7 +1087,7 @@ fun LevelMapScreen(
                         "number_theory" to "Number Theory"
                     )
                     val starOptions: List<Pair<Int?, String>> =
-                        listOf<Pair<Int?, String>>(null to "All Ratings") + (1..5).map { it to "⭐ $it" }
+                        listOf<Pair<Int?, String>>(null to "All Ratings") + (1..5).map { it to "$it★" }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1246,7 +1246,7 @@ fun LevelMapScreen(
                                             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                                                 repeat(5) { starIdx ->
                                                     Text(
-                                                        text = if (starIdx < item.stars) "⭐" else "☆",
+                                                        text = if (starIdx < item.stars) "★" else "☆",
                                                         fontSize = 12.sp
                                                     )
                                                 }
@@ -1308,7 +1308,7 @@ fun LevelMapScreen(
         NumeraQuickPreview(
             onDismiss = { archivePreviewItem = null },
             title = item.title,
-            subtitle = "${item.category.replace('_', ' ').replaceFirstChar { it.uppercase() }} · ${"⭐".repeat(item.stars)}",
+            subtitle = "${item.category.replace('_', ' ').replaceFirstChar { it.uppercase() }} · ${"★".repeat(item.stars)}",
             primaryLabel = "Solve Problem",
             onPrimary = { launchArchiveItem(item) }
         ) {

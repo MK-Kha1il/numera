@@ -138,9 +138,9 @@ fun CommitmentStatusDialog(
             ) {
                 if (loading) {
                     CircularProgressIndicator(modifier = Modifier.size(40.dp))
-                    Text("Opening commitment space...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
+                    Text("Loading…", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                 } else if (restorationMessage != null) {
-                    Text("✨ Restore Success ✨", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text("Streak restored", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Text(restorationMessage!!, textAlign = TextAlign.Center)
                     Spacer(modifier = Modifier.height(Spacing.s))
                     DuoButton(
@@ -345,7 +345,7 @@ fun CommitmentStatusDialog(
                         ) {
                             Column(modifier = Modifier.padding(Spacing.m), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = "💔 You lost a ${offer.lostStreak}-day streak",
+                                    text = "Your ${offer.lostStreak}-day streak ended",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface

@@ -43,7 +43,7 @@ class GrowthInsightsCardTest {
     )
     compose.setContent { GrowthInsightsCard(profile = profile) }
 
-    compose.onNodeWithText("🌱 Growth Insights").assertIsDisplayed()
+    compose.onNodeWithText("Strengths and slips").assertIsDisplayed()
     compose.onNodeWithText("Integer Multiplication").assertIsDisplayed()
     compose.onNodeWithText("92%").assertIsDisplayed()
     compose.onNodeWithText("Sign error", substring = true).assertIsDisplayed()
@@ -83,12 +83,12 @@ class GrowthInsightsCardTest {
   @Test
   fun rendersNothing_whenNoData() {
     compose.setContent { GrowthInsightsCard(profile = GrowthProfileResponse()) }
-    compose.onAllNodesWithText("🌱 Growth Insights").assertCountEquals(0)
+    compose.onAllNodesWithText("Strengths and slips").assertCountEquals(0)
   }
 
   @Test
   fun rendersNothing_whenProfileNull() {
     compose.setContent { GrowthInsightsCard(profile = null) }
-    compose.onAllNodesWithText("🌱 Growth Insights").assertCountEquals(0)
+    compose.onAllNodesWithText("Strengths and slips").assertCountEquals(0)
   }
 }

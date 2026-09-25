@@ -54,6 +54,6 @@ class TournamentScreenTest {
         }
         compose.onNodeWithText("alice_test", substring = true).assertIsDisplayed()
         // The seeded pace-setter is always labeled as a bot.
-        compose.onNodeWithText("🤖 bot", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("(bot)", substring = true).assertIsDisplayed()
     }
 }

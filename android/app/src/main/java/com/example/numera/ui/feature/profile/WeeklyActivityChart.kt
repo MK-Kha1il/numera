@@ -117,7 +117,7 @@ fun WeeklyActivityChart(activityDays: List<ActivityDay>) {
                         .padding(horizontal = Spacing.m, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "🔥 $totalSolved",
+                        text = "$totalSolved solved",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Black,
                         color = primary

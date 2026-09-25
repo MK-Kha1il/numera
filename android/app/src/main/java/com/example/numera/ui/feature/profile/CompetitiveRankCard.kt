@@ -76,7 +76,7 @@ fun CompetitiveRankCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "🏆 Competitive Rank",
+                    text = "Competitive Rank",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary,
@@ -137,7 +137,7 @@ fun CompetitiveRankCard(
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
                     )
-                    // Apex tier (audit #23): the leaderboard-only standing above the rank thresholds.
+                    // Apex tier: the leaderboard-only standing above the rank thresholds.
                     if (apexStanding != null) {
                         Box(
                             modifier = Modifier
@@ -146,17 +146,17 @@ fun CompetitiveRankCard(
                                 .padding(horizontal = Spacing.m, vertical = Spacing.xs),
                         ) {
                             Text(
-                                text = "👑 Apex #${apexStanding.position}",
+                                text = "Apex #${apexStanding.position}",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.tertiary,
                             )
                         }
                     }
-                    // Honor (audit #24): peer commendations earned for good sportsmanship.
+                    // Honor: peer commendations earned for good sportsmanship.
                     if (honor != null && honor.total > 0) {
                         Text(
-                            text = "🎖️ Honor Lv.${honor.level} · ${honor.total} commend${if (honor.total == 1) "" else "s"}",
+                            text = "Honor Lv.${honor.level} · ${honor.total} commend${if (honor.total == 1) "" else "s"}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),

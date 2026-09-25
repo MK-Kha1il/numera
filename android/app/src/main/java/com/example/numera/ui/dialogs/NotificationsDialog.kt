@@ -135,15 +135,17 @@ fun NotificationsDialog(
                                             ),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = when (item.type) {
-                                                "welcome" -> "🚀"
-                                                "levelup" -> "🌟"
-                                                "achievement" -> "🏆"
-                                                "social" -> "🤝"
-                                                else -> "🔔"
+                                        com.example.numera.ui.components.NumeraIcon(
+                                            type = when (item.type) {
+                                                "levelup" -> com.example.numera.ui.components.NumeraIconType.XP
+                                                "achievement" -> com.example.numera.ui.components.NumeraIconType.Trophy
+                                                "social" -> com.example.numera.ui.components.NumeraIconType.Profile
+                                                else -> com.example.numera.ui.components.NumeraIconType.Notification
                                             },
-                                            fontSize = 18.sp
+                                            tint = com.example.numera.theme.StudioOnSurface,
+                                            animate = false,
+                                            contentDescription = "",
+                                            modifier = Modifier.size(IconSize.s)
                                         )
                                     }
                                     

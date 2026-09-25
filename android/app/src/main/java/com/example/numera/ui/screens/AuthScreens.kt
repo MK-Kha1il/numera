@@ -25,7 +25,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.platform.LocalContext
 import com.example.numera.data.network.LoginRequest
 import com.example.numera.data.network.RegisterRequest
@@ -219,7 +218,6 @@ fun LoginScreen(
     var isLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    var showGoogleDialog by remember { mutableStateOf(false) }
     // Non-null while a password was accepted for an MFA-enabled account and we're awaiting the
     // second factor.
     var mfaChallenge by remember { mutableStateOf<String?>(null) }
@@ -277,7 +275,7 @@ fun LoginScreen(
                 }
 
                 Text(
-                    text = "Unlock your math potential",
+                    text = "Math practice and ranked duels",
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = Alpha.secondary),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
@@ -364,14 +362,6 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    // Continue with Google Button
-                    DuoButton(
-                        text = "Continue with Google",
-                        onClick = { showGoogleDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-
                     // Value-first: let a visitor solve a problem before any signup wall. A guest is
                     // a real (server-side) account; their progress is saved and can be claimed later.
                     TextButton(
@@ -404,7 +394,7 @@ fun LoginScreen(
 
                     TextButton(onClick = onNavigateToRegister) {
                         Text(
-                            text = "New User? Create Account",
+                            text = "New here? Create an account",
                             color = MaterialTheme.colorScheme.secondary,
                             fontWeight = FontWeight.Bold
                         )
@@ -420,47 +410,6 @@ fun LoginScreen(
                 }
             }
         }
-    }
-
-    if (showGoogleDialog) {
-        GoogleAuthMockDialog(
-            onDismiss = { showGoogleDialog = false },
-            onSuccess = { gUsername, gAvatar, gBirthDate ->
-                showGoogleDialog = false
-                isLoading = true
-                errorMessage = null
-                scope.launch(Dispatchers.IO) {
-                    try {
-                        // Attempt to register google user with a default strong password
-                        val response = RetrofitClient.apiService.register(
-                            RegisterRequest(gUsername, "GoogleUser123!", gAvatar, gBirthDate)
-                        )
-                        applyAuthResponse(context, response)
-                        withContext(Dispatchers.Main) {
-                            isLoading = false
-                            onLoginSuccess()
-                        }
-                    } catch (e: Exception) {
-                        // If user already exists, try logging in
-                        try {
-                            val response = RetrofitClient.apiService.login(
-                                LoginRequest(gUsername, "GoogleUser123!")
-                            )
-                            applyAuthResponse(context, response)
-                            withContext(Dispatchers.Main) {
-                                isLoading = false
-                                onLoginSuccess()
-                            }
-                        } catch (err: Exception) {
-                            withContext(Dispatchers.Main) {
-                                isLoading = false
-                                errorMessage = "Google authentication failed"
-                            }
-                        }
-                    }
-                }
-            }
-        )
     }
 
     mfaChallenge?.let { challenge ->
@@ -479,7 +428,7 @@ fun LoginScreen(
             onDismiss = { showForgotPassword = false },
             onResetComplete = {
                 showForgotPassword = false
-                errorMessage = "✅ Password reset. Log in with your new password."
+                errorMessage = "Password reset. Log in with your new password."
             },
         )
     }
@@ -516,7 +465,6 @@ fun RegisterScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     
-    var showGoogleDialog by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
 
@@ -732,16 +680,9 @@ fun RegisterScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    DuoButton(
-                        text = "Continue with Google",
-                        onClick = { showGoogleDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-
                     TextButton(onClick = onNavigateToLogin) {
                         Text(
-                            text = "Already registered? Login",
+                            text = "Have an account? Log in",
                             color = MaterialTheme.colorScheme.secondary,
                             fontWeight = FontWeight.Bold
                         )
@@ -750,175 +691,5 @@ fun RegisterScreen(
             }
         }
     }
-
-    if (showGoogleDialog) {
-        GoogleAuthMockDialog(
-            onDismiss = { showGoogleDialog = false },
-            onSuccess = { gUsername, gAvatar, gBirthDate ->
-                showGoogleDialog = false
-                isLoading = true
-                errorMessage = null
-                scope.launch(Dispatchers.IO) {
-                    try {
-                        val response = RetrofitClient.apiService.register(
-                            RegisterRequest(gUsername, "GoogleUser123!", gAvatar, gBirthDate)
-                        )
-                        applyAuthResponse(context, response)
-                        withContext(Dispatchers.Main) {
-                            isLoading = false
-                            onRegisterSuccess()
-                        }
-                    } catch (e: Exception) {
-                        try {
-                            val response = RetrofitClient.apiService.login(
-                                LoginRequest(gUsername, "GoogleUser123!")
-                            )
-                            applyAuthResponse(context, response)
-                            withContext(Dispatchers.Main) {
-                                isLoading = false
-                                onRegisterSuccess()
-                            }
-                        } catch (err: Exception) {
-                            withContext(Dispatchers.Main) {
-                                isLoading = false
-                                errorMessage = "Google authentication failed"
-                            }
-                        }
-                    }
-                }
-            }
-        )
-    }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun GoogleAuthMockDialog(
-    onDismiss: () -> Unit,
-    onSuccess: (String, String, String) -> Unit // username, avatar, birthDate (YYYY-MM-DD)
-) {
-    var emailOrName by remember { mutableStateOf("") }
-    var birthDate by remember { mutableStateOf("") }
-    var dialogError by remember { mutableStateOf<String?>(null) }
-    var selectedAvatar by remember { mutableStateOf("avatar_owl") }
-
-    Dialog(onDismissRequest = onDismiss) {
-        DuoCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(8.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = "Sign in with Google",
-                    style = TextStyle(
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    ),
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                Text(
-                    text = "Numera wants to use google.com to sign in.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
-                    textAlign = TextAlign.Center
-                )
-
-                OutlinedTextField(
-                    value = emailOrName,
-                    onValueChange = { emailOrName = it },
-                    label = { Text("Google Name or Email") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = birthDate,
-                    onValueChange = { birthDate = it },
-                    label = { Text("Date of birth (YYYY-MM-DD)") },
-                    placeholder = { Text("2008-04-15") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    supportingText = { Text("You must be at least 13.") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                if (dialogError != null) {
-                    Text(text = dialogError!!, color = WrongRed, fontSize = 12.sp, textAlign = TextAlign.Center)
-                }
-
-                Text(
-                    text = "Select Avatar",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    AVATAR_MAP.forEach { (avatarKey, avatarLabel) ->
-                        val isSelected = selectedAvatar == avatarKey
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else Color.Transparent)
-                                .border(
-                                    2.dp,
-                                    if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                                    CircleShape
-                                )
-                                .pressable { selectedAvatar = avatarKey },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = avatarLabel.split(" ")[0],
-                                fontSize = 24.sp
-                            )
-                        }
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
-                    }
-                    DuoButton(
-                        text = "Continue",
-                        onClick = {
-                            if (emailOrName.isNotBlank()) {
-                                val age = ageFromBirthDate(birthDate)
-                                if (age == null) {
-                                    dialogError = "Enter your date of birth as YYYY-MM-DD"
-                                    return@DuoButton
-                                }
-                                if (age < 13) {
-                                    dialogError = "You must be at least 13 years old to use Numera."
-                                    return@DuoButton
-                                }
-                                // Extract alphanumeric username from email or name
-                                val cleanedName = emailOrName.split("@")[0].filter { it.isLetterOrDigit() }
-                                val googleUser = if (cleanedName.length < 3) "GoogleUser_${System.currentTimeMillis() % 1000}" else cleanedName
-                                onSuccess(googleUser, selectedAvatar, birthDate.trim())
-                            }
-                        },
-                        modifier = Modifier.width(120.dp),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-    }
-}

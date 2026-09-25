@@ -43,20 +43,20 @@ fun GrowthInsightsCard(
     ) {
         Column(modifier = Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
             Text(
-                text = "🌱 Growth Insights",
+                text = "Strengths and slips",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = "What your practice shows — the things you've got down, and the habits worth a second look.",
+                text = "What your recent answers show: what you've got down, and the mistakes that keep repeating.",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
             )
 
             if (profile.strengths.isNotEmpty()) {
                 Text(
-                    text = "💪 You're strong at",
+                    text = "Strong at",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
@@ -92,14 +92,14 @@ fun GrowthInsightsCard(
 
             if (profile.watchAreas.isNotEmpty()) {
                 Text(
-                    text = "👀 Habits to watch",
+                    text = "Repeated mistakes",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 profile.watchAreas.forEach { w -> WatchAreaRow(w) }
                 Text(
-                    text = "Tap any habit for the fix. These aren't failures — they're your fastest wins.",
+                    text = "Tap one to see the fix.",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
                     lineHeight = 15.sp,
@@ -114,7 +114,7 @@ fun GrowthInsightsCard(
                             .padding(vertical = Spacing.m),
                     ) {
                         Text(
-                            text = "🎯 Practice these now",
+                            text = "Practice these now",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
@@ -127,11 +127,11 @@ fun GrowthInsightsCard(
     }
 }
 
-// Severity → plain-language framing + an icon, so the signal never relies on colour alone (#75).
+// Severity → plain-language framing + a marker, so the signal never relies on colour alone.
 private data class SeverityMeta(val icon: String, val phrase: String)
 
 private fun severityMeta(severity: String?): SeverityMeta = when (severity) {
-    "high" -> SeverityMeta("🔁", "Keeps coming up")
+    "high" -> SeverityMeta("!", "Keeps coming up")
     "medium" -> SeverityMeta("•", "Showing up a few times")
     else -> SeverityMeta("·", "A minor slip")
 }
@@ -186,7 +186,7 @@ private fun WatchAreaRow(w: GrowthWatchArea) {
             )
             if (expanded && hasTip) {
                 Text(
-                    text = "💡 ${w.tip}",
+                    text = "Fix: ${w.tip}",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),

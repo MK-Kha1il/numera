@@ -138,7 +138,7 @@ fun ChallengesScreen(onBack: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(Spacing.l)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("🎯 Challenges", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary)
+            Text("Challenges", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary)
             TextButton(onClick = { if (phase == "home") onBack() else { phase = "home"; loadHome() } }) {
                 Text(if (phase == "home") "Close" else "Back")
             }
@@ -273,7 +273,7 @@ fun ChallengesScreen(onBack: () -> Unit) {
                         )
                     }
 
-                    Text("🏆 Leaderboard", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.secondary)
+                    Text("Leaderboard", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.secondary)
                     if (d.leaderboard.isEmpty()) {
                         Text("No one's played yet. Be the first!", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                     } else {

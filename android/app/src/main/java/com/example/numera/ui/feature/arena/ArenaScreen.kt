@@ -320,7 +320,7 @@ fun ArenaScreen(
                                 textAlign = TextAlign.Center
                             )
                             DuoButton(
-                                text = "🤖 Face the Training Bot",
+                                text = "Play the practice bot",
                                 onClick = {
                                     com.example.numera.analytics.Analytics.log("bot_offer_accepted")
                                     SocketClient.acceptBotOffer()
@@ -494,7 +494,7 @@ fun ArenaScreen(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "⚔️ Live match in progress",
+                                        text = "Live match in progress",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.ExtraBold,
                                         color = MaterialTheme.colorScheme.onSurface
@@ -950,11 +950,11 @@ fun ArenaScreen(
         AlertDialog(
             onDismissRequest = dismiss,
             icon = { RankBadge(rankName = cRank, modifier = Modifier.size(64.dp)) },
-            title = { Text(text = "Placement complete!", fontWeight = FontWeight.ExtraBold) },
+            title = { Text(text = "Placement complete", fontWeight = FontWeight.ExtraBold) },
             text = {
                 Text(
                     text = "You've played your placement games. Your competitive rank is " +
-                        "$cRank. From here, every ranked result moves your rating — climb the ladder!"
+                        "$cRank. From here, every ranked result moves your rating."
                 )
             },
             confirmButton = {

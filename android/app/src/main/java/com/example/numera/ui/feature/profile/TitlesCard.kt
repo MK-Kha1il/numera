@@ -41,7 +41,7 @@ fun TitlesCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("🎖️ Titles", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
+                Text("Titles", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
                 if (titles.active.isNotEmpty()) {
                     Text("Clear", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable { onSelect("") })
                 }

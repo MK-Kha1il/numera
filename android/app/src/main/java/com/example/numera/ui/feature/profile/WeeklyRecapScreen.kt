@@ -52,7 +52,7 @@ fun WeeklyRecapScreen(onBack: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("📊 Your Week", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
+            Text("Your Week", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
             TextButton(onClick = onBack) { Text("Close") }
         }
 
@@ -114,7 +114,7 @@ fun WeeklyRecapScreen(onBack: () -> Unit) {
                             }
                             r.topConcept?.let { tc ->
                                 Text(
-                                    "💪 Strongest concept: ${tc.name} (${(tc.overall * 100).roundToInt()}%)",
+                                    "Strongest concept: ${tc.name} (${(tc.overall * 100).roundToInt()}%)",
                                     fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
                                 )
                             }
@@ -122,7 +122,7 @@ fun WeeklyRecapScreen(onBack: () -> Unit) {
                     }
 
                     Button(onClick = { shareRecap(context, r) }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Share my week 🚀", fontWeight = FontWeight.Bold)
+                        Text("Share my week", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -148,7 +148,7 @@ private fun StatTile(emoji: String, value: String, label: String, accent: Color,
 private fun shareRecap(context: Context, r: WeeklyRecap) {
     val mastery = "${(r.overallMastery * 100).roundToInt()}% (${r.masteryStage})"
     val text = buildString {
-        append("📊 My week on Numera: ")
+        append("My week on Numera: ")
         append("${r.weekProblems} problems solved across ${r.activeDays} active ${if (r.activeDays == 1) "day" else "days"}")
         append(", a ${r.streak}-day streak, now level ${r.level}. ")
         append("Overall mastery: $mastery.")

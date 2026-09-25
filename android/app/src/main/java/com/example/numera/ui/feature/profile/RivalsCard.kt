@@ -35,7 +35,7 @@ fun RivalsCard(
     ) {
         Column(modifier = Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
             Text(
-                text = "🤺 Rivals",
+                text = "Rivals",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary,

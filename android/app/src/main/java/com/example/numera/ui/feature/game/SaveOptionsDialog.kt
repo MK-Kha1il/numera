@@ -52,7 +52,7 @@ fun SaveOptionsDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(CornerRadius.m)
                 ) {
-                    Text(if (isSaved) "❤️  Unsave This Question" else "❤️  Save This Question", fontWeight = FontWeight.Bold)
+                    Text(if (isSaved) "Remove from notebook" else "Save to notebook", fontWeight = FontWeight.Bold)
                 }
 
                 // Save entire level
@@ -62,7 +62,7 @@ fun SaveOptionsDialog(
                     shape = RoundedCornerShape(CornerRadius.m),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("📁  Save Entire Level", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                    Text("Save whole level", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                 }
 
                 // Retry this exercise
@@ -72,7 +72,7 @@ fun SaveOptionsDialog(
                     shape = RoundedCornerShape(CornerRadius.m),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                 ) {
-                    Text("🔄  Retry This Exercise", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
+                    Text("Retry this problem", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
                 }
 
                 TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {

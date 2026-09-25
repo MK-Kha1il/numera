@@ -55,7 +55,7 @@ fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit, onD
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("🧭 Skill Mastery", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
+            Text("Skill Mastery", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
             TextButton(onClick = onBack) { Text("Close") }
         }
 
@@ -100,7 +100,7 @@ fun SkillTreeScreen(onBack: () -> Unit, onPractice: (SkillTreeNode) -> Unit, onD
                     val reviewNodes = allNodes.filter { it.needsReview }.sortedBy { it.dimensions?.retention ?: 1f }
                     if (reviewNodes.isNotEmpty()) {
                         Text(
-                            "🔁 Needs Review",
+                            "Needs review",
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.secondary,
@@ -150,9 +150,9 @@ private fun ConceptCard(node: SkillTreeNode, dimLabels: Map<String, String>, onP
                     StageChip(node.stage)
                 }
             }
-            // Standards alignment tag (e.g. Common Core "6.G.A.1") — the school-market framing.
+            // Standards alignment tag, e.g. Common Core "6.G.A.1".
             node.standard?.takeIf { it.isNotBlank() }?.let { std ->
-                Text("📐 $std", fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f))
+                Text(std, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f))
             }
             if (node.started) {
                 OverallBar(node.overall, stageColor(node.stage))
@@ -164,7 +164,7 @@ private fun ConceptCard(node: SkillTreeNode, dimLabels: Map<String, String>, onP
             // community thread (its own clickable, so it doesn't trigger the card's practice tap).
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "💬 Discuss",
+                    "Discuss",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary,
@@ -222,7 +222,7 @@ private fun MiniBar(value: Float, modifier: Modifier = Modifier) {
 private fun ReviewChip() {
     val c = MilestoneGold
     Box(modifier = Modifier.clip(RoundedCornerShape(CornerRadius.s)).background(c.copy(alpha = 0.18f)).padding(horizontal = Spacing.s, vertical = 2.dp)) {
-        Text("🔁 Review", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = c)
+        Text("Review", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = c)
     }
 }
 

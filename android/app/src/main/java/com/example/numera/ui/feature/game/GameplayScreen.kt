@@ -393,7 +393,7 @@ fun GameplayScreen(
                             }
                         }
                         Text(
-                            text = "🔥 $comboCount in a row",
+                            text = "$comboCount in a row",
                             color = DuoTertiary,
                             fontWeight = FontWeight.Black,
                             fontSize = 11.sp,
@@ -618,7 +618,7 @@ fun GameplayScreen(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                     ) {
                         Text(
-                            text = "❤️ Save this equation for offline review in your notebook!",
+                            text = "Tap the heart to keep this problem in your notebook.",
                             fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                             modifier = Modifier.weight(1f)
@@ -663,7 +663,7 @@ fun GameplayScreen(
                                     .padding(horizontal = 10.dp, vertical = 5.dp)
                             ) {
                                 Text(
-                                    text = "💡 Need scratch space?",
+                                    text = "Need scratch paper?",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -823,16 +823,15 @@ fun GameplayScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(Spacing.s)
             ) {
-                // Interactive Mathematical Discovery surface — shown only when the
-                // server's Adaptive Visual Intelligence attached a manipulative, and
-                // only while the learner is still working the problem.
+                // Interactive manipulative — shown only when the server attached one to
+                // this problem, and only while the learner is still working it.
                 currentProblem.interactiveVisualJson
                     ?.takeIf { it.isNotBlank() && !hasAnswered }
                     ?.let { visJson ->
                         DuoCard(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
-                                    text = "✦ DISCOVER",
+                                    text = "TRY IT",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Black,
                                     letterSpacing = 1.sp,
@@ -1059,9 +1058,8 @@ fun GameplayScreen(
                 colors = CardDefaults.cardColors(
                     containerColor = if (correct) CorrectGreen.copy(alpha = 0.06f) else WrongRed.copy(alpha = 0.06f)
                 ),
-                // Calmer container so the problem stays the loudest element (audit #9): a 1dp hairline
-                // tint instead of a heavy 1.5dp border; the green/red still carries the correct/wrong
-                // signal, and the encouragement header keeps its energy (a reward/feedback moment).
+                // A 1dp hairline tint rather than a heavy border, so the problem stays the loudest
+                // element; the green/red still carries the correct/wrong signal.
                 border = BorderStroke(1.dp, if (correct) CorrectGreen.copy(alpha = 0.22f) else WrongRed.copy(alpha = 0.22f))
             ) {
                 Column(
@@ -1069,7 +1067,7 @@ fun GameplayScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = if (correct) "✨ EXCELLENT JOB!" else "🤔 LET'S THINK",
+                        text = if (correct) "CORRECT" else "NOT QUITE",
                         fontWeight = FontWeight.Black,
                         fontSize = 14.sp,
                         color = if (correct) CorrectGreen else MaterialTheme.colorScheme.primary,
@@ -1187,7 +1185,7 @@ fun GameplayScreen(
                                         .padding(Spacing.m),
                                     horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                                 ) {
-                                    Text(text = "💡", fontSize = 14.sp)
+                                    NumeraIcon(type = NumeraIconType.Tip, tint = MaterialTheme.colorScheme.primary, animate = false, contentDescription = "", modifier = Modifier.size(IconSize.s))
                                     Text(
                                         text = hint,
                                         fontSize = 13.sp,
@@ -1219,7 +1217,7 @@ fun GameplayScreen(
                                         .padding(horizontal = Spacing.m, vertical = Spacing.s)
                                 ) {
                                     Text(
-                                        text = "📝 See a worked example",
+                                        text = "See a worked example",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.primary
@@ -1296,7 +1294,7 @@ fun GameplayScreen(
                                         }
                                     } else {
                                         Text(
-                                            text = "Now try yours the same way 👆",
+                                            text = "Now try yours the same way.",
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.primary

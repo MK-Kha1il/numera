@@ -89,7 +89,7 @@ fun SocialScreen(onBack: (() -> Unit)? = null) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("👥 Friends", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
+            Text("Friends", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
             TextButton(onClick = onBack) { Text("Close") }
         }
     }
@@ -162,7 +162,7 @@ fun SocialScreen(onBack: (() -> Unit)? = null) {
         item {
             Row(modifier = Modifier.fillMaxWidth().padding(top = Spacing.s), horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
                 FilterChip(selected = tab == "friends", onClick = { tab = "friends" }, label = { Text("Friends") })
-                FilterChip(selected = tab == "leaderboard", onClick = { tab = "leaderboard" }, label = { Text("🏆 Leaderboard") })
+                FilterChip(selected = tab == "leaderboard", onClick = { tab = "leaderboard" }, label = { Text("Leaderboard") })
             }
         }
 
@@ -335,7 +335,7 @@ fun SocialScreen(onBack: (() -> Unit)? = null) {
                                     // Friend nudge — send a canned encouragement (no free text).
                                     Box {
                                         TextButton(onClick = { nudgeMenuFriendId = friend.id }) {
-                                            Text("👋", fontSize = 15.sp)
+                                            Text("Nudge", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                         }
                                         DropdownMenu(expanded = nudgeMenuFriendId == friend.id, onDismissRequest = { nudgeMenuFriendId = null }) {
                                             NUDGE_OPTIONS.forEach { (key, label) ->

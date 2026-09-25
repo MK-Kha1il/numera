@@ -82,7 +82,7 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("🛡️ Clubs", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
+            Text("Clubs", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
             TextButton(onClick = onBack) { Text("Close") }
         }
 
@@ -120,7 +120,7 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
                         onKick = { act({ RetrofitClient.apiService.kickClubMember(it, club.id, ClubMemberActionRequest(m.id)) }, "Couldn't remove member.") }
                     )
                 }
-                DuoButton(text = "⚔️ Club Wars", onClick = onOpenWars, color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth())
+                DuoButton(text = "Club Wars", onClick = onOpenWars, color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth())
                 OutlinedButton(onClick = { act({ RetrofitClient.apiService.leaveClub(it, club.id) }, "Couldn't leave the club.") }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
                     Text("Leave club")
                 }
@@ -172,7 +172,7 @@ fun ClubsScreen(onBack: () -> Unit, onOpenWars: () -> Unit = {}) {
             // Top Clubs — two ladders: Activity (combined level/XP) and Skill (avg competitive rating,
             // audit #17 — so a tight crew of strong mathematicians can out-rank a horde of grinders).
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth().padding(top = Spacing.s)) {
-                Text("🏆 Top clubs", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
+                Text("Top clubs", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
                     LadderChip("Activity", clubLadderMode == "activity") { clubLadderMode = "activity" }
                     LadderChip("Skill", clubLadderMode == "skill") { clubLadderMode = "skill" }
@@ -266,7 +266,7 @@ private fun ClubMemberRow(
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     Text(m.username, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    if (isOwner) Text("👑", fontSize = 12.sp)
+                    if (isOwner) Text("owner", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                 }
                 Text("${m.rank} · Lvl ${m.level}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
             }

@@ -51,7 +51,7 @@ fun SeasonScreen(user: User?, onExit: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(Spacing.l)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("🏅 Ranked Season", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
+            Text("Ranked Season", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
             TextButton(onClick = onExit) { Text("Close") }
         }
 
@@ -63,7 +63,7 @@ fun SeasonScreen(user: User?, onExit: () -> Unit) {
                 DuoCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                         Text(d.season.name, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-                        Text("⏳ ${daysLeft(d.season.endAt)} days left · top 3 win 500 / 300 / 150 coins", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        Text("${daysLeft(d.season.endAt)} days left · top 3 win 500 / 300 / 150 coins", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         d.yourRank?.let { Text("Your rank: #$it", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary) }
                             ?: Text("Play ranked duels to set a peak rating and climb the board.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     }

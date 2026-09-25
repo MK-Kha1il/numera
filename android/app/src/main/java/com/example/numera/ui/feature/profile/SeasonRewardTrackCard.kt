@@ -45,7 +45,7 @@ fun SeasonRewardTrackCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "🎖️ Season Rewards",
+                    text = "Season Rewards",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary,
@@ -85,14 +85,14 @@ private fun RewardTierRow(tier: RewardTier, onClaim: (Int) -> Unit) {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 Text(text = tier.tierName, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
                 Text(
-                    text = "🪙 ${tier.coins} · 🎟️ ${tier.tokens} token${if (tier.tokens == 1) "" else "s"}",
+                    text = "${tier.coins} coins · ${tier.tokens} token${if (tier.tokens == 1) "" else "s"}",
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
                 )
                 if (tier.cosmetic != null) {
-                    // The season-exclusive earn-only Champion banner (audit #14).
+                    // The season-exclusive, earn-only Champion banner.
                     Text(
-                        text = "🎁 Season-exclusive banner",
+                        text = "+ season-exclusive banner",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.tertiary,

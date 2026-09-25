@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -471,7 +472,7 @@ fun ProfileScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("⭐ XP Gained", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                    Text("Total XP", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     Text("${user?.xp ?: 0}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
@@ -482,7 +483,7 @@ fun ProfileScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🏆 Math Rank", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                    Text("Rank", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(6.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -608,9 +609,7 @@ fun ProfileScreen(
         ) {
             Column(modifier = Modifier.padding(Spacing.l)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("🎒", fontSize = 20.sp)
-                    Spacer(modifier = Modifier.width(Spacing.s))
-                    Text("Inventory & Customizer", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
+                    Text("Inventory", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
                 }
                 Text("Equip your owned avatars, banners, and badges.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                 Spacer(modifier = Modifier.height(Spacing.m))
@@ -625,7 +624,7 @@ fun ProfileScreen(
                     val ownedItems = allItems.filter { it.id in ownedIds }
 
                     if (ownedItems.isEmpty()) {
-                        Text("No items in inventory yet. Visit the Shop to purchase!", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
+                        Text("Nothing here yet. Items you buy or earn show up here.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                     } else {
                         // ── Owned Avatars ──
                         val ownedAvatars = ownedItems.filter { it.type == "avatar" }
@@ -1502,8 +1501,6 @@ fun ProfileScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("📁", fontSize = 20.sp)
-                            Spacer(modifier = Modifier.width(Spacing.s))
                             Text("Collections", style = AppText.sectionTitle, color = MaterialTheme.colorScheme.primary)
                         }
                         TextButton(onClick = {
@@ -1577,21 +1574,28 @@ fun ProfileScreen(
                                         color = if (selectedCollectionFilterId == col.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                     )
                                     if (col.is_public == 1) {
-                                        Text("🌐", fontSize = 10.sp)
+                                        Icon(
+                                            imageVector = Icons.Filled.Public,
+                                            contentDescription = "Public",
+                                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
+                                            modifier = Modifier.size(IconSize.s)
+                                        )
                                     }
-                                    Text(
-                                        text = "✏️",
-                                        fontSize = 11.sp,
-                                        modifier = Modifier.pressable {
+                                    Icon(
+                                        imageVector = Icons.Filled.Edit,
+                                        contentDescription = "Rename ${col.name}",
+                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
+                                        modifier = Modifier.size(IconSize.s).pressable {
                                             renameCollectionName = col.name
                                             renameCollectionPublic = col.is_public == 1
                                             collectionToRename = col
                                         }
                                     )
-                                    Text(
-                                        text = "🗑️",
-                                        fontSize = 11.sp,
-                                        modifier = Modifier.pressable {
+                                    Icon(
+                                        imageVector = Icons.Filled.Delete,
+                                        contentDescription = "Delete ${col.name}",
+                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
+                                        modifier = Modifier.size(IconSize.s).pressable {
                                             collectionToDelete = col
                                         }
                                     )
@@ -1631,7 +1635,7 @@ fun ProfileScreen(
                         NumeraEmptyState(
                             illustration = EmptyIllustration.Saved,
                             title = if (selectedCollectionFilterId == null) "No saved exercises yet" else "Collection is empty",
-                            message = if (selectedCollectionFilterId == null) "Tap the ❤️ button on any exercise to save it here." else "Move exercises into this collection from All Favorites."
+                            message = if (selectedCollectionFilterId == null) "Tap the heart on any problem to save it here." else "Move exercises into this collection from All Favorites."
                         )
                     } else {
                         Column(verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
@@ -1656,7 +1660,7 @@ fun ProfileScreen(
                                             ) {
                                                 // Move to collection
                                                 Text(
-                                                    text = "📁 Move",
+                                                    text = "Move",
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = MaterialTheme.colorScheme.primary,
@@ -1666,7 +1670,7 @@ fun ProfileScreen(
                                                 )
                                                 // Unfavorite
                                                 Text(
-                                                    text = "🗑️ Remove",
+                                                    text = "Remove",
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = WrongRed,

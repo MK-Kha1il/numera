@@ -121,7 +121,7 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("⚡ Puzzle Rush", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary)
+            Text("Puzzle Rush", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary)
             TextButton(onClick = onExit) { Text("Exit") }
         }
 
@@ -151,7 +151,7 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
 
                 feedback?.let { fb ->
                     Text(
-                        text = if (fb == "correct") "✅ Correct!" else "❌ Not quite",
+                        text = if (fb == "correct") "Correct" else "Not quite",
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 18.sp,
                         color = if (fb == "correct") CorrectGreen else WrongRed
@@ -180,13 +180,13 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
                         if (reward > 0) Text("+$reward coins", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MilestoneGold)
                         if (flagged) {
                             Text(
-                                "⚠️ Some answers came in faster than humanly possible, so this run wasn't counted on the leaderboard.",
+                                "Some answers came in faster than a person can type, so this run wasn't counted on the leaderboard.",
                                 fontSize = 12.sp,
                                 color = WrongRed,
                                 textAlign = TextAlign.Center
                             )
                         } else if (finalScore >= personalBest && finalScore > 0) {
-                            Text("🏆 New personal best!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
+                            Text("New personal best", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -217,7 +217,7 @@ fun PuzzleRushScreen(user: User?, onExit: () -> Unit) {
                 if (leaderboard.isNotEmpty()) {
                     DuoCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.fillMaxWidth().padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
-                            Text("🏆 Top Rushers", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
+                            Text("Top scores", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
                             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
                             leaderboard.take(10).forEachIndexed { i, entry ->
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

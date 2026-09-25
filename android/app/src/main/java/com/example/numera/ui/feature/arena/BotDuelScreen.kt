@@ -68,7 +68,7 @@ fun BotDuelScreen(onExit: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(Spacing.l)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("🤖 Bot Duel", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary)
+            Text("Bot Duel", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary)
             TextButton(onClick = onExit) { Text("Exit") }
         }
 
@@ -94,7 +94,7 @@ fun BotDuelScreen(onExit: () -> Unit) {
                     Column(modifier = Modifier.fillMaxWidth().padding(Spacing.xl), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
                         Text("You ${r.userScore} — ${r.botScore} Bot", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MaterialTheme.colorScheme.secondary)
                         Text(
-                            if (draw) "It's a draw!" else if (won) "You beat the bot! 🏆" else "The bot won — try again?",
+                            if (draw) "Draw" else if (won) "You beat the bot" else "The bot won this one",
                             fontWeight = FontWeight.Bold, fontSize = 16.sp,
                             color = if (won) CorrectGreen else if (draw) MaterialTheme.colorScheme.onSurface else WrongRed
                         )

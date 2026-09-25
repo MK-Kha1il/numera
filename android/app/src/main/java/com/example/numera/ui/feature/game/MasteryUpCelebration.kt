@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.numera.theme.IconSize
+import com.example.numera.ui.components.NumeraIcon
+import com.example.numera.ui.components.NumeraIconType
 import com.example.numera.theme.Spacing
 import com.example.numera.ui.components.DuoButton
 import com.example.numera.ui.components.VictoryParticles
@@ -74,7 +78,7 @@ fun MasteryUpCelebration(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Spacing.m),
         ) {
-            Text(text = "👑", fontSize = 72.sp)
+            NumeraIcon(type = NumeraIconType.Trophy, tint = Color(0xFFFFD54A), filled = true, contentDescription = "", modifier = Modifier.size(IconSize.xl * 1.5f))
             Text(
                 text = "MASTERY UP",
                 fontSize = 30.sp,

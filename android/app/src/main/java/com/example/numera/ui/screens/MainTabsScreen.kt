@@ -528,8 +528,14 @@ fun MainTabsScreen(
                             remember { mutableStateOf(1.0f) }
                         }
                         
+                        val climbTextColor = when (climbState) {
+                            "fading" -> StatusDangerText
+                            "protected" -> StatusInfoText
+                            else -> MilestoneGoldText
+                        }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                             modifier = Modifier
                                 .padding(end = 6.dp)
                                 .clip(RoundedCornerShape(CornerRadius.m))
@@ -552,19 +558,22 @@ fun MainTabsScreen(
                                 .pressable { showCommitmentDialog = true }
                                 .padding(horizontal = Spacing.s, vertical = Spacing.xs)
                         ) {
+                            NumeraIcon(
+                                type = if (climbState == "fading") NumeraIconType.Warning else NumeraIconType.Streak,
+                                tint = climbTextColor,
+                                animate = false,
+                                contentDescription = "",
+                                modifier = Modifier.size(IconSize.s)
+                            )
                             Text(
                                 text = when (climbState) {
-                                    "fading" -> "⚠️ Restore"
-                                    "protected" -> "🛡️ Protected ($climbCount)"
-                                    else -> "✨ $climbCount"
+                                    "fading" -> "Restore"
+                                    "protected" -> "$climbCount · protected"
+                                    else -> "$climbCount"
                                 },
                                 fontWeight = FontWeight.Black,
                                 fontSize = 12.sp,
-                                color = when (climbState) {
-                                    "fading" -> StatusDangerText
-                                    "protected" -> StatusInfoText
-                                    else -> MilestoneGoldText
-                                }
+                                color = climbTextColor
                             )
                         }
 
@@ -893,7 +902,6 @@ private fun GuestBanner(onSave: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text("👋", fontSize = 18.sp)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = "You're playing as a guest",

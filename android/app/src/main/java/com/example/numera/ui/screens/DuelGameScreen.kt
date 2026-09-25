@@ -1233,9 +1233,9 @@ private fun DuelResultScreen(
         didICheat -> null
         theyForfeited -> "$opponentName ${if (forfeitReason == "connection lost") "lost connection" else "left the match"} — the win is yours."
         iForfeited -> "You left the match, so it was forfeited."
-        perfect -> "Flawless — every single answer correct. 🏅"
-        comeback -> "What a comeback — you were $maxDeficit points down!"
-        isDraw -> "Dead even after $totalProblems problems. Great minds…"
+        perfect -> "Flawless — every answer correct."
+        comeback -> "Comeback win — you were $maxDeficit points down."
+        isDraw -> "Dead even after $totalProblems problems."
         photoFinish && didIWin -> "A photo finish — decided by a single answer."
         photoFinish -> "One answer short — next time it's yours."
         timeExpired -> "Time ran out — the match was scored as it stood."
@@ -1262,8 +1262,8 @@ private fun DuelResultScreen(
                 ) {
                     Text(
                         text = when {
-                            isDraw -> "🤝 DRAW"
-                            didIWin -> "🏆 VICTORY!"
+                            isDraw -> "DRAW"
+                            didIWin -> "VICTORY"
                             else -> "DEFEAT"
                         },
                         fontSize = 32.sp,
@@ -1347,7 +1347,7 @@ private fun DuelResultScreen(
 
                         if (didIGetPromoted) {
                             Text(
-                                text = "⬆️ RANKED UP to $myNewRank!",
+                                text = "Ranked up to $myNewRank",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = CorrectGreen,
@@ -1357,7 +1357,7 @@ private fun DuelResultScreen(
 
                         if (didICheat) {
                             Text(
-                                text = "⚠️ Suspicious solve times detected — this ranked match was forfeited." +
+                                text = "Solve times looked automated, so this ranked match was forfeited." +
                                     (cheatReason?.let { "\n($it)" } ?: ""),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -1371,10 +1371,10 @@ private fun DuelResultScreen(
 
                     Text(
                         text = when {
-                            isDraw -> "An even match. One more problem would have settled it…"
-                            didIWin -> "You solved your way to the win. 🪙 +50 coins."
+                            isDraw -> "An even match — one more problem would have settled it."
+                            didIWin -> "Well played."
                             didICheat -> ""
-                            else -> "No luck involved — sharpen up and run it back."
+                            else -> "Review the misses and run it back."
                         },
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
@@ -1390,13 +1390,13 @@ private fun DuelResultScreen(
                     if (rematchOffered) {
                         when (rematchState) {
                             "waiting" -> DuoButton(
-                                text = "⏳ Waiting for $opponentName…",
+                                text = "Waiting for $opponentName…",
                                 enabled = false,
                                 onClick = {},
                                 modifier = Modifier.fillMaxWidth()
                             )
                             "incoming" -> DuoButton(
-                                text = "🔁 $opponentName wants a rematch — accept!",
+                                text = "Accept $opponentName's rematch",
                                 onClick = onRequestRematch,
                                 color = CorrectGreen,
                                 modifier = Modifier.fillMaxWidth()
@@ -1408,7 +1408,7 @@ private fun DuelResultScreen(
                                 textAlign = TextAlign.Center
                             )
                             else -> DuoButton(
-                                text = "🔁 Rematch",
+                                text = "Rematch",
                                 onClick = onRequestRematch,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.fillMaxWidth()
@@ -1422,7 +1422,7 @@ private fun DuelResultScreen(
                     // letting a fast-paced loss teach nothing.
                     if (missCount > 0) {
                         DuoButton(
-                            text = "📖 Review your $missCount miss${if (missCount == 1) "" else "es"}",
+                            text = "Review your $missCount miss${if (missCount == 1) "" else "es"}",
                             onClick = onReviewMisses,
                             color = CorrectGreen,
                             modifier = Modifier.fillMaxWidth()

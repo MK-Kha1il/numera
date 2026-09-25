@@ -113,7 +113,7 @@ fun UserProfileDialog(
                         )
                         if (!profile.active_title.isNullOrEmpty()) {
                             Text(
-                                text = "🎖️ ${profile.active_title}",
+                                text = profile.active_title.orEmpty(),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.primary

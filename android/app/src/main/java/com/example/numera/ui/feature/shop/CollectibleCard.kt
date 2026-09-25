@@ -116,7 +116,7 @@ fun CollectibleCard(
         ) {
             if (large) {
                 Text(
-                    text = "✦ FEATURED",
+                    text = "FEATURED",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
                     color = rarityColor,
@@ -185,7 +185,7 @@ private fun CollectibleCardPrice(
         locked -> Text("🔒 ${item.required_rank ?: "Locked"}", color = WrongRed, fontWeight = FontWeight.Bold, fontSize = 11.sp, textAlign = TextAlign.Center)
         (item.token_cost ?: 0) > 0 -> Text("👑 ${item.token_cost}", color = SeasonGold, fontWeight = FontWeight.Black, fontSize = 13.sp)
         // Earn-only prestige (cost 0, no token price): granted through play, never bought.
-        item.cost <= 0 -> Text("🏅 Earn it", color = MedalGold, fontWeight = FontWeight.Black, fontSize = 12.sp)
+        item.cost <= 0 -> Text("Earn it", color = MedalGold, fontWeight = FontWeight.Black, fontSize = 12.sp)
         else -> Text("🪙 ${item.cost}", color = rarityColor, fontWeight = FontWeight.Black, fontSize = 13.sp)
     }
 }

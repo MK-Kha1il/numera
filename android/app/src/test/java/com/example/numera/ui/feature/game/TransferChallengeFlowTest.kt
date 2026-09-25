@@ -65,9 +65,9 @@ class TransferChallengeFlowTest {
 
     compose.onNodeWithText("right").performClick()
     compose.waitUntil(timeoutMillis = 5_000) {
-      compose.onAllNodesWithText("✨ EXCELLENT JOB!").fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithText("CORRECT").fetchSemanticsNodes().isNotEmpty()
     }
-    compose.onNodeWithText("✨ EXCELLENT JOB!").assertIsDisplayed()
+    compose.onNodeWithText("CORRECT").assertIsDisplayed()
 
     // The out-of-context outcome was recorded for the concept under test (correct = true).
     coVerify { fakeApi.submitTransferResult(any(), match { it.conceptId == "arithmetic_add" && it.correct }) }

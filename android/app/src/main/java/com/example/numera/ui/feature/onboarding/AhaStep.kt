@@ -87,7 +87,7 @@ fun AhaStep(
         stepIndex = stepIndex,
         totalSteps = totalSteps,
         title = "Your first win",
-        subtitle = "One problem, picked just for you. Take your time.",
+        subtitle = "One problem at your level. Take your time.",
         primaryLabel = if (checking) "Checking…" else "Check",
         primaryEnabled = selected != null && !checking && !loading,
         onSkip = onSkip,
@@ -137,7 +137,7 @@ fun AhaStep(
         if (wrongShake) {
             Spacer(Modifier.height(Spacing.m))
             Text(
-                text = "Not quite — give it another try. You've got this.",
+                text = "Not quite — give it another try.",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = WrongRed,

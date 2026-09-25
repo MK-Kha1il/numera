@@ -229,7 +229,7 @@ fun FeaturedTab(
         if (rest.isNotEmpty()) {
             fullSpan {
                 ShopSectionHeader(
-                    title = "⏰ TODAY'S DEALS",
+                    title = "TODAY'S DEALS",
                     accent = RarityRareTeal,
                     trailing = refreshSeconds?.let { "Refreshes in ${formatDuration(it)}" },
                 )
@@ -281,14 +281,14 @@ fun EarnableTab(
     onCardClick: (ShopItem) -> Unit,
 ) {
     if (items.isEmpty()) {
-        ShopEmptyState("🏅", "Nothing locked right now — you've earned what's available. Keep climbing for more.")
+        ShopEmptyState("🏅", "You've earned everything available right now.")
         return
     }
     val sorted = items.sortedByDescending { rarityRank[it.rarity] ?: 0 }
     vaultGrid {
         fullSpan {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                Text("🏅 EARN THESE — NEVER FOR SALE", fontSize = 12.sp, fontWeight = FontWeight.Black, color = MedalGold, letterSpacing = 0.8.sp)
+                Text("EARNED, NOT SOLD", fontSize = 12.sp, fontWeight = FontWeight.Black, color = MedalGold, letterSpacing = 0.8.sp)
                 Text(
                     "Prestige you unlock by playing: ranks, mastery, streaks. Tap any to see how it's earned.",
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary),
@@ -352,7 +352,7 @@ fun SeasonalTab(
         if (seasonItems.isNotEmpty()) {
             item {
                 ShopSectionHeader(
-                    title = "✦ THIS SEASON" + (seasonName?.let { " · $it" } ?: ""),
+                    title = "THIS SEASON" + (seasonName?.let { " · $it" } ?: ""),
                     accent = SeasonGold,
                 )
             }
@@ -368,13 +368,13 @@ fun SeasonalTab(
             }
         }
         if (tokenItems.isNotEmpty()) {
-            item { ShopSectionHeader(title = "👑 PRESTIGE — TOKEN ONLY", accent = SeasonGold) }
+            item { ShopSectionHeader(title = "SEASON TOKENS ONLY", accent = SeasonGold) }
             items(tokenItems, key = { "token_${it.id}" }) { item ->
                 PrestigeTokenCard(item = item, tokens = seasonTokens, onClaim = { onClaim(item) })
             }
         }
         if (seasonItems.isEmpty() && tokenItems.isEmpty()) {
-            item { ShopEmptyState("✦", "No seasonal items right now. New rewards arrive with each season.") }
+            item { ShopEmptyState("✦", "No seasonal items right now.") }
         }
     }
 }
@@ -406,7 +406,7 @@ fun CollectionTab(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("🏆 COLLECTION", fontSize = 12.sp, fontWeight = FontWeight.Black, color = MedalGold, letterSpacing = 0.8.sp)
+                    Text("COLLECTION", fontSize = 12.sp, fontWeight = FontWeight.Black, color = MedalGold, letterSpacing = 0.8.sp)
                     Text("$ownedCount / $totalKnown owned", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
                 GlossyProgressBar(
@@ -463,8 +463,8 @@ fun SavingForBanner(item: ShopItem, coins: Int, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("🎯 SAVING FOR", fontSize = 11.sp, fontWeight = FontWeight.Black, color = SeasonGold, letterSpacing = 0.8.sp)
-            Text("$gap 🪙 to go", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text("SAVING FOR", fontSize = 11.sp, fontWeight = FontWeight.Black, color = SeasonGold, letterSpacing = 0.8.sp)
+            Text("$gap coins to go", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,

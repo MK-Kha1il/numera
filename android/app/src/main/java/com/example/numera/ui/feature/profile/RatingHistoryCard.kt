@@ -55,7 +55,7 @@ fun RatingHistoryCard(
     ) {
         Column(modifier = Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
             Text(
-                text = "📈 Rating History",
+                text = "Rating History",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary,

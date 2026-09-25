@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -34,14 +35,16 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.MotivationsRequest
 import com.example.numera.data.network.OnboardingCatalogs
 import com.example.numera.data.network.OnboardingEventRequest
 import com.example.numera.data.network.RetrofitClient
 import com.example.numera.theme.AnimDuration
 import com.example.numera.theme.Spacing
+import com.example.numera.theme.IconSize
 import com.example.numera.ui.components.DuoButton
+import com.example.numera.ui.components.NumeraIcon
+import com.example.numera.ui.components.NumeraIconType
 import com.example.numera.ui.screens.CinematicMathBackground
 import com.example.numera.ui.screens.PlacementTestScreen
 import kotlinx.coroutines.Dispatchers
@@ -155,24 +158,24 @@ private fun WelcomeStep(stepIndex: Int, totalSteps: Int, name: String, onStart: 
     OnboardingScaffold(
         stepIndex = stepIndex,
         totalSteps = totalSteps,
-        title = if (name.isBlank()) "Welcome to Numera 👋" else "Welcome, $name 👋",
-        subtitle = "Let's build a learning space that's truly yours. It takes about a minute.",
+        title = if (name.isBlank()) "Welcome to Numera" else "Welcome, $name",
+        subtitle = "A few quick questions to set up where you start. About a minute.",
         primaryLabel = "Let's begin",
         nextPreview = "Choose what you're here for",
         onPrimary = onStart,
     ) {
-        ValueProp("🎯", "Learn at your level", "A quick, smart placement — no grinding through what you already know.")
+        ValueProp(NumeraIconType.Learn, "Start at your level", "A short placement test skips what you already know.")
         Spacer(Modifier.height(Spacing.m))
-        ValueProp("🧠", "Practice that fits your goals", "Every session is tuned to where you want to go.")
+        ValueProp(NumeraIconType.Arena, "Play real people", "Ranked duels, Puzzle Rush and a weekly tournament.")
         Spacer(Modifier.height(Spacing.m))
-        ValueProp("🔥", "Build a habit that sticks", "Small, consistent wins — we'll help you show up.")
+        ValueProp(NumeraIconType.Streak, "Keep a streak", "One solved problem a day keeps it going.")
     }
 }
 
 @Composable
-private fun ValueProp(emoji: String, title: String, body: String) {
+private fun ValueProp(icon: NumeraIconType, title: String, body: String) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Text(emoji, fontSize = 30.sp)
+        NumeraIcon(type = icon, tint = MaterialTheme.colorScheme.primary, animate = false, contentDescription = "", modifier = Modifier.size(IconSize.l))
         Spacer(Modifier.width(Spacing.m))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
@@ -204,7 +207,13 @@ private fun CelebrateStep(onContinue: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text("🎉", fontSize = 72.sp, modifier = Modifier.graphicsLayer { scaleX = scale.value; scaleY = scale.value })
+            NumeraIcon(
+                type = NumeraIconType.Check,
+                tint = MaterialTheme.colorScheme.primary,
+                animate = false,
+                contentDescription = "",
+                modifier = Modifier.size(IconSize.xl).graphicsLayer { scaleX = scale.value; scaleY = scale.value },
+            )
             Spacer(Modifier.height(Spacing.l))
             Text(
                 "That's your first win.",
@@ -215,7 +224,7 @@ private fun CelebrateStep(onContinue: () -> Unit) {
             )
             Spacer(Modifier.height(Spacing.s))
             Text(
-                "This is how momentum starts — one solved problem at a time. Let's make it a habit.",
+                "Solve one a day and your streak starts counting.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,

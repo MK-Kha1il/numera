@@ -638,7 +638,7 @@ fun DashboardScreen(
                             verticalArrangement = Arrangement.spacedBy(Spacing.s)
                         ) {
                             Text(
-                                text = "🌍 Global Leaderboard",
+                                text = "Global Leaderboard",
                                 style = AppText.cardTitle,
                                 color = MaterialTheme.colorScheme.primary,
                                 textAlign = TextAlign.Center

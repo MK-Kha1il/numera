@@ -211,7 +211,7 @@ fun TwoFactorSettingsSection() {
                 }
             }
             Spacer(Modifier.height(8.dp))
-            Button(onClick = { recoveryCodes = null; statusMsg = "✅ Two-factor authentication is on."; isError = false }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CornerRadius.m)) {
+            Button(onClick = { recoveryCodes = null; statusMsg = "Two-factor authentication is on."; isError = false }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CornerRadius.m)) {
                 Text("I've saved my codes", fontWeight = FontWeight.Bold, color = Color.White)
             }
         }

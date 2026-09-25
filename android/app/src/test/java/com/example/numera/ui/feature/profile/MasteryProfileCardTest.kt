@@ -36,7 +36,7 @@ class MasteryProfileCardTest {
     )
     compose.setContent { MasteryProfileCard(profile = profile) }
 
-    compose.onNodeWithText("🧭 Skill Mastery").assertIsDisplayed()
+    compose.onNodeWithText("Skill Mastery").assertIsDisplayed()
     compose.onNodeWithText("Proficient").assertIsDisplayed()
     // All five dimensions are labelled (incl. the Sprint-4 transfer dimension).
     for (label in listOf("Accuracy", "Fluency", "Retention", "Independence", "Transfer")) {
@@ -50,6 +50,6 @@ class MasteryProfileCardTest {
   @Test
   fun rendersNothing_whenNoMasteryData() {
     compose.setContent { MasteryProfileCard(profile = null) }
-    compose.onAllNodesWithText("🧭 Skill Mastery").assertCountEquals(0)
+    compose.onAllNodesWithText("Skill Mastery").assertCountEquals(0)
   }
 }

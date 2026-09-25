@@ -78,7 +78,7 @@ fun ReasoningArenaScreen(onExit: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(Spacing.l)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("🧠 Reasoning Arena", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary)
+            Text("Reasoning Arena", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary)
             TextButton(onClick = onExit) { Text("Exit") }
         }
 
@@ -167,14 +167,14 @@ fun ReasoningArenaScreen(onExit: () -> Unit) {
                             if (!r.ratingCounted) {
                                 Text("Practice round — daily ranked cap reached. Rating unchanged.", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
                             } else if (r.promoted && r.newRank != null) {
-                                Text("⬆️ RANKED UP to ${r.newRank}!", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = CorrectGreen)
+                                Text("Ranked up to ${r.newRank}", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = CorrectGreen)
                             } else if (r.newRank != null) {
                                 val delta = r.ratingDelta.toInt()
                                 Text("Rating ${if (delta >= 0) "+" else ""}$delta · ${r.newRank}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                             }
                             if (r.reviewQueued > 0) {
                                 Text(
-                                    "📌 ${r.reviewQueued} concept${if (r.reviewQueued == 1) "" else "s"} added to your review queue",
+                                    "${r.reviewQueued} concept${if (r.reviewQueued == 1) "" else "s"} added to your review queue",
                                     fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.secondary
                                 )

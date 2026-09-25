@@ -105,11 +105,11 @@ fun ReviewSolutionDialog(
                         Text(text = problem.explanation, fontSize = 14.sp)
                     }
                 } else {
-                    Text("Work step-by-step to isolate the variables and evaluate the expression.", fontSize = 14.sp)
+                    Text("No written solution for this one yet.", fontSize = 14.sp)
                 }
 
                 Spacer(modifier = Modifier.height(Spacing.s))
-                Text("💡 Tip: Retry the question to lock in the logic!", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
+                Text("Retrying it now helps the method stick.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary))
             }
         },
         confirmButton = {

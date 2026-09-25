@@ -38,7 +38,7 @@ fun KeepGoingDialog(
         onDismissRequest = {},
         title = {
             Text(
-                text = "🌱 Let's slow down",
+                text = "Let's slow down",
                 fontWeight = FontWeight.Black,
                 fontSize = 18.sp,
                 color = CorrectGreen

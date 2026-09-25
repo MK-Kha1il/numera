@@ -153,14 +153,14 @@ fun RecapScreen(
             verticalArrangement = Arrangement.spacedBy(Spacing.l)
         ) {
             Text(
-                text = if (isMilestone) "🏆 MILESTONE MASTERED" else "LEVEL RECAP",
+                text = if (isMilestone) "MILESTONE CLEARED" else "LEVEL RECAP",
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Black,
                 color = primaryColor
             )
 
             Text(
-                text = if (levelUpOccurred) "🎉 LEVEL UP!" else if (isMilestone) "Theorem Documented!" else "Session Complete!",
+                text = if (levelUpOccurred) "Level up" else if (isMilestone) "Checkpoint passed" else "Round complete",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (isMilestone) MilestoneGold else CorrectGreen
@@ -248,7 +248,13 @@ fun RecapScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.m)
                 ) {
-                    Text(text = "🔥", fontSize = 30.sp)
+                    com.example.numera.ui.components.NumeraIcon(
+                        type = com.example.numera.ui.components.NumeraIconType.Streak,
+                        tint = DuoTertiary,
+                        animate = false,
+                        filled = true,
+                        modifier = Modifier.size(com.example.numera.theme.IconSize.l),
+                    )
                     Column {
                         Text(
                             text = "$shownStreak-day streak!",
@@ -309,11 +315,11 @@ fun RecapScreen(
                         ) {
                             Column {
                                 Text("Speed Bonus", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 12.sp)
-                                Text(if (speedBonusGained > 0) "+$speedBonusGained XP ⏱️" else "0 XP", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = DuoSecondary)
+                                Text(if (speedBonusGained > 0) "+$speedBonusGained XP" else "0 XP", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = DuoSecondary)
                             }
                             Column {
                                 Text("Perfect Combo", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 12.sp)
-                                Text(if (comboBonusGained > 0) "+$comboBonusGained XP ⚡" else "0 XP", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = DuoTertiary)
+                                Text(if (comboBonusGained > 0) "+$comboBonusGained XP" else "0 XP", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = DuoTertiary)
                             }
                         }
                     }
@@ -324,8 +330,8 @@ fun RecapScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
-                        Text("✨ Consistency Climb:", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 13.sp)
-                        Text("${streakDays ?: currentStreakDays} Days", fontWeight = FontWeight.Bold, color = DuoTertiary)
+                        Text("Streak:", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 13.sp)
+                        Text("${streakDays ?: currentStreakDays} days", fontWeight = FontWeight.Bold, color = DuoTertiary)
                     }
                 }
             }
@@ -402,13 +408,13 @@ fun RecapScreen(
                         .padding(Spacing.s)
                 ) {
                     if (isMilestone) {
-                        Text("🏅 Milestone Theorem 2.0x Multiplier Applied!", color = primaryColor, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text("Milestone level: rewards doubled", color = primaryColor, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                     if (streakBonusActive) {
-                        Text("✨ Consistency 1.5x XP Multiplier Active!", color = DuoSecondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text("Streak bonus: 1.5× XP", color = DuoSecondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                     if (criticalBonusActive) {
-                        Text("✨ 10% Critical Double Coins Triggered!", color = DuoTertiary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text("Lucky roll: double coins", color = DuoTertiary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
             }
@@ -444,7 +450,7 @@ fun RecapScreen(
             }
             if (claimableQuests > 0) {
                 Text(
-                    text = "🎁 $claimableQuests quest reward${if (claimableQuests == 1) "" else "s"} ready — claim on Quests",
+                    text = "$claimableQuests quest reward${if (claimableQuests == 1) "" else "s"} ready — claim on Quests",
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.tertiary

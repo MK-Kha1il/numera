@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.MasteryProfile
 import com.example.numera.theme.*
+import com.example.numera.ui.components.NumeraIcon
+import com.example.numera.ui.components.NumeraIconType
 
 /**
  * Multi-dimensional mastery breakdown (Sprint 3). Shows the four learner-model dimensions —
@@ -66,7 +68,7 @@ fun MasteryProfileCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "🧭 Skill Mastery",
+                    text = "Skill Mastery",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary,
@@ -122,7 +124,7 @@ fun MasteryProfileCard(
                             .padding(Spacing.m),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.s),
                     ) {
-                        Text(text = "🎯", fontSize = 14.sp)
+                        NumeraIcon(type = NumeraIconType.Tip, tint = MaterialTheme.colorScheme.primary, animate = false, contentDescription = "", modifier = Modifier.size(IconSize.s))
                         Text(
                             text = tip,
                             fontSize = 12.sp,
