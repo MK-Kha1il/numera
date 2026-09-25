@@ -2,10 +2,9 @@
 // server-authoritative duel lifecycle (countdown, grading, deadlines, disconnect forfeits,
 // reconnects, rematches, emotes, bot opponents) and the rating/reward commit at the end.
 //
-// Extracted verbatim from server.js (which had regrown to ~1.9k lines). State (queues, rooms,
-// lobbies, rematch offers) is module-level; attachDuels(io) wires the socket middleware, the
-// connection handlers and the matchmaking/deadline sweep onto a Socket.IO server exactly once, and
-// returns the functions the tests drive directly. See docs/MultiplayerOverhaul-2026-07.md.
+// State (queues, rooms, lobbies, rematch offers) is module-level; attachDuels(io) wires the socket
+// middleware, the connection handlers and the matchmaking/deadline sweep onto a Socket.IO server
+// exactly once, and returns the functions the tests drive directly.
 'use strict';
 
 const jwt = require('jsonwebtoken');
@@ -991,7 +990,7 @@ function simulateBot(roomId) {
 // (applyDuelResultToRatings → user_ratings + the users.* mirror) and ONLY when `ratingMoves` (ranked
 // human-vs-human). Coins/wins/solved_count are independent of rating. Note: this no longer writes
 // users.rank — that stays the level/progression rank; competitive rank lives in competitive_rank,
-// refreshed by the mirror. (docs/specs/Spec-RatingUnification.md)
+// refreshed by the mirror. (docs/Rating.md)
 // The duel's dominant math domain, from its concept mix — so a ranked duel credits the contested
 // per-domain rating (audit #16/#45), not just global. Returns null for an unattributable set (e.g.
 // CAS-generated rungs carry no concept key).
@@ -1136,7 +1135,7 @@ function endDuel(roomId, done) {
 
 // Commit a resolved duel: quest increment, challenge tickets, the unified rating + reward writes
 // (processPlayerDuelResult), then emit duel_end and free the room. Rating moves ONLY for a ranked
-// human-vs-human duel — bots and casual stay rating-neutral. See docs/specs/Spec-RatingUnification.md.
+// human-vs-human duel — bots and casual stay rating-neutral. See docs/Rating.md.
 function finalizeDuel(roomId, room, winner, p2IsBot, done) {
   // Increment duels_today in user_quests for human players — after the daily reset check, so a duel
   // finished just past local midnight counts toward today's quest instead of being wiped.

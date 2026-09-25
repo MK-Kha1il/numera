@@ -11,7 +11,7 @@ const { detectRatingPump } = require('../lib/integritySignals');
 const { notify } = require('../services/notificationService');
 const { withTransaction } = require('../dbx');
 // Shared NRS persistence + the users.* mirror (also used by the socket duel path) — see
-// services/ratingService.js and docs/specs/Spec-RatingUnification.md.
+// services/ratingService.js and docs/Rating.md.
 const { getRatingRow } = require('../services/ratingService');
 
 const { recordCoins } = require('../services/economyLedger');
@@ -414,7 +414,7 @@ function computeTitleStats(userId, cb) {
               let peakTier = NRS.rankToTierIndex(u ? u.competitive_rank : '');
               for (const a of awards || []) peakTier = Math.max(peakTier, NRS.rankToTierIndex(a.peak_rank));
               // Purchasable titles (shop_items type 'title') count as "earned" once owned — fetch the
-              // catalog ids the player owns so isTitleEarned can resolve them (docs/ShopOverhaul.md §8).
+              // catalog ids the player owns so isTitleEarned can resolve them.
               db.all(
                 "SELECT s.value AS tid FROM user_inventory ui JOIN shop_items s ON ui.item_id = s.id WHERE ui.user_id = ? AND s.type = 'title'",
                 [userId],

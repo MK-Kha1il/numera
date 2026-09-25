@@ -1,89 +1,66 @@
 # Numera
 
-A full-stack, gamified math-learning app: a **Jetpack Compose Android client** talking to a
-**Node.js / Express + SQLite server** that owns all game logic and progression. The server is
-authoritative — the client never computes rewards or touches the database directly.
+A math practice game for Android. You work through a map of levels, get hints and worked examples
+when you're stuck, and can play other people in timed duels. The Android app is Jetpack Compose;
+the server is Node/Express with SQLite and owns all the game logic — XP, coins, ratings and
+progression are never computed on the device.
 
-> New here? Start with [docs/Architecture.md](docs/Architecture.md), then the subsystem docs
-> linked at the bottom. [CLAUDE.md](CLAUDE.md) is the fast index for the repo layout.
+## What's in it
 
-## Features
+- **Practice.** 181 concepts from arithmetic up to calculus and number theory, each with a short
+  lesson. Problems are generated, so they don't repeat, and a wrong answer gets a follow-up
+  question, then a hint, then a worked example. A placement test lets you skip what you know.
+- **Progress.** Levels with 0–3 stars, a daily streak, six daily quests, spaced-repetition
+  review of old mistakes, and a per-concept mastery view.
+- **Competition.** Real-time ranked duels over Socket.IO (graded on the server, with timing checks),
+  plus bot duels, async duels with friends, Puzzle Rush, a weekly tournament and a weekly league.
+  One rating per domain, moved by both duels and solo play ([docs/Rating.md](docs/Rating.md)).
+- **The rest.** A coin shop for cosmetics, achievements, friends, clubs, classes, and in-app/email
+  notifications. Coins are earned only; there are no purchases or ads.
 
-- **Learning-intelligence engine** — adaptive problem generation across a growing concept
-  graph (currently ~58 concepts), with anti-repetition fingerprinting and multi-representation
-  templates ([docs/MathEngine.md](docs/MathEngine.md)).
-- **Concept-first lessons** — five-part lessons (intuition, *why*, representations, common
-  mistakes, connections) instead of bare drills.
-- **Socratic feedback** — misconception-targeted probes and fading hints when an answer is wrong.
-- **Multi-dimensional mastery** — accuracy, fluency, retention, independence, and transfer
-  tracked per concept; novel-context *transfer* challenges to prove real understanding.
-- **Hero progression path** that traverses every strand (number, algebra, geometry, powers, …)
-  in stage cycles, with a diagnostic placement test to skip ahead.
-- **Ranked & casual duels** — real-time multiplayer over Socket.IO, **server-authoritative
-  scoring** with an anti-cheat integrity engine (ranked requires fair-play consent).
-- **Economy & engagement** — shop (cosmetics, boosters, rotations), quests, achievements,
-  daily puzzle, SRS review, leagues, and leaderboards — all behind idempotent reward endpoints.
-- **Lifecycle notifications** — streak, win-back, and recap nudges (in-app + email; FCM push
-  scaffolded).
-- **Hardened auth** — Argon2id hashing, TOTP MFA, refresh-token rotation, password reset
-  ([docs/SecurityAudit-Auth.md](docs/SecurityAudit-Auth.md)).
-- **Polished Compose UI** — design-token theme, onboarding flow, profile identity hub, dark mode.
+[docs/Systems.md](docs/Systems.md) lists every system with its files and known gaps.
 
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Backend | Node.js, Express, SQLite3 |
-| Real-time | Socket.IO |
-| Auth | Argon2id, JWT (rotating refresh tokens), TOTP MFA |
-| Android UI | Jetpack Compose, Material 3 |
-| Networking | Retrofit 2, OkHttp 3, Gson |
-| Build | Gradle + Android Gradle Plugin, JDK 17+ (system JDK; non-LTS JDK 26 also builds green) |
-| CI | GitHub Actions — server lint + tests, Android assembleDebug + Robolectric |
-
-## Getting Started
+## Running it
 
 ### Server
 
 ```bash
 cd server
 npm install
-npm start
+npm start          # http://localhost:3000
 ```
 
-Runs on **port 3000** — visit `http://localhost:3000/` for the live status dashboard. Requires a
-`server/.env` with `JWT_SECRET` (required in production; dev auto-generates an ephemeral one with
-a warning). See [config.js](server/config.js) for all env config.
+Put `JWT_SECRET` in `server/.env`. It's required in production; in development the server makes up
+a temporary one and warns. Everything configurable is read in [server/config.js](server/config.js).
 
 ### Android
-
-Build the debug APK (the system `JAVA_HOME` is used as-is — no override needed):
 
 ```powershell
 cd android
 .\gradlew.bat assembleDebug
+adb install app\build\outputs\apk\debug\app-debug.apk
 ```
 
-Install on a device or emulator:
+The app looks for the server at `10.0.2.2:3000`, which is how an emulator reaches the host
+machine. On Windows, `Start_Numera_Server.bat` starts the server and `launch-numera.ps1` builds
+the APK and installs it into BlueStacks.
 
-```powershell
-adb install android\app\build\outputs\apk\debug\app-debug.apk
+## Tests
+
+```bash
+cd server && npm test && npm run lint
+cd android && ./gradlew assembleDebug testDebugUnitTest
 ```
 
-You can also download the APK directly from the server dashboard at
-`http://localhost:3000/download-apk`. On Windows, `Start_Numera_Server.bat` + `Launch Numera.lnk`
-build, install, and launch into BlueStacks in one step.
+The server tests boot the real app against a throwaway database. The Android tests are Robolectric
+Compose tests and don't need a device. CI runs both on every push.
 
-## Verifying changes
+## Docs
 
-- **Server:** `npm test` (node:test — boots the real app on an ephemeral port against a throwaway
-  DB) and `npm run lint` (ESLint v9, 0 errors expected).
-- **Android:** `gradlew assembleDebug` must be green; `gradlew testDebugUnitTest` runs the
-  JVM Compose UI test net (Robolectric — no device/emulator).
-- Both suites also run in CI on every push to `main` and on PRs.
-
-## Documentation
-
-- [Architecture](docs/Architecture.md) · [DataFlow](docs/DataFlow.md) · [Security](docs/Security.md)
-- [MathEngine](docs/MathEngine.md) · [ProgressionSystem](docs/ProgressionSystem.md) ·
-  [AchievementSystem](docs/AchievementSystem.md) · [DesignSystem](docs/DesignSystem.md)
+- [Architecture](docs/Architecture.md) · [Data flow](docs/DataFlow.md) · [Security](docs/Security.md) ·
+  [Compliance](docs/Compliance.md)
+- [Math engine](docs/MathEngine.md) · [Progression](docs/ProgressionSystem.md) ·
+  [Rating](docs/Rating.md) · [Achievements](docs/AchievementSystem.md) ·
+  [Economy](docs/EconomyModel.md)
+- [Design system](docs/DesignSystem.md) · [Sound](docs/SoundDesign.md) ·
+  [Content quality gate](docs/ContentQualityGate.md)

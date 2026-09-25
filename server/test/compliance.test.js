@@ -1,4 +1,4 @@
-// Compliance remediation tests (see docs/ComplianceAudit.md). Guards the age gate, the
+// Compliance tests (docs/Compliance.md). Guards the age gate, the
 // UGC content filter, account-deletion completeness, data-export completeness, and the
 // block/report moderation endpoints.
 const { test, before, after } = require('node:test');

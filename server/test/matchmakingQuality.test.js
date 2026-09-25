@@ -1,7 +1,6 @@
 // Pure unit tests for the hidden-MMR matchmaking gate + provisional marker
 // (mathEngine/ratingEngine.js: matchAcceptable, isProvisional). The socket matchmaker now pairs on
 // the (μ, σ) belief via the win-probability match-quality gate rather than a raw rating-point window.
-// See docs/CompetitiveEcosystemAudit.md Top-25 #11 / opp #7–#9.
 const { test } = require('node:test');
 const assert = require('node:assert');
 const NRS = require('../mathEngine/ratingEngine');

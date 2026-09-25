@@ -1,4 +1,4 @@
-// Shared NRS persistence + the rating-unification glue (docs/specs/Spec-RatingUnification.md).
+// Shared NRS persistence and the users-table mirror (docs/Rating.md).
 //
 // These helpers were local to routes/rating.js (the solo-session path). They're extracted here so
 // the SOCKET DUEL path (server.js) can write the SAME authoritative store — `user_ratings` — making
@@ -229,7 +229,7 @@ function nrsUpdateTilt(userId, performanceScore, sessionData) {
 }
 
 // Apply one SOLO session to the learner's domain + global rating (the "solo + duels move ONE number
-// per domain" owner decision — docs/specs/Spec-RatingUnification.md). Called by POST
+// per domain" owner decision — docs/Rating.md). Called by POST
 // /api/math/complete for a level session that consumed a serve ticket, so every input is already
 // server-anchored: solves capped at problems served, the level lock-checked. The bounds and the
 // internal-consistency rules (audit #29/#95) are still enforced here as defense in depth.

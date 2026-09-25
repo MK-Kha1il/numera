@@ -28,7 +28,7 @@ const { conceptFromType } = require('./mathEngine/problemOrchestrator');
 // and never the answer. The client echoes this back in per-answer telemetry so the server's
 // param-aware misconception rules (knowledgeGraph) can diagnose PERSISTED wrong answers — today
 // those rules only fire for the real-time socratic probe, which still has params at generation time
-// (the generated problem never carried them out to the client). See docs/ContentLearningScienceAudit-2026-06.md §2 #4.
+// (the generated problem never carried them out to the client).
 function clientSafeParams(bag) {
   const out = {};
   if (!bag || typeof bag !== 'object') return out;

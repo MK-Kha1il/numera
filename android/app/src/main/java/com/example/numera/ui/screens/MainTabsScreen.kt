@@ -61,8 +61,7 @@ fun MainTabsScreen(
 ) {
     // The app opens on "what should I do now": the Quests/home tab (index 2), whose Today plan
     // leads the default sub-tab — 0 taps from cold open to the next action. Competition stays one
-    // tap away on Arena. (Product call 2026-07-06, docs/VisualExperienceSprint-2026-07.md;
-    // supersedes the Arena-landing default from docs/BrandIdentity.md Phase 0.)
+    // tap away on Arena.
     var selectedTab by remember { mutableStateOf(2) }
     var previousTab by remember { mutableStateOf(2) }
     var currentUser by remember { mutableStateOf<User?>(null) }

@@ -47,7 +47,6 @@ gateGenerator(myGeneratorFn);                          // samples 12 instances
 2. Write the lesson (`conceptLessons.js`) — the gate tells you exactly what's missing.
 3. Write the generator (`templates.js`); tag distractors with misconception ids (`misc: {...}`).
 4. Run `npm test` — the gate suite plus the content tripwires must be green.
-5. Optionally run `node scripts/contentGraphAudit.js` and hold the lines listed in
-   docs/ContentQualitySprint-2026-07.md §4.
+5. Optionally run `node scripts/contentGraphAudit.js` to check the concept graph.
 6. Ask checklist question 7 honestly. The gate can verify structure; only you can verify
    that the content deserves to exist.

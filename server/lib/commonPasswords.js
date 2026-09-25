@@ -5,7 +5,7 @@
 //
 // Intentionally offline: no network dependency, no privacy leak of user passwords. For a
 // breach-corpus check beyond this list, the HIBP k-anonymity range API can be layered on
-// later (see docs/SecurityAudit-Auth.md).
+// later.
 const COMMON = new Set(
   [
     '123456', '123456789', '12345678', '1234567', '1234567890', '12345', '123123', '111111',

@@ -7,8 +7,7 @@ import androidx.compose.ui.unit.sp
 /**
  * Semantic text roles — the single source of truth for *what a piece of text is*, mapped onto the
  * Material3 scale in [Typography]. Adopt via `style = AppText.rowTitle` (etc.) to retire the
- * ~hundreds of raw `fontSize = …sp` / `fontWeight = …` literals scattered across the screens
- * (see docs/UiUxSimplificationAudit-2026-06.md #2). One hierarchy, applied everywhere.
+ * raw `fontSize = …sp` / `fontWeight = …` literals scattered across the screens.
  *
  * Pairing rules:
  *  - Secondary lines ([rowSubtitle], [caption]) should be tinted with `Alpha.secondary` (0.70) or

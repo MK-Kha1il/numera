@@ -61,7 +61,7 @@ fun ShopItemArt(item: ShopItem, locked: Boolean, artSize: Int, modifier: Modifie
             "banner" -> ProfileBanner(bannerKey = item.value, modifier = Modifier.fillMaxSize())
             "badge" -> AchievementBadge(achievementId = item.value, modifier = Modifier.fillMaxSize())
             "utility" -> Text(utilityEmoji(item.id), fontSize = (artSize * 0.45f).sp)
-            // New cosmetic types (Stage D): procedural math motifs, no emoji (docs/ShopOverhaul.md §8).
+            // Newer cosmetic types: procedural math motifs, no emoji.
             "title" -> ShopTitleArt(item = item, accent = rarityColor)
             "effect" -> ShopMotifArt(accent = rarityColor, motif = ShopMotif.Effect)
             "victory" -> ShopMotifArt(accent = rarityColor, motif = ShopMotif.Victory)
@@ -83,7 +83,7 @@ fun ShopItemArt(item: ShopItem, locked: Boolean, artSize: Int, modifier: Modifie
 }
 
 /**
- * The single collectible card used across every grid tab (docs/ShopOverhaul.md §6): framed art,
+ * The single collectible card used across every grid tab: framed art,
  * rarity, name, price/own-state, and a save heart — buyable/previewable in place (tap opens the
  * preview sheet, no scroll-jump). `large` is the Featured-tab hero variant.
  */

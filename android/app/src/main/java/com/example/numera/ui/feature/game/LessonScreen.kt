@@ -348,7 +348,7 @@ fun LessonScreen(
 
             Spacer(modifier = Modifier.height(Spacing.l))
 
-            // Auto-generated-content disclaimer (see docs/ComplianceAudit.md L1).
+            // Generated-content disclaimer (docs/Compliance.md).
             Text(
                 text = "Lessons and practice problems are generated automatically and may contain errors. " +
                     "They're a study aid, not a substitute for professional instruction.",

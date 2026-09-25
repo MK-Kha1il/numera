@@ -108,7 +108,7 @@ object Motion {
     fun rewardEnter(): EnterTransition =
         fadeIn(enter(AnimDuration.fast)) + scaleIn(rewardSpring(), initialScale = 0.6f)
 
-    // ── Phase 4 primitives (docs/BrandIdentity.md §5) ────────────────────────
+    // ── Signature motion primitives (docs/BrandIdentity.md §4) ────────────────────────
     // The named idioms of the competitive motion language. Specs only — the draw side of Trace/Link
     // is [drawTracedPath] below; Warm pairs the spring with a caller-side indigo→amber colour anim.
 

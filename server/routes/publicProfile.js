@@ -88,7 +88,7 @@ router.get('/api/user/:userId', authenticateToken, (req, res) => {
           theme: user.theme,
           avatar: user.avatar,
           active_banner: user.active_banner,
-          // Equipped cosmetics shown to others (docs/ShopOverhaul.md §8): the earned mastery-frame ring
+          // Equipped cosmetics shown to others: the earned mastery-frame ring
           // and the profile-effect aura, so prestige reads on another player's profile too.
           active_frame: user.active_frame || '',
           active_effect: user.active_effect || '',

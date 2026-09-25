@@ -48,7 +48,7 @@ function getUserWithMastery(userId, callback) {
         theme: user.theme,
         avatar: user.avatar,
         active_banner: user.active_banner || 'banner_default',
-        // New cosmetic equip slots (docs/ShopOverhaul.md §8). Empty string = nothing equipped.
+        // Cosmetic equip slots. Empty string = nothing equipped.
         active_title: user.active_title || '',
         active_effect: user.active_effect || '',
         active_victory: user.active_victory || '',

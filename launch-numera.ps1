@@ -60,7 +60,7 @@ OK "Installed"
 # ── 5. Launch ───────────────────────────────────────────────────────────────
 Step "Launching app..."
 & $ADB -s $ADB_TARGET shell am start -n "$PACKAGE/$ACTIVITY" 2>&1 | Out-Null
-OK "App launched in BlueStacks!"
+OK "App launched"
 
 Write-Host "`nDone. Numera is running.`n" -ForegroundColor Green
 Read-Host "Press Enter to close"

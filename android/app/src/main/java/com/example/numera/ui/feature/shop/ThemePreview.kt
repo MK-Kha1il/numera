@@ -16,7 +16,7 @@ import com.example.numera.theme.*
 
 /**
  * A theme swatch rendered as a tiny app mockup — an app-bar, two text lines, and a CTA pill — in the
- * theme's *own* colors, so a player can imagine the app wearing it (docs/ShopOverhaul.md §8/§13).
+ * theme's *own* colors, so a player can imagine the app wearing it.
  * Replaces the old three-dot swatch. It deliberately uses explicit theme tokens (StudioPrimary, …)
  * rather than MaterialTheme.colorScheme.*, because it renders inside the Vault's dark scheme and must
  * show the previewed theme, not the surrounding surface.

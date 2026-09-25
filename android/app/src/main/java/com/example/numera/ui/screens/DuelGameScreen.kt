@@ -1440,7 +1440,7 @@ private fun DuelResultScreen(
         }
 
         if (didIWin) {
-            // An equipped Victory Effect (docs/ShopOverhaul.md §8) plays instead of the default
+            // An equipped Victory Effect plays instead of the default
             // confetti — elegant, not explosive. Falls back to confetti when nothing is equipped.
             val victoryKey = remember { RetrofitClient.equippedVictoryKey }
             if (!victoryKey.isNullOrEmpty()) {

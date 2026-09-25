@@ -5,9 +5,7 @@
 > `app/src/test/.../sound/SoundEngineTest.kt` (mixer invariants) and
 > `SoundVocabularyTest.kt` (the executable loudness/duration/hierarchy contract — it renders
 > every cache key via `SoundManager.vocabularyForTest()`). Companion to
-> [BrandIdentity.md](BrandIdentity.md) (what the app should feel like) and
-> [MotionDesignAudit-2026-06.md](MotionDesignAudit-2026-06.md) (the motion twin of this doc —
-> same philosophy: adoption-not-absence, hierarchy, restraint).
+> [BrandIdentity.md](BrandIdentity.md) (what the app should feel like).
 
 Numera's audio is **100% procedurally synthesized at runtime** — no sample libraries, no
 audio assets, zero APK weight. This is not a cost compromise; it is the identity. Every
@@ -93,9 +91,9 @@ A tap is one TICK. Nothing in between ever uses more layers than its tier allows
 7. **Navigation says "moving", not "pressing"** — tabs/breadcrumbs use the rising
    two-blip `playNavigate`, never the button click.
 8. **Never hand-roll a sound+haptic combo at a call site.** Route through `pressable` /
-   `PressFeedback` / `CelebrationTier`, or call one vocabulary method + one haptic. (The
-   audit found `pressable { SoundManager.playClick(); … }` double-fire bugs — pressable
-   already emits.)
+   `PressFeedback` / `CelebrationTier`, or call one vocabulary method + one haptic.
+   `pressable { SoundManager.playClick(); … }` plays the click twice — pressable already
+   emits it.
 
 ## 5. Engine — performance model
 
@@ -122,34 +120,6 @@ A tap is one TICK. Nothing in between ever uses more layers than its tier allows
   timer bar, toast cards, rating count-up) — audio is reinforcement, never sole channel.
 - `USAGE_GAME`/`CONTENT_TYPE_SONIFICATION` audio attributes: respects media volume and
   system routing. Haptics respect the OS animator-scale via MotionManager conventions.
-
-## 7. Audit record (2026-07, what the redesign fixed)
-
-| # | Finding | Fix |
-|---|---------|-----|
-| 1 | Press hierarchy collapse: Light/Medium/Strong → same click | 3 distinct taps (tick / glass / noise+two-note) |
-| 2 | Celebration collapse: Medium/Large/Epic → same `playLevelUp`; `CelebrationTier.fire()` had **zero callers** | 5 distinct tiers; tier map fixed so future adoption is safe |
-| 3 | Duel **defeat = wrong-answer sound**; error haptic on a match result | `playDefeat` (graceful descent) + medium haptic |
-| 4 | Victory = generic level-up | `playVictory` (sub impact + signature run + shimmer) |
-| 5 | Draw was silent | `playDraw` (suspended, unresolved) |
-| 6 | Rank promotion (the biggest moment in the app) was **silent** | `playPromotion` EPIC; supersedes victory |
-| 7 | Countdown 3-2-1 haptic-only; match start silent; no duel clock pressure | `playCountdown` rising notes, `playMatchStart` impact, final-5 s rising ticks |
-| 8 | Timeout = wrong-answer sound | `playTimeUp` deflate |
-| 9 | `playCorrect` was a 1.15 s 6-note fanfare on *every* answer (fatigue) | SMALL 2-note base + streak escalation |
-| 10 | `playWrong` = harsh 49 Hz triple pluck at 0.9 amplitude | soft A3→G3 "not yet" |
-| 11 | Puzzle Rush verdicts were haptic-only (competitive mode, no audio distinction) | correct(score)/wrong wired |
-| 12 | Mastery-up full-screen celebration was silent | `playMasteryUp` + major haptic |
-| 13 | Manipulative `discover`/`solve` events haptic-only | discovery spark / correct wired (drag stays silent) |
-| 14 | Toasts haptic-only | Success/Error/Achievement speak; Info stays silent |
-| 15 | Double-fire bugs: `pressable` + manual click/haptic inside (MainTabs pill, ArenaModeTile, SheetActionRow, GameplayScreen chip) | de-duplicated to single `pressable` |
-| 16 | Tab nav / breadcrumbs sounded like button presses | `playNavigate` |
-| 17 | Sheets/palette/context menus opened with a button click | `playSheetOpen/Close` motion audio |
-| 18 | Answer commit in duels was silent until the verdict | `playLockIn` |
-| 19 | `playPurchase` was dead code (zero callers) | removed; unlock fanfare owns the moment |
-| 20 | Session-complete-without-level-up fired the *major reward* haptic | right-sized: `playLevelComplete` + success haptic |
-| 21 | Per-play synthesis + AudioTrack alloc + `Thread.sleep` poll; unbounded polyphony | cached render, coroutine release, priority caps, throttles |
-| 22 | Flat 800 Hz timer tick carried no urgency | pitch/presence rise with `urgency` |
-| 23 | Volume slider gave no preview; unmute gave no confirmation | both added |
 
 ## 8. Second pass ("leave nothing behind", same day)
 

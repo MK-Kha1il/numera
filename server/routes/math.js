@@ -70,7 +70,7 @@ const MASTERY_MILESTONES = [
   { count: 250, label: 'Virtuoso' },
 ];
 
-// Earn-only Mastery Frames (docs/ShopOverhaul.md §8/§9): granted — never bought — when a strand's
+// Earn-only Mastery Frames: granted — never bought — when a strand's
 // lifetime-correct count crosses the "Mastered" milestone (100). Keys are the normalized category;
 // only strands with a seeded `frame_*` item appear here (the FK to shop_items requires it).
 const MASTERY_FRAME_THRESHOLD = 100;
@@ -559,7 +559,7 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
 
   const solved = r.solved;
 
-  // Solo + duels move ONE rating per domain (docs/specs/Spec-RatingUnification.md). A level session
+  // Solo + duels move ONE rating per domain (docs/Rating.md). A level session
   // is rating evidence at its (lock-checked) level; every input here is server-anchored by the
   // ticket. Other solo modes are practice and stay rating-neutral. Best-effort: a rating hiccup
   // never fails the reward.

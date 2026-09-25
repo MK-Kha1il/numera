@@ -161,7 +161,7 @@ router.get('/api/shop', authenticateToken, (req, res) => {
           // in a buyable list. Fixes "owned earn-only cosmetics only re-equip at grant time".
           const ownedItems = allItems.filter((item) => inventory.includes(item.id) && item.is_utility !== 1);
 
-          // Earn-only prestige NOT yet owned — the "Earnable" showcase (docs/ShopOverhaul.md §9): badges,
+          // Earn-only prestige NOT yet owned — the "Earnable" showcase: badges,
           // mastery frames, relics, rank rewards. Cost 0 + no token price + not season-gated + unowned.
           // Their description carries the requirement, so the tab reads as "things to chase."
           const earnableItems = allItems.filter((item) =>
@@ -344,7 +344,7 @@ router.post('/api/shop/equip', authenticateToken, (req, res) => {
   const { type, value } = req.body;
   if (!type || !value) return res.status(400).json({ error: 'Type and value required' });
 
-  // type → user column. Stage D adds title/effect/victory/tap/frame slots (docs/ShopOverhaul.md §8).
+  // type → user column. Includes the title/effect/victory/tap/frame slots.
   const COLUMN_BY_TYPE = {
     theme: 'theme',
     avatar: 'avatar',

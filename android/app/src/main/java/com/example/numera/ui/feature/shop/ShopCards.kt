@@ -147,7 +147,7 @@ fun RarityCardFrame(
     )
 
     // Mythic gets the animated prismatic sweep so it can never be mistaken for Legendary amber
-    // (docs/ShopOverhaul.md §7); every other tier keeps its static gradient.
+    // Every other tier keeps its static gradient.
     val borderBrush = if (tier == Rarity.Mythic) mythicIridescentBrush(translateAnim) else tier.borderBrush
 
     // Stable per-card glow — hoisted so the infinite shimmer animation above doesn't

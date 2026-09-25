@@ -1,4 +1,4 @@
-# Numera — Project Guide for AI Assistants & Humans
+# Numera — project guide
 
 Numera is a full-stack, gamified math-learning app: a **Jetpack Compose Android client**
 talking to a **Node.js/Express + SQLite server** that owns all game logic and progression.
@@ -18,12 +18,12 @@ docs/         Subsystem documentation (start with Architecture.md)
 
 ### Server (`server/`)
 ```
-server.js            Bootstrap only (~170 lines): middleware wiring + router mounts + DB init +
+server.js            Bootstrap only (~150 lines): middleware wiring + router mounts + DB init +
                      attaching the duel engine. Exports { app, server, io, db, ready, … };
                      listens only when run directly.
 socket/duels.js      The Socket.IO duel engine: socket auth, matchmaking, the duel lifecycle,
                      rating/reward commit (attachDuels(io)).
-routes/landing.js    Landing/status page + dev APK download.
+routes/landing.js    Plain public root page + dev APK download.
 config.js            Single source for env config (JWT_SECRET, PORT, CORS origins).
 routes/              One express.Router per domain (45): auth, math, dailyPuzzle, archive, mistakes,
                      srs, transfer, assessment, onboarding, quests, today, commitment, shop,
@@ -54,8 +54,8 @@ test/                node:test smoke (real route stack) + unit tests.
 ```
 MainActivity.kt, Navigation.kt   Entry + nav graph.
 ui/screens/                      Standalone screens: AuthScreens, DuelGameScreen,
-                                 PlacementTestScreen, + the MainTabsScreen "shell" (606 lines:
-                                 Scaffold + bottom-nav + host wiring only).
+                                 PlacementTestScreen, + the MainTabsScreen "shell" (Scaffold,
+                                 bottom nav, top bar and host wiring).
 ui/feature/<domain>/             Decomposed top-level screens (dashboard, archive, arena,
                                  social, shop, profile, settings, game). One domain per package.
 ui/dialogs/                      LevelDebrief / CommitmentStatus / Notifications dialogs.
@@ -69,7 +69,8 @@ sound/, haptic/                  Feedback managers.
 
 - **Server:** `cd server; npm start` (port 3000). Needs `server/.env` with `JWT_SECRET`
   (required in production; dev auto-generates an ephemeral one with a warning).
-- **Android:** `Start_Numera_Server.bat` then `Launch Numera.lnk` (builds APK + installs in BlueStacks).
+- **Android:** `Start_Numera_Server.bat`, then `launch-numera.ps1` (builds the APK and installs it in
+  BlueStacks). The app reaches the server at `10.0.2.2:3000`.
 - **Build APK manually:** the system `JAVA_HOME` (Program Files JDK) is what the launcher
   (`launch-numera.ps1`) and Gradle use — no override needed:
   ```powershell
@@ -89,7 +90,7 @@ sound/, haptic/                  Feedback managers.
   `ApiService` via `RetrofitClient.setApiServiceForTest(...)` for network-driven screens
   (see `ui/feature/social/SocialScreenTest.kt`). First run downloads the Robolectric SDK jar.
 - **End-to-end:** start the server bat + launch the app in BlueStacks.
-- **CI:** `.github/workflows/ci.yml` runs both suites on every push to `main` and on PRs
+- **CI:** `.github/workflows/ci.yml` runs both suites on every push and on PRs
   (server: lint + node:test with SymPy installed; Android: assembleDebug + Robolectric).
 
 ## Conventions & invariants (do not regress)
@@ -140,27 +141,16 @@ Building something new? Put it in the right place from the start:
 
 ## Architecture status
 
-**2026-09 completion pass:** every system audited against the code and catalogued in
-[docs/Systems.md](docs/Systems.md); the game-loop integrity holes it found (client-chosen solo
-rewards, broken streak/quest clocks, the per-player weekly league, the rating pump endpoint, the
-daily puzzle, Mistakes Bank loops, logout, socket floods, the orphaned Friends screen) were fixed
-with tests. Its "Open work" section is the current backlog.
-
-### Stabilization sprint (earlier)
-
-**Done:** Phase 0 test/lint net; the **server `server.js` God file is fully split** —
-`config.js`, `middleware/`, `lib/`, 5 `services/`, and 20 `routes/*` routers (server.js
-5,096 → ~1,100 lines, just bootstrap + Socket.IO). The **Android `MainTabsScreen.kt` God file
-is fully split** — 9,933 → 606 lines (shell only); its screens/dialogs/helpers moved verbatim
-into `ui/feature/<domain>/` + `ui/dialogs/`. `SoloGameScreen.kt` relocated to `ui/feature/game/`
-with its calculator engine / lesson helpers extracted. **Pending:** carving the still-monolithic
-~2,600-line `SoloGameScreen` composable into sub-screens (needs a Compose test net first),
-design-token migration in the split screens, plus the cross-cutting items in `docs/AUDIT.md`.
-See the sprint plan and `docs/Architecture.md`.
+[docs/Systems.md](docs/Systems.md) lists every system with its known gaps; its Backlog section is
+the current to-do list. `server.js` is bootstrap only and the old `MainTabsScreen` God file is
+split into `ui/feature/<domain>/`. Still too big: `SoloGameScreen` (~1.1k lines), Settings,
+Profile, `Models.kt`, DuelGame, LevelMap, Gameplay and Arena — split them before adding to them,
+and move raw `dp`/`sp`/color literals to tokens as you touch those screens.
 
 ## Subsystem docs
-- [Systems catalog](docs/Systems.md) — every system, its files and completion status (start here)
-- [Architecture](docs/Architecture.md) · [DataFlow](docs/DataFlow.md) · [Security](docs/Security.md)
+- [Systems catalog](docs/Systems.md) — every system, its files and known gaps (start here)
+- [Architecture](docs/Architecture.md) · [DataFlow](docs/DataFlow.md) · [Security](docs/Security.md) ·
+  [Compliance](docs/Compliance.md) · [Rating](docs/Rating.md) · [EconomyModel](docs/EconomyModel.md)
 - [MathEngine](docs/MathEngine.md) · [MasteryProfile](docs/MasteryProfile.md) ·
   [ProgressionSystem](docs/ProgressionSystem.md) ·
   [AchievementSystem](docs/AchievementSystem.md) · [DesignSystem](docs/DesignSystem.md) ·

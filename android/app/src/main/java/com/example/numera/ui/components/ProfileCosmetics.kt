@@ -44,7 +44,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * An avatar wearing its equipped cosmetics (docs/ShopOverhaul.md §8): a profile-effect aura behind
+ * An avatar wearing its equipped cosmetics: a profile-effect aura behind
  * it and an earned mastery-frame ring around it. With neither equipped it renders exactly like the
  * plain avatar circle (a surface disc + primary border), so existing surfaces are unchanged until a
  * player equips something. All motion is reduce-motion aware.
@@ -230,7 +230,7 @@ private fun victoryColor(value: String): Color = when (value) {
 }
 
 /**
- * The equipped duel-win victory effect (docs/ShopOverhaul.md §8) — a one-shot, elegant reveal played
+ * The equipped duel-win victory effect — a one-shot reveal played
  * over the result screen, never an explosion. Empty key renders nothing (the caller keeps confetti).
  * Reduce-motion shows the fully-formed final frame.
  */
@@ -317,7 +317,7 @@ private fun tapColor(value: String): Color = when (value) {
 }
 
 /**
- * Wraps gameplay content with the equipped **tap effect** (docs/ShopOverhaul.md §8): a small flourish
+ * Wraps gameplay content with the equipped **tap effect**: a small flourish
  * where each tap lands. The pointer handler is **observe-only** — it never consumes the event
  * (`requireUnconsumed = false`, no `consume()`), so the underlying answer buttons keep working. When
  * nothing is equipped (or reduce-motion is on) it renders the content with zero overhead.

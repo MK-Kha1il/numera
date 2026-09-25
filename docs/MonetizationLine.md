@@ -7,8 +7,7 @@
 > never has to be drawn retroactively against users.
 >
 > Status: design decision only. No billing code exists or is implied by this doc. Any
-> implementation must first revisit `docs/ComplianceAudit.md` (its explicit warning) and the
-> DPIA, because paid features for likely-minors carry their own legal requirements.
+> implementation must first revisit `docs/Compliance.md` and do a DPIA, because paid features for likely-minors carry their own legal requirements.
 
 ## The model (decided)
 

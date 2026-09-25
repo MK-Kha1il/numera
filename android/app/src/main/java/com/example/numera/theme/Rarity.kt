@@ -22,7 +22,7 @@ val RarityLegendaryAmber = Color(0xFFFDB813)
 val RarityLegendaryRose  = Color(0xFFB76E79)
 val RarityMythicRoyal    = Color(0xFF6A0DAD)
 // Mythic's signature accent — a bright iridescent orchid, deliberately distinct from Legendary's
-// amber and Epic's blue-violet so a Mythic reads in under half a second (docs/ShopOverhaul.md §7).
+// amber and Epic's blue-violet so a Mythic reads in under half a second.
 val RarityMythicIridescent = Color(0xFFE05CFF)
 
 // The prismatic sweep used by the *animated* Mythic frame. A seamless loop (ends where it starts).

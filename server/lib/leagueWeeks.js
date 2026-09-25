@@ -12,7 +12,7 @@ const WEEK_SECS = 7 * 86400;
 // 1970-01-05T00:00:00Z was a Monday — the anchor for week numbering.
 const EPOCH_MONDAY = 4 * 86400;
 
-// The weekly league's own "stone" ladder (docs/BrandIdentity.md §8), lowest first.
+// The weekly league's own "stone" ladder (docs/BrandIdentity.md §7), lowest first.
 const LEAGUE_ORDER = ['Quartz', 'Onyx', 'Jade', 'Topaz', 'Obsidian'];
 
 // Promotion/demotion rules (unchanged from the per-user version): the top 3 of a league with any

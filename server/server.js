@@ -135,33 +135,11 @@ const { rooms, endDuel, forfeitDuel, applyDuelAnswer, buildDuelProblemSet, pickD
   attachDuels(io);
 app.set('activeDuelRooms', () => Object.keys(rooms).length);
 
-// Set up adb reverse port forwarding for Android emulators (including BlueStacks)
-function setupAdbReverse() {
-  const { exec } = require('child_process');
-  
-  // Try standard adb from PATH first, fallback to default Windows Android SDK location
-  const sdkAdbPath = 'C:\\Users\\khali\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe';
-  
-  const cmd = `adb reverse tcp:3000 tcp:3000`;
-  const fallbackCmd = `"${sdkAdbPath}" reverse tcp:3000 tcp:3000`;
-  
-  exec(cmd, (err) => {
-    if (err) {
-      exec(fallbackCmd, (fallbackErr) => {
-        // Fail silently to avoid cluttering logs
-      });
-    }
-  });
-}
-
 // Start Server — only when run directly (`node server.js`). When imported by tests the
 // app/server/io/db are exported instead so the test harness controls the lifecycle.
 if (require.main === module) {
   server.listen(PORT, () => {
     logger.info(`Server listening on port ${PORT}`);
-    setupAdbReverse();
-    // Continuously attempt setup every 10 seconds in case the emulator is started after the server
-    setInterval(setupAdbReverse, 10000);
   });
 }
 

@@ -1,4 +1,4 @@
-// Lifecycle re-engagement sweeper (see docs/specs/Spec-LifecycleNotifications.md).
+// Lifecycle re-engagement sweeper.
 //
 // The single biggest retention lever the product was missing: nobody was ever reminded to come
 // back. This runs a periodic pass that finds lapsed/at-risk learners by their last_active day and

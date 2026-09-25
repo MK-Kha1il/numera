@@ -379,8 +379,8 @@ function lowerFirst(s) {
 }
 
 // Match a graph-misconception label to the same lesson's commonMistakes entry by significant-
-// token overlap. Requires ≥2 shared tokens (or all tokens of the shorter label) to avoid the
-// fuzzy-matching failure mode called out in docs/ContentEngineAudit-2026-06.md.
+// token overlap. Requires ≥2 shared tokens (or all tokens of the shorter label) so one shared
+// word doesn't produce a false match.
 const STOP_WORDS = new Set(['the', 'a', 'an', 'of', 'to', 'and', 'or', 'in', 'into', 'instead', 'with', 'for', 'by', 'on']);
 function tokens(s) {
   return String(s).toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length > 2 && !STOP_WORDS.has(t));

@@ -1,10 +1,7 @@
-// Error-Detection ("Spot the Mistake") Engine — a genuinely different exercise TYPE, breaking the
-// multiple-choice/"just solve it" monoculture (see docs/ContentLearningScienceAudit-2026-06.md gap
-// #6). Detecting a flaw in someone else's reasoning is a distinct, high-transfer skill — it forces
-// the learner to VERIFY rather than generate, and it is exactly the metacognition strong students
-// use to catch their own errors.
+// "Spot the Mistake" exercises. Finding the flaw in someone else's worked solution makes the
+// learner verify rather than generate — the same check strong students run on their own work.
 //
-// It reuses two things this sprint already produced: the catalog-wide WORKED EXAMPLES
+// It reuses two existing pieces: the catalog-wide WORKED EXAMPLES
 // (workedExampleEngine, now derived for ~all concepts) provide a correct, fully-worked solution; we
 // corrupt exactly ONE line into a FALSE equation (e.g. "2 × 5 = 10" → "2 × 5 = 11") and ask which
 // line is wrong. The corrupted line is internally inconsistent, so the error is unambiguous and its

@@ -17,40 +17,6 @@ function calculateRank(level) {
   return `${currentTier} ${divisionStr}`;
 }
 
-// DEPRECATED / UNWIRED (docs/specs/Spec-RatingUnification.md, Increment 4): the competitive rank
-// ladder is now the NRS display-rating ladder (mathEngine/ratingEngine.displayRatingToRank), and the
-// duel path no longer computes a separate Elo rank. This 1100–2700 ladder has no live callers — kept
-// only so its unit test documents the retired scale. Do NOT rewire it; use displayRatingToRank.
-// Map competitive Elo (+ games played) to a rank label. <5 games = placement.
-function calculateRankFromElo(elo, matchesCount) {
-  if (matchesCount === undefined || matchesCount === null || matchesCount < 5) {
-    return `Unranked (Placement: ${matchesCount || 0}/5)`;
-  }
-
-  if (elo < 1100) return 'Bronze III';
-  if (elo < 1200) return 'Bronze II';
-  if (elo < 1300) return 'Bronze I';
-
-  if (elo < 1400) return 'Silver III';
-  if (elo < 1500) return 'Silver II';
-  if (elo < 1600) return 'Silver I';
-
-  if (elo < 1700) return 'Gold III';
-  if (elo < 1800) return 'Gold II';
-  if (elo < 1900) return 'Gold I';
-
-  if (elo < 2000) return 'Platinum III';
-  if (elo < 2100) return 'Platinum II';
-  if (elo < 2200) return 'Platinum I';
-
-  if (elo < 2300) return 'Diamond III';
-  if (elo < 2400) return 'Diamond II';
-  if (elo < 2500) return 'Diamond I';
-
-  if (elo < 2700) return 'Master';
-  return 'Grandmaster';
-}
-
 // Inverse-ish of calculateRank: turn a rank label into a sortable numeric value.
 function getRankValue(rankStr) {
   if (!rankStr) return 0;
@@ -146,4 +112,4 @@ function applyXp(xp, level, gained) {
   return { xp: newXp, level: newLevel };
 }
 
-module.exports = { calculateRank, calculateRankFromElo, getRankValue, normalizeLevelForGenerator, applyXp };
+module.exports = { calculateRank, getRankValue, normalizeLevelForGenerator, applyXp };

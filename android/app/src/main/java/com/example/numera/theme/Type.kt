@@ -114,7 +114,7 @@ val Typography = Typography(
     ),
 )
 
-// Crafted numerals (docs/BrandIdentity.md §4.3). Competitive surfaces — ratings, scores, timers, and
+// Crafted numerals (docs/BrandIdentity.md §3.3). Competitive surfaces — ratings, scores, timers, and
 // math expressions — set their figures in a tabular monospace so digits feel deliberate and
 // scoreboards don't jitter. Adopt per-Text via `style = MaterialTheme.typography.X.merge(NumeralStyle)`
 // or directly. Interim face is the system Monospace until a bundled figure/grotesk font lands.

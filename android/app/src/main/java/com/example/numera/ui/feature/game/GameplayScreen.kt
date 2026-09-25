@@ -241,7 +241,7 @@ fun GameplayScreen(
         }
     }
 
-    // Main Gameplay Screen — wrapped so an equipped tap effect (docs/ShopOverhaul.md §8) flourishes
+    // Main Gameplay Screen — wrapped so an equipped tap effect flourishes
     // where each answer tap lands. The pointer handler observes only (never consumes), so taps work.
     TapEffectLayer(tapKey = RetrofitClient.equippedTapKey, modifier = Modifier.fillMaxSize()) {
         Column(

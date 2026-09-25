@@ -107,7 +107,7 @@ fun ProfileScreen(
         }
     }
     
-    // Unified competitive rating — per-domain ranks (Spec-RatingUnification.md / audit Top-25 #6).
+    // Competitive rating, per domain (docs/Rating.md).
     var ratingProfile by remember { mutableStateOf<Map<String, com.example.numera.data.network.DomainRating>?>(null) }
     var seasonHistory by remember { mutableStateOf<List<com.example.numera.data.network.SeasonAward>?>(null) }
     var rewardTrack by remember { mutableStateOf<com.example.numera.data.network.RewardTrackResponse?>(null) }
@@ -330,7 +330,7 @@ fun ProfileScreen(
                 modifier = Modifier.fillMaxWidth().height(140.dp)
             )
             // Avatar wearing its equipped cosmetics — earned mastery frame ring + profile-effect aura
-            // (docs/ShopOverhaul.md §8). Falls back to the plain bordered circle when nothing's equipped.
+            // Falls back to the plain bordered circle when nothing's equipped.
             CosmeticAvatar(
                 avatarKey = user?.avatar,
                 frameKey = user?.active_frame,

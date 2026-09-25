@@ -10,14 +10,6 @@ test('calculateRank maps levels to tier + division', () => {
   assert.strictEqual(P.calculateRank(10), 'Silver III'); // level 10 starts the 2nd tier (tierSize 9)
 });
 
-test('calculateRankFromElo: placement under 5 games, then tiers', () => {
-  assert.strictEqual(P.calculateRankFromElo(1500, 0), 'Unranked (Placement: 0/5)');
-  assert.strictEqual(P.calculateRankFromElo(1500, 3), 'Unranked (Placement: 3/5)');
-  assert.strictEqual(P.calculateRankFromElo(1050, 10), 'Bronze III');
-  assert.strictEqual(P.calculateRankFromElo(1750, 10), 'Gold II');
-  assert.strictEqual(P.calculateRankFromElo(3000, 10), 'Grandmaster');
-});
-
 test('getRankValue is monotonic across tiers', () => {
   assert.strictEqual(P.getRankValue(null), 0);
   assert.strictEqual(P.getRankValue('Unranked (Placement: 2/5)'), 0);

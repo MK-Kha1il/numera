@@ -113,7 +113,7 @@ data class User(
     val theme: String? = null,
     val avatar: String? = null,
     val active_banner: String? = null,
-    // New cosmetic equip slots (docs/ShopOverhaul.md §8, Stage D)
+    // Cosmetic equip slots
     val active_title: String? = null,
     val active_effect: String? = null,
     val active_victory: String? = null,
@@ -1378,7 +1378,7 @@ data class SeasonLeaderboardResponse(
 // ---- Unified competitive rating (NRS) — GET /api/rating/profile ----
 // One (mu/sigma) rating per domain; `displayRating` is the conservative mu−2σ shown to the player,
 // `rank` its ladder label. The `profile` map is keyed by domain ("global" + the 8 math domains).
-// See docs/specs/Spec-RatingUnification.md.
+// See docs/Rating.md.
 data class DomainRating(
     val displayRating: Int = 0,
     val rank: String = "Unranked (Placement: 0/5)",

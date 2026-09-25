@@ -12,7 +12,7 @@ const TITLE_CATALOG = [
   { id: 'diamondmind', name: 'Diamond Mind', desc: 'Reach Diamond.' },
   { id: 'numerist', name: 'Numerist', desc: 'Reach Grandmaster — the apex.' },
   { id: 'nemesis', name: 'Nemesis', desc: 'Beat one rival 3 times.' },
-  // Purchasable cosmetic titles (docs/ShopOverhaul.md §8). Bought in the Vault (shop_items type
+  // Purchasable cosmetic titles. Bought in the Vault (shop_items type
   // 'title', value = these ids); "earned" = owned. They resolve to display names here the same way
   // earned titles do, so a bought title shows on the profile/public card just like a climbed one.
   { id: 'pattern_seeker', name: 'Pattern Seeker', desc: 'A Vault title for the eternally curious.', purchasable: true },

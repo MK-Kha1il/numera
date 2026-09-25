@@ -1,13 +1,8 @@
 # Numera — Brand & Identity System
 
-> **Canonical identity reference.** This document is the single source of truth for what Numera
-> *feels* like — its world, voice, visual language, motion, and the vocabulary that ties them
-> together. It is the audit that diagnosed why the app felt emotionally flat, and the system that
-> fixes it. Every new screen, string, color, animation, and reward should be able to point back to
-> a principle here. Companion docs: [DesignSystem.md](DesignSystem.md) (the token/component
-> mechanics that *implement* this), [CompetitiveEcosystemAudit.md](CompetitiveEcosystemAudit.md),
-> [ProductStrategicAudit.md](ProductStrategicAudit.md).
-
+> What Numera should feel like: its world, voice, visual language, motion and vocabulary. New
+> screens, strings, colors, animations and rewards should be able to point back to something here.
+> [DesignSystem.md](DesignSystem.md) has the tokens and components that implement it.
 ---
 
 ## 0. The one-sentence identity
@@ -20,33 +15,7 @@ Everything below is downstream of that sentence.
 
 ---
 
-## 1. Why the app currently feels dead — the audit
-
-The app is *functionally* rich and *emotionally* mute. The cause is not missing features; it's that
-the features were each built well in isolation and never given a shared soul. Concretely:
-
-| Layer | What's there now | Why it reads as dead / generic |
-|---|---|---|
-| **Visual DNA** | Default theme is literally commented `// Duolingo Theme`; primary is `Color(0xFF58CC02) // Duolingo green`; the core primitives are `DuoButton` / `DuoCard` (312 references across 48 files). | The app's *signature* is borrowed wholesale from another product. A user who has seen Duolingo feels déjà vu, not Numera. There is no color, shape, or mark a person could point to and call "Numera." |
-| **Typography** | `FontFamily.SansSerif` everywhere (the OS default). No custom face, no special treatment for *numbers*. | A product about the *beauty of mathematics* renders its numbers in the same anonymous system font as a settings menu. Type is where "premium" and "intelligent" are won or lost, and it's currently neutral-to-absent. |
-| **Terminology / ranks** | Competitive ladder is `Bronze · Silver · Gold · Platinum · Diamond · Master · Grandmaster`; Bronze even renders as the 🪵 log emoji. Four separate ladders (learning level, rating, league, club) all reuse the same metal names (flagged in CompetitiveEcosystemAudit §). | This is the *exact* ladder of League of Legends, Valorant, and chess.com. It carries zero meaning specific to mathematics or discovery, and the four-way name collision makes the systems feel like reskins of each other instead of one coherent journey. |
-| **Copywriting** | Clear, kind, but voiceless and emoji-led: "Ready for today's math? 🧠", "We miss you at Numera 👋", "Your next level is waiting 🚀", "Complete objectives every day to earn coins and experience points." | This is *generic friendly-app voice*. Swap the logo and it could be any of a thousand apps. Emoji are doing the job that personality should do. Nothing sounds like a specific, coherent voice. |
-| **Rewards** | XP + 🪙 coins + ⭐ stars + confetti. "Achievement Completed! 🏆 … Claim it for rewards." | The reward *chrome* (XP/coins/confetti) is the off-the-shelf gamification kit. Rewards are quantitative ("you got +20") not narrative ("you saw something"). They don't mean anything inside a world. |
-| **Achievements** | A genuinely good family/tier system exists (`AchievementBadge`: streak/learning/precision/mastery/…). | The *system* is excellent; the *naming and framing* is plain ("Achievement Completed!"). The structure deserves a story it doesn't yet have. |
-| **Motion** | A thoughtful `Motion.kt` already exists: decelerate-in, accelerate-out, reward overshoot spring. | This is a real strength — but it's "good generic Material motion." It expresses *politeness*, not *discovery*. Nothing in the motion language says "a pattern is resolving." |
-| **Onboarding** | Streamlined 5-step solve-first flow; copy is warm ("That's your first win."). | The best-written surface in the app — but it introduces *mechanics* (level, goals, habit) without introducing a *world*. The user learns what the app does, never where they are. |
-| **Progression** | XP→levels, mastery dimensions, ranks, league, season — all real, all server-authoritative. | Five parallel progress meters that don't ladder into one feeling. The user is "leveling up" in five disconnected ways instead of advancing along one legible arc. |
-| **Profile** | Identity hub with title, rank card, collection, growth insights. | Strong bones. But it presents *stats about a user* rather than *a portrait of a mind* — it's a dashboard, not a self. |
-| **Item shop** | Rarity system (Common→Mythic), dark premium surfaces, equippable cosmetics, themes. | Mechanically premium. But cosmetics decorate *nothing* — they're vanity floating free of a world. A theme called "Crimson Nebula" is pretty and arbitrary; it isn't *about* anything. |
-| **Notifications** | A mature, even *ethically* careful funnel (burnout-aware streak nudges — genuinely excellent). | Voice is generic re-engagement ("We miss you 👋"). The care is in the logic; none of it is in the personality. |
-
-**The throughline:** Numera has world-class *systems* wearing a *borrowed, voiceless skin*. The fix
-is not more features. It is to give the existing systems one shared world, one voice, one visual
-signature, and one progression story — derived entirely from what the app already is.
-
----
-
-## 2. The world — math is a sport
+## 1. The world — math is a sport
 
 Numera's world is a **competitive game**, in the lineage of chess.com and Rocket League: a ranked
 arena where the sport happens to be **mathematics**. Everything else — lessons, the adaptive engine,
@@ -74,7 +43,7 @@ How every pillar serves the competitive center (nothing invented — just re-ran
 | **Collections** | Your kit — banners, titles, rank cards, cosmetics that broadcast rank and history. |
 | **Premium quality** | A clean, high-stakes competitive product (chess.com-premium) — never gamey or cheap. |
 
-Place-names (use consistently; see §6 vocabulary):
+Place-names (use consistently; see §5 vocabulary):
 
 - **The Arena** — the main stage: ranked play, tournaments, live rooms, leaderboards, seasons. (Keep.)
 - **Training** / **your skill map** — solo practice, lessons, the adaptive engine, and the concept
@@ -83,7 +52,7 @@ Place-names (use consistently; see §6 vocabulary):
 
 ---
 
-## 3. Voice & personality — competitor to competitor
+## 2. Voice & personality — competitor to competitor
 
 Numera has **no narrator character** — it speaks the way a serious competitive game speaks: directly,
 to a competitor. Confident and sharp, never hype, never cheesy. It respects skill, names the stakes,
@@ -110,12 +79,12 @@ childishness · excessive hype · generic school software · corporate dashboard
 
 ---
 
-## 4. Visual language
+## 3. Visual language
 
 The recognizable style = **soft, tactile precision in warm light** — the "Studio" direction. Three
 building blocks.
 
-### 4.1 The mark & motif — *the rank crest + the skill map*
+### 3.1 The mark & motif — *the rank crest + the skill map*
 
 Two reusable atoms. **(1) The rank crest** — a clean, collectible insignia per tier (Bronze→
 Grandmaster) with real material treatment; it's the hero mark of a competitive product and shows up
@@ -134,7 +103,7 @@ Supporting motif vocabulary, all drawn from **mathematical beauty / geometry**: 
 the golden-ratio spiral, the compass-arc, symmetry/reflection, tessellation. Use them as *quiet
 texture*, never decoration-for-decoration's-sake.
 
-### 4.2 Color — the indigo→amber arc
+### 3.2 Color — the indigo→amber arc
 
 The most important identity decision: **retire Duolingo green as the brand signature.** Green stays
 only as the *semantic "correct" feedback* color, where it's conventional and fine. The brand is a
@@ -147,7 +116,7 @@ warm, restrained "Studio" palette carrying a two-tone emotional arc:
 | **Brand / active** | **Studio Indigo** `#4C5BA6` (muted) | discovery, in-progress, the active idea | the ownable signature; calm, intelligent, distinct from green |
 | **Earned / mastery** | **Amber** `#D99A4E` (warm) — the existing `MedalGold` / `MilestoneGold` family stays for top-tier medals | warmth you *earn*; a mastered idea | reserved for the earned moment |
 | **Feedback green** | keep `CorrectGreen` | "this answer is correct" | demoted from *brand* to *signal* |
-| **Feedback red** | keep `WrongRed` | "not yet" | reframe copy around it (see §7) |
+| **Feedback red** | keep `WrongRed` | "not yet" | reframe copy around it (see §6) |
 
 **The arc is the product's emotional spine:** in-progress work is *indigo* (cool, active, exploring)
 and earned work is *amber* (warm, mastered, yours). Map this everywhere — what's active is indigo,
@@ -165,7 +134,7 @@ lobby). Competitive surfaces — live duels, ranked match, tournaments — shift
 higher-contrast **Arena** surface (deeper ground, indigo-forward, amber/gold for rank and wins) so a
 match *feels* like a match. Same palette, raised stakes — the chess.com move, not the neon move.
 
-### 4.3 Typography — make the numbers beautiful
+### 3.3 Typography — make the numbers beautiful
 
 Introduce a real pairing. Two moves, in priority order:
 
@@ -182,7 +151,7 @@ Introduce a real pairing. Two moves, in priority order:
 Keep the existing weight/scale ramp in `Type.kt` (it's well-structured); just swap the family and
 add a `numeric`/`mono` style token for figures and expressions.
 
-### 4.4 Design principles (the six laws)
+### 3.4 Design principles (the six laws)
 
 Everything visual resolves to these. When two choices compete, the earlier principle wins.
 
@@ -201,7 +170,7 @@ Everything visual resolves to these. When two choices compete, the earlier princ
 
 ---
 
-## 5. Motion philosophy
+## 4. Motion philosophy
 
 `Motion.kt` already has the right bones (decelerate-in, accelerate-out, reward-overshoot). We extend
 it from "polite Material motion" to **"a clean play, precisely landed."** Motion communicates *skill,
@@ -228,7 +197,7 @@ Motion laws:
 
 ---
 
-## 6. Vocabulary — the lexicon
+## 5. Vocabulary — the lexicon
 
 One world needs one language. The table below is the canonical lexicon. **Rule: rename for identity
 only where it *adds* meaning and keeps clarity; keep the plain word where the plain word is clearer.**
@@ -241,7 +210,7 @@ framing in *voice*.
 | XP / "experience points" | keep **"XP"** — framed as *training progress* | meters, earn copy | universally understood |
 | Coins (🪙) | keep **"coins"** | shop, balances | rename only if a clearly better term emerges |
 | Streak (🔥) | keep "streak"; frame as **momentum / form** | notification + dashboard voice | the count + flame stay |
-| Ranks `Bronze…Grandmaster` | **keep** — Bronze…Grandmaster (see §8) | the competitive rank ladder | the metal ladder stays; premium comes from rendering, not renaming |
+| Ranks `Bronze…Grandmaster` | **keep** — Bronze…Grandmaster (see §7) | the competitive rank ladder | the metal ladder stays; premium comes from rendering, not renaming |
 | Solo game / practice | **Training** | solo modes, dashboard | the back room that feeds the Arena |
 | Duel / ranked game | **Match** (ranked Match) | duel surfaces | — |
 | Opponents you've beaten | **rivals** | profile, head-to-head | — |
@@ -254,13 +223,13 @@ framing in *voice*.
 
 Lexicon discipline: a term means *one* thing. Don't let "Master" be simultaneously a learning rank,
 a rating tier, and a mastery state — that name-collision is exactly what makes the four progress
-systems feel interchangeable (see §8).
+systems feel interchangeable (see §7).
 
 ---
 
-## 7. Copywriting — voice in practice
+## 6. Copywriting — voice in practice
 
-Audit verdict: the copy is *clear and kind* (a real asset — keep the clarity) but *voiceless* and
+The copy was *clear and kind* (a real asset — keep the clarity) but *voiceless* and
 emoji-led. Rewrite to a confident, competitor-to-competitor voice — same clarity, now with stakes and
 a point of view. Concrete before/afters using **real strings pulled from the codebase**:
 
@@ -288,7 +257,7 @@ Voice rules, distilled:
 
 ---
 
-## 8. Progression identity — one arc, not five meters
+## 7. Progression identity — one arc, not five meters
 
 Today five progress systems run in parallel and *share names*, so they feel like reskins:
 learning **level**, competitive **rating/rank**, weekly **league**, **club**, and **mastery**
@@ -310,17 +279,17 @@ ladder, season over season). The ranked ladder is the **spine**; every other met
 **Keep the existing rank ladder** — `Bronze · Silver · Gold · Platinum · Diamond · Master ·
 Grandmaster`. The metal ladder is instantly legible, carries earned competitive weight, and is what
 the product already wears; renaming it adds churn without adding premium feel. The premium upgrade
-comes from how each tier is *rendered* (materials, type, restraint — see §4) and from giving the
+comes from how each tier is *rendered* (materials, type, restraint — see §3) and from giving the
 *other* progression systems (league, club) their own distinct names so the four ladders stop
 colliding — **not** from renaming the core competitive ladder. ("Numerist" stays where it already
 lives, as the apex *title* in `lib/titles.js`.)
 
 **Rule going forward:** no two progression systems may share tier names. Name-collision is what made
-the competitive ecosystem feel like four reskins of one ladder (see CompetitiveEcosystemAudit §).
+the competitive ecosystem feel like four reskins of one ladder.
 
 ---
 
-## 9. Reward principles
+## 8. Reward principles
 
 - **The rank-up is the headline.** The biggest moment in the app is climbing a tier — and finishing a
   season. Reserve the strongest ceremony for it: bigger than any XP popup, the one celebration that
@@ -342,52 +311,7 @@ the competitive ecosystem feel like four reskins of one ladder (see CompetitiveE
 
 ---
 
-## 10. Implementation roadmap (phased, low-risk first)
-
-Identity is decided here; this is the order to make it real. Each phase is independently shippable
-and verifiable (`gradlew assembleDebug` + Robolectric; `npm test` + lint).
-
-**Phase 0 — Put competition at the center (IA — the pivot's headline).**
-- Make the Arena / ranked ladder the app's home and primary nav, with your **rank crest + current
-  rating** on the dashboard. Training (solo / lessons / the engine) becomes the clearly-labeled "back
-  room" that feeds it. This is structure, not tokens — but it's what makes the app *feel* competitive.
-- > **Launch-tab amendment (2026-07-06):** the app now *opens* on the home/Today tab so "what should
-  > I do now" is answered in 0 taps (learning-habit priority — see
-  > docs/VisualExperienceSprint-2026-07.md); the Arena remains the primary competitive stage, one tap
-  > away, and keeps its nav prominence. Competition-first identity is expressed by the Arena's depth
-  > and the rank/rating surfaces, not by the cold-open destination.
-
-**Phase 1 — Signature (highest impact / lowest risk).**
-- Add the typeface pairing: a `numeric`/`mono` figure style + a grotesk UI family in `Type.kt`. Set
-  ratings/levels/scores/expressions in the figure face.
-- Add **Studio Indigo** + **Amber** as named brand tokens and the warm **Studio** surface palette;
-  introduce the flagship **"Studio" (warm light)** theme and make it the default. Demote "Duolingo
-  green" to `CorrectGreen` semantic-only (rename the token, drop the comment).
-- Replace the busy `CinematicMathBackground` with the calm, flat map texture.
-
-**Phase 2 — Voice & lexicon.**
-- Rewrite the lifecycle/notification copy (§7), the onboarding strings, achievement toasts, and the
-  daily-card copy to the competitive voice.
-- Land the lexicon (§6): "Training," "Match," "Daily Drills," "Your skill map," "The Workshop,"
-  "You earned…" (coins keep their name).
-
-**Phase 3 — Progression story.**
-- **Keep** the Bronze…Grandmaster rank ladder; instead give league/club their *own* non-metal tier
-  names so the four ladders stop colliding. Resolve the name collision without renaming the core rank.
-- Render the rank crests with real material treatment (§4.1) and put them everywhere stakes live.
-
-**Phase 4 — Motion & Arena depth.**
-- Implement The Trace / The Warm / The Link in `Motion.kt`; give rank-ups and match wins the
-  strongest (earned) motion. Add the **Arena** surface expression (§4.2). Reframe the shop/collection
-  as your kit / loadout.
-
-**Naming-debt note:** the `Duo*` primitive names (`DuoButton`/`DuoCard`, 312 refs) are internal, not
-user-facing — a low-priority rename to `NumeraButton`/`NumeraCard` for self-respect, safe to defer
-until a quiet moment (mechanical find-replace + build).
-
----
-
-## 11. The test
+## 9. The test
 
 Before merging anything that touches a surface, ask:
 

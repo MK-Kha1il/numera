@@ -1,7 +1,7 @@
 // Pure unit tests for the rating-unification keystone: applyDuelOutcomeToRating +
 // winProbability (mathEngine/ratingEngine.js). A ranked duel is evidence about the same
 // latent skill as a solo session, so it updates the SAME (mu, sigma) belief via an
-// outcome-vs-expected (head-to-head) update. See docs/specs/Spec-RatingUnification.md.
+// outcome-vs-expected (head-to-head) update. See docs/Rating.md.
 const { test } = require('node:test');
 const assert = require('node:assert');
 const NRS = require('../mathEngine/ratingEngine');

@@ -1,4 +1,4 @@
-// Puzzle Rush — solo time-attack ladder (see docs/specs/Spec-CompetitionExpansion.md §4.1).
+// Puzzle Rush — solo time-attack ladder.
 // Server-authoritative: the server generates each problem, holds the correct answer in the run
 // row (the client never sees it before submitting), scores submissions, and ends the run on the
 // 3rd strike. Difficulty climbs with score. A basic integrity seam flags superhuman-speed

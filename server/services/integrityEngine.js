@@ -1,5 +1,5 @@
 'use strict';
-// Behavioral anti-cheat scorer (see docs/specs/Spec-CompetitionExpansion.md §5).
+// Behavioral anti-cheat scorer.
 //
 // Math is uniquely cheatable: a second device or a solver yields instant, correct answers in a
 // way chess positions don't. So the primary signal is TIMING vs. DIFFICULTY — a correct answer

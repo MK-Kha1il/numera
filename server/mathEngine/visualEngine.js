@@ -920,7 +920,7 @@ function buildCircle(question, conceptId) {
 // visual concept we run ONLY that concept's builders, so a stray pattern in the question text (e.g.
 // a `\frac` inside a non-fraction problem, or "p% of N" inside a non-percent one) can't attach the
 // wrong manipulative. When the concept is null/unknown we fall back to trying every builder (the spec
-// is still pattern-validated and answer-safe). See docs/ContentEngineAudit-2026-06.md §3.3.
+// is still pattern-validated and answer-safe).
 // The concept→model mapping lives in visualMetadata.js (single source of truth);
 // each builder reads its served concepts from MODEL_CONCEPTS and supplies the
 // function that describes the manipulable object.

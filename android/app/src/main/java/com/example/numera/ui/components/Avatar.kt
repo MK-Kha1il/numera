@@ -372,7 +372,7 @@ private fun SeasonGradientBanner(colors: List<Color>) {
 }
 
 /**
- * The competitive rank crest (docs/BrandIdentity.md §4.1). One faceted core per tier carrying a math
+ * The competitive rank crest (docs/BrandIdentity.md §3.1). One faceted core per tier carrying a math
  * symbol that climbs from beginner to expert (+ √ π ∑ ∫ ∂ ∞), with ornamentation and motion that
  * escalate from a still Bronze coin to a radiant, rotating Grandmaster apex. Motion is gated by the
  * shared reduce-motion setting; Bronze + unranked render static.

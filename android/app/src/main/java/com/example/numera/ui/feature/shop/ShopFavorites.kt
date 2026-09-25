@@ -6,7 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 /**
- * Local "saved / wishlist" store for the shop (docs/ShopOverhaul.md §12). A plain Compose-observable
+ * Local "saved / wishlist" store for the shop. A plain Compose-observable
  * singleton backed by SharedPreferences — mirrors MotionManager/ThemeManager. Reading [ids] in a
  * composable subscribes it to changes, so the heart toggles update everywhere at once.
  *

@@ -69,7 +69,7 @@ pattern. New components should follow the same conventions.
 - **Use tokens, not literals.** New/edited screens should use `Spacing.*`, `CornerRadius.*`,
   `MaterialTheme.typography.*`, and color tokens rather than raw `16.dp` / `Color(0x…)`.
   (The component library already does; the large legacy screens still carry raw values and
-  are migrated as they're split into `ui/feature/<domain>/` — a sprint follow-up.)
+  are migrated as they're split into `ui/feature/<domain>/`.)
 - **Mount global hosts once** (toast, command palette) at the `MainTabsScreen` shell, exposed
   via CompositionLocals — don't re-instantiate per screen.
 - **No CDN dependency** for the interactive canvas (offline/instant) — see MathEngine.md.

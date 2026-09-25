@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Transport security for RELEASE builds (see docs/ComplianceAudit.md C3).
+  Transport security for RELEASE builds (docs/Compliance.md).
 
   Cleartext (HTTP) is FORBIDDEN. All traffic must be HTTPS/TLS, so credentials, tokens, and
   behavioral data are never sent in the clear.

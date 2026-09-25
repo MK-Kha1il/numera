@@ -199,7 +199,7 @@ fun MainNavigation() {
           )
         }
         entry<DuelGame> { navKey ->
-          // Live ranked match → the Arena "stadium" surface (BrandIdentity §4.2): a match always
+          // Live ranked match → the Arena "stadium" surface (BrandIdentity §3.2): a match always
           // renders on the focused dark Studio scheme, whatever theme the player picked.
           com.example.numera.theme.ArenaStadiumTheme {
             DuelGameScreen(

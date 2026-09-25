@@ -2,7 +2,7 @@
 // telemetry. Before this, the generated problem never carried its params out to the client, so the
 // classifier (engineFeed → classifyMisconception) only ever saw params={} and could not fire any
 // concept-specific rule that needs a/b/etc. Now mathGenerator emits a client-safe params bag, the
-// client echoes it back, and the rules diagnose precisely. See docs/ContentLearningScienceAudit §2 #4.
+// client echoes it back, and the rules diagnose precisely.
 const { test } = require('node:test');
 const assert = require('node:assert');
 

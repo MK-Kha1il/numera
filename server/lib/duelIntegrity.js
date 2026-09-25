@@ -1,5 +1,5 @@
 'use strict';
-// Pure duel integrity + Elo resolution (see docs/specs/Spec-CompetitionExpansion.md §5).
+// Pure duel integrity + Elo resolution.
 //
 // Extracted from server.js's untested `endDuel` socket code so the cheat-decision is
 // unit-testable WITHOUT a live socket. This makes `integrityEngine` the shared scorer that ALL

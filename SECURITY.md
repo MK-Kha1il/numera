@@ -35,7 +35,7 @@ This project handles user accounts and progression server-side and is the author
 for all rewards. Areas of particular interest:
 
 - **Authentication** — Argon2id hashing, JWT/refresh-token rotation, TOTP MFA, password reset
-  (see [docs/SecurityAudit-Auth.md](docs/SecurityAudit-Auth.md)).
+  (see [docs/Security.md](docs/Security.md)).
 - **Reward integrity** — idempotent reward endpoints, transactional balance mutations, and the
   server-authoritative duel scoring / anti-cheat path.
 - **Transport & headers** — CORS and security middleware (see [docs/Security.md](docs/Security.md)).

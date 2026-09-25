@@ -1,13 +1,9 @@
-# Economy Model — coin faucet/sink audit & rebalance
+# Economy model
 
-> Ultra-review item #10 / #28 / #61 (2026-06-10). The strategic audit flagged that coin
-> **faucets multiplied** (tournaments, wars, challenges, seasons, quests, puzzle rush, bot
-> duels) while no **sink** was added to match — "inflation will hollow the shop and cheapen
-> rewards." This doc models the actual numbers from the code and proposes a rebalance.
->
-> Status: **diagnosis + design proposal.** No balance values are changed by this doc. Each
-> recommendation below is a discrete follow-up. Numbers are read from the source files cited;
-> re-derive them before shipping a change (the faucets move as new modes ship).
+Where coins come from and where they go, with numbers read from the code, plus the rebalance
+proposals. Faucets change as new modes ship, so re-derive the numbers before touching balance.
+The solo-session taper (`lib/soloRewards.js`) and the bot-duel decay are in place; the ledger
+(`GET /api/analytics/economy`) shows the real daily flows.
 
 ## TL;DR
 
@@ -132,7 +128,7 @@ ladder (review #61): the 3,500–4,000 "mythic" tier should feel like a multi-we
       Legendary 1000–1500 · Mythic 3000–4000) with no rarity inversions, and after taming the
       faucets the top Mythic tier (≈4000) sits at ~3 weeks of median earn — appropriately
       aspirational. Intra-rarity variety across cosmetic types looks intentional and was left
-      intact (cf. the color-token audit's "don't blanket-normalize intentional data" lesson).
+      intact.
 - [x] Wire coin faucet/sink counters into analytics so this model can be validated against real
       behavior instead of estimated. **Done (2026-09)** — `services/economyLedger.js` records every
       faucet and sink into the aggregate `economy_daily` table (migration v68, no user ids);

@@ -19,7 +19,6 @@ import com.example.numera.theme.Spacing
  * The one canonical way to display a coins/XP reward. Replaces the ad-hoc glyph-soup strings
  * ("🪙 12  ⭐ 30 XP") so every reward renders the same: crisp vector [NumeraIcon]s + tabular
  * [NumeralStyle] figures that never jitter as counts change.
- * (docs/UiUxSimplificationAudit-2026-06.md #5/#7; docs/VisualExperienceSprint-2026-07.md)
  */
 @Composable
 fun RewardChip(

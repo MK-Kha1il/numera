@@ -28,7 +28,7 @@ const logger = require('../logger');
 const router = express.Router();
 
 const ACCESS_TOKEN_TTL = '15m'; // short-lived; clients refresh with the rotating refresh token
-const MIN_AGE_YEARS = 13; // neutral age gate floor (see docs/ComplianceAudit.md C2)
+const MIN_AGE_YEARS = 13; // neutral age gate floor (docs/Compliance.md)
 
 // Compute age in whole years from an ISO 'YYYY-MM-DD' birth date, or null if unparseable.
 function ageFromBirthDate(birthDate) {
@@ -105,7 +105,7 @@ router.post('/api/auth/register', checkFailedLogins, rateLimiter(5, 60000), asyn
     return res.status(400).json({ error: 'Username and password required' });
   }
 
-  // Neutral age gate (COPPA / Children's Code — see docs/ComplianceAudit.md C2). A date of birth
+  // Neutral age gate (COPPA / Children's Code). A date of birth
   // is required; accounts under MIN_AGE_YEARS are refused. We persist only the birth year.
   const age = ageFromBirthDate(birthDate);
   if (age === null) {

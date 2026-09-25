@@ -421,7 +421,7 @@ fun NumeraTheme(
 }
 
 /**
- * The Arena "stadium" surface (docs/BrandIdentity.md §4.2). Live matches always render on the
+ * The Arena "stadium" surface (docs/BrandIdentity.md §3.2). Live matches always render on the
  * focused, higher-contrast dark Studio scheme — regardless of the player's chosen theme — so a match
  * *feels* like a match (the "lobby vs. stadium" rule). Wrap a duel/match screen in this; screens that
  * use `MaterialTheme.colorScheme.*` tokens (no hardcoded colors) restyle automatically.
@@ -436,7 +436,7 @@ fun ArenaStadiumTheme(content: @Composable () -> Unit) {
 }
 
 /**
- * The Shop "Vault" surface (docs/ShopOverhaul.md §3). The shop is a premium, museum-case dark
+ * The Shop "Vault" surface. The shop is a premium, museum-case dark
  * surface — its rarity frames, glows, and light-on-dark text depend on a dark ground — but unlike
  * the Arena it **tints to the player's equipped theme** (Studio → graphite-indigo + amber, Ocean →
  * navy + cyan, …) rather than always Studio, so the Vault feels like *their* collection. Wrap the

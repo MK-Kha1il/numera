@@ -1,7 +1,7 @@
 package com.example.numera.ui.feature.shop
 
 // HeroShowcasePanel — the in-place preview/buy/equip surface shown inside the Vault's bottom
-// sheet (docs/ShopOverhaul.md §6/§13). Split out of ShopCards.kt to keep that file under the
+// sheet. Split out of ShopCards.kt to keep that file under the
 // 600-line limit; imports are a superset shared with the cards.
 import android.util.Log
 import androidx.compose.foundation.background
@@ -325,7 +325,7 @@ fun HeroShowcasePanel(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         // Means-tested affordability help, presented honestly as a quiet "member
-                        // price" — never a red fake-urgency "SALE" (docs/ShopOverhaul.md §11).
+                        // price" — never a red fake-urgency "SALE".
                         if (item.discountActive == true && item.originalCost != null) {
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.s),

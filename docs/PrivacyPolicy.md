@@ -1,7 +1,7 @@
 # Numera — Privacy Policy
 
 > **DRAFT — requires review by qualified counsel before publication.** This is a good-faith
-> first draft that matches what the code actually does (see `docs/ComplianceAudit.md`). It is
+> first draft that matches what the code actually does (see `docs/Compliance.md`). It is
 > not legal advice. Fill in the bracketed `[…]` placeholders (legal entity, contact, governing
 > law) before publishing, and keep it in sync with the Play Data Safety / App Store privacy
 > labels.

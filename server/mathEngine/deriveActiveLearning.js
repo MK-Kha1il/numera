@@ -2,8 +2,7 @@
 // across the WHOLE catalog from authored data the system already holds, instead of hand-authoring
 // 150 of each.
 //
-// Why this exists (see docs/ContentLearningScienceAudit-2026-06.md): the three highest-effect-size
-// active-recall layers were authored deeply for the first ~8–15 foundational concepts and never
+// Why this exists: the transfer / self-explanation / worked-example layers were authored deeply for the first ~8–15 foundational concepts and never
 // scaled (transfer 5%, self-explain 9%, worked-examples 7% of 161 concepts). The adaptive/mastery
 // engine — whose `transfer` dimension is earned ONLY out-of-context — was therefore starved for
 // ~90% of the catalog.

@@ -374,7 +374,7 @@ object SoundManager {
     }
 
     /**
-     * Per-rarity unlock fanfare (docs/ShopOverhaul.md §7). [tier] is the Rarity ordinal
+     * Per-rarity unlock fanfare. [tier] is the Rarity ordinal
      * (0=Common … 4=Mythic): higher tiers add notes, climb higher, shimmer and ring longer.
      * Legendary/Mythic gain sub weight — the ear knows how rare the unlock was.
      */

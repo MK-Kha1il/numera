@@ -266,7 +266,7 @@ function applySessionToRating(ratingRow, sessionData) {
 /**
  * Applies one head-to-head duel result to a (mu, sigma) rating pair.
  *
- * This is the unification keystone (docs/specs/Spec-RatingUnification.md): a ranked
+ * This is the unification keystone (docs/Rating.md): a ranked
  * duel is evidence about the SAME latent skill as a solo session, so it updates the
  * SAME (mu, sigma) belief — just scored by OUTCOME-vs-EXPECTED instead of
  * performance-vs-baseline. Solo and duels therefore move ONE number per domain.

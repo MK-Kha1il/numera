@@ -23,7 +23,7 @@ import com.example.numera.ui.components.RankBadge
 import com.example.numera.theme.*
 
 /**
- * Unified competitive identity (docs/specs/Spec-RatingUnification.md + competitive-audit Top-25 #6).
+ * Competitive rank card (docs/Rating.md).
  * Leads with the ONE competitive rank (now fed by both solo practice and ranked duels), then expresses
  * the learner's real differentiator — per-domain skill — as "specialties", strongest first, with the
  * top played domain flagged as their "main". Fed by GET /api/rating/profile; renders nothing until the

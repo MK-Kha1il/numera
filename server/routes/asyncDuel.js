@@ -1,4 +1,4 @@
-// Async (correspondence) duels (see docs/specs/Spec-CompetitionExpansion.md §4.2).
+// Async (correspondence) duels.
 // Two friends solve the SAME server-generated problem set within 24h; the match resolves the
 // moment both have played. The set (questions + answers) is generated once and stored, so both
 // players get identical problems and scoring is fully server-authoritative. v1 awards coins to

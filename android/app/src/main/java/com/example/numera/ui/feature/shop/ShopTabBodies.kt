@@ -31,7 +31,7 @@ import com.example.numera.theme.*
 import com.example.numera.ui.components.GlossyProgressBar
 
 /**
- * The Vault's top-level sections (docs/ShopOverhaul.md §4). The former Titles/Effects/Themes tabs
+ * The Vault's top-level sections. The former Titles/Effects/Themes tabs
  * are folded into Cosmetics as in-body type filters (visual-experience sprint 2026-07: nine chips
  * exceeded one comfortable scroll; one browsable grid + filters is the pattern the audit prescribed).
  */
@@ -269,7 +269,7 @@ fun CosmeticsTab(
 }
 
 /**
- * The "Earnable" showcase (docs/ShopOverhaul.md §9): prestige you unlock by playing — ranks,
+ * The "Earnable" showcase: prestige you unlock by playing — ranks,
  * mastery frames, streak relics — never for sale. Tapping a card opens the preview sheet, which
  * shows the requirement instead of a buy button.
  */
@@ -441,7 +441,7 @@ fun ShopSectionHeader(title: String, accent: androidx.compose.ui.graphics.Color,
 }
 
 /**
- * "Saving for" nudge (docs/ShopOverhaul.md §11/§12): the player's closest wishlisted-but-unaffordable
+ * "Saving for" nudge: the player's closest wishlisted-but-unaffordable
  * item, with how far away it is + a progress bar — turns surplus coins into a goal. Tap to preview it.
  */
 @Composable

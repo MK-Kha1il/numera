@@ -1,4 +1,4 @@
-// Data-retention enforcement (see docs/ComplianceAudit.md M2). IP addresses in session and
+// Data-retention enforcement (docs/Compliance.md). IP addresses in session and
 // audit rows are personal data; we don't keep them forever. This purges:
 //   - expired sessions and their refresh tokens,
 //   - consumed/expired password-reset tokens,

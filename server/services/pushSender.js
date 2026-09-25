@@ -3,9 +3,8 @@
 // logged no-op, so the app, dev, and CI run with push simply disabled. Device tokens that FCM
 // reports as gone (UNREGISTERED / invalid) are pruned so we stop retrying them.
 //
-// Wiring the real device side (FCM SDK + google-services.json + a FirebaseMessagingService that
-// registers tokens via POST /api/notifications/push-token) is the one remaining manual step — see
-// docs/specs/Spec-LifecycleNotifications.md.
+// The device side (FCM SDK + google-services.json + a FirebaseMessagingService that registers tokens
+// via POST /api/notifications/push-token) isn't wired yet.
 const crypto = require('crypto');
 const fs = require('fs');
 const { db } = require('../db');

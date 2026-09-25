@@ -804,7 +804,7 @@ function initDb() {
         { id: 'avatar_celestial', name: 'Celestial Avatar', cost: 0, token_cost: 3, type: 'avatar', value: 'avatar_celestial', rarity: 'Mythic', description: 'Forged from seasons of surplus. The rarest face in Numera — it cannot be bought with coins at all.', required_rank: null, is_animated: 1, particle_effect: 'cosmic_sparkle', is_utility: 0 },
         { id: 'banner_eternal', name: 'Eternal Banner', cost: 0, token_cost: 2, type: 'banner', value: 'banner_eternal', rarity: 'Mythic', description: 'A horizon that outlasts every season. Worn only by those who converted a fortune to claim it.', required_rank: null, is_animated: 1, particle_effect: 'infinity_glow', is_utility: 0 },
 
-        // ── New cosmetic types (docs/ShopOverhaul.md §8, Stage D) ─────────────────────────────────
+        // ── Cosmetic types: titles, effects, victory/tap effects, frames ─────────────────────────────────
         // Purchasable Titles — equip via active_title; value is the lib/titles.js catalog id so the
         // bought title resolves to a display name on the profile/public card exactly like an earned one.
         { id: 'title_pattern_seeker', name: 'Title — Pattern Seeker', cost: 150, type: 'title', value: 'pattern_seeker', rarity: 'Common', description: 'Worn under your name: "Pattern Seeker."', required_rank: null, is_animated: 0, particle_effect: null, is_utility: 0 },

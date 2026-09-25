@@ -53,8 +53,7 @@ fun DuoCard(
     )
     // Hybrid calm/energy: the neutral `outline` default reads as a quiet 1dp hairline so ordinary
     // cards recede; any *accent* color passed in (selected / complete / promo / self) keeps the
-    // bolder 2dp border so competitive & reward states still pop. One edit, app-wide effect.
-    // (docs/UiUxSimplificationAudit-2026-06.md #1)
+    // bolder 2dp border so competitive & reward states still stand out.
     val isAccent = borderColor != MaterialTheme.colorScheme.outline
     val cardBorder = if (isAccent) {
         BorderStroke(2.dp, borderColor)

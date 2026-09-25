@@ -1,4 +1,4 @@
-// Notification funnel (see docs/specs/Spec-LifecycleNotifications.md).
+// Notification funnel: in-app, email and push through one entry point.
 //
 // A single `notify()` entry point so any notification can fan out to multiple channels while
 // honoring user preferences, consent, minor-safety defaults, and idempotency:

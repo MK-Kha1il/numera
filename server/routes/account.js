@@ -456,7 +456,7 @@ router.get('/api/user/export-data', authenticateToken, (req, res) => {
               exportedData.security_logs = logs || [];
 
               // Behavioral / psychometric data held about the user — included so the export is a
-              // COMPLETE Art 15/20 copy, not just the obvious account fields (see ComplianceAudit M1).
+              // COMPLETE Art 15/20 copy, not just the obvious account fields.
               const behavioralQueries = [
                 ['learner_profiles', 'SELECT * FROM learner_profiles WHERE user_id = ?'],
                 ['misconceptions', 'SELECT concept_id, misconception_type, misconception_label, frequency, severity FROM user_misconceptions WHERE user_id = ?'],

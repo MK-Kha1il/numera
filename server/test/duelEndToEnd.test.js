@@ -1,6 +1,6 @@
 // Live-duel integration: drives the REAL endDuel commit path WITHOUT a socket, by seeding a finished
 // room into the exported `rooms` map and calling the exported `endDuel`. This guards the unified
-// rating commit (docs/specs/Spec-RatingUnification.md): a ranked duel now updates the SAME per-domain
+// rating commit (docs/Rating.md): a ranked duel now updates the SAME per-domain
 // NRS rating (user_ratings) as solo play, and the users.elo / competitive_matches / competitive_rank
 // columns are a DERIVED MIRROR of it. The old K=32 duel-Elo is retired.
 //

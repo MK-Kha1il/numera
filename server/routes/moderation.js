@@ -1,4 +1,4 @@
-// UGC safety: user blocking and content reporting (see docs/ComplianceAudit.md H1).
+// UGC safety: user blocking and content reporting (docs/Compliance.md).
 //
 //  - Blocking is symmetric in effect: a block hides both users from each other's social surfaces
 //    (friends list, new friend requests) and removes any existing friend connection.
