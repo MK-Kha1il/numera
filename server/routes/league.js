@@ -1,22 +1,23 @@
-// Weekly league standings for the current user's league (cached briefly; the per-user
-// countdown stays live).
+// Weekly league standings for the current user's league (cached briefly) + the countdown to the
+// global weekly rollover (services/leagueService.js).
 const express = require('express');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const cache = require('../cache');
 const { checkAndResetQuestsAndLeagues } = require('../services/userService');
+const { weekIndex, weekEndsAt } = require('../lib/leagueWeeks');
 
 const router = express.Router();
 
 router.get('/api/league/leaderboard', authenticateToken, (req, res) => {
   checkAndResetQuestsAndLeagues(req.user.id, () => {
-    db.get('SELECT league, last_league_reset FROM users WHERE id = ?', [req.user.id], (err, currentUser) => {
+    db.get('SELECT league FROM users WHERE id = ?', [req.user.id], (err, currentUser) => {
       if (err || !currentUser) return res.status(500).json({ error: 'User not found' });
 
       const userLeague = currentUser.league || 'Quartz';
-      const lastReset = currentUser.last_league_reset || 0;
+      // Everyone's week ends at the same global boundary (Monday 00:00 UTC — lib/leagueWeeks.js).
       const now = Math.floor(Date.now() / 1000);
-      const secondsRemaining = Math.max(0, 7 * 86400 - (now - lastReset));
+      const secondsRemaining = Math.max(0, weekEndsAt(weekIndex(now)) - now);
 
       // seconds_remaining is per-request, but the standings list is shared by
       // everyone in the league and changes slowly — cache it briefly so a busy

@@ -4,6 +4,7 @@ const { db } = require('../db');
 const logger = require('../logger');
 const { localDayIndex } = require('../lib/streak');
 const { getTzOffset } = require('./streakService');
+const { ensureLeagueWeek } = require('./leagueService');
 
 // Load a user joined with their mastery row, shaped into the full client-facing user object.
 function getUserWithMastery(userId, callback) {
@@ -82,8 +83,8 @@ function getUserWithMastery(userId, callback) {
   });
 }
 
-// Lazily ensure quest/mastery rows exist, then apply daily quest resets and weekly league
-// promotion/demotion if their windows have elapsed. Always invokes callback when done.
+// Lazily ensure quest/mastery rows exist, then apply the daily quest reset and make sure the global
+// weekly league has rolled over. Always invokes callback when done.
 //
 // Daily quests reset when the learner's LOCAL calendar day changes (lib/streak.js day clock — the
 // same one the streak and daily puzzle use). The old rule (`now - last_quest_reset >= 86400`) was
@@ -149,63 +150,9 @@ function runResets(userId, tz, callback) {
           });
         }
 
-        questPromise.then(() => {
-          // Check weekly league reset (7 * 86400 seconds)
-          db.get('SELECT league, league_points, last_league_reset FROM users WHERE id = ?', [userId], (errU, uRow) => {
-            if (errU || !uRow) return callback && callback();
-
-            const lastLeagueReset = uRow.last_league_reset || 0;
-            if (lastLeagueReset === 0) {
-              db.run('UPDATE users SET last_league_reset = ? WHERE id = ?', [now, userId], () => {
-                callback && callback();
-              });
-              return;
-            }
-
-            if (now - lastLeagueReset >= 7 * 86400) {
-              const currentLeague = uRow.league || 'Quartz';
-
-              db.all(
-                'SELECT id, league_points FROM users WHERE league = ? ORDER BY league_points DESC',
-                [currentLeague],
-                (errStand, standings) => {
-                  if (errStand || !standings) return callback && callback();
-
-                  const rankIndex = standings.findIndex((s) => s.id === userId);
-                  const totalInLeague = standings.length;
-
-                  let newLeague = currentLeague;
-                  // Weekly league has its OWN "stone" ladder (docs/BrandIdentity.md §8) so it stops
-                  // colliding with the permanent Bronze..Grandmaster competitive rank.
-                  const leaguesOrder = ['Quartz', 'Onyx', 'Jade', 'Topaz', 'Obsidian'];
-                  const currentIdx = leaguesOrder.indexOf(currentLeague);
-
-                  if (rankIndex !== -1) {
-                    const userPoints = standings[rankIndex].league_points;
-                    const shouldPromote = (rankIndex < 3 && userPoints > 0) || userPoints > 100;
-                    const shouldDemote = rankIndex >= totalInLeague - 3 && totalInLeague >= 5 && currentIdx > 0;
-
-                    if (shouldPromote && currentIdx < leaguesOrder.length - 1) {
-                      newLeague = leaguesOrder[currentIdx + 1];
-                    } else if (shouldDemote && currentIdx > 0) {
-                      newLeague = leaguesOrder[currentIdx - 1];
-                    }
-                  }
-
-                  db.run(
-                    'UPDATE users SET league = ?, league_points = 0, last_league_reset = ? WHERE id = ?',
-                    [newLeague, now, userId],
-                    () => {
-                      callback && callback();
-                    }
-                  );
-                }
-              );
-            } else {
-              callback && callback();
-            }
-          });
-        });
+        // The weekly league runs on one global week with a single rollover (services/leagueService.js)
+        // — checked here so it always happens before any of this week's league points are earned.
+        questPromise.then(() => ensureLeagueWeek()).then(() => callback && callback());
       });
     };
 

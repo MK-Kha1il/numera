@@ -1555,6 +1555,27 @@ const migrations = [
       `);
     },
   },
+  {
+    version: 69,
+    name: 'league_global_weeks',
+    // The weekly league moves to ONE global week (Monday 00:00 UTC; lib/leagueWeeks.js) with a
+    // single rollover per week (services/leagueService.js). `week` is the PRIMARY KEY, so exactly one
+    // process claims each rollover. Seeded with the current week so the first real rollover happens
+    // at the next boundary instead of immediately ranking the old per-user windows.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS league_rollovers (
+          week      INTEGER PRIMARY KEY,
+          rolled_at INTEGER NOT NULL,
+          promoted  INTEGER DEFAULT 0,
+          demoted   INTEGER DEFAULT 0
+        )
+      `);
+      const { weekIndex } = require('./lib/leagueWeeks');
+      const now = Math.floor(Date.now() / 1000);
+      await run('INSERT OR IGNORE INTO league_rollovers (week, rolled_at) VALUES (?, ?)', [weekIndex(now), now]);
+    },
+  },
 ];
 
 /**
