@@ -8,7 +8,7 @@ linked subsystem docs hold the depth.
 (see [§ Completion pass](#completion-pass-2026-09)) · 🟡 works, with a known gap listed ·
 ⛔ blocked on an external dependency.
 
-**Snapshot (2026-09-25):** server 44 routers / 219 endpoints, 69 migrations, 88 tables,
+**Snapshot (2026-09-25):** server 45 routers / 221 endpoints, 69 migrations, 88 tables,
 1,316 passing `node:test` tests, ESLint 0 errors · content 181 concepts, 182 concept-first lessons,
 117 achievements, 114 shop items, 14 titles, 6 daily quests, 16 interactive visual models ·
 Android 129 Kotlin source files (~40k lines), 50 Robolectric test files.
@@ -22,7 +22,7 @@ Android 129 Kotlin source files (~40k lines), 50 Robolectric test files.
 
 | # | Domain | System | Server | Client | Status |
 |---|--------|--------|--------|--------|--------|
-| 1 | Platform | Bootstrap, config, routing | `server.js`, `config.js` | — | 🟡 |
+| 1 | Platform | Bootstrap, config, routing | `server.js`, `config.js`, `routes/landing.js` | — | 🔧 |
 | 2 | Platform | Data layer: schema, migrations, transactions, cache, backups | `db.js`, `migrations.js`, `dbx.js`, `cache.js`, `backup.js` | — | ✅ |
 | 3 | Platform | Auth & sessions | `routes/auth.js`, `middleware/auth.js`, `lib/passwords.js`, `lib/totp.js` | `ui/screens/AuthScreens.kt`, `MfaChallenge.kt`, `RetrofitClient.kt` | 🔧 |
 | 4 | Platform | Security & abuse controls | `middleware/{security,rateLimit}.js`, `lib/contentFilter.js`, `idempotency.js` | — | 🔧 |
@@ -49,7 +49,7 @@ Android 129 Kotlin source files (~40k lines), 50 Robolectric test files.
 | 25 | Economy | Shop, cosmetics, utilities, season tokens | `routes/shop.js` | `feature/shop/` | ✅ |
 | 26 | Economy | Achievements, badges, titles, frames | `services/achievementService.js`, `routes/achievements.js`, `lib/titles.js` | `profile/ProfileScreen.kt`, `TitlesCard.kt` | ✅ |
 | 27 | Compete | Rating (NRS), seasons, reward track, apex | `mathEngine/ratingEngine.js`, `services/ratingService.js`, `routes/rating.js` | `profile/CompetitiveRankCard.kt`, `arena/SeasonScreen.kt` | 🔧 |
-| 28 | Compete | Live duels (Socket.IO) | `server.js` (duel engine), `lib/duelIntegrity.js` | `ui/screens/DuelGameScreen.kt`, `arena/ArenaScreen.kt` | 🔧 |
+| 28 | Compete | Live duels (Socket.IO) | `socket/duels.js`, `lib/duelIntegrity.js` | `ui/screens/DuelGameScreen.kt`, `arena/ArenaScreen.kt` | 🔧 |
 | 29 | Compete | Bot duels | `routes/botDuel.js` | `arena/BotDuelScreen.kt` | 🔧 |
 | 30 | Compete | Async (correspondence) duels | `routes/asyncDuel.js` | `arena/AsyncDuelScreen.kt` | 🔧 |
 | 31 | Compete | Reasoning Arena | `routes/reasoningDuel.js` | `arena/ReasoningArenaScreen.kt` | 🔧 |
@@ -76,13 +76,12 @@ Android 129 Kotlin source files (~40k lines), 50 Robolectric test files.
 
 ## Platform
 
-### 1. Bootstrap, config, routing 🟡
+### 1. Bootstrap, config, routing 🔧
 Express app + global middleware (CORS allow-list, security headers, 5xx sanitizer, per-IP limiter),
-44 routers mounted in `server.js`, DB init + migrations (`ready` promise), Socket.IO attach.
+45 routers mounted in `server.js`, DB init + migrations (`ready` promise), and `attachDuels(io)`.
 `config.js` is the single env source (`JWT_SECRET` mandatory in production).
-**Gap:** `server.js` has regrown to ~1.9k lines — the Socket.IO duel engine (~1.2k lines) and a
-~380-line HTML landing page still live there. Split them into `socket/duels.js` and
-`routes/landing.js` (both covered by the duel socket/lifecycle/end-to-end tests).
+**Fixed this pass:** `server.js` had regrown to ~1.9k lines; the Socket.IO duel engine moved to
+`socket/duels.js` and the landing page to `routes/landing.js`, leaving ~170 lines of bootstrap.
 
 ### 2. Data layer ✅
 SQLite in WAL mode. `db.js` is the idempotent baseline; `migrations.js` holds 69 versioned,
@@ -192,8 +191,12 @@ commit atomically.
 **Fixed this pass:** the server used to pay whatever `xpGained`/`coinsGained` the client sent for
 every non-level mode; `parseInt(solvedCount) || 5` turned a zero-solve session into five solves; a
 wrong transfer answer was paid in full; completions needed no serve at all (scriptable farming).
-**Gap:** full server grading of solo answers (the client would send its answers with `/complete`)
-is the remaining step; today the ticket bounds what a tampered client can claim.
+**Gap:** solo answers themselves are still judged on the device. Echoing the client's answers back
+to `/complete` would add little — the correct answers ship in the payload so the device can give
+instant feedback, and a tampered client could echo them. True server grading means moving each
+answer check to a server round-trip (answers withheld from the payload), a UX/latency decision.
+Until then the ticket bounds what a tampered client can claim: only served problems, at most once,
+at the learner's own level, tapered.
 
 ### 19. Solo game modes 🔧
 Ten modes share the solo loop: **level**, **archive puzzle**, **legacy puzzle**, **daily puzzle**,
@@ -397,17 +400,17 @@ CI's `assembleDebug` + Robolectric run is the gate).
 | Friends | Screen unreachable | Re-mounted |
 | Economy | Faucets/sinks unmeasured | Aggregate ledger + admin rollup |
 | Ops | No health endpoint | `GET /healthz` |
+| Structure | `server.js` regrown to ~1.9k lines | Duel engine → `socket/duels.js`, landing → `routes/landing.js` |
 
 ## Open work (honest backlog)
 
 1. **Verify the Android changes in CI** (`assembleDebug` + `testDebugUnitTest`).
-2. **Server grading for solo answers** — have the client send its answers with `/complete` so the
-   server grades them against the ticketed problems (§18).
-3. **Split `server.js`** — the Socket.IO duel engine and the landing page (§1).
-4. **Split the oversized Android screens** before they grow further (§47).
-5. **Push notifications** — FCM credential + client token registration (§44).
-6. **Club seasons** with promotion/relegation (§40); **per-entrant tournament sets** (§33);
+2. **Server grading for solo answers** — withhold answers from solo payloads and check each answer
+   with a server round-trip (§18); a product decision about feedback latency.
+3. **Split the oversized Android screens** before they grow further (§47).
+4. **Push notifications** — FCM credential + client token registration (§44).
+5. **Club seasons** with promotion/relegation (§40); **per-entrant tournament sets** (§33);
    **device/multi-account integrity** heuristics (§38).
-7. **Accessibility, i18n, tablet layouts; DPIA** ([ComplianceAudit.md](ComplianceAudit.md)).
-8. Decide the fate of `practice_schedule` (wire it into reminders, or drop it) (§45).
-9. Offsite, encrypted backups (§2).
+6. **Accessibility, i18n, tablet layouts; DPIA** ([ComplianceAudit.md](ComplianceAudit.md)).
+7. Decide the fate of `practice_schedule` (wire it into reminders, or drop it) (§45).
+8. Offsite, encrypted backups (§2).

@@ -18,17 +18,20 @@ docs/         Subsystem documentation (start with Architecture.md)
 
 ### Server (`server/`)
 ```
-server.js            Bootstrap: middleware wiring + router mounts + DB init + the Socket.IO
-                     matchmaking/duel engine + a landing page. Exports { app, server, io, db, ready };
-                     listens only when run directly. (~1.9k lines — the duel engine + landing page
-                     are the next split; see docs/Systems.md §1.)
+server.js            Bootstrap only (~170 lines): middleware wiring + router mounts + DB init +
+                     attaching the duel engine. Exports { app, server, io, db, ready, … };
+                     listens only when run directly.
+socket/duels.js      The Socket.IO duel engine: socket auth, matchmaking, the duel lifecycle,
+                     rating/reward commit (attachDuels(io)).
+routes/landing.js    Landing/status page + dev APK download.
 config.js            Single source for env config (JWT_SECRET, PORT, CORS origins).
-routes/              One express.Router per domain (44): auth, math, dailyPuzzle, archive, mistakes,
+routes/              One express.Router per domain (45): auth, math, dailyPuzzle, archive, mistakes,
                      srs, transfer, assessment, onboarding, quests, today, commitment, shop,
                      achievements, rating, league, leaderboard, puzzleRush, botDuel, asyncDuel,
                      reasoningDuel, tournaments, challenges, liveRoom, friends, clubs, clubWars,
                      discussion, moderation, classes, notifications, account, engine, masteryMap,
-                     learn, worksheet, publicProfile(+Page), cas, analytics, crash, feedback, health.
+                     learn, worksheet, publicProfile(+Page), cas, analytics, crash, feedback, health,
+                     landing.
                      Each declares its own paths + imports its own deps.
 services/            DB-touching business logic shared across routes (userService, streakService,
                      soloSessionService, leagueService, economyLedger, ratingService,
@@ -124,7 +127,7 @@ Building something new? Put it in the right place from the start:
 
 - **New server endpoint** → add it to the matching `routes/<domain>.js` router (or create a new
   one and mount it in `server.js`). **Never** add routes back into `server.js` — that file is
-  bootstrap + Socket.IO only.
+  bootstrap only. Socket.IO duel events belong in `socket/duels.js`.
 - **DB-touching logic shared by ≥2 routes** → a function in `services/` (e.g. `userService`).
   Import it into the routers that need it. **Pure** helpers (no DB/IO) → `lib/`, with a unit test.
 - **New Android screen / feature** → its own file under `ui/feature/<domain>/` (not appended to

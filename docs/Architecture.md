@@ -21,10 +21,10 @@ without shipping a new APK.
 
 ## Server layers
 
-1. **Bootstrap (`server.js`)** — creates the Express `app`, wires global middleware
+1. **Bootstrap (`server.js`, ~170 lines)** — creates the Express `app`, wires global middleware
    (CORS allow-list, security headers, global rate limit), initializes the DB + runs
-   migrations (`ready` promise), registers routes, and attaches Socket.IO for real-time
-   duels. It exports `{ app, server, io, db, ready }` and only calls `listen()` when run
+   migrations (`ready` promise), registers routes, and attaches the Socket.IO duel engine
+   (`socket/duels.js` → `attachDuels(io)`). It exports `{ app, server, io, db, ready }` and only calls `listen()` when run
    directly (`require.main === module`) so tests can drive it in-process.
 2. **Middleware (`middleware/`)** — `auth.js` (stateful JWT: a valid signature must also map
    to a live row in `user_sessions`), `rateLimit.js` (global + per-route + brute-force),
@@ -63,8 +63,6 @@ from the main connection's autocommit reads/writes. Reward routes use `withTrans
 
 The live list is the "Open work" section of [Systems.md](Systems.md). Structurally:
 
-- **`server.js` has regrown** to ~1.9k lines (it was decomposed from 5k to ~1.1k): the Socket.IO
-  duel engine and the HTML landing page should move to `socket/` and `routes/landing.js`.
 - **Oversized Android screens** (Settings, Profile, `Models.kt`, DuelGame, LevelMap, Gameplay,
   SoloGame, Arena all exceed the 600-line rule). `MainTabsScreen.kt` itself was split (9.9k → a
   thin shell) and has a Robolectric Compose test net.
