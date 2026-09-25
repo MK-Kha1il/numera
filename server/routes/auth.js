@@ -316,7 +316,12 @@ router.post('/api/auth/login', checkFailedLogins, checkAccountLockout, rateLimit
 // services/streakService.js); a streak day is credited by actually solving something.
 function finalizeLogin(user, username, req, res) {
   checkAndResetQuestsAndLeagues(user.id, () => {
-    settleStreak(user.id).then(() => sendLoginResponse(user.id, username, req, res));
+    settleStreak(user.id).then(() => {
+      // A real sign-in counts as being seen (lifecycle audiences key off last_active).
+      db.run('UPDATE users SET last_active = ? WHERE id = ?', [Math.floor(Date.now() / 1000), user.id], () =>
+        sendLoginResponse(user.id, username, req, res)
+      );
+    });
   });
 }
 

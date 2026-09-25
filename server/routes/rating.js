@@ -5,7 +5,6 @@
 const express = require('express');
 const { db } = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { securityLog } = require('../middleware/security');
 const NRS = require('../mathEngine/ratingEngine');
 const { TITLE_CATALOG, isTitleEarned } = require('../lib/titles');
 const { detectRatingPump } = require('../lib/integritySignals');
@@ -13,13 +12,7 @@ const { notify } = require('../services/notificationService');
 const { withTransaction } = require('../dbx');
 // Shared NRS persistence + the users.* mirror (also used by the socket duel path) — see
 // services/ratingService.js and docs/specs/Spec-RatingUnification.md.
-const {
-  getRatingRow,
-  persistRatingUpdate,
-  maybeUpdateSeasonPeak,
-  nrsUpdateVelocity,
-  syncCompetitiveMirror,
-} = require('../services/ratingService');
+const { getRatingRow } = require('../services/ratingService');
 
 const { recordCoins } = require('../services/economyLedger');
 const router = express.Router();
@@ -149,150 +142,9 @@ function notifySeasonWinners(winners) {
   }
 }
 
-function checkSmurfSignals(userId, excess, sessionsCount) {
-  db.get('SELECT * FROM smurf_signals WHERE user_id = ?', [userId], (err, row) => {
-    const updated = NRS.evaluateSmurfSignals(row || {}, excess, sessionsCount);
-    const now = Math.floor(Date.now() / 1000);
-    db.run(
-      `INSERT INTO smurf_signals (user_id, anomaly_score, consecutive_high, flagged, last_checked)
-       VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT(user_id) DO UPDATE SET
-         anomaly_score    = excluded.anomaly_score,
-         consecutive_high = excluded.consecutive_high,
-         flagged          = MAX(flagged, excluded.flagged),
-         last_checked     = excluded.last_checked`,
-      [userId, updated.anomaly_score, updated.consecutive_high, updated.flagged ? 1 : 0, now]
-    );
-    if (updated.flagged) {
-      securityLog(userId, 'SMURF_FLAG', 'system', `anomaly_score=${updated.anomaly_score.toFixed(3)}, consecutive=${updated.consecutive_high}`);
-    }
-  });
-}
-
-function nrsUpdateTilt(userId, performanceScore, sessionData) {
-  db.get('SELECT * FROM tilt_tracking WHERE user_id = ?', [userId], (err, row) => {
-    const updated = NRS.updateTiltState(row || {}, performanceScore, sessionData);
-    const now = Math.floor(Date.now() / 1000);
-    db.run(
-      `INSERT INTO tilt_tracking (user_id, loss_streak, tilt_score, tilted, last_session)
-       VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT(user_id) DO UPDATE SET
-         loss_streak  = excluded.loss_streak,
-         tilt_score   = excluded.tilt_score,
-         tilted       = excluded.tilted,
-         last_session = excluded.last_session`,
-      [userId, updated.loss_streak, updated.tilt_score, updated.tilted ? 1 : 0, now]
-    );
-    if (updated.tilted && (!row || !row.tilted)) {
-      notify(userId, {
-        category: 'tilt',
-        title: 'Take a Break 🧘',
-        message: "You've had a tough session run. Taking a short break often improves performance. Your matchmaking will be adjusted to find you better-suited opponents.",
-        type: 'system',
-      });
-    }
-  });
-}
-
-// ── POST /api/rating/session ──────────────────────────────────────────────────
-router.post('/api/rating/session', authenticateToken, (req, res) => {
-  const userId = req.user.id;
-  const { category, level, usedCalculator, gameMode } = req.body;
-  let { solvedCount, totalProblems, errorsCount, speedBonus, comboBonus } = req.body;
-
-  // Bound every client-supplied metric (the solo path is the last place the client asserts its own
-  // performance — duels are server-graded). Beyond bounds, enforce INTERNAL CONSISTENCY so a cheater
-  // can't claim an impossible/maximal session to pump the unified rating (audit #29/#95 / Top-25 #8).
-  totalProblems = Math.min(Math.max(parseInt(totalProblems, 10) || 3, 1), 20);
-  solvedCount = Math.min(Math.max(parseInt(solvedCount, 10) || 0, 0), 20);
-  solvedCount = Math.min(solvedCount, totalProblems); // can't solve more than you attempted
-  errorsCount = Math.min(Math.max(parseInt(errorsCount, 10) || 0, 0), 20);
-  speedBonus = Math.min(Math.max(parseInt(speedBonus, 10) || 0, 0), 20);
-  comboBonus = Math.min(Math.max(parseInt(comboBonus, 10) || 0, 0), 15);
-  // The perfect-combo bonus is only legitimate on a flawless full run (no errors, everything solved);
-  // otherwise it's a spoofed value and is dropped — speed/combo can't outrank an honest careful solver.
-  const perfectRun = errorsCount === 0 && solvedCount > 0 && solvedCount === totalProblems;
-  if (!perfectRun) comboBonus = 0;
-  const lv = Math.max(1, parseInt(level, 10) || 1);
-  const gMode = gameMode || 'level';
-  const domain = NRS.categoryToDomain(category);
-
-  const sessionData = {
-    solvedCount,
-    totalProblems,
-    errorsCount,
-    speedBonus,
-    comboBonus,
-    level: lv,
-    usedCalculator: Boolean(usedCalculator),
-    gameMode: gMode,
-  };
-
-  getRatingRow(userId, 'global', (errG, globalRow) => {
-    if (errG) return res.status(500).json({ error: 'Rating fetch failed' });
-    getRatingRow(userId, domain, (errD, domainRow) => {
-      if (errD) return res.status(500).json({ error: 'Rating fetch failed' });
-
-      const domainResult = NRS.applySessionToRating(domainRow, sessionData);
-      const domainExplanation = NRS.buildRatingExplanation(domain, sessionData, domainResult);
-
-      const globalInfluence = NRS.domainInfluenceWeight(domainRow, globalRow);
-      const scaledDelta = domainResult.delta * globalInfluence;
-      const globalAfter = NRS.applySessionToRating(globalRow, sessionData);
-      globalAfter.mu = globalRow.mu + scaledDelta;
-      globalAfter.displayRating = Math.max(0, Math.floor(globalAfter.mu - 2 * globalAfter.sigma));
-      const globalExplanation = NRS.buildRatingExplanation('global', sessionData, {
-        ...globalAfter,
-        delta: scaledDelta,
-      });
-
-      persistRatingUpdate(userId, domain, domainRow, domainResult, { category, level: lv, gameMode: gMode }, domainExplanation, (errPD) => {
-        if (errPD) return res.status(500).json({ error: 'Domain rating save failed' });
-
-        persistRatingUpdate(userId, 'global', globalRow, globalAfter, { category, level: lv, gameMode: gMode }, globalExplanation, (errPG) => {
-          if (errPG) return res.status(500).json({ error: 'Global rating save failed' });
-
-          maybeUpdateSeasonPeak(userId, domain, domainResult.displayRating);
-          maybeUpdateSeasonPeak(userId, 'global', globalAfter.displayRating);
-          nrsUpdateVelocity(userId, domain, domainResult.delta);
-          nrsUpdateVelocity(userId, 'global', scaledDelta);
-
-          const excess = domainResult.performanceScore - domainResult.expectedPerformance;
-          checkSmurfSignals(userId, excess, domainResult.sessionsCount);
-          nrsUpdateTilt(userId, domainResult.performanceScore, sessionData);
-
-          const newRank = NRS.displayRatingToRank(globalAfter.displayRating, globalAfter.sessionsCount);
-          // The users.elo / competitive_matches / competitive_rank columns are now a DERIVED MIRROR of
-          // the just-persisted global rating — written ONLY here (and by the duel path) via the shared
-          // helper, never independently. (Was the ad-hoc `SET elo = round(mu)` that collided with the
-          // duel writer — see docs/specs/Spec-RatingUnification.md.)
-          syncCompetitiveMirror(userId);
-
-          res.json({
-            success: true,
-            domain: {
-              name: domain,
-              displayRating: domainResult.displayRating,
-              mu: +domainResult.mu.toFixed(1),
-              sigma: +domainResult.sigma.toFixed(1),
-              delta: +domainResult.delta.toFixed(1),
-              performanceScore: +domainResult.performanceScore.toFixed(3),
-              explanation: domainExplanation,
-            },
-            global: {
-              displayRating: globalAfter.displayRating,
-              mu: +globalAfter.mu.toFixed(1),
-              sigma: +globalAfter.sigma.toFixed(1),
-              delta: +scaledDelta.toFixed(1),
-              rank: newRank,
-              explanation: globalExplanation,
-            },
-          });
-        });
-      });
-    });
-  });
-});
+// Solo sessions move the rating through services/ratingService.applySoloSessionToRatings, called
+// by POST /api/math/complete for a ticket-anchored level session (the old client-asserted
+// POST /api/rating/session was never called by the app and was an open rating-pump surface).
 
 // ── GET /api/rating/profile ───────────────────────────────────────────────────
 router.get('/api/rating/profile', authenticateToken, (req, res) => {

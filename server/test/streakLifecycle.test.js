@@ -128,3 +128,15 @@ test('recommit is refused when the climb is not fading', async () => {
   const bad = await api(ctx.base, 'POST', '/api/commitment/recommit', { token: u.token, body: { method: 'bribe' } });
   assert.equal(bad.status, 400);
 });
+
+test('opening the app does not count as activity: the Today comeback card still shows', async () => {
+  const u = await registerUser(ctx.base);
+  const weekAgo = nowSec() - 8 * DAY;
+  await dbRun('UPDATE users SET streak = 4, streak_day = ?, last_active = ? WHERE id = ?', [utcToday() - 8, weekAgo, u.user.id]);
+  await api(ctx.base, 'GET', '/api/auth/me', { token: u.token }); // settles (reset) but is not activity
+  const row = await dbGet('SELECT last_active FROM users WHERE id = ?', [u.user.id]);
+  assert.equal(row.last_active, weekAgo, 'last_active untouched by app-open');
+  const today = await api(ctx.base, 'GET', '/api/today', { token: u.token });
+  assert.ok(today.body.comeback, 'the returning learner is welcomed back');
+  assert.ok(today.body.comeback.daysAway >= 7);
+});

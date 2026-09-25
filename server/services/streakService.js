@@ -7,7 +7,10 @@
 //
 // Both run in one ACID transaction on the write connection, so the shield spend (conditional
 // `quantity >= n`) and the users update commit together — two concurrent requests can't
-// double-spend a shield or double-credit a day. Every call also bumps last_active ("last seen").
+// double-spend a shield or double-credit a day. A credit also bumps last_active (real activity); a
+// settle never does — opening the app isn't activity, and the Today "comeback" card and the
+// lifecycle audiences read last_active as the last time the learner actually showed up to play.
+// A settle with nothing to resolve writes nothing.
 'use strict';
 
 const { db } = require('../db');
@@ -58,20 +61,31 @@ async function applyStreakEvent(userId, kind) {
     }
 
     const reset = prev.streak > 0 && state.streak === 0;
-    await tx.run(
-      `UPDATE users SET streak = ?, max_streak = ?, commitment_state = ?, streak_day = ?, last_active = ?
-         ${reset ? ', lost_streak = ?, lost_streak_at = ?' : ''}
-       WHERE id = ?`,
-      [
-        state.streak,
-        state.maxStreak,
-        state.commitmentState,
-        state.streakDay,
-        now,
-        ...(reset ? [effects.lostStreak, effects.lostStreak > 0 ? now : 0] : []),
-        userId,
-      ]
-    );
+    const isCredit = kind === 'credit';
+    const changed =
+      isCredit ||
+      reset ||
+      state.streak !== prev.streak ||
+      state.maxStreak !== prev.maxStreak ||
+      state.commitmentState !== prev.commitmentState ||
+      state.streakDay !== prev.streakDay;
+    if (changed) {
+      await tx.run(
+        `UPDATE users SET streak = ?, max_streak = ?, commitment_state = ?, streak_day = ?
+           ${isCredit ? ', last_active = ?' : ''}
+           ${reset ? ', lost_streak = ?, lost_streak_at = ?' : ''}
+         WHERE id = ?`,
+        [
+          state.streak,
+          state.maxStreak,
+          state.commitmentState,
+          state.streakDay,
+          ...(isCredit ? [now] : []),
+          ...(reset ? [effects.lostStreak, effects.lostStreak > 0 ? now : 0] : []),
+          userId,
+        ]
+      );
+    }
     return { prev, state, effects, today };
   });
 

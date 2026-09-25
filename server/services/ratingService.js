@@ -11,6 +11,8 @@
 
 const { db } = require('../db');
 const NRS = require('../mathEngine/ratingEngine');
+const { securityLog } = require('../middleware/security');
+const { notify } = require('./notificationService');
 
 // Fetch a user's (mu, sigma) row for a domain, or a fresh default if they have none yet.
 function getRatingRow(userId, domain, callback) {
@@ -181,8 +183,147 @@ function applyDuelResultToRatings({ userId, opponentMu, opponentSigma, outcome, 
   });
 }
 
+function checkSmurfSignals(userId, excess, sessionsCount) {
+  db.get('SELECT * FROM smurf_signals WHERE user_id = ?', [userId], (err, row) => {
+    const updated = NRS.evaluateSmurfSignals(row || {}, excess, sessionsCount);
+    const now = Math.floor(Date.now() / 1000);
+    db.run(
+      `INSERT INTO smurf_signals (user_id, anomaly_score, consecutive_high, flagged, last_checked)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         anomaly_score    = excluded.anomaly_score,
+         consecutive_high = excluded.consecutive_high,
+         flagged          = MAX(flagged, excluded.flagged),
+         last_checked     = excluded.last_checked`,
+      [userId, updated.anomaly_score, updated.consecutive_high, updated.flagged ? 1 : 0, now]
+    );
+    if (updated.flagged) {
+      securityLog(userId, 'SMURF_FLAG', 'system', `anomaly_score=${updated.anomaly_score.toFixed(3)}, consecutive=${updated.consecutive_high}`);
+    }
+  });
+}
+
+function nrsUpdateTilt(userId, performanceScore, sessionData) {
+  db.get('SELECT * FROM tilt_tracking WHERE user_id = ?', [userId], (err, row) => {
+    const updated = NRS.updateTiltState(row || {}, performanceScore, sessionData);
+    const now = Math.floor(Date.now() / 1000);
+    db.run(
+      `INSERT INTO tilt_tracking (user_id, loss_streak, tilt_score, tilted, last_session)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         loss_streak  = excluded.loss_streak,
+         tilt_score   = excluded.tilt_score,
+         tilted       = excluded.tilted,
+         last_session = excluded.last_session`,
+      [userId, updated.loss_streak, updated.tilt_score, updated.tilted ? 1 : 0, now]
+    );
+    if (updated.tilted && (!row || !row.tilted)) {
+      notify(userId, {
+        category: 'tilt',
+        title: 'Take a Break 🧘',
+        message: "You've had a tough session run. Taking a short break often improves performance. Your matchmaking will be adjusted to find you better-suited opponents.",
+        type: 'system',
+      });
+    }
+  });
+}
+
+// Apply one SOLO session to the learner's domain + global rating (the "solo + duels move ONE number
+// per domain" owner decision — docs/specs/Spec-RatingUnification.md). Called by POST
+// /api/math/complete for a level session that consumed a serve ticket, so every input is already
+// server-anchored: solves capped at problems served, the level lock-checked. The bounds and the
+// internal-consistency rules (audit #29/#95) are still enforced here as defense in depth.
+// callback(err, { domain: {...}, global: {...} }).
+function applySoloSessionToRatings(userId, raw, callback) {
+  const { category, usedCalculator, gameMode } = raw;
+  const totalProblems = Math.min(Math.max(parseInt(raw.totalProblems, 10) || 3, 1), 20);
+  let solvedCount = Math.min(Math.max(parseInt(raw.solvedCount, 10) || 0, 0), 20);
+  solvedCount = Math.min(solvedCount, totalProblems); // can't solve more than you attempted
+  const errorsCount = Math.min(Math.max(parseInt(raw.errorsCount, 10) || 0, 0), 20);
+  const speedBonus = Math.min(Math.max(parseInt(raw.speedBonus, 10) || 0, 0), 20);
+  let comboBonus = Math.min(Math.max(parseInt(raw.comboBonus, 10) || 0, 0), 15);
+  // The perfect-combo bonus is only legitimate on a flawless full run (no errors, everything solved);
+  // otherwise it's dropped — speed/combo can't outrank an honest careful solver.
+  const perfectRun = errorsCount === 0 && solvedCount > 0 && solvedCount === totalProblems;
+  if (!perfectRun) comboBonus = 0;
+  const lv = Math.max(1, parseInt(raw.level, 10) || 1);
+  const gMode = gameMode || 'level';
+  const domain = NRS.categoryToDomain(category);
+
+  const sessionData = {
+    solvedCount,
+    totalProblems,
+    errorsCount,
+    speedBonus,
+    comboBonus,
+    level: lv,
+    usedCalculator: Boolean(usedCalculator),
+    gameMode: gMode,
+  };
+
+  getRatingRow(userId, 'global', (errG, globalRow) => {
+    if (errG) return callback(errG);
+    getRatingRow(userId, domain, (errD, domainRow) => {
+      if (errD) return callback(errD);
+
+      const domainResult = NRS.applySessionToRating(domainRow, sessionData);
+      const domainExplanation = NRS.buildRatingExplanation(domain, sessionData, domainResult);
+
+      const globalInfluence = NRS.domainInfluenceWeight(domainRow, globalRow);
+      const scaledDelta = domainResult.delta * globalInfluence;
+      const globalAfter = NRS.applySessionToRating(globalRow, sessionData);
+      globalAfter.mu = globalRow.mu + scaledDelta;
+      globalAfter.displayRating = Math.max(0, Math.floor(globalAfter.mu - 2 * globalAfter.sigma));
+      const globalExplanation = NRS.buildRatingExplanation('global', sessionData, { ...globalAfter, delta: scaledDelta });
+
+      const meta = { category, level: lv, gameMode: gMode };
+      persistRatingUpdate(userId, domain, domainRow, domainResult, meta, domainExplanation, (errPD) => {
+        if (errPD) return callback(errPD);
+        persistRatingUpdate(userId, 'global', globalRow, globalAfter, meta, globalExplanation, (errPG) => {
+          if (errPG) return callback(errPG);
+
+          maybeUpdateSeasonPeak(userId, domain, domainResult.displayRating);
+          maybeUpdateSeasonPeak(userId, 'global', globalAfter.displayRating);
+          nrsUpdateVelocity(userId, domain, domainResult.delta);
+          nrsUpdateVelocity(userId, 'global', scaledDelta);
+
+          const excess = domainResult.performanceScore - domainResult.expectedPerformance;
+          checkSmurfSignals(userId, excess, domainResult.sessionsCount);
+          nrsUpdateTilt(userId, domainResult.performanceScore, sessionData);
+
+          const newRank = NRS.displayRatingToRank(globalAfter.displayRating, globalAfter.sessionsCount);
+          // users.elo / competitive_matches / competitive_rank are a DERIVED MIRROR of the global
+          // rating, written only via this shared helper (and by the duel path).
+          syncCompetitiveMirror(userId, () =>
+            callback(null, {
+              domain: {
+                name: domain,
+                displayRating: domainResult.displayRating,
+                mu: +domainResult.mu.toFixed(1),
+                sigma: +domainResult.sigma.toFixed(1),
+                delta: +domainResult.delta.toFixed(1),
+                performanceScore: +domainResult.performanceScore.toFixed(3),
+                explanation: domainExplanation,
+              },
+              global: {
+                displayRating: globalAfter.displayRating,
+                mu: +globalAfter.mu.toFixed(1),
+                sigma: +globalAfter.sigma.toFixed(1),
+                delta: +scaledDelta.toFixed(1),
+                rank: newRank,
+                explanation: globalExplanation,
+              },
+            })
+          );
+        });
+      });
+    });
+  });
+}
+
 module.exports = {
   getRatingRow,
+  applySoloSessionToRatings,
   persistRatingUpdate,
   maybeUpdateSeasonPeak,
   nrsUpdateVelocity,

@@ -19,6 +19,7 @@ const { attachTipToProblem } = require('../services/tipService');
 const { updateAchievements } = require('../services/achievementService');
 const { updateCommitmentAndBurnout } = require('../services/commitmentService');
 const { grantRankRewards } = require('../services/rankRewardService');
+const { applySoloSessionToRatings } = require('../services/ratingService');
 const { ACTIVATION_THRESHOLD, ACTIVATION_WINDOW_DAYS } = require('../lib/activation');
 
 const LearnerModel = require('../mathEngine/learnerModel');
@@ -449,6 +450,10 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
         withheld: false,
         user,
         solved,
+        servedCount: ticket.servedCount,
+        rewardLevel,
+        speedBonus: base.speedBonus,
+        comboBonus: base.comboBonus,
         levelLocked,
         factor,
         xpGained,
@@ -511,6 +516,35 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
   }
 
   const solved = r.solved;
+
+  // Solo + duels move ONE rating per domain (docs/specs/Spec-RatingUnification.md). A level session
+  // is rating evidence at its (lock-checked) level; every input here is server-anchored by the
+  // ticket. Other solo modes are practice and stay rating-neutral. Best-effort: a rating hiccup
+  // never fails the reward.
+  const rating =
+    mode === 'level'
+      ? await new Promise((resolve) =>
+          applySoloSessionToRatings(
+            userId,
+            {
+              category,
+              level: r.rewardLevel,
+              solvedCount: solved,
+              totalProblems: r.servedCount,
+              errorsCount,
+              speedBonus: r.speedBonus,
+              comboBonus: r.comboBonus,
+              usedCalculator: !!body.usedCalculator,
+              gameMode: 'level',
+            },
+            (err, result) => {
+              if (err) logger.error('[Complete-Rating]', err.message);
+              resolve(err ? null : result);
+            }
+          )
+        )
+      : null;
+
   updateCommitmentAndBurnout(userId, solved, () => {
     // Set when this session's solves push the category's lifetime-correct count across a mastery
     // milestone — the client turns it into the signature "mastery-up" moment (ultra-review #20).
@@ -553,6 +587,9 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
             rewardWithheld: false,
             levelLocked: r.levelLocked,
             faucetFactor: r.factor,
+            // The session's rating movement (level mode): domain + global display rating, delta and
+            // the plain-language explanation — the post-session "why did my rating change" surface.
+            rating,
           });
         });
       });

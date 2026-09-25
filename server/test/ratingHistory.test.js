@@ -1,6 +1,7 @@
 // Competitive history (Phase 2 identity): GET /api/rating/history is the rating timeline that powers
-// the "rating over time" card. It must return camelCase fields, newest first. A rated session is
-// produced through the real /api/rating/session path so this is an end-to-end contract check.
+// the "rating over time" card. It must return camelCase fields, newest first. Rated sessions are
+// produced through the real solo rating path (services/ratingService.applySoloSessionToRatings,
+// what POST /api/math/complete calls for a level session).
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const { bootServer, shutdown, api, registerUser } = require('./helpers');
@@ -12,8 +13,12 @@ after(async () => { await shutdown(ctx); });
 test('rating history returns camelCase rated results, newest first', async () => {
   const u = await registerUser(ctx.base);
   const sessionBody = { category: 'algebra', level: 12, solvedCount: 5, totalProblems: 5, errorsCount: 0, speedBonus: 10, comboBonus: 15, gameMode: 'level' };
-  await api(ctx.base, 'POST', '/api/rating/session', { token: u.token, body: sessionBody });
-  await api(ctx.base, 'POST', '/api/rating/session', { token: u.token, body: { ...sessionBody, level: 13 } });
+  const rate = (body) =>
+    new Promise((res, rej) =>
+      require('../services/ratingService').applySoloSessionToRatings(u.user.id, body, (e, r) => (e ? rej(e) : res(r)))
+    );
+  await rate(sessionBody);
+  await rate({ ...sessionBody, level: 13 });
 
   const res = await api(ctx.base, 'GET', '/api/rating/history?domain=global&limit=5', { token: u.token });
   assert.equal(res.status, 200);
