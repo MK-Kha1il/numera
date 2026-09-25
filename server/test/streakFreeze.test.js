@@ -31,24 +31,27 @@ async function waitFor(fn, tries = 60, delay = 20) {
 const login = (u) => api(ctx.base, 'POST', '/api/auth/login', { body: { username: u.username, password: u.password } });
 const giveShields = (id, qty) =>
   dbRun("INSERT INTO user_utilities (user_id, item_id, quantity) VALUES (?, 'item_streak_shield', ?)", [id, qty]);
-// Make the user look like they missed `days` days, with the given streak/state.
-const setStale = (id, streak, days, state = 'active') =>
-  dbRun('UPDATE users SET streak = ?, commitment_state = ?, last_active = ? WHERE id = ?',
-    [streak, state, nowSec() - Math.round(days * DAY), id]);
+// Make the user look like their streak was last credited `daysAgo` LOCAL calendar days ago (the
+// streak is calendar-day based — lib/streak.js; no tz reported, so local = UTC). daysAgo = 2 means
+// exactly one missed day; daysAgo = 4 means three.
+const setStale = (id, streak, daysAgo, state = 'active') =>
+  dbRun('UPDATE users SET streak = ?, commitment_state = ?, streak_day = ?, last_active = ? WHERE id = ?',
+    [streak, state, Math.floor(nowSec() / DAY) - daysAgo, nowSec() - daysAgo * DAY, id]);
 
 // ---- A held shield preserves the streak and is consumed transactionally ----------
 test('missed day + a shield held: streak is preserved, shield consumed, save notified', async () => {
   const u = await registerUser(ctx.base);
   const id = await idOf(u.username);
-  await setStale(id, 5, 2.5);     // missed a day (>2d, <3d)
+  await setStale(id, 5, 2);       // missed exactly one day
   await giveShields(id, 1);
 
   const res = await login(u);
   assert.equal(res.status, 200, 'login should succeed');
 
-  const after = await dbGet('SELECT streak, commitment_state FROM users WHERE id = ?', [id]);
+  const after = await dbGet('SELECT streak, commitment_state, streak_day FROM users WHERE id = ?', [id]);
   assert.equal(after.streak, 5, 'streak must be preserved by the shield');
   assert.equal(after.commitment_state, 'protected', 'state should flip to protected');
+  assert.equal(after.streak_day, Math.floor(nowSec() / DAY) - 1, 'the shield bridges the missed day');
 
   const util = await dbGet("SELECT quantity FROM user_utilities WHERE user_id = ? AND item_id = 'item_streak_shield'", [id]);
   assert.equal(util.quantity, 0, 'exactly one shield should be consumed');
@@ -66,7 +69,7 @@ test('missed day + a shield held: streak is preserved, shield consumed, save not
 test('missed several days with no shield: streak resets to 0', async () => {
   const u = await registerUser(ctx.base);
   const id = await idOf(u.username);
-  await setStale(id, 7, 4);       // >3d gap, no shield -> hard reset
+  await setStale(id, 7, 4);       // missed three days, no shield -> hard reset
 
   const res = await login(u);
   assert.equal(res.status, 200);
@@ -80,7 +83,7 @@ test('missed several days with no shield: streak resets to 0', async () => {
 test('missed a day with no shield (within grace): streak survives as fading', async () => {
   const u = await registerUser(ctx.base);
   const id = await idOf(u.username);
-  await setStale(id, 4, 2.5);     // >2d, <3d, no shield -> fading (climb preserved for recovery)
+  await setStale(id, 4, 2);       // one missed day, no shield -> fading (climb preserved for recovery)
 
   await login(u);
 
@@ -93,7 +96,7 @@ test('missed a day with no shield (within grace): streak survives as fading', as
 test('missed day with a shield but zero streak: the shield is NOT spent', async () => {
   const u = await registerUser(ctx.base);
   const id = await idOf(u.username);
-  await setStale(id, 0, 2.5);
+  await setStale(id, 0, 2);
   await giveShields(id, 1);
 
   await login(u);

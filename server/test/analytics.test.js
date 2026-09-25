@@ -54,13 +54,17 @@ test('the summary rollup is admin-only and aggregates totals', async () => {
   assert.ok(sum.body.totals.find((t) => t.event === 'game_finish').total === 1);
 });
 
-// /complete clamps solvedCount to 5, so pre-seed solved_count to cross the threshold in one call.
-const complete = (token, body) => api(ctx.base, 'POST', '/api/math/complete', { token, body: { solvedCount: 5, category: 'arithmetic', level: 1, gameMode: 'level', xpGained: 0, coinsGained: 0, errorsCount: 1, ...body } });
+// A level completion must follow a real serve (it consumes the serve ticket) and solves are capped
+// at the 3 problems served, so pre-seed solved_count to cross the threshold in one call.
+const complete = async (token, body) => {
+  await api(ctx.base, 'GET', '/api/math/problems?category=arithmetic&level=1&count=3', { token });
+  return api(ctx.base, 'POST', '/api/math/complete', { token, body: { solvedCount: 3, category: 'arithmetic', level: 1, gameMode: 'level', errorsCount: 1, ...body } });
+};
 
 test('a learner who clears the bar within the window is marked activated', async () => {
   const u = await registerUser(ctx.base); // registration stamps created_at = now
   const id = await idOf(u.username);
-  await dbRun('UPDATE users SET solved_count = 9 WHERE id = ?', [id]); // +5 from one complete → 14 ≥ 10
+  await dbRun('UPDATE users SET solved_count = 9 WHERE id = ?', [id]); // +3 from one complete → 12 ≥ 10
 
   const r = await complete(u.token);
   assert.equal(r.status, 200);

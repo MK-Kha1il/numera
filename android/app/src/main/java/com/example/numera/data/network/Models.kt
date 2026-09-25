@@ -465,9 +465,12 @@ data class ClaimQuestResponse(
     val rank: String
 )
 
+// The server grades `answer` against the day's pinned puzzle (routes/dailyPuzzle.js); `correct` is
+// kept only for wire compatibility and is ignored.
 @Serializable
 data class DailyPuzzleSubmitRequest(
-    val correct: Boolean
+    val correct: Boolean,
+    val answer: String? = null
 )
 
 @Serializable
@@ -965,19 +968,6 @@ data class BlockedUser(
     val userId: Int,
     val username: String,
     val created_at: Long = 0
-)
-
-@Serializable
-data class AssessmentSubmitRequest(
-    val score: Int
-)
-
-@Serializable
-data class AssessmentSubmitResponse(
-    val success: Boolean,
-    val assignedLevel: Int,
-    val assignedRank: String,
-    val rewardsUnlocked: List<String>
 )
 
 @Serializable

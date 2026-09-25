@@ -34,6 +34,8 @@ test('progress, done-states, claimable count and streak safety reflect the quest
     'UPDATE user_quests SET solved_today = 5, duels_today = 1, daily_puzzle_today = 1 WHERE user_id = ?',
     [user.id]
   );
+  // Streak safety is the streak engine's credited day (lib/streak.js); no tz reported → UTC day.
+  await run('UPDATE users SET streak = 1, streak_day = ? WHERE id = ?', [Math.floor(Date.now() / 86400000), user.id]);
 
   const { status, body } = await api(ctx.base, 'GET', '/api/today', { token });
   assert.strictEqual(status, 200);

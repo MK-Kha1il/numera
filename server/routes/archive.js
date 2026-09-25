@@ -6,6 +6,7 @@ const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { generateArchiveProblem, getLessonForArchive } = require('../mathGenerator');
 const { attachTipToProblem } = require('../services/tipService');
+const { issueSoloTicket } = require('../services/soloSessionService');
 const ExerciseMemory = require('../mathEngine/exerciseMemory');
 const LessonSafety = require('../mathEngine/lessonSafety');
 
@@ -101,6 +102,8 @@ router.get('/api/archive/search', authenticateToken, async (req, res) => {
     ExerciseMemory.pruneExposures(db, userId).catch(() => {});
 
     results = results.map((item) => attachTipToProblem(item, true));
+    // One serve ticket for the page: each listed puzzle can be played (and paid) once.
+    await issueSoloTicket(userId, { mode: 'archive_puzzle', servedCount: 1, uses: results.length });
     res.json(results);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -125,7 +128,7 @@ router.get('/api/legacy/puzzles', authenticateToken, (req, res) => {
         category: r.category || 'arithmetic',
         stars: r.stars || 3,
       }));
-      res.json(formatted);
+      issueSoloTicket(req.user.id, { mode: 'legacy_puzzle', servedCount: 1 }).then(() => res.json(formatted));
     }
   );
 });

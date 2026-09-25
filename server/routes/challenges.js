@@ -15,6 +15,8 @@ const { checkText } = require('../lib/contentFilter');
 const { generateProblem, CONCEPT_TO_LEVEL } = require('../mathGenerator');
 const KnowledgeGraph = require('../mathEngine/knowledgeGraph');
 
+const { creditStreak } = require('../services/streakService');
+
 const router = express.Router();
 
 const TITLE_MIN = 3;
@@ -200,6 +202,7 @@ router.post('/api/challenges/:code/play', authenticateToken, (req, res) => {
     return { challengeId: ch.id, alreadyPlayed: false, score, elapsedMs, total: problems.length };
   })
     .then(async (payload) => {
+      if (!payload.alreadyPlayed && payload.score > 0) await creditStreak(req.user.id); // a solve keeps today's streak alive
       const board = await leaderboard(payload.challengeId);
       const { challengeId, ...rest } = payload;
       res.json({ ...rest, leaderboard: board });

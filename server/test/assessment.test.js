@@ -67,3 +67,21 @@ test('guards: unknown session 404, and answering a finished diagnostic is reject
   const after = await api(ctx.base, 'POST', '/api/assessment/adaptive/answer', { token: u.token, body: { sessionId, answer: 'x' } });
   assert.equal(after.status, 400, 'cannot answer a completed diagnostic');
 });
+
+test('placement never demotes: an all-wrong retake keeps the level already earned', async () => {
+  const u = await registerUser(ctx.base);
+  const uid = await idOf(u.username);
+  await new Promise((res, rej) => ctx.mod.db.run('UPDATE users SET level = 25 WHERE id = ?', [uid], (e) => (e ? rej(e) : res())));
+  const { final } = await runDiagnostic(u.token, async () => 'definitely-wrong');
+  assert.equal(final.done, true);
+  assert.ok(final.placedLevel < 25, 'the diagnostic itself placed low');
+  assert.equal(await levelOf(uid), 25, 'but the learner keeps their progress');
+  assert.equal(final.level, 25);
+});
+
+test('the legacy client-scored placement endpoint is gone', async () => {
+  const u = await registerUser(ctx.base);
+  const r = await api(ctx.base, 'POST', '/api/assessment/submit', { token: u.token, body: { score: 10 } });
+  assert.equal(r.status, 404);
+  assert.equal(await levelOf(await idOf(u.username)), 1, 'no free level-up');
+});

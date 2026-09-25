@@ -10,6 +10,7 @@ const MasteryEngine = require('../mathEngine/masteryEngine');
 const LearnerModel = require('../mathEngine/learnerModel');
 const { concepts } = require('../mathEngine/knowledgeGraph');
 const { attachTipToProblem } = require('../services/tipService');
+const { issueSoloTicket } = require('../services/soloSessionService');
 const logger = require('../logger');
 
 const router = express.Router();
@@ -69,6 +70,7 @@ router.get('/api/math/transfer/challenge', authenticateToken, async (req, res) =
       templateType: conceptId,
     }, false);
 
+    await issueSoloTicket(req.user.id, { mode: 'transfer_challenge', servedCount: 1 });
     res.json({
       conceptId,
       conceptName: (concepts[conceptId] && concepts[conceptId].name) || conceptId,

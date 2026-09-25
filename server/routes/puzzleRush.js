@@ -13,6 +13,9 @@ const { generateProblem } = require('../mathGenerator');
 const { assessAnswer, verdictForRun } = require('../services/integrityEngine');
 const { feedEngineOutcome } = require('../services/engineFeed');
 
+const { creditStreak } = require('../services/streakService');
+const { ensureDailyReset } = require('../services/userService');
+
 const router = express.Router();
 
 const STARTING_LIVES = 3;
@@ -73,7 +76,8 @@ router.post('/api/puzzle-rush/submit', authenticateToken, idempotency, (req, res
   // analytics write never entangles or delays the reward transaction).
   let feed = null;
 
-  withTransaction(async (tx) => {
+  // Daily reset first, so a run finished past local midnight credits today's "Rush Hour" quest.
+  ensureDailyReset(userId).then(() => withTransaction(async (tx) => {
     const run = await tx.get('SELECT * FROM puzzle_rush_runs WHERE id = ? AND user_id = ?', [runId, userId]);
     if (!run) throw httpError(404, 'Run not found');
     if (run.status !== 'active') throw httpError(400, 'Run already finished');
@@ -138,8 +142,10 @@ router.post('/api/puzzle-rush/submit', authenticateToken, idempotency, (req, res
       index: nextIndex,
       problem: { question: prob.question, options: prob.options },
     };
-  })
-    .then((payload) => {
+  }))
+    .then(async (payload) => {
+      // A correct answer is a solve: it keeps today's streak alive (idempotent per day).
+      if (feed && feed.correct) await creditStreak(userId);
       // Feed the engine fire-and-forget (concept attributed via the stored template type) so
       // competitive play now strengthens mastery/retention/Growth Insights just like solo play.
       if (feed && feed.conceptKey) {

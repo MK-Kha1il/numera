@@ -134,4 +134,16 @@ function normalizeLevelForGenerator(category, level) {
   }
 }
 
-module.exports = { calculateRank, calculateRankFromElo, getRankValue, normalizeLevelForGenerator };
+// Apply an XP gain to (xp-into-level, level): each level costs `level * 100` XP, carried over.
+// The single copy of the level-up loop that used to be pasted into every reward route.
+function applyXp(xp, level, gained) {
+  let newXp = Math.max(0, (parseInt(xp, 10) || 0) + Math.max(0, parseInt(gained, 10) || 0));
+  let newLevel = Math.max(1, parseInt(level, 10) || 1);
+  while (newXp >= newLevel * 100) {
+    newXp -= newLevel * 100;
+    newLevel += 1;
+  }
+  return { xp: newXp, level: newLevel };
+}
+
+module.exports = { calculateRank, calculateRankFromElo, getRankValue, normalizeLevelForGenerator, applyXp };

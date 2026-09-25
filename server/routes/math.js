@@ -10,7 +10,10 @@ const { idempotency } = require('../idempotency');
 const { securityLog } = require('../middleware/security');
 const { generateProblem, getLessonAndExamples } = require('../mathGenerator');
 const { runIngestionPipeline } = require('../mathEngine/knowledgeIngestion');
-const { normalizeLevelForGenerator } = require('../lib/progression');
+const { normalizeLevelForGenerator, applyXp } = require('../lib/progression');
+const { SOLO_MODES, normalizeMode, faucetFactor, baseReward } = require('../lib/soloRewards');
+const { withTransaction, httpError } = require('../dbx');
+const { ensureDailyReset } = require('../services/userService');
 const { notify } = require('../services/notificationService');
 const { attachTipToProblem } = require('../services/tipService');
 const { updateAchievements } = require('../services/achievementService');
@@ -30,6 +33,7 @@ const { buildErrorDetectionSet } = require('../mathEngine/errorDetection');
 const { buildSelfExplainJson } = require('../mathEngine/selfExplainEngine');
 const { buildWorkedExampleJson } = require('../mathEngine/workedExampleEngine');
 const { feedEngineOutcome } = require('../services/engineFeed');
+const { issueSoloTicket, consumeSoloTicket } = require('../services/soloSessionService');
 const logger = require('../logger');
 
 const router = express.Router();
@@ -161,6 +165,9 @@ router.get('/api/math/problems', authenticateToken, async (req, res) => {
     // Keep the memory table bounded (best-effort, fire-and-forget).
     ExerciseMemory.pruneExposures(db, userId).catch(() => {});
 
+    // Serve ticket: a level-mode /complete for this level must follow a real serve.
+    await issueSoloTicket(userId, { mode: 'level', level, servedCount: problems.length });
+
     res.json({
       category,
       level,
@@ -289,8 +296,48 @@ router.post('/api/math/calculator/log', authenticateToken, (req, res) => {
 // Per-user cooldown guarding against rapid-fire completion replays.
 const completionCooldowns = new Map();
 
-// Update user stats after a successful game session
-router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => {
+// Normalized strand category → its lifetime-correct column in user_mastery (fixed allowlist, so
+// interpolating the column name into SQL is safe). "mixed" sets credit no single strand.
+const MASTERY_COL_BY_CAT = {
+  arithmetic: 'arithmetic_correct',
+  mental: 'mental_correct',
+  algebra: 'algebra_correct',
+  calculus: 'calculus_correct',
+  combinatorics: 'combinatorics_correct',
+  'number theory': 'number_theory_correct',
+  number_theory: 'number_theory_correct',
+  // Curriculum strands (migration v27 columns) — without these, strand solves were silently
+  // dropped from mastery tracking and their achievement chains.
+  geometry: 'geometry_correct',
+  integers: 'integers_correct',
+  decimals: 'decimals_correct',
+  fractions: 'fractions_correct',
+  'number sense': 'number_sense_correct',
+  number_sense: 'number_sense_correct',
+  statistics: 'statistics_correct',
+  expressions: 'expressions_correct',
+  powers: 'powers_correct',
+  graphing: 'graphing_correct',
+  inequalities: 'inequalities_correct',
+  functions: 'functions_correct',
+  sequences: 'sequences_correct',
+  equations: 'equations_correct',
+  rates: 'rates_correct',
+  factors: 'factors_correct',
+};
+
+// Finalize a solo session. Server-authoritative (lib/soloRewards.js): the client reports only what
+// happened (mode, level, solves, errors, bonuses) and the server decides what it is worth.
+//   - The completion must consume a serve ticket for the same mode (+ level in level mode) issued
+//     when the problems were served; without one nothing is granted (rewardWithheld).
+//   - Solves are capped at the problems that ticket served (and a zero-solve session is zero —
+//     the old `parseInt(x) || 5` turned 0 into 5).
+//   - A level above the learner's unlocked level can't be "completed" (levelLocked): no
+//     progression jump, rewards at their own level.
+//   - Coins/league points taper after the day's first sessions (faucetFactor); XP never does.
+// The grant, the ticket and the counters commit in ONE transaction; everything else (mastery,
+// streak, achievements) fans out after the commit.
+router.post('/api/math/complete', authenticateToken, idempotency, async (req, res) => {
   const userId = req.user.id;
   const nowMs = Date.now();
   if (completionCooldowns.has(userId)) {
@@ -302,256 +349,233 @@ router.post('/api/math/complete', authenticateToken, idempotency, (req, res) => 
   }
   completionCooldowns.set(userId, nowMs);
 
-  const { xpGained, coinsGained, category, level, errorsCount, gameMode, totalTime } = req.body;
-  let { solvedCount, speedBonus, comboBonus } = req.body;
+  const body = req.body || {};
+  const mode = normalizeMode(body.gameMode);
+  const rules = SOLO_MODES[mode];
+  const category = body.category || 'arithmetic';
+  const parsedLevel = mode === 'level' ? Math.max(1, parseInt(body.level, 10) || 1) : null;
+  const errorsCount = Math.min(Math.max(parseInt(body.errorsCount, 10) || 0, 0), 1000);
+  const claimedSolved = Math.min(Math.max(parseInt(body.solvedCount, 10) || 0, 0), rules.maxProblems);
+  const totalTime = parseInt(body.totalTime, 10);
 
-  // Clamp incoming metrics bounds to prevent client spoofing
-  solvedCount = Math.min(Math.max(parseInt(solvedCount, 10) || 5, 0), 5);
-  speedBonus = Math.min(Math.max(parseInt(speedBonus, 10) || 0, 0), 20);
-  comboBonus = Math.min(Math.max(parseInt(comboBonus, 10) || 0, 0), 15);
+  // Progress earned after local midnight must land on today's quest row.
+  await ensureDailyReset(userId);
 
-  db.get(`SELECT * FROM users WHERE id = ?`, [req.user.id], (err, user) => {
-    if (err || !user) return res.status(500).json({ error: 'User not found' });
+  let r;
+  try {
+    r = await withTransaction(async (tx) => {
+      const user = await tx.get('SELECT * FROM users WHERE id = ?', [userId]);
+      if (!user) throw httpError(404, 'User not found');
 
-    // APRA Algorithm calculations
-    let baseXP = parseInt(xpGained, 10) || 20;
-    let baseCoins = parseInt(coinsGained, 10) || 5;
+      const ticket = await consumeSoloTicket(tx, userId, mode, parsedLevel);
+      if (!ticket) return { withheld: true, user };
 
-    // Clamp to prevent user manipulation when level is absent
-    if (baseXP < 0 || baseXP > 100) baseXP = 20;
-    if (baseCoins < 0 || baseCoins > 50) baseCoins = 5;
+      const solved = Math.min(claimedSolved, ticket.servedCount);
+      const levelLocked = mode === 'level' && parsedLevel > user.level;
+      const rewardLevel = mode === 'level' ? Math.min(parsedLevel, user.level) : null;
 
-    const parsedLevel = parseInt(level, 10);
-    if (!isNaN(parsedLevel) && parsedLevel > 0) {
-      // Logarithmic difficulty scaling
-      baseXP = 15 + Math.round(5 * Math.log2(parsedLevel)) + speedBonus + comboBonus;
-      baseCoins = 5 + Math.round(2 * Math.log2(parsedLevel)) + Math.round(speedBonus / 2) + Math.round(comboBonus / 3);
+      const q = await tx.get('SELECT solo_sessions_today, daily_puzzle_today FROM user_quests WHERE user_id = ?', [userId]);
+      const factor = faucetFactor(((q && q.solo_sessions_today) || 0) + 1);
 
-      // Milestone level double multiplier
-      if (parsedLevel % 10 === 0) {
-        baseXP = Math.round(baseXP * 2.0);
-        baseCoins = Math.round(baseCoins * 2.0);
+      const base = baseReward({
+        mode,
+        level: rewardLevel,
+        solvedCount: solved,
+        errorsCount,
+        servedCount: ticket.servedCount,
+        speedBonus: body.speedBonus,
+        comboBonus: body.comboBonus,
+      });
+
+      // Modifiers: streak ×1.5 XP (3+ day streak), 10% critical ×2 coins, XP booster ×2 (only spent
+      // when there is XP to boost), then the coin taper.
+      let xpGained = base.xp;
+      const streakBonusActive = xpGained > 0 && (user.streak || 0) >= 3;
+      if (streakBonusActive) xpGained = Math.round(xpGained * 1.5);
+      const criticalBonusActive = base.coins > 0 && Math.random() < 0.1;
+      let coinsGained = criticalBonusActive ? base.coins * 2 : base.coins;
+      let boosterUses = user.xp_booster_uses_left || 0;
+      const xpBoosterActive = xpGained > 0 && boosterUses > 0;
+      if (xpBoosterActive) {
+        xpGained = Math.round(xpGained * 2);
+        boosterUses -= 1;
       }
-    }
+      coinsGained = Math.round(coinsGained * factor);
+      const leaguePoints = Math.round(xpGained * factor);
 
-    // Accuracy Bonus (no errors/wrong answers)
-    if (errorsCount !== undefined && errorsCount !== null && parseInt(errorsCount, 10) === 0) {
-      baseXP = Math.round(baseXP * 1.2);
-      baseCoins = Math.round(baseCoins * 1.2);
-    }
-
-    // Streak Multiplier: 1.5x XP if streak >= 3
-    let streakBonusActive = false;
-    if (user.streak >= 3) {
-      baseXP = Math.round(baseXP * 1.5);
-      streakBonusActive = true;
-    }
-
-    // Critical Bonus: 10% chance to double coins
-    let criticalBonusActive = false;
-    if (Math.random() < 0.1) {
-      baseCoins = baseCoins * 2;
-      criticalBonusActive = true;
-    }
-
-    let finalXpGained = baseXP;
-    let xpBoosterActive = false;
-    let newXpBoosterUses = user.xp_booster_uses_left || 0;
-    if (newXpBoosterUses > 0) {
-      finalXpGained = Math.round(baseXP * 2);
-      xpBoosterActive = true;
-      newXpBoosterUses -= 1;
-    }
-
-    const finalCoinsGained = baseCoins;
-
-    let newXp = user.xp + finalXpGained;
-    let newLevel = user.level;
-    // XP equation for leveling up: level * 100
-    while (newXp >= newLevel * 100) {
-      newXp -= newLevel * 100;
-      newLevel += 1;
-    }
-
-    // Level progression node unlocking
-    if (level !== undefined && level !== null) {
-      if (!isNaN(parsedLevel) && parsedLevel >= user.level) {
+      const progressed = applyXp(user.xp, user.level, xpGained);
+      let newLevel = progressed.level;
+      // Clearing the frontier level (with at least one solve) unlocks the next one.
+      if (mode === 'level' && !levelLocked && solved > 0 && parsedLevel >= user.level) {
         newLevel = Math.max(newLevel, parsedLevel + 1);
-        if (newXp >= newLevel * 100) {
-          newXp = newXp % (newLevel * 100);
-        }
       }
-    }
 
-    const currentRank = user.rank || 'Unranked (Placement: 0/5)';
-    const newCoins = user.coins + finalCoinsGained;
-    const newSolvedCount = (user.solved_count || 0) + solvedCount;
-    const newLeaguePoints = (user.league_points || 0) + finalXpGained;
-    const now = Math.floor(Date.now() / 1000);
+      const perfect = base.perfect;
+      const speedDemon =
+        mode === 'level' && !levelLocked && perfect && rewardLevel >= 30 && Number.isFinite(totalTime) && totalTime >= 0 && totalTime < 10;
 
-    let addPerfectLevels = 0;
-    let addPerfectExercises = 0;
-    if (errorsCount !== undefined && errorsCount !== null && parseInt(errorsCount, 10) === 0) {
-      addPerfectLevels = 1;
-      addPerfectExercises = solvedCount;
-    }
+      await tx.run(
+        `UPDATE users SET
+           xp = ?, level = ?, coins = coins + ?, league_points = league_points + ?,
+           solved_count = solved_count + ?, xp_booster_uses_left = ?,
+           perfect_levels_count = perfect_levels_count + ?, perfect_exercises_count = perfect_exercises_count + ?,
+           archive_solved = archive_solved + ?, speed_demon_count = CASE WHEN ? THEN 1 ELSE speed_demon_count END
+         WHERE id = ?`,
+        [
+          progressed.xp,
+          newLevel,
+          coinsGained,
+          leaguePoints,
+          solved,
+          boosterUses,
+          perfect ? 1 : 0,
+          perfect ? solved : 0,
+          mode === 'archive_puzzle' ? solved : 0,
+          speedDemon ? 1 : 0,
+          userId,
+        ]
+      );
+      await tx.run('UPDATE user_quests SET solved_today = solved_today + ?, solo_sessions_today = solo_sessions_today + 1 WHERE user_id = ?', [
+        solved,
+        userId,
+      ]);
 
-    let addArchiveSolved = 0;
-    if (gameMode === 'archive') {
-      addArchiveSolved = solvedCount;
-    }
+      // The daily puzzle's reward was paid (once, server-graded) by its submit endpoint; echo it for
+      // the recap without granting it again.
+      const echo = base.paidElsewhere && solved > 0 && q && q.daily_puzzle_today >= 1 ? rules.echo : null;
 
-    let setSpeedDemon = user.speed_demon_count || 0;
-    if (totalTime !== undefined && totalTime !== null && parseInt(totalTime, 10) < 10 && parsedLevel >= 30 && errorsCount === 0) {
-      setSpeedDemon = 1;
-    }
-
-    db.run(
-      `UPDATE users SET
-         xp = ?,
-         level = ?,
-         coins = ?,
-         rank = ?,
-         solved_count = ?,
-         league_points = ?,
-         xp_booster_uses_left = ?,
-         perfect_levels_count = perfect_levels_count + ?,
-         perfect_exercises_count = perfect_exercises_count + ?,
-         archive_solved = archive_solved + ?,
-         speed_demon_count = ?
-       WHERE id = ?`,
-      [
-        newXp,
+      return {
+        withheld: false,
+        user,
+        solved,
+        levelLocked,
+        factor,
+        xpGained,
+        coinsGained,
+        echo,
+        streakBonusActive,
+        criticalBonusActive,
+        xpBoosterActive,
+        boosterUses,
+        newXp: progressed.xp,
         newLevel,
-        newCoins,
-        currentRank,
-        newSolvedCount,
-        newLeaguePoints,
-        newXpBoosterUses,
-        addPerfectLevels,
-        addPerfectExercises,
-        addArchiveSolved,
-        setSpeedDemon,
-        req.user.id,
-      ],
-      (updateErr) => {
-        if (updateErr) return res.status(500).json({ error: updateErr.message });
+        newCoins: (user.coins || 0) + coinsGained,
+      };
+    });
+  } catch (err) {
+    return res.status(err.status || 500).json({ error: err.status ? err.message : 'Could not save the session.' });
+  }
 
-        // Activation marker (ultra review #23): stamp activated_at the first time the learner clears
-        // the bar (N solves) inside the signup window. Conditional UPDATE so it fires at most once and
-        // needs no read-back; fire-and-forget so it never delays the reward response.
-        db.run(
-          'UPDATE users SET activated_at = ? WHERE id = ? AND activated_at = 0 AND created_at > 0 AND solved_count >= ? AND (? - created_at) <= ?',
-          [now, req.user.id, ACTIVATION_THRESHOLD, now, ACTIVATION_WINDOW_DAYS * 86400]
-        );
+  const currentRank = r.user.rank || 'Unranked (Placement: 0/5)';
 
-        if (newLevel > user.level) {
-          notify(req.user.id, {
-            category: 'levelup',
-            title: 'Level Up! 🌟',
-            message: `Congratulations! You reached Level ${newLevel}. Keep climbing!`,
-            type: 'levelup',
-          });
-        }
+  if (r.withheld) {
+    securityLog(userId, 'COMPLETION_WITHOUT_SERVE', req.ip, `Solo completion (${mode}) with no matching serve ticket — reward withheld.`);
+    return res.json({
+      xp: r.user.xp,
+      level: r.user.level,
+      coins: r.user.coins,
+      rank: currentRank,
+      levelUp: false,
+      streakBonusActive: false,
+      xpGained: 0,
+      coinsGained: 0,
+      criticalBonusActive: false,
+      xpBoosterActive: false,
+      xpBoosterUsesLeft: r.user.xp_booster_uses_left || 0,
+      masteryMilestone: null,
+      rewardWithheld: true,
+    });
+  }
 
-        updateCommitmentAndBurnout(req.user.id, solvedCount, () => {
-          // Update user_quests and user_mastery
-          db.run('UPDATE user_quests SET solved_today = solved_today + ? WHERE user_id = ?', [solvedCount, req.user.id], () => {
-            let masteryCol = null;
-            // Set when this level's solves push the category's lifetime-correct count across a
-            // mastery milestone — the client turns it into the signature "mastery-up" moment
-            // (ultra-review #20: learning events deserve celebration at parity with activity).
-            let masteryMilestone = null;
-            const normCat = (category || 'arithmetic').toLowerCase();
-            if (normCat === 'arithmetic') masteryCol = 'arithmetic_correct';
-            else if (normCat === 'mental') masteryCol = 'mental_correct';
-            else if (normCat === 'algebra') masteryCol = 'algebra_correct';
-            else if (normCat === 'calculus') masteryCol = 'calculus_correct';
-            else if (normCat === 'combinatorics') masteryCol = 'combinatorics_correct';
-            else if (normCat === 'number theory' || normCat === 'number_theory') masteryCol = 'number_theory_correct';
-            // Curriculum strands (migration v27 columns) — without these, strand solves
-            // were silently dropped from mastery tracking and their achievement chains.
-            else if (normCat === 'geometry') masteryCol = 'geometry_correct';
-            else if (normCat === 'integers') masteryCol = 'integers_correct';
-            else if (normCat === 'decimals') masteryCol = 'decimals_correct';
-            else if (normCat === 'fractions') masteryCol = 'fractions_correct';
-            else if (normCat === 'number sense' || normCat === 'number_sense') masteryCol = 'number_sense_correct';
-            else if (normCat === 'statistics') masteryCol = 'statistics_correct';
-            else if (normCat === 'expressions') masteryCol = 'expressions_correct';
-            else if (normCat === 'powers') masteryCol = 'powers_correct';
-            else if (normCat === 'graphing') masteryCol = 'graphing_correct';
-            else if (normCat === 'inequalities') masteryCol = 'inequalities_correct';
-            else if (normCat === 'functions') masteryCol = 'functions_correct';
-            else if (normCat === 'sequences') masteryCol = 'sequences_correct';
-            else if (normCat === 'equations') masteryCol = 'equations_correct';
-            else if (normCat === 'rates') masteryCol = 'rates_correct';
-            else if (normCat === 'factors') masteryCol = 'factors_correct';
+  if (r.levelLocked) {
+    securityLog(userId, 'LOCKED_LEVEL_COMPLETION', req.ip, `Claimed completion of level ${parsedLevel} while unlocked up to ${r.user.level}.`);
+  }
 
-            const finalizeResponse = () => {
-              // Fire-and-forget: update competitive skill profile for the concepts practised this level
-              (async () => {
-                try {
-                  const conceptIds = Orchestrator.getCategoryConceptIds(category, parsedLevel);
-                  const accuracy = solvedCount > 0 && errorsCount !== undefined ? Math.max(0, (solvedCount - parseInt(errorsCount, 10)) / solvedCount) : 0.5;
-                  const outcome = accuracy >= 0.8 ? 1 : accuracy >= 0.5 ? 0.5 : 0;
-                  for (const cId of conceptIds.slice(0, 2)) {
-                    await CompetitiveEngine.updateCompetitiveRating(db, req.user.id, cId, outcome);
-                  }
-                } catch (e) {
-                  logger.error('[Complete-CompetitiveEngine]', e.message);
-                }
-              })();
+  const now = Math.floor(Date.now() / 1000);
+  // Activation marker (ultra review #23): stamp activated_at the first time the learner clears
+  // the bar (N solves) inside the signup window. Conditional UPDATE so it fires at most once.
+  db.run(
+    'UPDATE users SET activated_at = ? WHERE id = ? AND activated_at = 0 AND created_at > 0 AND solved_count >= ? AND (? - created_at) <= ?',
+    [now, userId, ACTIVATION_THRESHOLD, now, ACTIVATION_WINDOW_DAYS * 86400]
+  );
 
-              grantRankRewards(req.user.id, currentRank, () => {
-                updateAchievements(req.user.id, () => {
-                  res.json({
-                    xp: newXp,
-                    level: newLevel,
-                    coins: newCoins,
-                    rank: currentRank,
-                    levelUp: newLevel > user.level,
-                    streakBonusActive,
-                    xpGained: finalXpGained,
-                    coinsGained: finalCoinsGained,
-                    criticalBonusActive,
-                    xpBoosterActive,
-                    xpBoosterUsesLeft: newXpBoosterUses,
-                    masteryMilestone,
-                  });
-                });
-              });
-            };
+  if (r.newLevel > r.user.level) {
+    notify(userId, {
+      category: 'levelup',
+      title: 'Level Up! 🌟',
+      message: `Congratulations! You reached Level ${r.newLevel}. Keep climbing!`,
+      type: 'levelup',
+    });
+  }
 
-            if (masteryCol) {
-              // Read the pre-solve count so we can detect a milestone *crossing* (not just a
-              // threshold being met repeatedly). masteryCol comes from the fixed allowlist above,
-              // never user input, so the interpolation is safe.
-              db.get(`SELECT ${masteryCol} AS c FROM user_mastery WHERE user_id = ?`, [req.user.id], (selErr, mrow) => {
-                const oldCount = (mrow && mrow.c) || 0;
-                const newCount = oldCount + solvedCount;
-                for (let i = MASTERY_MILESTONES.length - 1; i >= 0; i--) {
-                  const m = MASTERY_MILESTONES[i];
-                  if (oldCount < m.count && newCount >= m.count) {
-                    masteryMilestone = { category: normCat, label: m.label, count: m.count };
-                    break;
-                  }
-                }
-                // Crossing "Mastered" (100) earns the strand's Mastery Frame — granted, never sold.
-                const frameId = MASTERY_FRAME_BY_CAT[normCat];
-                if (frameId && oldCount < MASTERY_FRAME_THRESHOLD && newCount >= MASTERY_FRAME_THRESHOLD) {
-                  db.run('INSERT OR IGNORE INTO user_inventory (user_id, item_id) VALUES (?, ?)', [req.user.id, frameId]);
-                }
-                db.run(`UPDATE user_mastery SET ${masteryCol} = ${masteryCol} + ? WHERE user_id = ?`, [solvedCount, req.user.id], () => {
-                  finalizeResponse();
-                });
-              });
-            } else {
-              finalizeResponse();
+  const solved = r.solved;
+  updateCommitmentAndBurnout(userId, solved, () => {
+    // Set when this session's solves push the category's lifetime-correct count across a mastery
+    // milestone — the client turns it into the signature "mastery-up" moment (ultra-review #20).
+    let masteryMilestone = null;
+    const normCat = String(category).toLowerCase();
+    const masteryCol = solved > 0 ? MASTERY_COL_BY_CAT[normCat] || null : null;
+
+    const finalizeResponse = () => {
+      // Fire-and-forget: update competitive skill profile for the concepts practised this level.
+      if (mode === 'level' && solved > 0) {
+        (async () => {
+          try {
+            const conceptIds = Orchestrator.getCategoryConceptIds(category, parsedLevel);
+            const accuracy = Math.max(0, (solved - errorsCount) / solved);
+            const outcome = accuracy >= 0.8 ? 1 : accuracy >= 0.5 ? 0.5 : 0;
+            for (const cId of conceptIds.slice(0, 2)) {
+              await CompetitiveEngine.updateCompetitiveRating(db, userId, cId, outcome);
             }
+          } catch (e) {
+            logger.error('[Complete-CompetitiveEngine]', e.message);
+          }
+        })();
+      }
+
+      grantRankRewards(userId, currentRank, () => {
+        updateAchievements(userId, () => {
+          res.json({
+            xp: r.newXp,
+            level: r.newLevel,
+            coins: r.newCoins,
+            rank: currentRank,
+            levelUp: r.newLevel > r.user.level,
+            streakBonusActive: r.streakBonusActive,
+            xpGained: r.echo ? r.echo.xp : r.xpGained,
+            coinsGained: r.echo ? r.echo.coins : r.coinsGained,
+            criticalBonusActive: r.criticalBonusActive,
+            xpBoosterActive: r.xpBoosterActive,
+            xpBoosterUsesLeft: r.boosterUses,
+            masteryMilestone,
+            rewardWithheld: false,
+            levelLocked: r.levelLocked,
+            faucetFactor: r.factor,
           });
         });
+      });
+    };
+
+    if (!masteryCol) return finalizeResponse();
+    // Read the pre-solve count so we can detect a milestone *crossing* (not just a threshold being
+    // met repeatedly).
+    db.get(`SELECT ${masteryCol} AS c FROM user_mastery WHERE user_id = ?`, [userId], (selErr, mrow) => {
+      const oldCount = (mrow && mrow.c) || 0;
+      const newCount = oldCount + solved;
+      for (let i = MASTERY_MILESTONES.length - 1; i >= 0; i--) {
+        const m = MASTERY_MILESTONES[i];
+        if (oldCount < m.count && newCount >= m.count) {
+          masteryMilestone = { category: normCat, label: m.label, count: m.count };
+          break;
+        }
       }
-    );
+      // Crossing "Mastered" (100) earns the strand's Mastery Frame — granted, never sold.
+      const frameId = MASTERY_FRAME_BY_CAT[normCat];
+      if (frameId && oldCount < MASTERY_FRAME_THRESHOLD && newCount >= MASTERY_FRAME_THRESHOLD) {
+        db.run('INSERT OR IGNORE INTO user_inventory (user_id, item_id) VALUES (?, ?)', [userId, frameId]);
+      }
+      db.run(`UPDATE user_mastery SET ${masteryCol} = ${masteryCol} + ? WHERE user_id = ?`, [solved, userId], () => finalizeResponse());
+    });
   });
 });
 
@@ -616,7 +640,9 @@ router.get('/api/math/checkpoint-exam', authenticateToken, (req, res) => {
         i++;
       }
 
-      res.json({ count: problems.length, level, strands: chosen.map((s) => s.category), problems });
+      issueSoloTicket(userId, { mode: 'checkpoint_exam', servedCount: problems.length }).then(() =>
+        res.json({ count: problems.length, level, strands: chosen.map((s) => s.category), problems })
+      );
     });
   });
 });
@@ -633,7 +659,9 @@ router.get('/api/math/word-problems', authenticateToken, (req, res) => {
     if (uErr) return res.status(500).json({ error: uErr.message });
     const level = user ? user.level || 1 : 1;
     const problems = buildWordProblemSet(count, level).map(enrichAppliedProblem);
-    res.json({ count: problems.length, level, problems });
+    issueSoloTicket(userId, { mode: 'word_problems', servedCount: problems.length }).then(() =>
+      res.json({ count: problems.length, level, problems })
+    );
   });
 });
 
@@ -648,7 +676,9 @@ router.get('/api/math/estimation', authenticateToken, (req, res) => {
     if (uErr) return res.status(500).json({ error: uErr.message });
     const level = user ? user.level || 1 : 1;
     const problems = buildEstimationSet(count, level).map(enrichAppliedProblem);
-    res.json({ count: problems.length, level, problems });
+    issueSoloTicket(userId, { mode: 'estimation', servedCount: problems.length }).then(() =>
+      res.json({ count: problems.length, level, problems })
+    );
   });
 });
 
@@ -663,7 +693,9 @@ router.get('/api/math/error-detection', authenticateToken, (req, res) => {
     if (uErr) return res.status(500).json({ error: uErr.message });
     const level = user ? user.level || 1 : 1;
     const problems = buildErrorDetectionSet(count, level).map(enrichAppliedProblem);
-    res.json({ count: problems.length, level, problems });
+    issueSoloTicket(userId, { mode: 'error_detection', servedCount: problems.length }).then(() =>
+      res.json({ count: problems.length, level, problems })
+    );
   });
 });
 

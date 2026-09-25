@@ -1,10 +1,9 @@
-// Authentication: register, login (with streak/commitment + quest/league reset on entry),
+// Authentication: register, login (quest/league reset + streak settle on entry),
 // logout (session revocation), and the authenticated /me snapshot.
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { db } = require('../db');
-const { withTransaction } = require('../dbx');
 const { JWT_SECRET } = require('../config');
 const { authenticateToken } = require('../middleware/auth');
 const { notify } = require('../services/notificationService');
@@ -21,6 +20,7 @@ const { securityLog } = require('../middleware/security');
 const { hashPassword, verifyPassword, needsRehash, validatePasswordStrength } = require('../lib/passwords');
 const totp = require('../lib/totp');
 const { getUserWithMastery, checkAndResetQuestsAndLeagues } = require('../services/userService');
+const { settleStreak } = require('../services/streakService');
 const { sendMail } = require('../services/mailer');
 const { checkText } = require('../lib/contentFilter');
 const logger = require('../logger');
@@ -310,118 +310,42 @@ router.post('/api/auth/login', checkFailedLogins, checkAccountLockout, rateLimit
   });
 });
 
-// Post-password login finalize: streak/commitment update + session issuance. Shared by the
-// normal login path and the MFA second-factor exchange so both apply identical side effects.
+// Post-password login finalize: quest/league reset + streak settle + session issuance. Shared by
+// the normal login path and the MFA second-factor exchange so both apply identical side effects.
+// Logging in only SETTLES the streak (spends a Streak Shield / fades / resets for missed days —
+// services/streakService.js); a streak day is credited by actually solving something.
 function finalizeLogin(user, username, req, res) {
   checkAndResetQuestsAndLeagues(user.id, () => {
-      const now = Math.floor(Date.now() / 1000);
-      const dayInSecs = 86400;
-
-      if (user.last_active > 0) {
-        const elapsed = now - user.last_active;
-        if (elapsed > 2 * dayInSecs) {
-          // Missed a day. Streak insurance: if the learner holds a Streak Shield (the
-          // streak-freeze utility), consume one and PRESERVE the streak instead of letting it
-          // fade/reset. The check-and-consume runs in one ACID transaction with a conditional
-          // `WHERE quantity > 0`, so two concurrent logins can't double-spend a single shield and
-          // a crash can't leave the shield consumed without the streak preserved (or vice-versa).
-          handleMissedDay(user, now, elapsed, (savedStreak) => {
-            if (savedStreak > 0) {
-              // Fire-and-forget: a save notification (in-app + email). Never blocks login. The
-              // date-stamped dedupKey makes it at-most-once per day even if something re-enters.
-              notify(user.id, {
-                category: 'streak_freeze_used',
-                title: 'Your Streak Shield saved your streak! 🛡️',
-                message: `You missed a day, but a Streak Shield kept your ${savedStreak}-day streak alive. Welcome back — keep it going!`,
-                type: 'reward',
-                channels: ['inapp', 'email'],
-                dedupKey: new Date(now * 1000).toISOString().slice(0, 10),
-              }).catch(() => {});
-            }
-            sendLoginResponse(user.id, username, req, res);
-          });
-        } else if (elapsed > dayInSecs) {
-          // Showed up next day!
-          const newStreak = user.streak + 1;
-          db.run(
-            'UPDATE users SET streak = ?, commitment_state = \'active\', last_active = ?, max_streak = CASE WHEN ? > max_streak THEN ? ELSE max_streak END WHERE id = ?',
-            [newStreak, now, newStreak, newStreak, user.id],
-            () => {
-              sendLoginResponse(user.id, username, req, res);
-            }
-          );
-        } else {
-          // Logged in multiple times today
-          db.run('UPDATE users SET last_active = ? WHERE id = ?', [now, user.id], () => {
-            sendLoginResponse(user.id, username, req, res);
-          });
-        }
-      } else {
-        // First login
-        db.run(
-          "UPDATE users SET streak = 1, commitment_state = 'active', last_active = ?, max_streak = 1 WHERE id = ?",
-          [now, user.id],
-          () => {
-            sendLoginResponse(user.id, username, req, res);
-          }
-        );
-      }
-    });
+    settleStreak(user.id).then(() => sendLoginResponse(user.id, username, req, res));
+  });
 }
 
-// Resolve a missed-day login (>2 days since last active) in one ACID transaction: first try to
-// spend a Streak Shield (the streak-freeze utility) to PRESERVE the streak, otherwise walk the
-// fading -> reset ladder. Calls back with the streak value that was *saved* by a shield (> 0 only
-// when a shield was actually consumed), or 0 when no shield was spent (faded or reset). Doing the
-// conditional `quantity > 0` consume + the users update together is what makes streak insurance
-// race-safe and crash-safe. Best-effort: on a transaction error we report 0 so login never hangs.
-function handleMissedDay(user, now, elapsed, done) {
-  const dayInSecs = 86400;
-  withTransaction(async (tx) => {
-    // Only spend a shield when there's actually a streak worth saving.
-    if (user.streak > 0) {
-      const consumed = await tx.run(
-        "UPDATE user_utilities SET quantity = quantity - 1 WHERE user_id = ? AND item_id = 'item_streak_shield' AND quantity > 0",
-        [user.id]
-      );
-      if (consumed.changes > 0) {
-        await tx.run(
-          "UPDATE users SET commitment_state = 'protected', last_active = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
-          [now, user.id]
-        );
-        return user.streak; // saved by a shield
-      }
-    }
-    // No shield spent. Enter fading state (preserves the climb count for recovery); finally
-    // reset to 0 only if already fading or more than 3 days have passed.
-    if (user.commitment_state === 'fading' || elapsed > 3 * dayInSecs) {
-      // Full reset. Stash the lost streak so it can be repaired for coins within the grace window
-      // (streak repair — the second valve after the shield). Only worth offering for a real run.
-      const lostStreak = user.streak >= 2 ? user.streak : 0;
-      await tx.run(
-        "UPDATE users SET streak = 0, commitment_state = 'active', last_active = ?, lost_streak = ?, lost_streak_at = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
-        [now, lostStreak, lostStreak > 0 ? now : 0, user.id]
-      );
-    } else {
-      await tx.run(
-        "UPDATE users SET commitment_state = 'fading', last_active = ?, max_streak = CASE WHEN streak > max_streak THEN streak ELSE max_streak END WHERE id = ?",
-        [now, user.id]
-      );
-    }
-    return 0;
-  })
-    .then((savedStreak) => done(savedStreak))
-    .catch((err) => {
-      logger.error(`[auth] missed-day handling failed for user ${user.id}: ${err.message}`);
-      done(0);
-    });
-}
-
-router.post('/api/auth/logout', authenticateToken, (req, res) => {
-  db.run('DELETE FROM refresh_tokens WHERE session_id = ?', [req.user.sessionId]);
-  db.run('DELETE FROM user_sessions WHERE id = ?', [req.user.sessionId], (err) => {
+// Revoke one session (its refresh tokens die with it). The client clears its local credentials
+// first and revokes in the background, so logout never waits on — or fails with — the network.
+function revokeSession(sessionId, res) {
+  db.run('DELETE FROM refresh_tokens WHERE session_id = ?', [sessionId]);
+  db.run('DELETE FROM user_sessions WHERE id = ?', [sessionId], (err) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true, message: 'Successfully logged out' });
+  });
+}
+
+// Log out. Two credentials are accepted: the refresh token in the body (preferred — it works even
+// after the short-lived access token has expired, which is exactly when a backgrounded app logs
+// out), or a valid access token. Idempotent: an unknown/already-revoked refresh token is a success.
+router.post('/api/auth/logout', rateLimiter(30, 60000), (req, res) => {
+  const { refreshToken } = req.body || {};
+  if (typeof refreshToken === 'string' && refreshToken) {
+    return db.get('SELECT session_id, user_id FROM refresh_tokens WHERE token_hash = ?', [sha256(refreshToken)], (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!row) return res.json({ success: true, message: 'Successfully logged out' });
+      securityLog(row.user_id, 'logout', req.ip, 'Session revoked by logout.');
+      revokeSession(row.session_id, res);
+    });
+  }
+  authenticateToken(req, res, () => {
+    securityLog(req.user.id, 'logout', req.ip, 'Session revoked by logout.');
+    revokeSession(req.user.sessionId, res);
   });
 });
 
@@ -468,11 +392,17 @@ router.post('/api/auth/refresh', rateLimiter(30, 60000), (req, res) => {
   });
 });
 
+// The app's "session start" for a still-signed-in learner (it validates its stored token here on
+// every launch — most returning players never type a password again). So this is also where the
+// daily quest reset and the streak SETTLE run: a learner coming back after missed days sees the
+// truth (shield spent / fading / reset) instead of a stale count.
 router.get('/api/auth/me', authenticateToken, (req, res) => {
   checkAndResetQuestsAndLeagues(req.user.id, () => {
-    getUserWithMastery(req.user.id, (err, fullUser) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(fullUser);
+    settleStreak(req.user.id).then(() => {
+      getUserWithMastery(req.user.id, (err, fullUser) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(fullUser);
+      });
     });
   });
 });

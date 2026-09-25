@@ -13,6 +13,8 @@ const { generateProblem, CONCEPT_TO_LEVEL } = require('../mathGenerator');
 const KnowledgeGraph = require('../mathEngine/knowledgeGraph');
 const { notify } = require('../services/notificationService');
 
+const { creditStreak } = require('../services/streakService');
+
 const router = express.Router();
 
 const PROBLEM_COUNT = 10;
@@ -224,6 +226,7 @@ router.post('/api/tournaments/:id/play', authenticateToken, (req, res) => {
     return { tournamentId: id, score, elapsedMs, total: problems.length };
   })
     .then(async (payload) => {
+      if (payload.score > 0) await creditStreak(req.user.id); // any solve keeps today's streak alive
       const board = await leaderboard(payload.tournamentId, payload.total);
       const yourRank = (board.find((b) => !b.isBot && b.userId === req.user.id) || {}).position || null;
       const { tournamentId, ...rest } = payload;

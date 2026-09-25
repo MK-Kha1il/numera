@@ -12,6 +12,8 @@ const { withTransaction, httpError } = require('../dbx');
 const { generateProblem } = require('../mathGenerator');
 const { notify } = require('../services/notificationService');
 
+const { creditStreak } = require('../services/streakService');
+
 const router = express.Router();
 
 const PROBLEM_COUNT = 5;
@@ -210,7 +212,8 @@ router.post('/api/duel/async/:id/play', authenticateToken, idempotency, (req, re
     if (winnerId) await tx.run('UPDATE users SET coins = coins + ? WHERE id = ?', [reward, winnerId]);
     return { score, resolved: true, match: m, result: { winnerId, challengerScore, opponentScore, reward } };
   })
-    .then((payload) => {
+    .then(async (payload) => {
+      if (payload.score > 0) await creditStreak(uid); // any solve keeps today's streak alive
       // Feed this player's graded answers into the engine — sequential, fire-and-forget (so one
       // playthrough's answers don't race each other on shared analytics tables).
       (async () => {

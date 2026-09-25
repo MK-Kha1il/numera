@@ -7,6 +7,7 @@ const express = require('express');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { checkAndResetQuestsAndLeagues } = require('../services/userService');
+const { localToday } = require('../services/streakService');
 const { QUEST_DEFS } = require('../lib/questDefs');
 
 const router = express.Router();
@@ -26,8 +27,9 @@ const ITEM_COPY = {
 
 router.get('/api/today', authenticateToken, (req, res) => {
   // The reset pass first, so a stale user_quests row from yesterday never leaks into the plan.
-  checkAndResetQuestsAndLeagues(req.user.id, () => {
-    db.get('SELECT streak, last_active FROM users WHERE id = ?', [req.user.id], (errU, user) => {
+  checkAndResetQuestsAndLeagues(req.user.id, async () => {
+    const today = await localToday(req.user.id);
+    db.get('SELECT streak, streak_day, last_active FROM users WHERE id = ?', [req.user.id], (errU, user) => {
       if (errU || !user) return res.status(500).json({ error: 'User not found' });
 
       db.get('SELECT * FROM user_quests WHERE user_id = ?', [req.user.id], (errQ, q) => {
@@ -64,8 +66,9 @@ router.get('/api/today', authenticateToken, (req, res) => {
               (d) => (q[d.progressCol] || 0) >= d.target && q[d.claimCol] !== 1
             ).length;
 
-            // Streak safety: solving anything today is what keeps the flame alive.
-            const streakSafeToday = (q.solved_today || 0) > 0;
+            // Streak safety: solving anything today (solo, duel, rush…) is what keeps the flame
+            // alive — read straight from the streak engine's credited day (lib/streak.js).
+            const streakSafeToday = (user.streak || 0) > 0 && user.streak_day === today;
 
             // Comeback framing (ultra review #22): a learner returning after a week away
             // should be welcomed back with an achievable re-entry, not greeted by the same

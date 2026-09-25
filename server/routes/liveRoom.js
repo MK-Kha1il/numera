@@ -15,6 +15,8 @@ const { generateProblem } = require('../mathGenerator');
 const { areEquivalent } = require('../mathEngine/answerEquivalence');
 const { feedEngineOutcome } = require('../services/engineFeed');
 
+const { creditStreak } = require('../services/streakService');
+
 const router = express.Router();
 
 const PROBLEM_COUNT = 5;
@@ -183,6 +185,7 @@ router.post('/api/live-rooms/:id/answer', authenticateToken, (req, res) => {
     return { correct, score: updated.score, answered: updated.answered_count, total: problems.length };
   })
     .then(async (r) => {
+      if (r.correct) await creditStreak(req.user.id); // a solve keeps today's streak alive
       if (feed) { try { await feedEngineOutcome(db, req.user.id, feed.conceptKey, feed); } catch { /* best-effort */ } }
       emitRoomUpdate(req, id, 'active'); // a score moved → push the standings refresh
       res.json(r);

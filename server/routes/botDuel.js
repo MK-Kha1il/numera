@@ -10,6 +10,8 @@ const { idempotency } = require('../idempotency');
 const { withTransaction, httpError } = require('../dbx');
 const { generateProblem } = require('../mathGenerator');
 
+const { creditStreak } = require('../services/streakService');
+
 const router = express.Router();
 
 const PROBLEM_COUNT = 5;
@@ -135,7 +137,8 @@ router.post('/api/duel/bot/:id/play', authenticateToken, idempotency, (req, res)
 
     return { userScore, botScore: m.bot_score, winner, reward };
   })
-    .then((payload) => {
+    .then(async (payload) => {
+      if (payload.userScore > 0) await creditStreak(uid); // any solve keeps today's streak alive
       // Feed each graded answer into the engine — fire-and-forget overall, but SEQUENTIAL so the
       // duel's own answers (which can share a template type) don't race each other on the shared
       // system-level analytics tables. Bot duels now strengthen mastery/retention/Growth Insights.

@@ -164,6 +164,23 @@ object RetrofitClient {
         securePrefs(context).edit().remove(TOKEN_KEY).remove(REFRESH_KEY).apply()
     }
 
+    // User-initiated logout: forget the credentials locally right away (the UI never waits on the
+    // network), then revoke the server session by its refresh token on a background thread, so a
+    // copied access/refresh token stops working too. Best-effort: offline, the session simply
+    // expires on its own.
+    fun logout(context: Context) {
+        val refresh = refreshTokenValue
+        clearToken(context)
+        if (refresh.isNullOrEmpty() || !::tokenRefreshApi.isInitialized) return
+        Thread {
+            try {
+                tokenRefreshApi.logout(RefreshRequest(refresh)).execute()
+            } catch (e: Exception) {
+                android.util.Log.w("RetrofitClient", "Server logout failed: ${e.message}")
+            }
+        }.start()
+    }
+
     // Drops all credentials and signals a logout. Called when refresh fails (session truly gone).
     private fun forceLogout(): okhttp3.Request? {
         authToken = null

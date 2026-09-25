@@ -2,6 +2,7 @@
 const express = require('express');
 const { db } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { ensureDailyReset } = require('../services/userService');
 
 const router = express.Router();
 
@@ -25,12 +26,13 @@ router.post('/api/math/srs/review', authenticateToken, (req, res) => {
     return res.status(400).json({ error: 'Valid quality rating (0-5) required' });
   }
 
-  db.get(
+  ensureDailyReset(req.user.id).then(() => db.get(
     `SELECT * FROM srs_reviews WHERE user_id = ? AND topic = ?`,
     [req.user.id, topic],
     (err, review) => {
       if (err) return res.status(500).json({ error: err.message });
 
+      const wasDue = !!review && review.next_review <= Math.floor(Date.now() / 1000);
       let ef = review ? review.ease_factor : 2.5;
       let interval = review ? review.interval : 0;
       let reps = review ? review.repetitions : 0;
@@ -71,13 +73,17 @@ router.post('/api/math/srs/review', authenticateToken, (req, res) => {
         [req.user.id, topic, ef, interval, reps, nextReview],
         (saveErr) => {
           if (saveErr) return res.status(500).json({ error: saveErr.message });
-          // Credit the "Memory Tune-Up" daily quest for clearing a review (best-effort).
-          db.run('UPDATE user_quests SET srs_review_today = srs_review_today + 1 WHERE user_id = ?', [req.user.id]);
+          // Credit the "Memory Tune-Up" daily quest only for clearing a review that was actually DUE.
+          // Every level session also writes its topic here (first sighting / early replay), and those
+          // used to count too, so the quest completed itself during ordinary play.
+          if (wasDue) {
+            db.run('UPDATE user_quests SET srs_review_today = srs_review_today + 1 WHERE user_id = ?', [req.user.id]);
+          }
           res.json({ topic, ease_factor: ef, interval, next_review: nextReview });
         }
       );
     }
-  );
+  ));
 });
 
 // Dismiss (snooze) an SRS item — pushes its next_review 7 days out without

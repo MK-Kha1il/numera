@@ -27,6 +27,8 @@ const { recordMatch } = require('./services/matchLog');
 const { categoryToDomain, matchAcceptable, SIGMA_INIT: NRS_SIGMA_INIT } = require('./mathEngine/ratingEngine'); // attribute a duel to its dominant domain; hidden-MMR pairing gate
 const { updateAchievements } = require('./services/achievementService');
 const { grantRankRewards } = require('./services/rankRewardService');
+const { creditStreak } = require('./services/streakService');
+const { ensureDailyReset } = require('./services/userService');
 const { flagAnswer, resolveDuel, rankedMatchmakingError } = require('./lib/duelIntegrity');
 
 const app = express();
@@ -967,8 +969,36 @@ setInterval(() => {
   }
 }, 1500).unref();
 
+// Per-socket event budget (ultra review #90). Every inbound event spends a token from a small
+// bucket that refills continuously; a flood — answer spam, queue join/leave flapping, ack-probe
+// loops — is dropped before any handler runs (no DB work, no matchmaking churn). Generous for real
+// play: a whole duel is a handful of events.
+const SOCKET_EVENT_CAPACITY = 20;
+const SOCKET_EVENT_REFILL_PER_SEC = 5;
+function spendSocketToken(socket) {
+  const now = Date.now();
+  const bucket = socket.data.eventBucket || (socket.data.eventBucket = { tokens: SOCKET_EVENT_CAPACITY, at: now });
+  bucket.tokens = Math.min(SOCKET_EVENT_CAPACITY, bucket.tokens + ((now - bucket.at) / 1000) * SOCKET_EVENT_REFILL_PER_SEC);
+  bucket.at = now;
+  if (bucket.tokens < 1) return false;
+  bucket.tokens -= 1;
+  return true;
+}
+
 io.on('connection', (socket) => {
   logger.info(`Socket connected: ${socket.id}`);
+
+  // Drop over-budget packets (not calling next() discards the event). Logged once per burst.
+  socket.use((packet, next) => {
+    if (spendSocketToken(socket)) {
+      socket.data.rateLimited = false;
+      return next();
+    }
+    if (!socket.data.rateLimited) {
+      socket.data.rateLimited = true;
+      logger.warn(`[socket] event flood from user ${socket.userId} (${socket.id}); dropping '${packet && packet[0]}'`);
+    }
+  });
 
   // Live-room liveness: a member subscribes to its room channel so REST state changes (a player
   // joined, the host started, someone scored, the host ended it) push an instant "refetch" ping.
@@ -1586,7 +1616,8 @@ function processPlayerDuelResult(userId, opts, callback) {
         db.get('SELECT elo, competitive_rank FROM users WHERE id = ?', [userId], (e, row) => {
           const newRank = (row && row.competitive_rank) || 'Unranked (Placement: 0/5)';
           const newElo = row && row.elo != null ? row.elo : 1000;
-          updateAchievements(userId, () => {
+          // Any solve in the match keeps today's streak alive (idempotent per local day).
+          (solvedCount > 0 ? creditStreak(userId) : Promise.resolve()).then(() => updateAchievements(userId, () => {
             grantRankRewards(userId, newRank, () => {
               callback(null, {
                 ratingDelta: after ? +after.delta.toFixed(1) : 0,
@@ -1597,7 +1628,7 @@ function processPlayerDuelResult(userId, opts, callback) {
                 previousRank: after ? after.previousRank : null,
               });
             });
-          });
+          }));
         });
       }
     );
@@ -1696,13 +1727,12 @@ function endDuel(roomId, done) {
 // (processPlayerDuelResult), then emit duel_end and free the room. Rating moves ONLY for a ranked
 // human-vs-human duel — bots and casual stay rating-neutral. See docs/specs/Spec-RatingUnification.md.
 function finalizeDuel(roomId, room, winner, p2IsBot, done) {
-  // Increment duels_today in user_quests for human players
-  if (room.p1.id && typeof room.p1.id === 'number') {
-    db.run("UPDATE user_quests SET duels_today = duels_today + 1 WHERE user_id = ?", [room.p1.id]);
-  }
-  if (room.p2.id && typeof room.p2.id === 'number' && room.p2.id !== 9999) {
-    db.run("UPDATE user_quests SET duels_today = duels_today + 1 WHERE user_id = ?", [room.p2.id]);
-  }
+  // Increment duels_today in user_quests for human players — after the daily reset check, so a duel
+  // finished just past local midnight counts toward today's quest instead of being wiped.
+  const bumpDuelQuest = (id) =>
+    ensureDailyReset(id).then(() => db.run("UPDATE user_quests SET duels_today = duels_today + 1 WHERE user_id = ?", [id]));
+  if (room.p1.id && typeof room.p1.id === 'number') bumpDuelQuest(room.p1.id);
+  if (room.p2.id && typeof room.p2.id === 'number' && room.p2.id !== 9999) bumpDuelQuest(room.p2.id);
 
   const p1IsHuman = typeof room.p1.id === 'number' && room.p1.id !== 9999;
   const p2IsHuman = typeof room.p2.id === 'number' && !p2IsBot;

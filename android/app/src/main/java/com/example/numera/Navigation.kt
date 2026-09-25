@@ -159,8 +159,8 @@ fun MainNavigation() {
             onStartDuelGame = { duelGame -> backStack.add(duelGame) },
             onStartLegacyGame = { puzzleId -> backStack.add(LegacyGame(puzzleId)) },
             onLogout = {
-              android.util.Log.d("Navigation", "onLogout callback executed, clearing token and navigating to Login")
-              RetrofitClient.clearToken(context)
+              android.util.Log.d("Navigation", "onLogout callback executed, revoking session and navigating to Login")
+              RetrofitClient.logout(context)
               while (backStack.size > 1) {
                 backStack.removeLastOrNull()
               }

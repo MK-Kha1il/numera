@@ -19,6 +19,8 @@ const { feedEngineOutcome } = require('../services/engineFeed');
 const { recordMatch } = require('../services/matchLog');
 const { enqueueMissedTopic } = require('../services/srsService');
 
+const { creditStreak } = require('../services/streakService');
+
 const router = express.Router();
 
 const PROBLEM_COUNT = 5;
@@ -187,6 +189,7 @@ router.post('/api/reasoning-duel/:id/submit', authenticateToken, (req, res) => {
     return { level: round.level, domain: round.domain, total: problems.length, banked, answerCorrectCount, perProblem, missedConcepts, willRate };
   })
     .then(async (r) => {
+      if (r.answerCorrectCount > 0) await creditStreak(req.user.id); // any solve keeps today's streak alive
       // Feed the learning engine (answer correctness), awaited + sequential so the engine is fed
       // before we respond (no detached writes racing teardown; mastery/retention stay attributed).
       for (const f of feeds) {

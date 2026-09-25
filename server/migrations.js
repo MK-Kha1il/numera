@@ -1464,6 +1464,78 @@ const migrations = [
       await run('CREATE INDEX IF NOT EXISTS idx_mastery_snapshots_user ON mastery_snapshots(user_id, snap_date)');
     },
   },
+  {
+    version: 65,
+    name: 'streak_calendar_day',
+    // lib/streak.js: the streak moves from elapsed-seconds-since-last_active to LOCAL calendar days.
+    // `streak_day` is the local day index (floor((epoch + tz*60) / 86400)) the streak was last
+    // credited on — distinct from last_active, which a mere login/app-open also bumps. Backfill
+    // from last_active's UTC day for anyone holding a live streak, so no current run is lost.
+    up: async (run) => {
+      try {
+        await run('ALTER TABLE users ADD COLUMN streak_day INTEGER DEFAULT 0');
+      } catch (e) {
+        if (!/duplicate column name/i.test(e.message)) throw e;
+      }
+      await run('UPDATE users SET streak_day = CAST(last_active / 86400 AS INTEGER) WHERE streak > 0 AND last_active > 0');
+    },
+  },
+  {
+    version: 66,
+    name: 'solo_serve_tickets',
+    // Server-authoritative solo economy (lib/soloRewards.js). Every problem-serving endpoint issues a
+    // "serve ticket"; POST /api/math/complete must consume one (so a completion can't be posted for
+    // problems that were never served) and solves are capped at what the ticket served. `uses` > 1
+    // for list serves (an archive page can be played item by item). Plus two per-day counters on
+    // user_quests (reset with the daily quests): solo completions (the coin taper) and paid
+    // Mistakes-Bank resolves (the resolve-reward cap).
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS solo_sessions (
+          id           INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id      INTEGER NOT NULL,
+          mode         TEXT NOT NULL,
+          level        INTEGER,
+          served_count INTEGER NOT NULL,
+          remaining    INTEGER NOT NULL,
+          served_at    INTEGER NOT NULL,
+          expires_at   INTEGER NOT NULL
+        )
+      `);
+      await run('CREATE INDEX IF NOT EXISTS idx_solo_sessions_user ON solo_sessions(user_id, mode, served_at)');
+      const addColumn = async (sql) => {
+        try {
+          await run(sql);
+        } catch (e) {
+          if (!/duplicate column name/i.test(e.message)) throw e;
+        }
+      };
+      await addColumn('ALTER TABLE user_quests ADD COLUMN solo_sessions_today INTEGER DEFAULT 0');
+      await addColumn('ALTER TABLE user_quests ADD COLUMN mistake_rewards_today INTEGER DEFAULT 0');
+    },
+  },
+  {
+    version: 67,
+    name: 'daily_puzzle_serves',
+    // The daily puzzle is pinned per learner per LOCAL day: the first fetch generates and stores the
+    // variant, later fetches return the same one (it used to regenerate — different numbers — on
+    // every refresh). `solved_at` is the atomic once-per-day reward guard (a conditional
+    // `WHERE solved_at IS NULL` update), independent of whether a user_quests row exists — before,
+    // a learner without one could be paid on every submit.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS daily_puzzle_serves (
+          user_id     INTEGER NOT NULL,
+          day         INTEGER NOT NULL,
+          payload     TEXT NOT NULL,
+          answer      TEXT NOT NULL,
+          created_at  INTEGER NOT NULL,
+          solved_at   INTEGER,
+          PRIMARY KEY (user_id, day)
+        )
+      `);
+    },
+  },
 ];
 
 /**

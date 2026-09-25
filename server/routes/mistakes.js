@@ -3,10 +3,13 @@
 // for a small XP/coin reward.
 const express = require('express');
 const { db } = require('../db');
+const { withTransaction, httpError } = require('../dbx');
 const { authenticateToken } = require('../middleware/auth');
-const { normalizeLevelForGenerator } = require('../lib/progression');
+const { normalizeLevelForGenerator, applyXp } = require('../lib/progression');
 const { generateProblem } = require('../mathGenerator');
 const { attachTipToProblem } = require('../services/tipService');
+const { ensureDailyReset } = require('../services/userService');
+const { creditStreak } = require('../services/streakService');
 
 const router = express.Router();
 
@@ -52,7 +55,17 @@ router.get('/api/mistakes', authenticateToken, (req, res) => {
   });
 });
 
-// Post a new wrong answer to the Mistakes Bank
+// Economy guards (docs/EconomyModel.md): logging a mistake is free and client-reported, so a
+// resolve can only be PAID a few times a day — otherwise "log a mistake, resolve it" was an
+// unlimited scripted coin faucet — and the bank itself is bounded.
+const MISTAKE_RESOLVE_XP = 15;
+const MISTAKE_RESOLVE_COINS = 10;
+const PAID_RESOLVES_PER_DAY = 10;
+const MAX_BANK_SIZE = 200;
+
+// Post a new wrong answer to the Mistakes Bank. Logging a mistake no longer advances the "Focus
+// Practice" quest ("solve or review 3 growth equations") — getting answers WRONG used to complete
+// it; resolving one does now.
 router.post('/api/mistakes', authenticateToken, (req, res) => {
   const { category, question, correct_answer, options, explanation } = req.body;
   if (!question || !correct_answer || !options) {
@@ -65,63 +78,80 @@ router.post('/api/mistakes', authenticateToken, (req, res) => {
   db.run(
     `INSERT INTO user_mistakes (user_id, category, question, correct_answer, options, explanation, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [req.user.id, category || 'Arithmetic', question, correct_answer, optionsStr, explanation || '', now],
+    [
+      req.user.id,
+      String(category || 'Arithmetic').slice(0, 64),
+      String(question).slice(0, 2000),
+      String(correct_answer).slice(0, 500),
+      optionsStr.slice(0, 4000),
+      String(explanation || '').slice(0, 4000),
+      now,
+    ],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
-
-      db.run('UPDATE user_quests SET mistakes_today = mistakes_today + 1 WHERE user_id = ?', [req.user.id], () => {
-        res.json({ success: true, id: this.lastID });
-      });
+      const id = this.lastID;
+      // Keep only the newest MAX_BANK_SIZE entries (best-effort).
+      db.run(
+        `DELETE FROM user_mistakes WHERE user_id = ? AND id NOT IN (
+           SELECT id FROM user_mistakes WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT ?
+         )`,
+        [req.user.id, req.user.id, MAX_BANK_SIZE],
+        () => res.json({ success: true, id })
+      );
     }
   );
 });
 
-// Resolve a logged mistake after answering it correctly
-router.post('/api/mistakes/resolve', authenticateToken, (req, res) => {
-  const { mistakeId } = req.body;
+// Resolve a logged mistake after answering it correctly. One transaction: the delete (owned by the
+// caller — a second resolve of the same id finds nothing), the quest credit, and — while under the
+// daily cap — the XP/coin reward with relative writes (no read-modify-write lost updates).
+router.post('/api/mistakes/resolve', authenticateToken, async (req, res) => {
+  const { mistakeId } = req.body || {};
   if (!mistakeId) return res.status(400).json({ error: 'Mistake ID required' });
+  const userId = req.user.id;
 
-  db.get('SELECT * FROM user_mistakes WHERE id = ? AND user_id = ?', [mistakeId, req.user.id], (err, mistake) => {
-    if (err || !mistake) return res.status(404).json({ error: 'Mistake not found' });
+  try {
+    await ensureDailyReset(userId);
+    const r = await withTransaction(async (tx) => {
+      const del = await tx.run('DELETE FROM user_mistakes WHERE id = ? AND user_id = ?', [mistakeId, userId]);
+      if (del.changes === 0) throw httpError(404, 'Mistake not found');
 
-    db.run('DELETE FROM user_mistakes WHERE id = ? AND user_id = ?', [mistakeId, req.user.id], (errDel) => {
-      if (errDel) return res.status(500).json({ error: errDel.message });
+      await tx.run('UPDATE user_quests SET mistakes_today = mistakes_today + 1 WHERE user_id = ?', [userId]);
+      const q = await tx.get('SELECT mistake_rewards_today FROM user_quests WHERE user_id = ?', [userId]);
+      const paid = !q || (q.mistake_rewards_today || 0) < PAID_RESOLVES_PER_DAY;
 
-      const coinsGained = 10;
-      const xpGained = 15;
-
-      db.get('SELECT xp, level, coins, league_points, rank FROM users WHERE id = ?', [req.user.id], (errU, user) => {
-        if (errU || !user) return res.status(500).json({ error: 'User details not found' });
-
-        let newXp = user.xp + xpGained;
-        let newLevel = user.level;
-        while (newXp >= newLevel * 100) {
-          newXp -= newLevel * 100;
-          newLevel += 1;
-        }
-
-        const newCoins = user.coins + coinsGained;
-        const newLeaguePoints = (user.league_points || 0) + xpGained;
-        const currentRank = user.rank || 'Unranked (Placement: 0/5)';
-
-        db.run(
-          'UPDATE users SET xp = ?, level = ?, coins = ?, rank = ?, league_points = ? WHERE id = ?',
-          [newXp, newLevel, newCoins, currentRank, newLeaguePoints, req.user.id],
-          () => {
-            res.json({
-              success: true,
-              coinsGained,
-              xpGained,
-              xp: newXp,
-              level: newLevel,
-              coins: newCoins,
-              rank: currentRank,
-            });
-          }
-        );
-      });
+      const user = await tx.get('SELECT xp, level, coins, rank FROM users WHERE id = ?', [userId]);
+      if (!user) throw httpError(404, 'User details not found');
+      const xpGained = paid ? MISTAKE_RESOLVE_XP : 0;
+      const coinsGained = paid ? MISTAKE_RESOLVE_COINS : 0;
+      const progressed = applyXp(user.xp, user.level, xpGained);
+      if (paid) {
+        await tx.run('UPDATE users SET xp = ?, level = ?, coins = coins + ?, league_points = league_points + ? WHERE id = ?', [
+          progressed.xp,
+          progressed.level,
+          coinsGained,
+          xpGained,
+          userId,
+        ]);
+        await tx.run('UPDATE user_quests SET mistake_rewards_today = mistake_rewards_today + 1 WHERE user_id = ?', [userId]);
+      }
+      return { user, progressed, xpGained, coinsGained, paid };
     });
-  });
+
+    await creditStreak(userId); // solving a problem keeps today's streak alive
+    res.json({
+      success: true,
+      coinsGained: r.coinsGained,
+      xpGained: r.xpGained,
+      rewardCapped: !r.paid,
+      xp: r.progressed.xp,
+      level: r.progressed.level,
+      coins: (r.user.coins || 0) + r.coinsGained,
+      rank: r.user.rank || 'Unranked (Placement: 0/5)',
+    });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Could not resolve the mistake.' });
+  }
 });
 
 module.exports = router;

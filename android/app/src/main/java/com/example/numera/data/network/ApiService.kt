@@ -8,6 +8,11 @@ import retrofit2.http.*
 interface TokenRefreshApi {
     @POST("api/auth/refresh")
     fun refresh(@Body request: RefreshRequest): retrofit2.Call<AuthResponse>
+
+    // Server-side logout keyed by the refresh token (works even once the short-lived access token
+    // has expired). Lives here, off the main client, so it needs no Authorization header/refresh.
+    @POST("api/auth/logout")
+    fun logout(@Body request: RefreshRequest): retrofit2.Call<GenericMessageResponse>
 }
 
 interface ApiService {
@@ -400,17 +405,6 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body request: AchievementClaimRequest
     ): AchievementClaimResponse
-
-    @GET("api/assessment/questions")
-    suspend fun getAssessmentQuestions(
-        @Header("Authorization") token: String
-    ): List<MathProblem>
-
-    @POST("api/assessment/submit")
-    suspend fun submitAssessment(
-        @Header("Authorization") token: String,
-        @Body request: AssessmentSubmitRequest
-    ): AssessmentSubmitResponse
 
     @POST("api/assessment/adaptive/start")
     suspend fun startAdaptiveDiagnostic(

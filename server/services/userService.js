@@ -2,6 +2,8 @@
 // codebase). Used by many routes, so they live here rather than in any single router.
 const { db } = require('../db');
 const logger = require('../logger');
+const { localDayIndex } = require('../lib/streak');
+const { getTzOffset } = require('./streakService');
 
 // Load a user joined with their mastery row, shaped into the full client-facing user object.
 function getUserWithMastery(userId, callback) {
@@ -82,7 +84,20 @@ function getUserWithMastery(userId, callback) {
 
 // Lazily ensure quest/mastery rows exist, then apply daily quest resets and weekly league
 // promotion/demotion if their windows have elapsed. Always invokes callback when done.
+//
+// Daily quests reset when the learner's LOCAL calendar day changes (lib/streak.js day clock — the
+// same one the streak and daily puzzle use). The old rule (`now - last_quest_reset >= 86400`) was
+// a rolling window anchored to whenever the app was first opened after the last reset, so the
+// reset time drifted later and later and a day's quests could bleed into the next.
 function checkAndResetQuestsAndLeagues(userId, callback) {
+  getTzOffset(userId).then((tz) => runResets(userId, tz, callback));
+}
+
+// Promise form, for routes that bump quest counters: run the reset FIRST so progress earned after
+// midnight lands on today's row instead of being wiped by a later lazy reset.
+const ensureDailyReset = (userId) => new Promise((resolve) => checkAndResetQuestsAndLeagues(userId, resolve));
+
+function runResets(userId, tz, callback) {
   const now = Math.floor(Date.now() / 1000);
 
   // 1. Ensure user_quests and user_mastery exist
@@ -105,8 +120,8 @@ function checkAndResetQuestsAndLeagues(userId, callback) {
         if (errQ || !qRow) return callback && callback();
 
         let questPromise = Promise.resolve();
-        // Check daily quest reset (86400 seconds)
-        if (now - qRow.last_quest_reset >= 86400) {
+        // Daily quest reset on a new local calendar day.
+        if (!qRow.last_quest_reset || localDayIndex(now, tz) > localDayIndex(qRow.last_quest_reset, tz)) {
           questPromise = new Promise((resolveQ) => {
             db.run(
               `
@@ -123,6 +138,8 @@ function checkAndResetQuestsAndLeagues(userId, callback) {
                 daily_puzzle_claimed = 0,
                 puzzle_rush_claimed = 0,
                 srs_review_claimed = 0,
+                solo_sessions_today = 0,
+                mistake_rewards_today = 0,
                 last_quest_reset = ?
               WHERE user_id = ?
             `,
@@ -200,4 +217,4 @@ function checkAndResetQuestsAndLeagues(userId, callback) {
   });
 }
 
-module.exports = { getUserWithMastery, checkAndResetQuestsAndLeagues };
+module.exports = { getUserWithMastery, checkAndResetQuestsAndLeagues, ensureDailyReset };

@@ -680,11 +680,13 @@ fun SoloGameScreen(
                 }
             }
             if (gameMode == "daily_puzzle") {
+                // The server grades the learner's own answer (typed value, else the tapped option).
+                val submittedAnswer = typedInput.trim().ifEmpty { selectedAnswer }.ifBlank { currentProblem.correctAnswer }
                 scope.launch(Dispatchers.IO) {
                     try {
                         RetrofitClient.apiService.submitDailyPuzzle(
                             token = RetrofitClient.authToken ?: "",
-                            request = DailyPuzzleSubmitRequest(correct = true)
+                            request = DailyPuzzleSubmitRequest(correct = true, answer = submittedAnswer)
                         )
                     } catch (e: Exception) {
                         Log.e("SoloGame", "Failed to submit daily puzzle: ${e.message}")

@@ -23,10 +23,15 @@ test('the quest list now includes the Puzzle Rush and SRS quests', async () => {
   for (const t of ['solved', 'duels', 'mistakes', 'daily_puzzle']) assert.ok(types.includes(t), `${t} present`);
 });
 
-test('clearing an SRS review advances the Memory Tune-Up quest', async () => {
+test('clearing a DUE SRS review advances the Memory Tune-Up quest', async () => {
   const u = await registerUser(ctx.base);
-  const before = await dbGet('SELECT srs_review_today FROM user_quests WHERE user_id = ?', [await idOf(u.username)]);
+  const id = await idOf(u.username);
+  const before = await dbGet('SELECT srs_review_today FROM user_quests WHERE user_id = ?', [id]);
   assert.equal(before.srs_review_today, 0);
+  await dbRun(
+    'INSERT INTO srs_reviews (user_id, topic, ease_factor, interval, repetitions, next_review) VALUES (?, ?, 2.5, 1, 1, ?)',
+    [id, 'arithmetic_3', Math.floor(Date.now() / 1000) - 60]
+  );
 
   const rev = await api(ctx.base, 'POST', '/api/math/srs/review', { token: u.token, body: { topic: 'arithmetic_3', quality: 5 } });
   assert.equal(rev.status, 200);
@@ -34,6 +39,17 @@ test('clearing an SRS review advances the Memory Tune-Up quest', async () => {
   const list = await api(ctx.base, 'GET', '/api/quests', { token: u.token });
   const srs = list.body.find((q) => q.type === 'srs_review');
   assert.equal(srs.current, 1, 'one review counted toward the quest');
+});
+
+test('a first sighting or an early replay does not count as clearing a review', async () => {
+  const u = await registerUser(ctx.base);
+  const id = await idOf(u.username);
+  // First sighting of a topic (what every level session writes) …
+  await api(ctx.base, 'POST', '/api/math/srs/review', { token: u.token, body: { topic: 'algebra_12', quality: 5 } });
+  // … and replaying it again before it is due.
+  await api(ctx.base, 'POST', '/api/math/srs/review', { token: u.token, body: { topic: 'algebra_12', quality: 5 } });
+  const row = await dbGet('SELECT srs_review_today FROM user_quests WHERE user_id = ?', [id]);
+  assert.equal(row.srs_review_today, 0);
 });
 
 test('a completed Puzzle Rush quest can be claimed once', async () => {
@@ -65,4 +81,22 @@ test('the daily reset zeroes the new quest columns', async () => {
   assert.equal(row.puzzle_rush_claimed, 0);
   assert.equal(row.srs_review_today, 0);
   assert.equal(row.srs_review_claimed, 0);
+});
+
+test('quests reset on a new calendar day even when less than 24h have passed (no drift)', async () => {
+  const u = await registerUser(ctx.base);
+  const id = await idOf(u.username);
+  const todayStart = Math.floor(Date.now() / 86400000) * 86400; // no tz reported → UTC day
+  // Last reset one minute before today's midnight: < 24h ago, but yesterday.
+  await dbRun('UPDATE user_quests SET solved_today = 4, solved_claimed = 1, last_quest_reset = ? WHERE user_id = ?', [todayStart - 60, id]);
+  await api(ctx.base, 'GET', '/api/quests', { token: u.token });
+  let row = await dbGet('SELECT solved_today, solved_claimed FROM user_quests WHERE user_id = ?', [id]);
+  assert.equal(row.solved_today, 0, 'yesterday\'s progress is cleared at local midnight');
+  assert.equal(row.solved_claimed, 0);
+
+  // Same calendar day: progress survives however many times the quests are read.
+  await dbRun('UPDATE user_quests SET solved_today = 2, last_quest_reset = ? WHERE user_id = ?', [todayStart, id]);
+  await api(ctx.base, 'GET', '/api/quests', { token: u.token });
+  row = await dbGet('SELECT solved_today FROM user_quests WHERE user_id = ?', [id]);
+  assert.equal(row.solved_today, 2);
 });
