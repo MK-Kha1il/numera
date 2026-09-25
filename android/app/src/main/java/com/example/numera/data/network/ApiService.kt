@@ -79,6 +79,12 @@ interface ApiService {
         @Body request: CompleteSessionRequest
     ): CompleteSessionResponse
 
+    // Best stars (0–3) per level-map level — the map's replay goal.
+    @GET("api/levels/stars")
+    suspend fun getLevelStars(
+        @Header("Authorization") token: String
+    ): LevelStarsResponse
+
     @POST("api/math/calculator/log")
     suspend fun logCalculatorUsage(
         @Header("Authorization") token: String,

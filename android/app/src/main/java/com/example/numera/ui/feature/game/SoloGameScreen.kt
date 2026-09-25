@@ -68,6 +68,8 @@ fun SoloGameScreen(
     passedLessonContent: String? = null,
     passedLessonFormula: String? = null,
     passedExamplesJson: String? = null,
+    // Starts the given level-map level in place of this session (the recap's "Next level" button).
+    onNextLevel: ((nextLevel: Int) -> Unit)? = null,
     onFinishGame: () -> Unit
 ) {
     val context = LocalContext.current
@@ -86,6 +88,8 @@ fun SoloGameScreen(
     
     var solvedCount by remember { mutableIntStateOf(0) }
     var correctStreak by remember { mutableIntStateOf(0) }
+    // Exercise index → whether its FIRST answer was right (the in-session progress segments).
+    val exerciseResults = remember { androidx.compose.runtime.mutableStateMapOf<Int, Boolean>() }
     val activeExplanationState = remember { mutableStateOf<String?>(null) }
     var activeExplanation by activeExplanationState
     val hasAnsweredState = remember { mutableStateOf(false) }
@@ -101,6 +105,14 @@ fun SoloGameScreen(
     
     var xpReward by remember { mutableIntStateOf(0) }
     var coinReward by remember { mutableIntStateOf(0) }
+    // Recap payoff from the server's /complete response (null/false = not reported).
+    var sessionStars by remember { mutableStateOf<Int?>(null) }
+    var sessionNewBest by remember { mutableStateOf(false) }
+    var sessionStreakDays by remember { mutableStateOf<Int?>(null) }
+    var sessionStreakExtended by remember { mutableStateOf(false) }
+    var sessionStreakRestored by remember { mutableStateOf(false) }
+    var dailySolverQuest by remember { mutableStateOf<com.example.numera.data.network.QuestProgressDto?>(null) }
+    var claimableQuests by remember { mutableIntStateOf(0) }
     // Mistakes practice is paid per resolve by the server (with a daily cap), so the recap shows
     // what the server actually granted rather than a local estimate.
     var mistakeXpEarned by remember { mutableIntStateOf(0) }
@@ -587,7 +599,13 @@ fun SoloGameScreen(
         return
     }
 
-    if (showLesson && lessonTitle != null) {
+    // A lesson is taught once: replaying a level (or meeting the same concept again) goes straight
+    // to the exercises — the header's "Reference" button still reopens the formula and concept.
+    // Before, a full lesson screen preceded every 3-exercise level, replays included.
+    val lessonAlreadySeen = remember(lessonTitle) {
+        lessonTitle != null && gamePrefs.getStringSet(SEEN_LESSONS_KEY, emptySet())?.contains(lessonTitle) == true
+    }
+    if (showLesson && lessonTitle != null && !lessonAlreadySeen) {
         LessonScreen(
             level = level,
             lessonTitle = lessonTitle,
@@ -598,6 +616,9 @@ fun SoloGameScreen(
             onStart = {
                 showLesson = false
                 SoundManager.playClick()
+                val seen = gamePrefs.getStringSet(SEEN_LESSONS_KEY, emptySet()).orEmpty().toMutableSet()
+                seen.add(lessonTitle!!)
+                gamePrefs.edit().putStringSet(SEEN_LESSONS_KEY, seen).apply()
             },
         )
         return
@@ -657,6 +678,8 @@ fun SoloGameScreen(
                 }
             }
         }
+        // First answer per exercise feeds the segmented progress bar (a retry doesn't repaint it).
+        if (!exerciseResults.containsKey(currentProblemIdx)) exerciseResults[currentProblemIdx] = isCorrect
         if (isCorrect) {
             score += 20
             solvedCount++
@@ -712,6 +735,9 @@ fun SoloGameScreen(
             errorsCount++
             answeredWrongForCurrent = true
             perfectStreakCount = 0
+            // A slip ends the run of correct answers (it used to keep counting, so the rising
+            // "correct" pitch and the combo carried straight through mistakes).
+            correctStreak = 0
             activeExplanation = currentProblem.explanation
             shakeTrigger++
             if (gameMode != "mistakes_practice") {
@@ -851,6 +877,13 @@ fun SoloGameScreen(
                             userCoins = saveRes.coins
                             userRank = saveRes.rank
                             masteryMilestone = saveRes.masteryMilestone
+                            sessionStars = saveRes.stars
+                            sessionNewBest = saveRes.newBest == true
+                            sessionStreakDays = saveRes.streak?.days
+                            sessionStreakExtended = saveRes.streak?.extendedToday == true
+                            sessionStreakRestored = saveRes.streak?.restored == true
+                            dailySolverQuest = saveRes.questProgress?.firstOrNull { it.type == "solved" }
+                            claimableQuests = saveRes.claimableQuests ?: 0
 
                             if (levelUpOccurred) {
                                 SoundManager.playLevelUp()
@@ -983,6 +1016,22 @@ fun SoloGameScreen(
             comboBonusGained = comboBonusGained,
             streakBonusActive = streakBonusActive,
             criticalBonusActive = criticalBonusActive,
+            stars = sessionStars,
+            newBest = sessionNewBest,
+            streakDays = sessionStreakDays,
+            streakExtended = sessionStreakExtended,
+            streakRestored = sessionStreakRestored,
+            dailySolverQuest = dailySolverQuest,
+            claimableQuests = claimableQuests,
+            // "Next level" only for a map level (the session's category is the map's for this
+            // level) whose successor is now unlocked.
+            onNextLevel = if (
+                onNextLevel != null && gameMode == "level" && level > 0 &&
+                level + 1 <= userLevel &&
+                category == com.example.numera.ui.feature.archive.mapLevelCategory(level)
+            ) {
+                { onNextLevel(level + 1) }
+            } else null,
             onFinishGame = onFinishGame,
         )
         return
@@ -1029,6 +1078,8 @@ fun SoloGameScreen(
         calculatorMemoryState = calculatorMemoryState,
         calculatorHistoryState = calculatorHistoryState,
         calcIsErrorState = calcIsErrorState,
+        exerciseResults = exerciseResults,
+        comboCount = correctStreak,
         handleAnswer = { handleAnswer(it) },
         isCurrentAnswerCorrect = { isCurrentAnswerCorrect() },
         continueOrFinish = { continueOrFinish(it) },
@@ -1070,3 +1121,6 @@ fun SoloGameScreen(
     }
 }
 
+// SharedPreferences key (numera_game_prefs) holding the lesson titles this learner has already
+// been taught — those lessons are skipped on replay.
+private const val SEEN_LESSONS_KEY = "seen_lessons_v1"

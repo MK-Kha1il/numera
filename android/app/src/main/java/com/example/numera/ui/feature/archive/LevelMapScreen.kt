@@ -95,6 +95,17 @@ fun LevelMapScreen(
     var mistakesList by remember { mutableStateOf<List<Mistake>>(emptyList()) }
     var activeDebriefLevel by remember { mutableStateOf<Int?>(null) }
     var activeDebriefCategory by remember { mutableStateOf<String?>(null) }
+    // Best stars (0–3) per level — the replay goal under each completed node and per stage.
+    var levelStars by remember { mutableStateOf<Map<Int, Int>>(emptyMap()) }
+    // Re-fetched whenever the user object refreshes (e.g. returning from a finished level).
+    LaunchedEffect(user) {
+        try {
+            val r = withContext(Dispatchers.IO) { RetrofitClient.apiService.getLevelStars(RetrofitClient.authToken ?: "") }
+            levelStars = r.stars.orEmpty().mapNotNull { (k, v) -> k.toIntOrNull()?.let { it to v } }.toMap()
+        } catch (e: Exception) {
+            android.util.Log.w("LevelMap", "Level stars unavailable: ${e.message}")
+        }
+    }
 
     val context = LocalContext.current
     val prefs = remember(context) { context.getSharedPreferences("numera_scroll_prefs", android.content.Context.MODE_PRIVATE) }
@@ -191,22 +202,7 @@ fun LevelMapScreen(
             }
 
             val isUnlocked = levelNum <= currentMaxLevel
-            // Stage-coherent curriculum: each stage cycles the categories that belong to its
-            // band, so the hero path now traverses ALL strands (fractions/decimals/integers/
-            // geometry/number_sense/statistics/expressions were previously reachable only via
-            // the buried Skill Tree). Milestone levels (10/20/30/40/50/60) are boss levels —
-            // the server forces their category, so the cycle value there is cosmetic.
-            // Difficulty within a category is normalized server-side
-            // (normalizeLevelForGenerator), so any category is servable at any UI level.
-            val stageCycle = when ((levelNum - 1) / 10) {
-                0 -> listOf("arithmetic", "mental", "integers", "decimals")              // Stage 1: number foundations
-                1 -> listOf("fractions", "number_sense", "decimals", "geometry")        // Stage 2: proportional reasoning
-                2 -> listOf("expressions", "powers", "graphing", "inequalities", "functions", "sequences", "equations", "rates", "factors", "algebra", "statistics")    // Stage 3: algebraic thinking
-                3 -> listOf("combinatorics", "algebra", "functions", "sequences", "equations", "rates", "factors", "inequalities", "graphing", "powers", "expressions") // Stage 4: discrete structures
-                4 -> listOf("calculus", "algebra", "combinatorics", "number_sense")     // Stage 5: continuous math
-                else -> listOf("number_theory", "calculus", "combinatorics", "mental")  // Stage 6: the deep end
-            }
-            val category = stageCycle[(levelNum - 1) % stageCycle.size]
+            val category = mapLevelCategory(levelNum)
 
             itemsList.add(
                 LearnMapItem.LevelNodeItem(
@@ -812,12 +808,15 @@ fun LevelMapScreen(
                     ) { item ->
                         when (item) {
                             is LearnMapItem.StageHeader -> {
+                                val stageLevels = ((item.stageNum - 1) * 10 + 1)..(item.stageNum * 10)
                                 StageHeaderCard(
                                     stageNum = item.stageNum,
                                     title = item.title,
                                     description = item.description,
                                     startColor = item.startColor,
-                                    endColor = item.endColor
+                                    endColor = item.endColor,
+                                    starsEarned = stageLevels.sumOf { levelStars[it] ?: 0 },
+                                    starsPossible = stageLevels.count() * 3
                                 )
                             }
                             is LearnMapItem.LevelNodeItem -> {
@@ -900,6 +899,8 @@ fun LevelMapScreen(
                                             category = category,
                                             isUnlocked = isUnlocked,
                                             isActive = item.isActive,
+                                            stars = levelStars[levelNum] ?: 0,
+                                            showStars = levelNum < currentMaxLevel,
                                             onClick = {
                                                 if (isUnlocked) {
                                                     activeDebriefLevel = levelNum
@@ -1348,4 +1349,24 @@ fun LevelMapScreen(
         )
     }
 }
+}
+
+// Stage-coherent curriculum: each stage cycles the categories that belong to its
+// band, so the hero path now traverses ALL strands (fractions/decimals/integers/
+// geometry/number_sense/statistics/expressions were previously reachable only via
+// the buried Skill Tree). Milestone levels (10/20/30/40/50/60) are boss levels —
+// the server forces their category, so the cycle value there is cosmetic.
+// Difficulty within a category is normalized server-side
+// (normalizeLevelForGenerator), so any category is servable at any UI level.
+// Shared by the map and the recap's "Next level" button so both agree on what level N is.
+internal fun mapLevelCategory(levelNum: Int): String {
+    val stageCycle = when ((levelNum - 1) / 10) {
+        0 -> listOf("arithmetic", "mental", "integers", "decimals")              // Stage 1: number foundations
+        1 -> listOf("fractions", "number_sense", "decimals", "geometry")        // Stage 2: proportional reasoning
+        2 -> listOf("expressions", "powers", "graphing", "inequalities", "functions", "sequences", "equations", "rates", "factors", "algebra", "statistics")    // Stage 3: algebraic thinking
+        3 -> listOf("combinatorics", "algebra", "functions", "sequences", "equations", "rates", "factors", "inequalities", "graphing", "powers", "expressions") // Stage 4: discrete structures
+        4 -> listOf("calculus", "algebra", "combinatorics", "number_sense")     // Stage 5: continuous math
+        else -> listOf("number_theory", "calculus", "combinatorics", "mental")  // Stage 6: the deep end
+    }
+    return stageCycle[(levelNum - 1) % stageCycle.size]
 }

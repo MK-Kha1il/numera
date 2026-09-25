@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius as GeometryCornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
@@ -163,6 +164,10 @@ fun GameplayScreen(
     calculatorMemoryState: androidx.compose.runtime.MutableState<Double>,
     calculatorHistoryState: androidx.compose.runtime.MutableState<List<String>>,
     calcIsErrorState: androidx.compose.runtime.MutableState<Boolean>,
+    // In-session momentum: exercise index → first answer right/wrong (the progress segments), and
+    // the current run of correct answers (the combo chip). Defaults keep old call sites valid.
+    exerciseResults: Map<Int, Boolean> = emptyMap(),
+    comboCount: Int = 0,
     handleAnswer: (Boolean) -> Unit,
     isCurrentAnswerCorrect: () -> Boolean,
     continueOrFinish: (Boolean) -> Unit,
@@ -325,6 +330,33 @@ fun GameplayScreen(
                 }
             }
 
+            // Segmented progress: one pill per exercise — solved green, missed red, the current one
+            // lit — so the run's shape is readable at a glance (not just "Exercise 2 of 3").
+            if (problemsList.size in 2..30) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+                ) {
+                    problemsList.indices.forEach { i ->
+                        val result = exerciseResults[i]
+                        val target = when {
+                            result == true -> CorrectGreen
+                            result == false -> WrongRed.copy(alpha = 0.75f)
+                            i == currentProblemIdx -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                            else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.22f)
+                        }
+                        val segColor by animateColorAsState(targetValue = target, label = "segment$i")
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(segColor)
+                        )
+                    }
+                }
+            }
+
             // Exercise Mode Label & Countdown
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -337,12 +369,42 @@ fun GameplayScreen(
                     ExerciseType.TIMED -> "Timed Mastery"
                 }
                 
-                Text(
-                    text = modeLabel,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 12.sp
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+                ) {
+                    Text(
+                        text = modeLabel,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 12.sp
+                    )
+                    // Combo chip: a visible run of correct answers (2+), bouncing on each new one.
+                    AnimatedVisibility(
+                        visible = comboCount >= 2,
+                        enter = scaleIn() + fadeIn(),
+                        exit = scaleOut() + fadeOut()
+                    ) {
+                        val comboScale = remember { Animatable(1f) }
+                        LaunchedEffect(comboCount) {
+                            if (comboCount >= 2 && !com.example.numera.motion.MotionManager.reduceMotion) {
+                                comboScale.snapTo(1.25f)
+                                comboScale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                            }
+                        }
+                        Text(
+                            text = "🔥 $comboCount in a row",
+                            color = DuoTertiary,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 11.sp,
+                            modifier = Modifier
+                                .graphicsLayer(scaleX = comboScale.value, scaleY = comboScale.value)
+                                .clip(RoundedCornerShape(CornerRadius.s))
+                                .background(DuoTertiary.copy(alpha = 0.14f))
+                                .padding(horizontal = Spacing.s, vertical = 2.dp)
+                        )
+                    }
+                }
 
                 if (gameMode == "level") {
                     // Lives as vector hearts: filled = remaining, hollow + muted = spent — the

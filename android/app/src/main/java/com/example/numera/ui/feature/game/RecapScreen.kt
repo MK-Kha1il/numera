@@ -28,6 +28,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,11 +38,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.numera.data.network.MathProblem
+import com.example.numera.data.network.QuestProgressDto
+import com.example.numera.haptic.HapticManager
+import com.example.numera.sound.SoundManager
+import com.example.numera.theme.MedalGold
+import com.example.numera.ui.components.StarRating
 import com.example.numera.data.network.RetrofitClient
 import com.example.numera.ui.components.animatedInt
 import com.example.numera.theme.CorrectGreen
@@ -80,6 +87,19 @@ fun RecapScreen(
     comboBonusGained: Int,
     streakBonusActive: Boolean,
     criticalBonusActive: Boolean,
+    // Payoff moments (all optional — absent on an older server or outside level mode).
+    // This level's 0–3 stars and whether this run set a new best on it.
+    stars: Int? = null,
+    newBest: Boolean = false,
+    // The streak after this session, and whether THIS session is what kept it alive today.
+    streakDays: Int? = null,
+    streakExtended: Boolean = false,
+    streakRestored: Boolean = false,
+    // The "Daily Solver" quest's progress + how many quest rewards are ready to claim.
+    dailySolverQuest: QuestProgressDto? = null,
+    claimableQuests: Int = 0,
+    // One tap into the next level (null → only "Continue" back to the map).
+    onNextLevel: (() -> Unit)? = null,
     onFinishGame: () -> Unit,
 ) {
     val isMilestone = (level > 0) && (level % 10 == 0)
@@ -146,6 +166,105 @@ fun RecapScreen(
                 color = if (isMilestone) MilestoneGold else CorrectGreen
             )
 
+            // The level's stars, revealed one by one — the replay goal made visible. Each landing
+            // star clicks into place; the third lands with the big reward haptic.
+            if (gameMode == "level" && stars != null) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                ) {
+                    StarRating(
+                        stars = stars,
+                        size = 44.dp,
+                        animateReveal = true,
+                        onStarRevealed = { i ->
+                            SoundManager.playLockIn()
+                            if (i == 2) HapticManager.playMajorReward() else HapticManager.playSuccess()
+                        }
+                    )
+                    Text(
+                        text = when (stars) {
+                            3 -> "Flawless!"
+                            2 -> "Every problem solved"
+                            1 -> "Level cleared"
+                            else -> "No stars this time"
+                        },
+                        fontWeight = FontWeight.Black,
+                        fontSize = 15.sp,
+                        color = if (stars >= 3) MedalGold else MaterialTheme.colorScheme.onBackground
+                    )
+                    if (newBest && stars > 0) {
+                        Text(
+                            text = "NEW BEST",
+                            fontWeight = FontWeight.Black,
+                            fontSize = 11.sp,
+                            letterSpacing = 1.sp,
+                            color = MaterialTheme.colorScheme.onTertiary,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(CornerRadius.s))
+                                .background(MaterialTheme.colorScheme.tertiary)
+                                .padding(horizontal = Spacing.s, vertical = 2.dp)
+                        )
+                    }
+                    val nextStarHint = when (stars) {
+                        0 -> "Solve one problem to earn your first star"
+                        1 -> "Solve every problem to earn a second star"
+                        2 -> "No slips at all for the third star"
+                        else -> null
+                    }
+                    if (nextStarHint != null) {
+                        Text(
+                            text = nextStarHint,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
+                        )
+                    }
+                }
+            }
+
+            // The streak moment: when THIS session is what kept the streak alive today, say so —
+            // with the day count front and center (a comeback reads as a comeback).
+            val shownStreak = streakDays ?: currentStreakDays
+            if (streakExtended && shownStreak > 0) {
+                var streakPop by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) {
+                    delay(900)
+                    streakPop = true
+                    SoundManager.playRewardClaim()
+                }
+                val streakScale by animateFloatAsState(
+                    targetValue = if (streakPop) 1f else 0.85f,
+                    animationSpec = tween(durationMillis = 350, easing = EaseOutCubic),
+                    label = "streakPop"
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer(scaleX = streakScale, scaleY = streakScale)
+                        .clip(RoundedCornerShape(CornerRadius.l))
+                        .background(DuoTertiary.copy(alpha = 0.12f))
+                        .border(1.dp, DuoTertiary.copy(alpha = 0.35f), RoundedCornerShape(CornerRadius.l))
+                        .padding(Spacing.m),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.m)
+                ) {
+                    Text(text = "🔥", fontSize = 30.sp)
+                    Column {
+                        Text(
+                            text = "$shownStreak-day streak!",
+                            fontWeight = FontWeight.Black,
+                            fontSize = 18.sp,
+                            color = DuoTertiary
+                        )
+                        Text(
+                            text = if (streakRestored) "Comeback — your climb is back on" else "Today's done — your streak is safe",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
+                        )
+                    }
+                }
+            }
+
             // Stats Dashboard Grid
             AnimatedVisibility(
                 visible = statsCardVisible,
@@ -206,7 +325,7 @@ fun RecapScreen(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.s)
                     ) {
                         Text("✨ Consistency Climb:", color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary), fontSize = 13.sp)
-                        Text("$currentStreakDays Days", fontWeight = FontWeight.Bold, color = DuoTertiary)
+                        Text("${streakDays ?: currentStreakDays} Days", fontWeight = FontWeight.Bold, color = DuoTertiary)
                     }
                 }
             }
@@ -294,17 +413,76 @@ fun RecapScreen(
                 }
             }
 
+            // Daily-quest progress: the next goal, one glance away.
+            dailySolverQuest?.let { q ->
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(q.name.ifBlank { "Daily quest" }, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text(
+                            text = if (q.current >= q.target) "✓ Done" else "${q.current} / ${q.target}",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = if (q.current >= q.target) CorrectGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.secondary)
+                        )
+                    }
+                    LinearProgressIndicator(
+                        progress = if (q.target > 0) (q.current.toFloat() / q.target).coerceIn(0f, 1f) else 0f,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(Spacing.s)
+                            .clip(RoundedCornerShape(CornerRadius.s)),
+                        color = CorrectGreen,
+                        trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                    )
+                }
+            }
+            if (claimableQuests > 0) {
+                Text(
+                    text = "🎁 $claimableQuests quest reward${if (claimableQuests == 1) "" else "s"} ready — claim on Quests",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            }
+
             Spacer(modifier = Modifier.height(Spacing.l))
 
-            DuoButton(
-                text = "Continue",
-                onClick = {
-                    RetrofitClient.triggerProfileRefresh()
-                    onFinishGame()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                color = primaryColor
-            )
+            if (onNextLevel != null) {
+                // Keep the run going: one tap into the next level (the map is one tap away too).
+                DuoButton(
+                    text = "Next level ▶",
+                    onClick = {
+                        RetrofitClient.triggerProfileRefresh()
+                        onNextLevel()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = primaryColor
+                )
+                TextButton(
+                    onClick = {
+                        RetrofitClient.triggerProfileRefresh()
+                        onFinishGame()
+                    }
+                ) {
+                    Text("Back to map", fontWeight = FontWeight.Bold)
+                }
+            } else {
+                DuoButton(
+                    text = "Continue",
+                    onClick = {
+                        RetrofitClient.triggerProfileRefresh()
+                        onFinishGame()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = primaryColor
+                )
+            }
         }
     }
 }

@@ -30,6 +30,9 @@ fun LevelNode(
     category: String,
     isUnlocked: Boolean,
     isActive: Boolean,
+    // Best stars earned on this level (0–3); shown under completed levels as the replay goal.
+    stars: Int = 0,
+    showStars: Boolean = false,
     onClick: () -> Unit
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -178,6 +181,16 @@ fun LevelNode(
             }
         }
 
+        if (showStars && isUnlocked && !isActive) {
+            com.example.numera.ui.components.StarRating(
+                stars = stars,
+                size = 14.dp,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(y = 8.dp)
+            )
+        }
+
         if (isActive) {
             Box(
                 modifier = Modifier
@@ -224,7 +237,10 @@ fun StageHeaderCard(
     title: String,
     description: String,
     startColor: Color,
-    endColor: Color
+    endColor: Color,
+    // Stars earned across this stage's levels vs. the maximum (3 per level); null hides the chip.
+    starsEarned: Int? = null,
+    starsPossible: Int? = null
 ) {
     Box(
         modifier = Modifier
@@ -289,6 +305,15 @@ fun StageHeaderCard(
                     fontSize = 12.sp,
                     lineHeight = 16.sp
                 )
+                if (starsEarned != null && starsPossible != null && starsPossible > 0) {
+                    Spacer(modifier = Modifier.height(Spacing.xs))
+                    Text(
+                        text = "★ $starsEarned / $starsPossible",
+                        color = if (starsEarned >= starsPossible) MedalGold else MedalGold.copy(alpha = 0.85f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Black
+                    )
+                }
             }
         }
     }

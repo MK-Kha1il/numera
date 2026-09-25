@@ -183,6 +183,18 @@ fun MainNavigation() {
             passedLessonContent = navKey.lessonContent,
             passedLessonFormula = navKey.lessonFormula,
             passedExamplesJson = navKey.examplesJson,
+            // "Next level" swaps this finished session for the next map level, so Back still returns
+            // to wherever the run started (the map), not to a dead recap.
+            onNextLevel = { next ->
+              backStack.removeLastOrNull()
+              backStack.add(
+                SoloGame(
+                  category = com.example.numera.ui.feature.archive.mapLevelCategory(next),
+                  level = next,
+                  gameMode = "level"
+                )
+              )
+            },
             onFinishGame = { backStack.removeLastOrNull() }
           )
         }

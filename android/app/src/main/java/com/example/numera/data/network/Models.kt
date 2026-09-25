@@ -824,7 +824,44 @@ data class CompleteSessionResponse(
     val xpBoosterUsesLeft: Int? = null,
     // Present when this level's solves pushed the category across a mastery milestone — the
     // client turns it into the signature mastery-up celebration (ultra-review #20).
-    val masteryMilestone: MasteryMilestone? = null
+    val masteryMilestone: MasteryMilestone? = null,
+    // Recap payoff (docs/Systems.md §18/§21/§22). Nullable on purpose: Gson ignores Kotlin
+    // defaults, so an older server simply leaves these null and the recap hides the section.
+    // This level's stars (0–3), the best ever on it, and whether this run set that best.
+    val stars: Int? = null,
+    val bestStars: Int? = null,
+    val newBest: Boolean? = null,
+    // The streak after this session, and whether THIS session is what kept it alive today.
+    val streak: SessionStreak? = null,
+    // Daily-quest progress so the next goal is one glance away.
+    val questProgress: List<QuestProgressDto>? = null,
+    val claimableQuests: Int? = null,
+    // True when no serve ticket matched (nothing was granted).
+    val rewardWithheld: Boolean? = null
+)
+
+@Serializable
+data class SessionStreak(
+    val days: Int = 0,
+    val extendedToday: Boolean = false,
+    val restored: Boolean = false
+)
+
+@Serializable
+data class QuestProgressDto(
+    val type: String = "",
+    val name: String = "",
+    val current: Int = 0,
+    val target: Int = 0,
+    val claimed: Boolean = false
+)
+
+// GET /api/levels/stars — best stars per level-map level (keys are level numbers as strings).
+@Serializable
+data class LevelStarsResponse(
+    val stars: Map<String, Int>? = null,
+    val total: Int? = null,
+    val threeStarLevels: Int? = null
 )
 
 @Serializable
