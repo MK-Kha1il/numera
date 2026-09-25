@@ -153,8 +153,8 @@ router.get('/api/tournaments/current', authenticateToken, async (req, res) => {
       recordCoins('tournament', w.reward);
       notify(w.userId, {
         category: 'tournament_result',
-        title: '🏆 Tournament Result',
-        message: `You placed #${w.position} in the ${w.title} and won ${w.reward} coins!`,
+        title: 'Tournament result',
+        message: `You placed #${w.position} in the ${w.title} and won ${w.reward} coins.`,
         type: 'social',
         dedupKey: `tournament:${w.tournamentId}`,
       });

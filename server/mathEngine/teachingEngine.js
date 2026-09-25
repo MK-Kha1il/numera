@@ -59,22 +59,22 @@ function adaptExplanation(explanation, styleProfile) {
 
   if (dominant === STYLES.rule_based) {
     // Lead with the rule, then show the solution
-    adapted.lead = '📐 **Rule first**: ' + (explanation.tip || '');
+    adapted.lead = '**Rule**: ' + (explanation.tip || '');
     adapted.body = explanation.solution;
   } else if (dominant === STYLES.example) {
     // Lead with a worked step, then generalise
-    adapted.lead = '🔢 **Worked example**:';
+    adapted.lead = '**Worked example**:';
     adapted.body = explanation.solution;
   } else if (dominant === STYLES.intuition) {
     // Lead with intuition check, then formalise
-    adapted.lead = '💭 **Intuition check**: Does your answer feel right given the numbers?';
+    adapted.lead = '**Check**: Does your answer make sense for these numbers?';
     adapted.body = explanation.simplified || explanation.solution;
   } else if (dominant === STYLES.pattern) {
     // Highlight the mathematical pattern
-    adapted.lead = '🔍 **Pattern**: Look for a structural regularity in the numbers.';
+    adapted.lead = '**Pattern**: Look for a regularity in the numbers.';
     adapted.body = explanation.solution;
   } else if (dominant === STYLES.visual) {
-    adapted.lead = '📊 **Visualise**: Draw or sketch the relationship before calculating.';
+    adapted.lead = '**Sketch it**: Draw the relationship before calculating.';
     adapted.body = explanation.solution;
   }
 

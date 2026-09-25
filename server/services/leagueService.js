@@ -50,15 +50,15 @@ async function rollover(current) {
   logger.info(`[league] week ${current} rolled: ${result.length} movers`);
   for (const m of result) {
     // Promotions always; demotions only for players who actually played last week (an inactive
-    // account doesn't need a ping). Gentle copy — a new week is a fresh climb, not a failure.
+    // account doesn't need a ping).
     if (m.direction === 'down' && m.points === 0) continue;
     notify(m.id, {
       category: 'league_result',
-      title: m.direction === 'up' ? `🏆 Promoted to ${m.to} League!` : `A fresh climb in ${m.to} League`,
+      title: m.direction === 'up' ? `Promoted to ${m.to} League` : `You're in ${m.to} League this week`,
       message:
         m.direction === 'up'
-          ? `You finished #${m.position} in ${m.from} last week. Welcome to ${m.to}!`
-          : `New week, new start: you'll climb from ${m.to} League this week. Every problem counts.`,
+          ? `You finished #${m.position} in ${m.from} last week.`
+          : `You finished #${m.position} in ${m.from} last week. Points reset every Monday.`,
       type: 'reward',
       dedupKey: `league:${current}`,
     }).catch(() => {});

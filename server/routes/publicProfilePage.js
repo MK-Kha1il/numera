@@ -91,7 +91,7 @@ router.get('/u/:username/card.svg', async (req, res) => {
     const placed = (user.competitive_matches || 0) >= 5;
     const rank = placed ? (user.competitive_rank || 'Unranked') : 'Unranked — in placement';
     const tier = String(user.competitive_rank || '').split(' ')[0];
-    return res.send(svg(user.username, `🏆 ${rank}`, TIER_COLOR[tier] || '#b06bff'));
+    return res.send(svg(user.username, rank, TIER_COLOR[tier] || '#b06bff'));
   } catch {
     res.send(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="315"><rect width="600" height="315" fill="#14081f"/></svg>`);
   }
@@ -148,8 +148,8 @@ router.get('/u/:username', async (req, res) => {
     const body = `
     <div class="hero">
       <h1>${esc(user.username)}</h1>
-      <div class="rank">🏆 ${heroRank}</div>
-      ${title ? `<div class="title">🎖️ ${esc(title)}</div>` : ''}
+      <div class="rank">${heroRank}</div>
+      ${title ? `<div class="title">${esc(title)}</div>` : ''}
     </div>
     <div class="grid">
       <div class="stat"><div class="n">${placed && global ? global.display_rating : '—'}</div><div class="l">Rating</div></div>

@@ -54,12 +54,12 @@ function areFriends(a, b) {
 function notifyResult(match, winnerId) {
   const msgFor = (uid) =>
     winnerId == null
-      ? 'Your async duel ended in a draw!'
+      ? 'Your async duel ended in a draw.'
       : winnerId === uid
-        ? 'You won your async duel! 🏆'
+        ? 'You won your async duel.'
         : 'You lost your async duel. Rematch?';
-  notify(match.challenger_id, { category: 'async_result', title: 'Duel Result ⚔️', message: msgFor(match.challenger_id), type: 'social' });
-  notify(match.opponent_id, { category: 'async_result', title: 'Duel Result ⚔️', message: msgFor(match.opponent_id), type: 'social' });
+  notify(match.challenger_id, { category: 'async_result', title: 'Duel result', message: msgFor(match.challenger_id), type: 'social' });
+  notify(match.opponent_id, { category: 'async_result', title: 'Duel result', message: msgFor(match.opponent_id), type: 'social' });
 }
 
 // Challenge a friend to an async duel.
@@ -91,8 +91,8 @@ router.post('/api/duel/async/challenge', authenticateToken, idempotency, async (
       if (err) return res.status(500).json({ error: err.message });
       notify(opponentId, {
         category: 'async_challenge',
-        title: 'New Duel Challenge ⚔️',
-        message: `${req.user.username} challenged you to an async duel — you have 24h to answer!`,
+        title: 'New duel challenge',
+        message: `${req.user.username} challenged you to an async duel. You have 24 hours to play it.`,
         type: 'social',
       });
       res.json({ matchId: this.lastID, problemCount: problems.length });
@@ -235,7 +235,7 @@ router.post('/api/duel/async/:id/play', authenticateToken, idempotency, (req, re
       } else {
         const m = payload.match;
         const otherId = m.challenger_id === uid ? m.opponent_id : m.challenger_id;
-        notify(otherId, { category: 'async_turn', title: 'Your move ⚔️', message: `${req.user.username} played their round — your turn!`, type: 'social' });
+        notify(otherId, { category: 'async_turn', title: 'Your move', message: `${req.user.username} played their round. Your turn.`, type: 'social' });
       }
       res.json({ success: true, score: payload.score, resolved: payload.resolved, result: payload.result || null });
     })

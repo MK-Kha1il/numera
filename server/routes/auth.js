@@ -166,8 +166,8 @@ router.post('/api/auth/register', checkFailedLogins, rateLimiter(5, 60000), asyn
         db.run('INSERT OR IGNORE INTO user_mastery (user_id) VALUES (?)', [newUserId], () => {
           notify(newUserId, {
             category: 'welcome',
-            title: 'Welcome to Numera! 🚀',
-            message: 'Start your math journey by taking the diagnostic placement test or jump straight into Level 1!',
+            title: 'Welcome to Numera',
+            message: 'Take the placement test to skip what you already know, or start at level 1.',
             type: 'welcome',
           }).then(() => sendLoginResponse(newUserId, username, req, res));
         });

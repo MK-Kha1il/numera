@@ -60,12 +60,12 @@ function constructPersonalizedExplanation(conceptId, baseExplanation, userAnalyt
   if (hesitation > 1.5 || successRate < 0.7) {
     const tip = TUTOR_INSIGHTS[conceptId]
       || `Applying the inverse operation is the fastest route to isolate variables or solve for the unknown.`;
-    text = `\n\n💡 **Tutor Insight**: ${tip}\n\n` + text;
+    text = `\n\n**Tip**: ${tip}\n\n` + text;
   }
 
   if (successRate < 0.6 && concept.misconceptions && concept.misconceptions.length > 0) {
     const m = concept.misconceptions[0];
-    text += `\n\n⚠️ **Common Pitfall**: Watch out for the **${m.label}**. Double-check signs and operation order.`;
+    text += `\n\n**Common mistake**: ${m.label}.`;
   }
 
   return text;
@@ -85,7 +85,7 @@ function buildStructuredExplanation(conceptId, baseExplanation, userAnalytics = 
       type:    top.misconception_type,
       label:   top.misconception_label,
       severity: top.severity,
-      warning: `⚠️ You've made the error "${top.misconception_label}" ${top.frequency} time${top.frequency > 1 ? 's' : ''} before. Watch this step carefully.`
+      warning: `You've made the error "${top.misconception_label}" ${top.frequency} time${top.frequency > 1 ? 's' : ''} before. Watch this step.`
     };
   }
 

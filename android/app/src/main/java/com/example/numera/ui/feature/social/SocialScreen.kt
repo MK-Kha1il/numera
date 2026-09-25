@@ -30,12 +30,12 @@ import kotlinx.coroutines.withContext
 // Preset friend nudges (keys must match the server's NUDGES catalog in routes/friends.js). Fixed
 // set → no free text → nothing to moderate.
 private val NUDGE_OPTIONS = listOf(
-    "cheer" to "👏 Cheer on",
-    "duel" to "⚔️ Challenge",
-    "gg" to "🎮 Good game",
-    "streak" to "🔥 Keep streak",
-    "study" to "📚 Study?",
-    "congrats" to "🎉 Congrats"
+    "cheer" to "Cheer on",
+    "duel" to "Ask for a duel",
+    "gg" to "Good game",
+    "streak" to "Keep your streak",
+    "study" to "Study together?",
+    "congrats" to "Congrats"
 )
 
 // Friends: add by username, accept/decline requests, nudge, remove, and the friends ranking.

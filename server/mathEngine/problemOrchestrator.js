@@ -511,25 +511,25 @@ function buildSolutionPath(problem, conceptId) {
 
 function buildEducationalNote(conceptId, reason) {
   if (reason === 'misconception_remediation') {
-    return '🎯 This problem specifically targets a mistake pattern you\'ve shown before. Focus carefully on each step.';
+    return 'This one targets a mistake you\'ve made before. Take it step by step.';
   }
   if (reason === 'retention_review') {
-    return '🔁 You haven\'t seen this concept in a while. This review strengthens long-term memory.';
+    return 'Review: you haven\'t practised this in a while.';
   }
   if (reason === 'prerequisite_gap') {
-    return '🔑 Mastering this foundational concept will unlock more advanced topics.';
+    return 'Later topics build on this one.';
   }
   if (reason === 'dimension_building') {
-    return '🎯 You\'ve got the idea — this round sharpens a specific edge (solving faster, or unaided) to deepen your mastery.';
+    return 'You know the method. This round works on speed, or solving without hints.';
   }
   if (reason === 'transfer_practice') {
-    return '🧩 You\'ve mastered the standard form — now apply it in a new, unfamiliar context to prove you truly understand it.';
+    return 'Same idea, new setting.';
   }
   if (reason === 'exploration') {
-    return '🌟 You\'ve mastered the prerequisites — this is a new concept for you!';
+    return 'New concept. You\'ve covered what it builds on.';
   }
   if (reason === 'challenge') {
-    return '🏆 You\'re performing well. This problem pushes your mastery further.';
+    return 'A harder one, since you\'ve been doing well.';
   }
   return null;
 }

@@ -72,8 +72,8 @@ function notifyWarWinners(rewarded) {
     recordCoins('club_war', w.reward);
     notify(w.userId, {
       category: 'club_war_result',
-      title: '⚔️ Club War Won!',
-      message: `Your club won its war — you earned ${w.reward} coins!`,
+      title: 'Club war won',
+      message: `Your club won its war. You earned ${w.reward} coins.`,
       type: 'social',
       dedupKey: `clubwar:${w.warId}`,
     });
@@ -173,7 +173,7 @@ router.post('/api/clubs/wars/challenge', authenticateToken, (req, res) => {
     .then((out) => {
       // Rally the opponent's members.
       db.all('SELECT user_id FROM club_members WHERE club_id = ?', [out.opponentClubId], (e, rows) => {
-        if (!e && rows) for (const r of rows) notify(r.user_id, { category: 'club_war_challenge', title: '⚔️ Your club was challenged!', message: 'A rival club declared war — play to defend your team.', type: 'social', dedupKey: `clubwar-new:${out.warId}` });
+        if (!e && rows) for (const r of rows) notify(r.user_id, { category: 'club_war_challenge', title: 'Your club was challenged', message: 'Another club started a war. Play your round to score for your club.', type: 'social', dedupKey: `clubwar-new:${out.warId}` });
       });
       res.json({ success: true, warId: out.warId });
     })

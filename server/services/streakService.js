@@ -96,10 +96,10 @@ async function applyStreakEvent(userId, kind) {
     // Fire-and-forget; the date-stamped dedupKey makes it at-most-once per day.
     notify(userId, {
       category: 'streak_freeze_used',
-      title: 'Your Streak Shield saved your streak! 🛡️',
+      title: 'A Streak Shield saved your streak',
       message: `You missed ${effects.shieldsUsed === 1 ? 'a day' : `${effects.shieldsUsed} days`}, but ${
         effects.shieldsUsed === 1 ? 'a Streak Shield' : 'your Streak Shields'
-      } kept your ${effects.savedStreak}-day streak alive. Welcome back — keep it going!`,
+      } kept your ${effects.savedStreak}-day streak alive.`,
       type: 'reward',
       channels: ['inapp', 'email'],
       dedupKey: new Date(now * 1000).toISOString().slice(0, 10),

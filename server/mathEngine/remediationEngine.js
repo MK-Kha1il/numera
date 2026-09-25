@@ -95,7 +95,7 @@ function applyRemediation(problem, misconception) {
     severity: mc.severity,
     frequency: mc.frequency,
     temptingAnswer: temptingStr,
-    focus: `🎯 Targeted practice for a slip you've made before: "${mc.label}". One of the wrong options is the answer that mistake produces — make sure you don't pick it.`,
+    focus: `Practice for a mistake you've made before: "${mc.label}". One of the wrong options is the answer that mistake gives.`,
     watchFor,
   };
 

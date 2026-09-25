@@ -220,8 +220,8 @@ function nrsUpdateTilt(userId, performanceScore, sessionData) {
     if (updated.tilted && (!row || !row.tilted)) {
       notify(userId, {
         category: 'tilt',
-        title: 'Take a Break 🧘',
-        message: "You've had a tough session run. Taking a short break often improves performance. Your matchmaking will be adjusted to find you better-suited opponents.",
+        title: 'Maybe take a break',
+        message: "That's a few losses in a row. A short break usually helps, and your next matches will be against closer opponents.",
         type: 'system',
       });
     }

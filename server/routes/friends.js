@@ -65,8 +65,8 @@ router.post('/api/friends/request', authenticateToken, (req, res) => {
             if (errUpdate) return res.status(500).json({ error: errUpdate.message });
             notify(conn.user_id, {
               category: 'friend_accept',
-              title: 'Friend Request Accepted 🤝',
-              message: `${req.user.username} accepted your friend request!`,
+              title: 'Friend request accepted',
+              message: `${req.user.username} accepted your friend request.`,
               type: 'social',
             });
             return res.json({ success: true, message: 'Friend request accepted immediately' });
@@ -83,7 +83,7 @@ router.post('/api/friends/request', authenticateToken, (req, res) => {
           }
           notify(target.id, {
             category: 'friend_request',
-            title: 'New Friend Request 👤',
+            title: 'New friend request',
             message: `${req.user.username} sent you a friend request.`,
             type: 'social',
           });
@@ -107,8 +107,8 @@ router.post('/api/friends/accept', authenticateToken, (req, res) => {
       if (this.changes === 0) return res.status(404).json({ error: 'Pending friend request not found' });
       notify(friendId, {
         category: 'friend_accept',
-        title: 'Friend Request Accepted 🤝',
-        message: `${req.user.username} accepted your friend request!`,
+        title: 'Friend request accepted',
+        message: `${req.user.username} accepted your friend request.`,
         type: 'social',
       });
       res.json({ success: true, message: 'Friend request accepted' });
@@ -154,19 +154,19 @@ router.delete('/api/friends/:friendId', authenticateToken, (req, res) => {
   );
 });
 
-// Friend nudges (audit #1.7 / #20 — safe peer interaction without free-text chat). A friend can
-// send one of a FIXED set of canned encouragements; the message text is server-defined (the client
+// Friend nudges: peer interaction without free-text chat. A friend can send one of a FIXED set of
+// canned encouragements; the message text is server-defined (the client
 // only picks a type), so there's no user-generated text to moderate — the right default for a
 // likely-minors product. Delivered through the in-app notification funnel, friends-only and
 // block-aware. Rate-limited to one delivered nudge per friend per 5-minute window via notify()'s
 // dedup key (keyed by sender), so no extra table is needed.
 const NUDGES = {
-  cheer: '👏 is cheering you on!',
-  duel: '⚔️ wants to duel you!',
-  gg: '🎮 says: good game!',
-  streak: '🔥 says: keep that streak going!',
-  study: '📚 says: study session?',
-  congrats: '🎉 says: congrats!',
+  cheer: 'is cheering you on.',
+  duel: 'wants a duel.',
+  gg: 'says good game.',
+  streak: 'says keep your streak going.',
+  study: 'wants to study together.',
+  congrats: 'says congrats.',
 };
 
 // The nudge catalog, so the client renders the options instead of hardcoding them.
@@ -206,7 +206,7 @@ router.post('/api/friends/:friendId/nudge', authenticateToken, (req, res) => {
             // Await delivery so the 200 means "sent" (and so callers don't race the write).
             await notify(friendId, {
               category: 'friend_nudge',
-              title: 'Friend Nudge',
+              title: 'Nudge',
               message: `${name} ${NUDGES[type]}`,
               type: 'social',
               dedupKey: `nudge:${req.user.id}:${bucket}`,

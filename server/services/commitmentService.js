@@ -21,8 +21,8 @@ function maybeCelebrateDailyGoal(user, todaySolved, solvedThisSession) {
       if (todaySolved >= target && before < target) {
         notify(user.id, {
           category: 'daily_goal_reached',
-          title: 'Daily goal smashed! 🎯',
-          message: `You hit your goal of ${target} problems today. Great work — see you tomorrow!`,
+          title: 'Daily goal reached',
+          message: `You solved ${target} problems today.`,
           type: 'reward',
           channels: ['inapp', 'email'],
           dedupKey: new Date().toISOString().slice(0, 10),

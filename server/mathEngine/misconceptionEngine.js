@@ -216,9 +216,8 @@ function buildMisconceptionWarning(misconceptions) {
     label:      top.misconception_label,
     severity:   top.severity,
     frequency:  top.frequency,
-    warning:    `⚠️ Watch out: you have previously made the error "${top.misconception_label}" ` +
-                `${top.frequency} time${top.frequency > 1 ? 's' : ''}. ` +
-                `Double-check this step carefully.`
+    warning:    `You've made the error "${top.misconception_label}" ` +
+                `${top.frequency} time${top.frequency > 1 ? 's' : ''} before. Watch this step.`
   };
 }
 

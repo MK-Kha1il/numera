@@ -551,8 +551,8 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
   if (r.newLevel > r.user.level) {
     notify(userId, {
       category: 'levelup',
-      title: 'Level Up! 🌟',
-      message: `Congratulations! You reached Level ${r.newLevel}. Keep climbing!`,
+      title: `Level ${r.newLevel}`,
+      message: `You reached level ${r.newLevel}.`,
       type: 'levelup',
     });
   }

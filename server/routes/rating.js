@@ -134,8 +134,8 @@ function notifySeasonWinners(winners) {
     recordCoins('season_reward', w.reward);
     notify(w.userId, {
       category: 'season_result',
-      title: '🏅 Season Result',
-      message: `You finished #${w.position} in ${w.seasonName} and earned ${w.reward} coins!`,
+      title: 'Season result',
+      message: `You finished #${w.position} in ${w.seasonName} and earned ${w.reward} coins.`,
       type: 'social',
       dedupKey: `season:${w.seasonName}:${w.userId}`,
     });
@@ -341,7 +341,6 @@ router.get('/api/rating/honor', authenticateToken, (req, res) => {
 // A composed, shareable boast about the player's competitive standing (audit #22 — the viral loop /
 // reach gap). Server-built so the copy is consistent and the rank can't be spoofed by the client.
 // Returns a ready-to-share `text` + the structured bits so the client can render a card too.
-const APP_TAGLINE = 'the ranked math ladder where understanding wins, not speed';
 router.get('/api/rating/share-card', authenticateToken, (req, res) => {
   getRatingRow(req.user.id, 'global', (err, row) => {
     if (err) return res.status(500).json({ error: 'Rating lookup failed' });
@@ -351,14 +350,13 @@ router.get('/api/rating/share-card', authenticateToken, (req, res) => {
       const titleId = u && u.active_title;
       const title = titleId ? TITLE_CATALOG.find((t) => t.id === titleId) : null;
       const titleStr = title ? ` "${title.name}"` : '';
-      // Link to the public web profile when a base URL is configured (completes the viral loop into
-      // the SEO profile page, audit #75). Omitted when unconfigured (dev) so the text stays clean.
+      // Link to the public web profile when a base URL is configured; omitted in dev.
       const base = require('../config').APP_BASE_URL;
       const profileUrl = base && u && u.username ? `${base.replace(/\/$/, '')}/u/${encodeURIComponent(u.username)}` : null;
       const urlSuffix = profileUrl ? ` ${profileUrl}` : '';
       const text = (placed
-        ? `🧠 I'm ${rank} (${row.display_rating})${titleStr} on Numera — ${APP_TAGLINE}. Think you can climb higher?`
-        : `🧠 I'm climbing the ranked ladder on Numera — ${APP_TAGLINE}. Come compete with me!`) + urlSuffix;
+        ? `I'm ${rank} (${row.display_rating})${titleStr} in ranked math duels on Numera.`
+        : `I'm playing ranked math duels on Numera.`) + urlSuffix;
       res.json({
         text,
         placed,

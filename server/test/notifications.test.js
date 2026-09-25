@@ -99,7 +99,7 @@ test('lifecycle sweep fires streak_risk for a user active yesterday with a strea
   assert.equal(after, before, 'a second sweep on the same day must be deduped');
 });
 
-// ---- Sweep: a high-burnout learner gets a supportive streak nudge, not FOMO -------
+// ---- Sweep: a high-burnout learner gets a low-pressure streak nudge --------------
 test('lifecycle streak_risk softens to a low-pressure nudge for a high-burnout learner', async () => {
   // High burnout (the engine measured it) + active yesterday with a streak.
   const stressed = await registerUser(ctx.base);
@@ -114,11 +114,11 @@ test('lifecycle streak_risk softens to a low-pressure nudge for a high-burnout l
 
   const stressedNote = await dbGet("SELECT * FROM user_notifications WHERE user_id = ? AND title LIKE '%streak%'", [sid]);
   assert.ok(stressedNote, 'high-burnout learner still gets a streak nudge (re-engagement preserved)');
-  assert.ok(!/Don't lose/i.test(stressedNote.title), 'but it must NOT be the loss-framed FOMO push');
-  assert.match(stressedNote.title, /no pressure/i, 'it should be the supportive, low-pressure framing');
+  assert.ok(!/ends tonight/i.test(stressedNote.title), 'but it must NOT be the loss-framed push');
+  assert.match(stressedNote.title, /one problem/i, 'it should be the low-pressure framing');
 
   const calmNote = await dbGet("SELECT * FROM user_notifications WHERE user_id = ? AND title LIKE '%streak%'", [cid]);
-  assert.ok(calmNote && /Don't lose/i.test(calmNote.title), 'a normal-wellbeing learner still gets the standard reminder');
+  assert.ok(calmNote && /ends tonight/i.test(calmNote.title), 'a normal-wellbeing learner still gets the standard reminder');
 });
 
 // ---- Sweep: a lapsed minor gets the in-app nudge but no email --------------------
