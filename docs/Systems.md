@@ -9,7 +9,7 @@ linked subsystem docs hold the depth.
 ⛔ blocked on an external dependency.
 
 **Snapshot (2026-09-25):** server 45 routers / 221 endpoints, 70 migrations, 88 tables,
-1,316 passing `node:test` tests, ESLint 0 errors · content 181 concepts, 182 concept-first lessons,
+1,317 passing `node:test` tests, ESLint 0 errors · content 181 concepts, 182 concept-first lessons,
 117 achievements, 114 shop items, 14 titles, 6 daily quests, 16 interactive visual models ·
 Android 129 Kotlin source files (~40k lines), 50 Robolectric test files.
 
