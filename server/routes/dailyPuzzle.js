@@ -21,6 +21,7 @@ const { applyXp } = require('../lib/progression');
 const ExerciseMemory = require('../mathEngine/exerciseMemory');
 const LessonSafety = require('../mathEngine/lessonSafety');
 
+const { recordCoins } = require('../services/economyLedger');
 const router = express.Router();
 
 const DAILY_REWARD_XP = 50;
@@ -176,6 +177,7 @@ router.post('/api/math/daily-puzzle/submit', authenticateToken, idempotency, asy
 
     if (result.alreadySolved) return res.json({ success: true, message: 'Already solved today!', alreadySolved: true });
 
+    recordCoins('daily_puzzle', DAILY_REWARD_COINS);
     await creditStreak(userId);
     updateAchievements(userId, () => {
       res.json({

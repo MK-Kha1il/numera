@@ -16,6 +16,7 @@ const { feedEngineOutcome } = require('../services/engineFeed');
 const { creditStreak } = require('../services/streakService');
 const { ensureDailyReset } = require('../services/userService');
 
+const { recordCoins } = require('../services/economyLedger');
 const router = express.Router();
 
 const STARTING_LIVES = 3;
@@ -146,6 +147,7 @@ router.post('/api/puzzle-rush/submit', authenticateToken, idempotency, (req, res
     .then(async (payload) => {
       // A correct answer is a solve: it keeps today's streak alive (idempotent per day).
       if (feed && feed.correct) await creditStreak(userId);
+      if (payload.gameOver) recordCoins('puzzle_rush', payload.reward);
       // Feed the engine fire-and-forget (concept attributed via the stored template type) so
       // competitive play now strengthens mastery/retention/Growth Insights just like solo play.
       if (feed && feed.conceptKey) {

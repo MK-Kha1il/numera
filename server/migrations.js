@@ -1536,6 +1536,25 @@ const migrations = [
       `);
     },
   },
+  {
+    version: 68,
+    name: 'economy_daily',
+    // Aggregate coin faucet/sink ledger (services/economyLedger.js): per UTC day, per source, per
+    // flow ('in' = faucet, 'out' = sink) — coins moved + event count. No user id: not personal data.
+    // Lets docs/EconomyModel.md be validated against real behavior (GET /api/analytics/economy).
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS economy_daily (
+          day    TEXT NOT NULL,
+          source TEXT NOT NULL,
+          flow   TEXT NOT NULL CHECK (flow IN ('in', 'out')),
+          coins  INTEGER NOT NULL DEFAULT 0,
+          events INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (day, source, flow)
+        )
+      `);
+    },
+  },
 ];
 
 /**

@@ -11,6 +11,7 @@ const { attachTipToProblem } = require('../services/tipService');
 const { ensureDailyReset } = require('../services/userService');
 const { creditStreak } = require('../services/streakService');
 
+const { recordCoins } = require('../services/economyLedger');
 const router = express.Router();
 
 // Mistakes Bank Endpoint: Get all current user errors
@@ -138,6 +139,7 @@ router.post('/api/mistakes/resolve', authenticateToken, async (req, res) => {
       return { user, progressed, xpGained, coinsGained, paid };
     });
 
+    recordCoins('mistake_resolve', r.coinsGained);
     await creditStreak(userId); // solving a problem keeps today's streak alive
     res.json({
       success: true,

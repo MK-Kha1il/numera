@@ -1,6 +1,7 @@
 // Grants the cumulative cosmetic + badge rewards a user is entitled to at a given rank
 // (idempotent via INSERT OR IGNORE; coins credited only on a newly-granted badge).
 const { db } = require('../db');
+const { recordCoins } = require('./economyLedger');
 
 function grantRankRewards(userId, rank, callback) {
   const rewards = [];
@@ -63,7 +64,9 @@ function grantRankRewards(userId, rank, callback) {
       if (!errRun && this.changes > 0) {
         const badgeMatch = badgesWithCoins.find((b) => b.id === itemId);
         if (badgeMatch) {
-          db.run('UPDATE users SET coins = coins + ? WHERE id = ?', [badgeMatch.coins, userId]);
+          db.run('UPDATE users SET coins = coins + ? WHERE id = ?', [badgeMatch.coins, userId], (e) => {
+            if (!e) recordCoins('rank_reward', badgeMatch.coins);
+          });
         }
       }
       completed++;

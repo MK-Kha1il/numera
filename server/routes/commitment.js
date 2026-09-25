@@ -6,6 +6,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { getUserWithMastery } = require('../services/userService');
 const { settleStreak, creditStreak, localToday } = require('../services/streakService');
 
+const { recordCoins } = require('../services/economyLedger');
 const router = express.Router();
 
 // Streak repair (the second valve after the streak-freeze shield): after a full reset, the lost
@@ -142,7 +143,10 @@ router.post('/api/commitment/recommit', authenticateToken, async (req, res) => {
     );
     if (bridged.changes === 0) throw httpError(409, 'Climb is not in a fading state.');
   })
-    .then(() => respond('Consistency climb restored!'))
+    .then(() => {
+      if (method === 'coins') recordCoins('recommit', -RECOMMIT_COIN_COST);
+      respond('Consistency climb restored!');
+    })
     .catch((e) => res.status(e.status || 500).json({ error: e.status ? e.message : 'Recommit failed.' }));
 });
 
@@ -180,6 +184,7 @@ router.post('/api/commitment/streak-repair', authenticateToken, (req, res) => {
       return restoredStreak;
     })
       .then((restored) => {
+        recordCoins('streak_repair', -offer.cost);
         getUserWithMastery(userId, (errMe, fullUser) => {
           if (errMe) return res.status(500).json({ error: errMe.message });
           res.json({ success: true, message: `Streak restored to ${restored} days!`, restoredStreak: restored, user: fullUser });

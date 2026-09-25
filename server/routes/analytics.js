@@ -121,4 +121,46 @@ router.get('/api/analytics/activation', authenticateToken, requireAdmin, (req, r
   );
 });
 
+// Economy ledger rollup (docs/EconomyModel.md — validate the modeled faucets/sinks against real
+// behavior). Per-source totals split into faucets (coins in) and sinks (coins out), the net flow,
+// and a per-day series; optional ?since/&until=YYYY-MM-DD window. Admin-only; aggregate rows from
+// services/economyLedger.js carry no user ids.
+router.get('/api/analytics/economy', authenticateToken, requireAdmin, (req, res) => {
+  const since = ISO_DAY.test(req.query.since || '') ? req.query.since : '0000-00-00';
+  const until = ISO_DAY.test(req.query.until || '') ? req.query.until : '9999-99-99';
+  db.all(
+    `SELECT source, flow, SUM(coins) AS coins, SUM(events) AS events
+       FROM economy_daily WHERE day >= ? AND day <= ?
+      GROUP BY source, flow ORDER BY coins DESC`,
+    [since, until],
+    (err, bySource) => {
+      if (err) return res.status(500).json({ error: err.message });
+      db.all(
+        `SELECT day,
+                SUM(CASE WHEN flow = 'in' THEN coins ELSE 0 END) AS coinsIn,
+                SUM(CASE WHEN flow = 'out' THEN coins ELSE 0 END) AS coinsOut
+           FROM economy_daily WHERE day >= ? AND day <= ?
+          GROUP BY day ORDER BY day DESC`,
+        [since, until],
+        (e2, days) => {
+          if (e2) return res.status(500).json({ error: e2.message });
+          const rows = bySource || [];
+          const faucets = rows.filter((r) => r.flow === 'in').map(({ source, coins, events }) => ({ source, coins, events }));
+          const sinks = rows.filter((r) => r.flow === 'out').map(({ source, coins, events }) => ({ source, coins, events }));
+          const coinsIn = faucets.reduce((a, r) => a + r.coins, 0);
+          const coinsOut = sinks.reduce((a, r) => a + r.coins, 0);
+          res.json({
+            since,
+            until,
+            totals: { coinsIn, coinsOut, net: coinsIn - coinsOut, sinkRatio: coinsIn ? +(coinsOut / coinsIn).toFixed(3) : null },
+            faucets,
+            sinks,
+            days: (days || []).map((d) => ({ ...d, net: d.coinsIn - d.coinsOut })),
+          });
+        }
+      );
+    }
+  );
+});
+
 module.exports = router;

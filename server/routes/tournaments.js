@@ -15,6 +15,7 @@ const { notify } = require('../services/notificationService');
 
 const { creditStreak } = require('../services/streakService');
 
+const { recordCoins } = require('../services/economyLedger');
 const router = express.Router();
 
 const PROBLEM_COUNT = 10;
@@ -148,6 +149,7 @@ router.get('/api/tournaments/current', authenticateToken, async (req, res) => {
     const { tournament: t, winners } = await withTransaction((tx) => ensureCurrent(tx, now));
     // Notify the just-crowned winners (post-commit; deduped per event so it fires once).
     for (const w of winners) {
+      recordCoins('tournament', w.reward);
       notify(w.userId, {
         category: 'tournament_result',
         title: '🏆 Tournament Result',

@@ -21,6 +21,7 @@ const {
   syncCompetitiveMirror,
 } = require('../services/ratingService');
 
+const { recordCoins } = require('../services/economyLedger');
 const router = express.Router();
 
 // End-of-season coin prizes for the top finishers (by season peak rating).
@@ -137,6 +138,7 @@ async function ensureSeason(tx) {
 // Fire the post-commit "you placed in the season" notifications for a winners list.
 function notifySeasonWinners(winners) {
   for (const w of winners) {
+    recordCoins('season_reward', w.reward);
     notify(w.userId, {
       category: 'season_result',
       title: '🏅 Season Result',
@@ -891,7 +893,10 @@ router.post('/api/rating/reward-track/claim', authenticateToken, (req, res) => {
     const u = await tx.get('SELECT season_tokens, coins FROM users WHERE id = ?', [userId]);
     return { tier, tierName: NRS.RANK_TIERS[tier], tokensAwarded: reward.tokens, coinsAwarded: reward.coins, cosmeticAwarded, seasonTokens: u.season_tokens, coins: u.coins };
   })
-    .then((r) => res.json({ success: true, ...r }))
+    .then((r) => {
+      recordCoins('season_track', r.coinsAwarded);
+      res.json({ success: true, ...r });
+    })
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));
 });
 

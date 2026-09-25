@@ -12,6 +12,7 @@ const { generateProblem, CONCEPT_TO_LEVEL } = require('../mathGenerator');
 const KnowledgeGraph = require('../mathEngine/knowledgeGraph');
 const { notify } = require('../services/notificationService');
 
+const { recordCoins } = require('../services/economyLedger');
 const router = express.Router();
 
 const PROBLEM_COUNT = 7;
@@ -68,6 +69,7 @@ async function finalizeIfEnded(tx, war, now) {
 
 function notifyWarWinners(rewarded) {
   for (const w of rewarded) {
+    recordCoins('club_war', w.reward);
     notify(w.userId, {
       category: 'club_war_result',
       title: '⚔️ Club War Won!',

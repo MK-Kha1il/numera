@@ -7,6 +7,7 @@ const { idempotency } = require('../idempotency');
 const { withTransaction, httpError } = require('../dbx');
 const { updateAchievements } = require('../services/achievementService');
 
+const { recordCoins } = require('../services/economyLedger');
 const router = express.Router();
 
 router.get('/api/achievements', authenticateToken, (req, res) => {
@@ -86,7 +87,10 @@ router.post('/api/achievements/claim', authenticateToken, idempotency, (req, res
 
     return { success: true, rewardCoins: row.reward_coins, unlockedBadge: badgeItem ? badgeId : null };
   })
-    .then((payload) => res.json(payload))
+    .then((payload) => {
+      recordCoins('achievement_claim', payload.rewardCoins);
+      res.json(payload);
+    })
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));
 });
 

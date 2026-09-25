@@ -28,6 +28,7 @@ const { categoryToDomain, matchAcceptable, SIGMA_INIT: NRS_SIGMA_INIT } = requir
 const { updateAchievements } = require('./services/achievementService');
 const { grantRankRewards } = require('./services/rankRewardService');
 const { creditStreak } = require('./services/streakService');
+const { recordCoins } = require('./services/economyLedger');
 const { ensureDailyReset } = require('./services/userService');
 const { flagAnswer, resolveDuel, rankedMatchmakingError } = require('./lib/duelIntegrity');
 
@@ -65,6 +66,7 @@ app.use(globalRateLimiter(100, 60000));
 
 // Feature routers extracted from this file (incremental decomposition — see docs/Architecture.md).
 // Each router declares its own full /api/... paths and imports its own deps.
+app.use(require('./routes/health'));
 app.use(require('./routes/notifications'));
 app.use(require('./routes/srs'));
 app.use(require('./routes/library'));
@@ -1611,7 +1613,8 @@ function processPlayerDuelResult(userId, opts, callback) {
     db.run(
       "UPDATE users SET coins = coins + ?, arena_wins = arena_wins + ?, solved_count = solved_count + ? WHERE id = ?",
       [coinGain, isWinner ? 1 : 0, solvedCount, userId],
-      () => {
+      (coinErr) => {
+        if (!coinErr) recordCoins('live_duel', coinGain);
         // Read the (possibly just-synced) mirror so the debrief shows the unified competitive rank.
         db.get('SELECT elo, competitive_rank FROM users WHERE id = ?', [userId], (e, row) => {
           const newRank = (row && row.competitive_rank) || 'Unranked (Placement: 0/5)';

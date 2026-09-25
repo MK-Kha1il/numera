@@ -36,6 +36,7 @@ const { feedEngineOutcome } = require('../services/engineFeed');
 const { issueSoloTicket, consumeSoloTicket } = require('../services/soloSessionService');
 const logger = require('../logger');
 
+const { recordCoins } = require('../services/economyLedger');
 const router = express.Router();
 
 // Enrich an applied-mode problem (word problems / estimation / spot-the-mistake) with the
@@ -487,6 +488,7 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
     });
   }
 
+  recordCoins('solo_session', r.coinsGained);
   if (r.levelLocked) {
     securityLog(userId, 'LOCKED_LEVEL_COMPLETION', req.ip, `Claimed completion of level ${parsedLevel} while unlocked up to ${r.user.level}.`);
   }

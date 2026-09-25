@@ -10,6 +10,7 @@ const cache = require('../cache');
 const { getRankValue } = require('../lib/progression');
 const { securityLog } = require('../middleware/security');
 
+const { recordCoins } = require('../services/economyLedger');
 const router = express.Router();
 
 // Cosmetic price multiplier (1.0 = full price). The ONLY discount is a gentle affordability
@@ -287,7 +288,7 @@ router.post('/api/shop/purchase', authenticateToken, idempotency, (req, res) => 
       if (itemId === 'item_xp_booster') {
         await tx.run('UPDATE users SET xp_booster_uses_left = xp_booster_uses_left + 3 WHERE id = ?', [userId]);
       }
-      return { success: true, message: 'Booster purchased successfully', coinsLeft: currentCoins - finalCost };
+      return { success: true, message: 'Booster purchased successfully', coinsLeft: currentCoins - finalCost, coinsSpent: finalCost };
     }
 
     // Cosmetic item: UNIQUE(user_id, item_id) enforces "buy once". A duplicate
@@ -300,9 +301,12 @@ router.post('/api/shop/purchase', authenticateToken, idempotency, (req, res) => 
       }
       throw e;
     }
-    return { success: true, message: 'Item purchased successfully', coinsLeft: currentCoins - finalCost };
+    return { success: true, message: 'Item purchased successfully', coinsLeft: currentCoins - finalCost, coinsSpent: finalCost };
   })
-    .then((payload) => res.json(payload))
+    .then((payload) => {
+      recordCoins('shop_purchase', -payload.coinsSpent);
+      res.json(payload);
+    })
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));
 });
 
@@ -329,7 +333,10 @@ router.post('/api/shop/convert-coins', authenticateToken, idempotency, (req, res
     const u = await tx.get('SELECT coins, season_tokens FROM users WHERE id = ?', [userId]);
     return { success: true, tokensGained: tokens, coinsSpent: coinCost, coins: u.coins, seasonTokens: u.season_tokens };
   })
-    .then((payload) => res.json(payload))
+    .then((payload) => {
+      recordCoins('coin_conversion', -payload.coinsSpent);
+      res.json(payload);
+    })
     .catch((err) => res.status(err.status || 500).json({ error: err.message }));
 });
 
