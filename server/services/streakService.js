@@ -123,6 +123,15 @@ const MEMO_LIMIT = 50000;
 // Never throw into a request path: a streak hiccup must not fail a login or a reward.
 async function settleStreak(userId) {
   try {
+    // Fast path (every app launch lands here): a plain read decides whether anything is missed
+    // at all — no streak, or credited today/yesterday — before taking the write lock.
+    const [row, today] = await Promise.all([
+      new Promise((resolve) =>
+        db.get('SELECT streak, streak_day FROM users WHERE id = ?', [userId], (e, r) => resolve(e ? null : r))
+      ),
+      localToday(userId),
+    ]);
+    if (!row || !(row.streak > 0) || !(row.streak_day > 0) || today - row.streak_day <= 1) return null;
     return await applyStreakEvent(userId, 'settle');
   } catch (err) {
     logger.error(`[streak] settle failed for user ${userId}: ${err.message}`);
