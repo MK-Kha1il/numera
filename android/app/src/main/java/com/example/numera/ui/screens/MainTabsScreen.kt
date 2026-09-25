@@ -84,6 +84,7 @@ fun MainTabsScreen(
     var showLearningPlan by remember { mutableStateOf(false) }
     var showWeeklyRecap by remember { mutableStateOf(false) }
     var showGoal by remember { mutableStateOf(false) }
+    var showSocial by remember { mutableStateOf(false) }
     var showClubs by remember { mutableStateOf(false) }
     var showClubWars by remember { mutableStateOf(false) }
     var showChallenges by remember { mutableStateOf(false) }
@@ -256,6 +257,13 @@ fun MainTabsScreen(
         return
     }
 
+    if (showSocial) {
+        NumeraTheme {
+            com.example.numera.ui.feature.social.SocialScreen(onBack = { showSocial = false })
+        }
+        return
+    }
+
     if (showClubs) {
         NumeraTheme {
             com.example.numera.ui.feature.social.ClubsScreen(
@@ -384,6 +392,9 @@ fun MainTabsScreen(
             },
             CommandItem("My Goal", CommandCategory.QuickAction, NumeraIconType.Quests, "Set a target and track your progress", "goal target daily aim objective plan motivation") {
                 showGoal = true
+            },
+            CommandItem("Friends", CommandCategory.QuickAction, NumeraIconType.Arena, "Requests, nudges & the friends ranking", "friends friend request add nudge cheer social leaderboard ranking") {
+                showSocial = true
             },
             CommandItem("Clubs", CommandCategory.QuickAction, NumeraIconType.Arena, "Join or create a team", "club team group community join members ranking") {
                 showClubs = true
@@ -763,7 +774,7 @@ fun MainTabsScreen(
                     }, onOpenMasteryMap = {
                         com.example.numera.analytics.Analytics.log("mastery_profile_open")
                         showMasteryMap = true
-                    })
+                    }, onOpenFriends = { showSocial = true })
                     5 -> SettingsScreen(
                         currentUser,
                         onLogout,
@@ -903,4 +914,4 @@ private fun GuestBanner(onSave: () -> Unit) {
             color = MaterialTheme.colorScheme.primary
         )
     }
-}
+}

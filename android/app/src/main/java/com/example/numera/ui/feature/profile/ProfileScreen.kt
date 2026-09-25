@@ -60,7 +60,9 @@ fun ProfileScreen(
     onShowUserProfile: (Int) -> Unit,
     unlockedRelicIds: Set<String>,
     onPracticeMistakes: (() -> Unit)? = null,
-    onOpenMasteryMap: (() -> Unit)? = null
+    onOpenMasteryMap: (() -> Unit)? = null,
+    // Opens the full Friends screen (requests, nudges, remove, friends ranking).
+    onOpenFriends: (() -> Unit)? = null
 ) {
     val scope = rememberCoroutineScope()
     val toast = LocalToast.current
@@ -1010,7 +1012,16 @@ fun ProfileScreen(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Column(modifier = Modifier.padding(Spacing.l)) {
-                Text("Social & Friends", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Social & Friends", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    if (onOpenFriends != null) {
+                        TextButton(onClick = onOpenFriends) { Text("See all") }
+                    }
+                }
                 Spacer(modifier = Modifier.height(10.dp))
                 
                 var searchUsername by remember { mutableStateOf("") }

@@ -38,8 +38,11 @@ private val NUDGE_OPTIONS = listOf(
     "congrats" to "🎉 Congrats"
 )
 
+// Friends: add by username, accept/decline requests, nudge, remove, and the friends ranking.
+// Opened as a full-screen overlay (from Profile or the command palette) with a Close header; the
+// header is omitted when no onBack is supplied (the component tests render it bare).
 @Composable
-fun SocialScreen() {
+fun SocialScreen(onBack: (() -> Unit)? = null) {
     val toast = LocalToast.current
     var nudgeMenuFriendId by remember { mutableStateOf<Int?>(null) }
     var searchUsername by remember { mutableStateOf("") }
@@ -79,9 +82,21 @@ fun SocialScreen() {
         }
     }
 
+    Column(modifier = Modifier.fillMaxSize()) {
+    if (onBack != null) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.m, vertical = Spacing.s),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("👥 Friends", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
+            TextButton(onClick = onBack) { Text("Close") }
+        }
+    }
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
+            .weight(1f)
             .padding(Spacing.l),
         verticalArrangement = Arrangement.spacedBy(Spacing.m)
     ) {
@@ -365,6 +380,7 @@ fun SocialScreen() {
         }
         } // end tab == "friends"
     }
+    } // end Column
 }
 
 @Composable
