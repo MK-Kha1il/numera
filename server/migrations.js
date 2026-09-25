@@ -1591,6 +1591,24 @@ const migrations = [
       }
     },
   },
+  {
+    version: 71,
+    name: 'user_level_stars',
+    // Per-level star ratings (lib/soloRewards.levelStars): the best 0–3 stars a learner has earned
+    // on each level-map level, so the map has something to chase on replay. Written by
+    // POST /api/math/complete (ticket-anchored level sessions only), read by GET /api/levels/stars.
+    up: async (run) => {
+      await run(`
+        CREATE TABLE IF NOT EXISTS user_level_stars (
+          user_id  INTEGER NOT NULL,
+          level    INTEGER NOT NULL,
+          stars    INTEGER NOT NULL CHECK (stars BETWEEN 0 AND 3),
+          best_at  INTEGER NOT NULL,
+          PRIMARY KEY (user_id, level)
+        )
+      `);
+    },
+  },
 ];
 
 /**

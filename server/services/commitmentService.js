@@ -91,6 +91,10 @@ function updateCommitmentAndBurnout(userId, solvedCountThisSession, callback) {
                       callback({
                         newStreak: state ? state.streak : user.streak,
                         newState: state ? state.commitmentState : user.commitment_state,
+                        // Did THIS session credit today's streak day (the recap's "streak extended"
+                        // moment), and did it rescue a fading climb?
+                        streakCredited: !!(streakResult && streakResult.effects.credited),
+                        streakRestored: !!(streakResult && streakResult.effects.restoredFromFading),
                         burnoutRisk,
                         consistencyIndex,
                       });

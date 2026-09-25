@@ -89,4 +89,18 @@ function baseReward({ mode, level, solvedCount, errorsCount, servedCount, speedB
   return out;
 }
 
-module.exports = { SOLO_MODES, FULL_REWARD_SESSIONS, isSoloMode, normalizeMode, faucetFactor, baseReward };
+// Per-level stars (0–3) — the replay goal on the level map. Legible rules, computed from the
+// server-anchored session (solves capped at what was served):
+//   ★   cleared   — at least one solve
+//   ★★  complete  — every served problem solved
+//   ★★★ flawless  — every served problem solved with zero wrong attempts
+function levelStars({ solvedCount, servedCount, errorsCount }) {
+  const solved = Math.max(0, parseInt(solvedCount, 10) || 0);
+  const served = Math.max(solved, parseInt(servedCount, 10) || 0);
+  const errors = Math.max(0, parseInt(errorsCount, 10) || 0);
+  if (solved === 0) return 0;
+  if (solved < served) return 1;
+  return errors === 0 ? 3 : 2;
+}
+
+module.exports = { SOLO_MODES, FULL_REWARD_SESSIONS, isSoloMode, normalizeMode, faucetFactor, baseReward, levelStars };

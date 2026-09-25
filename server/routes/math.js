@@ -11,7 +11,8 @@ const { securityLog } = require('../middleware/security');
 const { generateProblem, getLessonAndExamples } = require('../mathGenerator');
 const { runIngestionPipeline } = require('../mathEngine/knowledgeIngestion');
 const { normalizeLevelForGenerator, applyXp } = require('../lib/progression');
-const { SOLO_MODES, normalizeMode, faucetFactor, baseReward } = require('../lib/soloRewards');
+const { SOLO_MODES, normalizeMode, faucetFactor, baseReward, levelStars } = require('../lib/soloRewards');
+const { QUEST_DEFS } = require('../lib/questDefs');
 const { withTransaction, httpError } = require('../dbx');
 const { ensureDailyReset } = require('../services/userService');
 const { notify } = require('../services/notificationService');
@@ -295,6 +296,24 @@ router.post('/api/math/calculator/log', authenticateToken, (req, res) => {
   );
 });
 
+// Daily-quest progress for the recap: every quest's current/target/claimed + how many are ready
+// to claim. Best-effort (an empty snapshot never fails the response).
+function questSnapshot(userId) {
+  return new Promise((resolve) => {
+    db.get('SELECT * FROM user_quests WHERE user_id = ?', [userId], (err, q) => {
+      if (err || !q) return resolve({ progress: [], claimable: 0 });
+      const progress = QUEST_DEFS.map((d) => ({
+        type: d.type,
+        name: d.name,
+        current: Math.min(d.target, q[d.progressCol] || 0),
+        target: d.target,
+        claimed: q[d.claimCol] === 1,
+      }));
+      resolve({ progress, claimable: progress.filter((p) => p.current >= p.target && !p.claimed).length });
+    });
+  });
+}
+
 // Per-user cooldown guarding against rapid-fire completion replays.
 const completionCooldowns = new Map();
 
@@ -442,6 +461,26 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
         userId,
       ]);
 
+      // Per-level stars (the map's replay goal): only for an unlocked level-map level; the best
+      // result is kept.
+      let stars = 0;
+      let bestStars = 0;
+      let newBest = false;
+      if (mode === 'level' && !levelLocked) {
+        stars = levelStars({ solvedCount: solved, servedCount: ticket.servedCount, errorsCount });
+        const prev = await tx.get('SELECT stars FROM user_level_stars WHERE user_id = ? AND level = ?', [userId, parsedLevel]);
+        const prevStars = prev ? prev.stars : 0;
+        newBest = stars > prevStars;
+        bestStars = Math.max(stars, prevStars);
+        if (newBest) {
+          await tx.run(
+            `INSERT INTO user_level_stars (user_id, level, stars, best_at) VALUES (?, ?, ?, ?)
+             ON CONFLICT(user_id, level) DO UPDATE SET stars = excluded.stars, best_at = excluded.best_at`,
+            [userId, parsedLevel, stars, Math.floor(Date.now() / 1000)]
+          );
+        }
+      }
+
       // The daily puzzle's reward was paid (once, server-graded) by its submit endpoint; echo it for
       // the recap without granting it again.
       const echo = base.paidElsewhere && solved > 0 && q && q.daily_puzzle_today >= 1 ? rules.echo : null;
@@ -450,6 +489,9 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
         withheld: false,
         user,
         solved,
+        stars,
+        bestStars,
+        newBest,
         servedCount: ticket.servedCount,
         rewardLevel,
         speedBonus: base.speedBonus,
@@ -545,7 +587,7 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
         )
       : null;
 
-  updateCommitmentAndBurnout(userId, solved, () => {
+  updateCommitmentAndBurnout(userId, solved, (commitment) => {
     // Set when this session's solves push the category's lifetime-correct count across a mastery
     // milestone — the client turns it into the signature "mastery-up" moment (ultra-review #20).
     let masteryMilestone = null;
@@ -570,7 +612,8 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
       }
 
       grantRankRewards(userId, currentRank, () => {
-        updateAchievements(userId, () => {
+        updateAchievements(userId, async () => {
+          const quests = await questSnapshot(userId);
           res.json({
             xp: r.newXp,
             level: r.newLevel,
@@ -590,6 +633,19 @@ router.post('/api/math/complete', authenticateToken, idempotency, async (req, re
             // The session's rating movement (level mode): domain + global display rating, delta and
             // the plain-language explanation — the post-session "why did my rating change" surface.
             rating,
+            // The recap's payoff moments: this level's stars (+ best + whether it's a new best),
+            // the streak (and whether THIS session is what kept it alive today), and daily-quest
+            // progress so the next goal is one glance away.
+            stars: r.stars,
+            bestStars: r.bestStars,
+            newBest: r.newBest,
+            streak: {
+              days: commitment && commitment.newStreak != null ? commitment.newStreak : r.user.streak || 0,
+              extendedToday: !!(commitment && commitment.streakCredited),
+              restored: !!(commitment && commitment.streakRestored),
+            },
+            questProgress: quests.progress,
+            claimableQuests: quests.claimable,
           });
         });
       });

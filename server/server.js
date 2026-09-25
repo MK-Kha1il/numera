@@ -82,6 +82,7 @@ app.use(require('./routes/archive'));
 app.use(require('./routes/league'));
 app.use(require('./routes/commitment'));
 app.use(require('./routes/math'));
+app.use(require('./routes/levels'));
 app.use(require('./routes/transfer'));
 app.use(require('./routes/rating'));
 app.use(require('./routes/puzzleRush'));
